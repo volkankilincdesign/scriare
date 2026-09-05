@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useProjectStore } from "../../state/projectStore";
 import { ProjectSettingsDialog } from "./ProjectSettingsDialog";
-import logoMark from "../../assets/logo-mark.png";
 
 const SAVE_STATUS_LABEL = {
   saved: "All changes saved",
@@ -27,7 +26,12 @@ export function TopBar() {
           className="flex items-center gap-2 text-sm font-semibold tracking-wide text-[var(--text)] hover:text-[var(--accent)]"
           title="Back to Welcome screen"
         >
-          <img src={logoMark} alt="" className="h-5 w-5 shrink-0 rounded-[6px]" />
+          <span
+            aria-hidden
+            className="font-blackletter-mark shrink-0 text-[22px] text-[var(--accent)]"
+          >
+            S
+          </span>
           <span className="font-serif-narrative italic">Scriare</span>
         </button>
         <span className="text-[var(--text-3)]">/</span>

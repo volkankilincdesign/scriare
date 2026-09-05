@@ -1,11 +1,27 @@
-# Scriare — v0.9.0 — Premium Redesign
+# Scriare — v0.9.1 — Brand Mark
 
-Scriare is still a rich text editor, first and foremost. This release is a
-visual redesign only: a new colour-theme system (four switchable palettes,
-Crimson Noir default), a serif/sans font pairing, an app logo, and reskinned
-chrome across every screen. **No functionality changed** — every feature
-audited in v0.8.2 and fixed in v0.8.3 still behaves exactly as it did
-before; only how it looks changed.
+Scriare is still a rich text editor, first and foremost. This is a small
+visual follow-up to v0.9.0: the app logo is now a live, theme-aware glyph
+instead of a static PNG. **No functionality changed.**
+
+## What's new (v0.9.1 — Brand Mark)
+
+- **The Top Bar and Welcome screen logo is now rendered text, not an
+  image.** The project owner supplied a blackletter font pack
+  (`other_materials/fonts/blackletter_ds/`, two cuts — a filled ExtraBold
+  and a decorative Shadow/outline variant); the filled one
+  (`BLACEB__.TTF`, renamed `scriare-blackletter.ttf`) is embedded via
+  `@font-face` in `themes.css` and used to render a single capital "S" as
+  the brand mark, coloured with `var(--accent)`.
+- **The mark now re-themes live**, exactly like the rest of the app —
+  switch palettes in Project Settings and the "S" shifts colour along with
+  everything else, instead of staying frozen as a static white-on-black
+  image. Verified by rendering the glyph against two different `--accent`
+  values and confirming both render correctly.
+- The original PNG (`assets/logo-mark.png`) is no longer imported in
+  `TopBar.tsx`/`WelcomeScreen.tsx` — it's kept only as the source for
+  `build/icon.png`/`resources/icon.png` (the Electron window icon), which
+  has to be a bitmap regardless of the in-app theme.
 
 ## What's new (v0.9.0 — Premium Redesign)
 

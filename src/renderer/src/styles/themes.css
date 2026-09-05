@@ -115,3 +115,21 @@
 .font-serif-narrative {
   font-family: "Newsreader", Georgia, "Times New Roman", serif;
 }
+
+/* The Scriare brand mark: a single blackletter "S", set in the project
+   owner's own font file (the filled/ExtraBold cut, not the Shadow one) and
+   coloured via the active theme's --accent, so the mark itself re-themes
+   along with everything else instead of being a static image. */
+@font-face {
+  font-family: "Scriare Blackletter";
+  src: url("../assets/fonts/scriare-blackletter.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-blackletter-mark {
+  font-family: "Scriare Blackletter", "Newsreader", Georgia, serif;
+  font-weight: 800;
+  line-height: 1;
+}

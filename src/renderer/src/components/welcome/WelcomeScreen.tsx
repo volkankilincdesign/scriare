@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useProjectStore } from "../../state/projectStore";
 import { NewProjectDialog } from "./NewProjectDialog";
-import logoMark from "../../assets/logo-mark.png";
 
 export function WelcomeScreen() {
   const recentProjects = useProjectStore((s) => s.recentProjects);
@@ -17,7 +16,9 @@ export function WelcomeScreen() {
   return (
     <div className="flex h-screen w-screen items-center justify-center bg-[var(--bg)] text-[var(--text)]">
       <div className="w-full max-w-md">
-        <img src={logoMark} alt="" className="mb-4 h-11 w-11 rounded-[10px]" />
+        <span aria-hidden className="font-blackletter-mark mb-2 block text-5xl text-[var(--accent)]">
+          S
+        </span>
         <h1 className="font-serif-narrative mb-1 text-3xl italic text-[var(--text)]">Scriare</h1>
         <p className="mb-8 text-sm text-[var(--text-3)]">Build stories, not syntax.</p>
 
