@@ -8,6 +8,8 @@ interface SceneNodeData {
   choiceCount: number;
   isActive: boolean;
   isStart: boolean;
+  /** True while this exact scene is the one currently being dragged. */
+  isDragging?: boolean;
   [key: string]: unknown;
 }
 
@@ -29,15 +31,17 @@ interface SceneNodeData {
 const HANDLE_STYLE = { opacity: 0, pointerEvents: "none" as const };
 
 export function SceneNode({ data }: NodeProps) {
-  const { label, choiceCount, isActive, isStart } = data as SceneNodeData;
+  const { label, choiceCount, isActive, isStart, isDragging } = data as SceneNodeData;
 
   return (
     <div
       style={{ width: SCENE_NODE_WIDTH, height: SCENE_NODE_HEIGHT }}
-      className={`flex flex-col justify-center rounded-lg border px-3 py-2 ${
-        isActive
-          ? "border-[var(--accent)] bg-[var(--surface-2)]"
-          : "border-[var(--border)] bg-[var(--bg)] hover:border-[var(--border-faint)]"
+      className={`flex flex-col justify-center rounded-lg border px-3 py-2 transition-all duration-150 ${
+        isDragging
+          ? "scale-105 cursor-grabbing border-[var(--accent)] bg-[var(--surface-2)] shadow-lg shadow-black/30"
+          : isActive
+            ? "border-[var(--accent)] bg-[var(--surface-2)]"
+            : "border-[var(--border)] bg-[var(--bg)] hover:border-[var(--border-faint)] hover:bg-[var(--surface-2-faint)]"
       }`}
     >
       <Handle type="target" position={Position.Left} style={HANDLE_STYLE} />

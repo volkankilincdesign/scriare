@@ -120,3 +120,31 @@ body {
 .scriare-graph-bg .react-flow__background {
   opacity: 0.9;
 }
+
+/* Graph interaction polish (Sprint 8A). React Flow already positions nodes
+   with a per-frame transform while dragging — never add a transition on
+   that, or manual dragging would lag behind the cursor. Instead: (1) lift
+   whatever node is actively being dragged above everything else and give it
+   a soft shadow, read as "this is the thing currently moving"; (2) let a
+   *programmatic* position change (Auto Layout, a frame drag settling) ease
+   into place instead of snapping, since those aren't driven by the cursor
+   frame-by-frame; (3) keep edge paths popping instantly with node movement
+   (correctness — an edge lagging behind its node reads as broken) while
+   still transitioning an edge's own stroke/opacity changes smoothly. */
+.react-flow__node.dragging {
+  cursor: grabbing;
+  z-index: 30 !important;
+  filter: drop-shadow(0 10px 20px var(--overlay));
+}
+
+.react-flow__node:not(.dragging) {
+  transition: transform 150ms ease;
+}
+
+.react-flow__edge-path {
+  transition: stroke 150ms ease, stroke-width 150ms ease, opacity 150ms ease;
+}
+
+.react-flow__node {
+  cursor: grab;
+}

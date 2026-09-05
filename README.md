@@ -1,8 +1,41 @@
-# Scriare — v0.9.1 — Brand Mark
+# Scriare — v0.10.0 — Graph Interaction Polish
 
-Scriare is still a rich text editor, first and foremost. This is a small
-visual follow-up to v0.9.0: the app logo is now a live, theme-aware glyph
-instead of a static PNG. **No functionality changed.**
+Scriare is still a rich text editor, first and foremost. This sprint touches
+only the Story Graph's *feel* — dragging, hovering, selecting, zooming — not
+its features or visual identity. **No new graph capability was added, and
+nothing about the graph looks different at rest.**
+
+## What's new (v0.10.0 — Graph Interaction Polish)
+
+- **Drop preview while dragging a scene.** The scene card being dragged
+  lifts (scale, accent border, drop shadow) so it reads as "this is what's
+  moving, not settled yet." If it's hovering inside a Frame's bounds, that
+  Frame highlights (accent border + soft tint) using the exact same
+  containment check `projectStore` uses to decide the real drop — so the
+  frame that's glowing is always the frame the scene will actually join on
+  release, never a guess.
+- **Frame drags** get the same "currently moving" lift via a shared
+  React Flow CSS rule, instead of custom code per node type.
+- **Selection and hover feel more alive**: scene cards now get a visible
+  background tint on hover (previously only the border changed), and every
+  state change (hover, select, drag) eases in over 150ms instead of
+  snapping — subtle, not showy.
+- **Edges no longer pop.** Edge paths still track their nodes' positions
+  instantly (correctness — a lagging edge reads as broken), but an edge's
+  own stroke/width/opacity changes now transition smoothly.
+- **Auto Layout and frame-drag settling now ease into place** (150ms)
+  instead of jumping, while a live drag still tracks the cursor with zero
+  added latency — the CSS transition is scoped to only apply when a node
+  isn't the one currently being dragged.
+- **Fewer accidental micro-drags.** A 2px movement threshold means a plain
+  click on a scene no longer risks registering as a tiny, unintended
+  position change.
+- **Initial "fit view" now animates** (300ms) instead of snapping the
+  camera into place when a project's graph first opens.
+- **Performance**: the new hover-highlight state only triggers a re-render
+  when a drag actually crosses into or out of a Frame's bounds — not on
+  every mouse-move tick — so this stays cheap on large graphs. Verified
+  with `tsc --noEmit` and a production build.
 
 ## What's new (v0.9.1 — Brand Mark)
 

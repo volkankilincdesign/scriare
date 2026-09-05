@@ -6,7 +6,7 @@ import { buildFrame, buildProject, buildScene, normalizeProject } from "../types
 import { computeAutoLayout } from "../utils/autoLayout";
 import { extractChoices, regenerateChoiceIds } from "../utils/choiceBlocks";
 import { childrenOf, isDescendant, nextOrder } from "../utils/contentTree";
-import { SCENE_NODE_HEIGHT, SCENE_NODE_WIDTH } from "../utils/graphConstants";
+import { findContainingFrame } from "../utils/graphConstants";
 
 type SaveStatus = "saved" | "saving" | "unsaved";
 
@@ -526,18 +526,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     if (!project) return;
 
     // Figma-style auto-grouping: if the scene's new position lands inside a
-    // Frame's rectangle, it joins that frame; otherwise it's ungrouped.
-    const center = {
-      x: position.x + SCENE_NODE_WIDTH / 2,
-      y: position.y + SCENE_NODE_HEIGHT / 2,
-    };
-    const containingFrame = project.frames.find(
-      (frame) =>
-        center.x >= frame.position.x &&
-        center.x <= frame.position.x + frame.size.width &&
-        center.y >= frame.position.y &&
-        center.y <= frame.position.y + frame.size.height,
-    );
+    // Frame's rectangle, it joins that frame; otherwise it's ungrouped. Uses
+    // the same containment check the graph's live drag-hover preview uses,
+    // so what the user sees highlighted while dragging is always what
+    // actually happens on drop.
+    const containingFrame = findContainingFrame(project.frames, position);
 
     set({
       project: {

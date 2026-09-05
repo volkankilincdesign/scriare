@@ -6,11 +6,14 @@ import { FRAME_MIN_HEIGHT, FRAME_MIN_WIDTH } from "../../utils/graphConstants";
 
 interface FrameNodeData {
   title: string;
+  /** True while a scene being dragged is currently hovering over this frame
+   * — highlighted as the frame the scene will join if released now. */
+  isDropTarget?: boolean;
   [key: string]: unknown;
 }
 
 export function FrameNode({ id, data, selected }: NodeProps) {
-  const { title } = data as FrameNodeData;
+  const { title, isDropTarget } = data as FrameNodeData;
   const renameFrame = useProjectStore((s) => s.renameFrame);
   const deleteFrame = useProjectStore((s) => s.deleteFrame);
   const updateFrameRect = useProjectStore((s) => s.updateFrameRect);
@@ -26,7 +29,13 @@ export function FrameNode({ id, data, selected }: NodeProps) {
   }
 
   return (
-    <div className="h-full w-full rounded-lg border-2 border-dashed border-[var(--border)] bg-[var(--surface-2-faint)]">
+    <div
+      className={`h-full w-full rounded-lg border-2 border-dashed transition-colors duration-150 ${
+        isDropTarget
+          ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+          : "border-[var(--border)] bg-[var(--surface-2-faint)]"
+      }`}
+    >
       <NodeResizer
         minWidth={FRAME_MIN_WIDTH}
         minHeight={FRAME_MIN_HEIGHT}

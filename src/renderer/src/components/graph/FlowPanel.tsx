@@ -11,6 +11,7 @@ import type {
 import "@xyflow/react/dist/style.css";
 import { useProjectStore } from "../../state/projectStore";
 import { extractChoices } from "../../utils/choiceBlocks";
+import { findContainingFrame } from "../../utils/graphConstants";
 import { SceneNode } from "./SceneNode";
 import { FrameNode } from "./FrameNode";
 
@@ -33,6 +34,22 @@ interface FrameDragOffset {
   dy: number;
 }
 
+/**
+ * Which scene is currently being dragged, and which frame (if any) it's
+ * hovering over — drives the "drop preview": the scene node gets a lifted,
+ * highlighted look, and the frame it would join on release gets a matching
+ * highlight, so the landing spot is never a surprise. Kept separate from
+ * the `nodes`/`edges` memo's other inputs isn't possible (it has to flow
+ * through node `data` like everything else), but `hoverFrameId` is only
+ * updated when it actually changes (see handleNodeDrag) — crossing a frame
+ * boundary is rare, so this doesn't force a full nodes/edges recompute on
+ * every drag frame the way position updates would.
+ */
+interface SceneDragState {
+  sceneId: string;
+  hoverFrameId: string | null;
+}
+
 export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps) {
   const project = useProjectStore((s) => s.project);
   const selectedSceneId = useProjectStore((s) => s.selectedSceneId);
@@ -44,6 +61,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
 
   const flowInstanceRef = useRef<ReactFlowInstance | null>(null);
   const [frameDrag, setFrameDrag] = useState<FrameDragOffset | null>(null);
+  const [sceneDrag, setSceneDrag] = useState<SceneDragState | null>(null);
 
   const { nodes, edges } = useMemo(() => {
     if (!project) return { nodes: [] as Node[], edges: [] as Edge[] };
@@ -59,7 +77,10 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
         type: "frame",
         position,
         style: { width: frame.size.width, height: frame.size.height, zIndex: 0 },
-        data: { title: frame.title },
+        data: {
+          title: frame.title,
+          isDropTarget: sceneDrag?.hoverFrameId === frame.id,
+        },
         zIndex: 0,
       };
     });
@@ -79,6 +100,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
           choiceCount: extractChoices(scene.content).length,
           isActive: scene.id === selectedSceneId,
           isStart: scene.id === project.startSceneId,
+          isDragging: sceneDrag?.sceneId === scene.id,
         },
         zIndex: 1,
       };
@@ -92,6 +114,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
           source: scene.id,
           target: choice.targetSceneId as string,
           type: "smoothstep",
+          pathOptions: { borderRadius: 8 },
           label: choice.text || undefined,
           style: { stroke: "var(--border-faint)", strokeWidth: 1.6 },
           labelStyle: { fill: "var(--text-2)", fontSize: 11 },
@@ -100,27 +123,44 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     );
 
     return { nodes: [...frameNodes, ...sceneNodes], edges: flowEdges };
-  }, [project, selectedSceneId, frameDrag]);
+  }, [project, selectedSceneId, frameDrag, sceneDrag]);
 
   const handleNodeClick: NodeMouseHandler = (_event, node) => {
     if (node.type === "scene") selectScene(node.id);
   };
 
   const handleNodeDragStart: OnNodeDrag = (_event, node) => {
-    if (node.type !== "frame") return;
-    setFrameDrag({ frameId: node.id, origin: { ...node.position }, dx: 0, dy: 0 });
+    if (node.type === "frame") {
+      setFrameDrag({ frameId: node.id, origin: { ...node.position }, dx: 0, dy: 0 });
+    } else if (node.type === "scene" && project) {
+      setSceneDrag({
+        sceneId: node.id,
+        hoverFrameId: findContainingFrame(project.frames, node.position)?.id ?? null,
+      });
+    }
   };
 
   const handleNodeDrag: OnNodeDrag = (_event, node) => {
-    if (node.type !== "frame") return;
-    setFrameDrag((prev) => {
-      if (!prev || prev.frameId !== node.id) return prev;
-      return {
-        ...prev,
-        dx: node.position.x - prev.origin.x,
-        dy: node.position.y - prev.origin.y,
-      };
-    });
+    if (node.type === "frame") {
+      setFrameDrag((prev) => {
+        if (!prev || prev.frameId !== node.id) return prev;
+        return {
+          ...prev,
+          dx: node.position.x - prev.origin.x,
+          dy: node.position.y - prev.origin.y,
+        };
+      });
+    } else if (node.type === "scene" && project) {
+      const hoverFrameId = findContainingFrame(project.frames, node.position)?.id ?? null;
+      setSceneDrag((prev) => {
+        if (!prev || prev.sceneId !== node.id) return prev;
+        // Bail out with the same reference when nothing changed, so React
+        // skips the re-render (and the nodes/edges memo above skips its
+        // recompute) on every mousemove that isn't crossing a frame edge.
+        if (prev.hoverFrameId === hoverFrameId) return prev;
+        return { ...prev, hoverFrameId };
+      });
+    }
   };
 
   const handleNodeDragStop: OnNodeDrag = (_event, node) => {
@@ -129,6 +169,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       setFrameDrag(null);
     } else if (node.type === "scene") {
       updateScenePosition(node.id, node.position);
+      setSceneDrag(null);
     }
   };
 
@@ -202,6 +243,9 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
               minZoom={0.15}
               maxZoom={1.5}
               fitView
+              fitViewOptions={{ padding: 0.2, duration: 300 }}
+              selectionOnDrag={false}
+              nodeDragThreshold={2}
               proOptions={{ hideAttribution: true }}
             >
               <Background color="var(--border-soft)" gap={18} />
