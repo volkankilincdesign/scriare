@@ -69,21 +69,21 @@ export function SceneEditor() {
 
   if (!scene) {
     return (
-      <div className="flex h-full flex-1 items-center justify-center bg-zinc-900 text-sm text-zinc-600">
+      <div className="flex h-full flex-1 items-center justify-center bg-[var(--bg)] text-sm text-[var(--text-3)]">
         Select or create a scene to start writing.
       </div>
     );
   }
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-hidden bg-zinc-900">
+    <div className="flex h-full flex-1 flex-col overflow-hidden bg-[var(--bg)]">
       <EditorToolbar editor={editor} />
       <div className="flex-1 overflow-y-auto px-8 py-8">
         <div className={READING_COLUMN_CLASS}>
           <input
             value={scene.title}
             onChange={(e) => renameScene(scene.id, e.target.value)}
-            className="mb-6 w-full bg-transparent text-2xl font-semibold text-zinc-100 outline-none placeholder:text-zinc-600"
+            className="mb-6 w-full bg-transparent text-2xl font-semibold text-[var(--text)] outline-none placeholder:text-[var(--text-3)]"
             placeholder="Scene title"
           />
           <EditorContent editor={editor} />

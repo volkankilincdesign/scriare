@@ -20,8 +20,8 @@ export function NewProjectDialog({ onClose }: NewProjectDialogProps) {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-sm rounded-lg border border-zinc-800 bg-zinc-950 p-5">
-        <h2 className="mb-4 text-sm font-semibold text-zinc-100">New Project</h2>
+      <div className="w-full max-w-sm rounded-lg border border-[var(--border-soft)] bg-[var(--surface)] p-5">
+        <h2 className="mb-4 text-sm font-semibold text-[var(--text)]">New Project</h2>
         <input
           autoFocus
           type="text"
@@ -32,13 +32,13 @@ export function NewProjectDialog({ onClose }: NewProjectDialogProps) {
             if (e.key === "Escape") onClose();
           }}
           placeholder="Story title"
-          className="mb-4 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-600"
+          className="mb-4 w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
         />
         <div className="flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md px-3 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800"
+            className="rounded-md px-3 py-1.5 text-sm text-[var(--text-2)] hover:bg-[var(--surface-2)]"
           >
             Cancel
           </button>
@@ -46,7 +46,7 @@ export function NewProjectDialog({ onClose }: NewProjectDialogProps) {
             type="button"
             onClick={() => void handleCreate()}
             disabled={!name.trim() || creating}
-            className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+            className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-[var(--accent-text-on)] hover:bg-[var(--accent-hover)] disabled:opacity-50"
           >
             {creating ? "Creating..." : "Create"}
           </button>

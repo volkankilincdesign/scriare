@@ -93,8 +93,8 @@ export function EditorGraphSplit({ flowCollapsed, onToggleFlow }: EditorGraphSpl
         <div
           onPointerDown={handlePointerDown}
           title="Drag to resize"
-          className={`group relative h-1.5 shrink-0 cursor-row-resize bg-zinc-800 ${
-            dragging ? "bg-emerald-600" : "hover:bg-emerald-700/60"
+          className={`group relative h-1.5 shrink-0 cursor-row-resize bg-[var(--surface-2)] ${
+            dragging ? "bg-[var(--accent)]" : "hover:bg-[var(--accent-fill-mid)]"
           }`}
         >
           <div className="absolute inset-x-0 -top-1.5 -bottom-1.5" />

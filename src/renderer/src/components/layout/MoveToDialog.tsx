@@ -43,14 +43,14 @@ export function MoveToDialog({ nodeIds, onClose }: MoveToDialogProps) {
 
   return (
     <Modal onClose={onClose}>
-      <h2 className="mb-3 text-base font-semibold text-zinc-100">
+      <h2 className="mb-3 text-base font-semibold text-[var(--text)]">
         Move {nodeIds.length} item{nodeIds.length === 1 ? "" : "s"}
       </h2>
-      <div className="max-h-64 overflow-y-auto rounded-md border border-zinc-800">
+      <div className="max-h-64 overflow-y-auto rounded-md border border-[var(--border-soft)]">
         <button
           type="button"
           onClick={() => moveTo(null)}
-          className="flex w-full items-center gap-1.5 px-2.5 py-1.5 text-left text-sm text-zinc-200 hover:bg-zinc-800"
+          className="flex w-full items-center gap-1.5 px-2.5 py-1.5 text-left text-sm text-[var(--text)] hover:bg-[var(--surface-2)]"
         >
           📖 Story (root)
         </button>
@@ -60,7 +60,7 @@ export function MoveToDialog({ nodeIds, onClose }: MoveToDialogProps) {
             type="button"
             onClick={() => moveTo(folder.id)}
             style={{ paddingLeft: 10 + depthOf(folder) * 16 }}
-            className="flex w-full items-center gap-1.5 py-1.5 pr-2.5 text-left text-sm text-zinc-200 hover:bg-zinc-800"
+            className="flex w-full items-center gap-1.5 py-1.5 pr-2.5 text-left text-sm text-[var(--text)] hover:bg-[var(--surface-2)]"
           >
             📁 {folder.name}
           </button>
@@ -70,7 +70,7 @@ export function MoveToDialog({ nodeIds, onClose }: MoveToDialogProps) {
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md border border-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-300 hover:bg-zinc-800"
+          className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
         >
           Cancel
         </button>

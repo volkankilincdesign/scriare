@@ -36,18 +36,18 @@ export function SceneNode({ data }: NodeProps) {
       style={{ width: SCENE_NODE_WIDTH, height: SCENE_NODE_HEIGHT }}
       className={`flex flex-col justify-center rounded-lg border px-3 py-2 ${
         isActive
-          ? "border-emerald-500 bg-zinc-800"
-          : "border-zinc-700 bg-zinc-900 hover:border-zinc-600"
+          ? "border-[var(--accent)] bg-[var(--surface-2)]"
+          : "border-[var(--border)] bg-[var(--bg)] hover:border-[var(--border-faint)]"
       }`}
     >
       <Handle type="target" position={Position.Left} style={HANDLE_STYLE} />
       <Handle type="source" position={Position.Right} style={HANDLE_STYLE} />
 
       <div className="flex items-center gap-1">
-        <div className="min-w-0 flex-1 truncate text-xs font-medium text-zinc-100">{label}</div>
+        <div className="min-w-0 flex-1 truncate text-xs font-medium text-[var(--text)]">{label}</div>
         {isStart && <StartBadge compact />}
       </div>
-      <div className="mt-0.5 text-[10px] text-zinc-500">
+      <div className="mt-0.5 text-[10px] text-[var(--text-3)]">
         {choiceCount === 0
           ? "No choices"
           : `${choiceCount} choice${choiceCount === 1 ? "" : "s"}`}

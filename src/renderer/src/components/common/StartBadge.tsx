@@ -13,7 +13,7 @@ export function StartBadge({ compact = false }: StartBadgeProps) {
   return (
     <span
       title="Start Scene — Play Mode begins here"
-      className={`inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-emerald-600/15 font-semibold uppercase tracking-wide text-emerald-400 ${
+      className={`inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-[var(--accent-fill-soft)] font-semibold uppercase tracking-wide text-[var(--accent)] ${
         compact ? "px-1 py-0.5 text-[8px]" : "px-1.5 py-0.5 text-[9px]"
       }`}
     >

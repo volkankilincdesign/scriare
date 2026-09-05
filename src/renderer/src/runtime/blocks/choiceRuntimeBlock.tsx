@@ -21,7 +21,7 @@ function RuntimeChoiceOptions({ options, context }: RuntimeChoiceOptionsProps) {
           key={option.id}
           type="button"
           onClick={() => context.goToScene(option.targetSceneId as string)}
-          className="rounded-md border border-zinc-700 bg-zinc-800/60 px-4 py-2 text-left text-sm text-zinc-100 hover:border-emerald-500 hover:bg-zinc-800"
+          className="rounded-md border border-[var(--border)] bg-[var(--surface-2-translucent)] px-4 py-2 text-left text-sm text-[var(--text)] hover:border-[var(--accent)] hover:bg-[var(--surface-2)]"
         >
           {option.text || "Continue"}
         </button>

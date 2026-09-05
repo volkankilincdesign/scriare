@@ -42,11 +42,11 @@ export function ChoiceBlockView({ node, updateAttributes, deleteNode, selected }
   return (
     <NodeViewWrapper
       className={`choice-block my-3 rounded-md border px-3 py-2.5 ${
-        selected ? "border-emerald-600 bg-emerald-950/20" : "border-zinc-700 bg-zinc-950/60"
+        selected ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--overlay)]"
       }`}
       contentEditable={false}
     >
-      <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-500">
+      <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">
         <span>⤷</span>
         <span>Choice</span>
       </div>
@@ -60,7 +60,7 @@ export function ChoiceBlockView({ node, updateAttributes, deleteNode, selected }
                 disabled={index === 0}
                 onClick={() => moveOption(index, -1)}
                 title="Move up"
-                className="leading-none text-[10px] text-zinc-500 hover:text-zinc-200 disabled:opacity-25"
+                className="leading-none text-[10px] text-[var(--text-3)] hover:text-[var(--text)] disabled:opacity-25"
               >
                 ▲
               </button>
@@ -69,7 +69,7 @@ export function ChoiceBlockView({ node, updateAttributes, deleteNode, selected }
                 disabled={index === options.length - 1}
                 onClick={() => moveOption(index, 1)}
                 title="Move down"
-                className="leading-none text-[10px] text-zinc-500 hover:text-zinc-200 disabled:opacity-25"
+                className="leading-none text-[10px] text-[var(--text-3)] hover:text-[var(--text)] disabled:opacity-25"
               >
                 ▼
               </button>
@@ -78,12 +78,12 @@ export function ChoiceBlockView({ node, updateAttributes, deleteNode, selected }
               value={option.text}
               onChange={(e) => updateOption(index, { text: e.target.value })}
               placeholder="Choice text (e.g. Open the door)"
-              className="min-w-0 flex-1 rounded bg-transparent px-1 text-sm text-zinc-100 outline-none placeholder:text-zinc-600"
+              className="min-w-0 flex-1 rounded bg-transparent px-1 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-3)]"
             />
             <select
               value={option.targetSceneId ?? ""}
               onChange={(e) => updateOption(index, { targetSceneId: e.target.value || null })}
-              className="shrink-0 rounded border border-zinc-700 bg-zinc-900 px-1.5 py-1 text-xs text-zinc-300 outline-none focus:border-emerald-600"
+              className="shrink-0 rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text-2)] outline-none focus:border-[var(--accent)]"
             >
               <option value="">— Not linked —</option>
               {otherScenes.map((scene) => (
@@ -96,7 +96,7 @@ export function ChoiceBlockView({ node, updateAttributes, deleteNode, selected }
               type="button"
               onClick={() => removeOption(index)}
               title="Remove this option"
-              className="shrink-0 rounded px-1.5 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-red-400"
+              className="shrink-0 rounded px-1.5 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-red-400"
             >
               ✕
             </button>
@@ -108,7 +108,7 @@ export function ChoiceBlockView({ node, updateAttributes, deleteNode, selected }
         <button
           type="button"
           onClick={addOption}
-          className="rounded px-1.5 py-0.5 text-xs font-medium text-emerald-500 hover:bg-emerald-950/40"
+          className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
         >
           + Add option
         </button>
@@ -116,7 +116,7 @@ export function ChoiceBlockView({ node, updateAttributes, deleteNode, selected }
           type="button"
           onClick={deleteNode}
           title="Remove this entire Choice Block"
-          className="rounded px-1.5 py-0.5 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-red-400"
+          className="rounded px-1.5 py-0.5 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-red-400"
         >
           Remove block
         </button>

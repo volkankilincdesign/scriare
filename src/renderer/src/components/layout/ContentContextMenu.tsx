@@ -40,7 +40,7 @@ export function ContentContextMenu({ x, y, items, onClose }: ContentContextMenuP
     <div
       ref={ref}
       style={{ top: y, left: x }}
-      className="fixed z-50 min-w-[160px] rounded-md border border-zinc-700 bg-zinc-900 py-1 shadow-xl"
+      className="fixed z-50 min-w-[160px] rounded-md border border-[var(--border)] bg-[var(--bg)] py-1 shadow-xl"
     >
       {items.map((item) => (
         <button
@@ -50,8 +50,8 @@ export function ContentContextMenu({ x, y, items, onClose }: ContentContextMenuP
             item.onSelect();
             onClose();
           }}
-          className={`block w-full px-3 py-1.5 text-left text-sm hover:bg-zinc-800 ${
-            item.danger ? "text-red-400" : "text-zinc-200"
+          className={`block w-full px-3 py-1.5 text-left text-sm hover:bg-[var(--surface-2)] ${
+            item.danger ? "text-red-400" : "text-[var(--text)]"
           }`}
         >
           {item.label}

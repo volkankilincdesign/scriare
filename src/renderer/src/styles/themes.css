@@ -1,0 +1,117 @@
+/* Fonts for the premium theme system: Newsreader for narrative/prose
+   surfaces (titles, editor body copy), Manrope for UI chrome. Loaded via
+   @import so no <link> tags are needed in index.html. Must stay the first
+   rule in this file — @import is only valid before any other CSS rule. */
+@import url("https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap");
+
+:root, [data-theme="crimson"] {
+  --theme-name: "Crimson Noir";
+  --bg: oklch(16% 0.006 260);
+  --surface: oklch(19% 0.007 260);
+  --surface-2: oklch(22.5% 0.008 260);
+  --surface-3: oklch(26% 0.009 260);
+  --border: oklch(29% 0.01 260);
+  --border-soft: oklch(25% 0.008 260);
+  --border-faint: oklch(33% 0.01 260);
+  --text: oklch(94% 0.004 260);
+  --text-2: oklch(72% 0.008 260);
+  --text-3: oklch(52% 0.01 260);
+  --accent: oklch(58% 0.19 27);
+  --accent-hover: oklch(53% 0.2 27);
+  --accent-text-on: oklch(98% 0.008 27);
+  --accent-soft: oklch(58% 0.19 27 / 0.13);
+  --accent-soft-2: oklch(58% 0.19 27 / 0.24);
+  --accent-ring: oklch(58% 0.19 27 / 0.45);
+  --accent-fill-strong: oklch(53% 0.2 27 / 0.92);
+  --accent-fill-soft: oklch(58% 0.19 27 / 0.15);
+  --accent-fill-mid: oklch(53% 0.2 27 / 0.6);
+  --overlay: oklch(10% 0.006 260 / 0.6);
+  --surface-translucent: oklch(19% 0.007 260 / 0.85);
+  --surface-2-translucent: oklch(22.5% 0.008 260 / 0.5);
+  --surface-2-faint: oklch(22.5% 0.008 260 / 0.2);
+}
+
+[data-theme="indigo"] {
+  --theme-name: "Indigo Dusk";
+  --bg: oklch(15% 0.02 265);
+  --surface: oklch(18% 0.022 265);
+  --surface-2: oklch(21.5% 0.024 265);
+  --surface-3: oklch(25% 0.026 265);
+  --border: oklch(28% 0.026 265);
+  --border-soft: oklch(24% 0.022 265);
+  --border-faint: oklch(32% 0.026 265);
+  --text: oklch(94% 0.006 265);
+  --text-2: oklch(73% 0.012 265);
+  --text-3: oklch(53% 0.014 265);
+  --accent: oklch(62% 0.16 275);
+  --accent-hover: oklch(57% 0.17 275);
+  --accent-text-on: oklch(98% 0.008 275);
+  --accent-soft: oklch(62% 0.16 275 / 0.13);
+  --accent-soft-2: oklch(62% 0.16 275 / 0.24);
+  --accent-ring: oklch(62% 0.16 275 / 0.45);
+  --accent-fill-strong: oklch(57% 0.17 275 / 0.92);
+  --accent-fill-soft: oklch(62% 0.16 275 / 0.15);
+  --accent-fill-mid: oklch(57% 0.17 275 / 0.6);
+  --overlay: oklch(9% 0.02 265 / 0.6);
+  --surface-translucent: oklch(18% 0.022 265 / 0.85);
+  --surface-2-translucent: oklch(21.5% 0.024 265 / 0.5);
+  --surface-2-faint: oklch(21.5% 0.024 265 / 0.2);
+}
+
+[data-theme="emerald"] {
+  --theme-name: "Emerald Slate";
+  --bg: oklch(15% 0.015 165);
+  --surface: oklch(18% 0.016 165);
+  --surface-2: oklch(21.5% 0.017 165);
+  --surface-3: oklch(25% 0.018 165);
+  --border: oklch(28% 0.02 165);
+  --border-soft: oklch(24% 0.017 165);
+  --border-faint: oklch(32% 0.02 165);
+  --text: oklch(94% 0.006 165);
+  --text-2: oklch(73% 0.012 165);
+  --text-3: oklch(53% 0.014 165);
+  --accent: oklch(64% 0.13 155);
+  --accent-hover: oklch(58% 0.14 155);
+  --accent-text-on: oklch(98% 0.008 155);
+  --accent-soft: oklch(64% 0.13 155 / 0.13);
+  --accent-soft-2: oklch(64% 0.13 155 / 0.24);
+  --accent-ring: oklch(64% 0.13 155 / 0.45);
+  --accent-fill-strong: oklch(58% 0.14 155 / 0.92);
+  --accent-fill-soft: oklch(64% 0.13 155 / 0.15);
+  --accent-fill-mid: oklch(58% 0.14 155 / 0.6);
+  --overlay: oklch(9% 0.015 165 / 0.6);
+  --surface-translucent: oklch(18% 0.016 165 / 0.85);
+  --surface-2-translucent: oklch(21.5% 0.017 165 / 0.5);
+  --surface-2-faint: oklch(21.5% 0.017 165 / 0.2);
+}
+
+[data-theme="ivory"] {
+  --theme-name: "Ivory Gold";
+  --bg: oklch(98% 0.006 90);
+  --surface: oklch(96% 0.007 90);
+  --surface-2: oklch(93% 0.009 90);
+  --surface-3: oklch(89% 0.011 90);
+  --border: oklch(83% 0.013 90);
+  --border-soft: oklch(87% 0.011 90);
+  --border-faint: oklch(78% 0.014 90);
+  --text: oklch(22% 0.01 90);
+  --text-2: oklch(40% 0.015 90);
+  --text-3: oklch(56% 0.015 90);
+  --accent: oklch(62% 0.14 75);
+  --accent-hover: oklch(56% 0.15 75);
+  --accent-text-on: oklch(99% 0.008 75);
+  --accent-soft: oklch(62% 0.14 75 / 0.13);
+  --accent-soft-2: oklch(62% 0.14 75 / 0.24);
+  --accent-ring: oklch(62% 0.14 75 / 0.45);
+  --accent-fill-strong: oklch(56% 0.15 75 / 0.92);
+  --accent-fill-soft: oklch(62% 0.14 75 / 0.15);
+  --accent-fill-mid: oklch(56% 0.15 75 / 0.6);
+  --overlay: oklch(25% 0.015 90 / 0.4);
+  --surface-translucent: oklch(96% 0.007 90 / 0.85);
+  --surface-2-translucent: oklch(93% 0.009 90 / 0.5);
+  --surface-2-faint: oklch(93% 0.009 90 / 0.2);
+}
+
+.font-serif-narrative {
+  font-family: "Newsreader", Georgia, "Times New Roman", serif;
+}

@@ -9,7 +9,10 @@ function createWindow(): void {
     height: 800,
     show: false,
     autoHideMenuBar: true,
-    backgroundColor: "#18181b",
+    // Matches --bg in the default Crimson Noir theme (themes.css) so the
+    // window doesn't flash a mismatched colour while the page loads.
+    backgroundColor: "#0c0d10",
+    icon: join(__dirname, "../../build/icon.png"),
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
       sandbox: false,

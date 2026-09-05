@@ -384,14 +384,14 @@ export function ContentBrowser() {
 
   return (
     <ContentBrowserContext.Provider value={contextValue}>
-      <aside className="flex w-64 shrink-0 flex-col border-r border-zinc-800 bg-zinc-950">
-        <div className="flex items-center justify-between border-b border-zinc-800 px-3 py-2">
-          <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Content</span>
+      <aside className="flex w-64 shrink-0 flex-col border-r border-[var(--border-soft)] bg-[var(--surface)]">
+        <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-3 py-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">Content</span>
           <div className="flex items-center gap-0.5">
             <button
               type="button"
               onClick={() => createScene(null)}
-              className="rounded px-1.5 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+              className="rounded px-1.5 text-xs text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
               title="New scene (Story root)"
             >
               + Scene
@@ -399,7 +399,7 @@ export function ContentBrowser() {
             <button
               type="button"
               onClick={() => createFolder(null)}
-              className="rounded px-1.5 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+              className="rounded px-1.5 text-xs text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
               title="New folder (Story root)"
             >
               + Folder
@@ -407,19 +407,19 @@ export function ContentBrowser() {
           </div>
         </div>
 
-        <div className="border-b border-zinc-800 px-2 py-2">
+        <div className="border-b border-[var(--border-soft)] px-2 py-2">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search Story..."
-            className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm text-zinc-200 outline-none placeholder:text-zinc-600 focus:border-emerald-600"
+            className="w-full rounded-md border border-[var(--border-soft)] bg-[var(--bg)] px-2 py-1 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-3)] focus:border-[var(--accent)]"
           />
         </div>
 
         <nav className="flex-1 overflow-y-auto p-1.5">
           {favoriteScenes.length > 0 && (
             <div className="mb-2">
-              <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-600">
+              <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-3)]">
                 Favorites
               </div>
               {favoriteScenes.map((scene) => (
@@ -428,10 +428,10 @@ export function ContentBrowser() {
                   type="button"
                   onClick={() => openFavorite(scene.id)}
                   className={`flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-sm ${
-                    scene.id === selectedSceneId ? "bg-zinc-800 text-zinc-100" : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+                    scene.id === selectedSceneId ? "bg-[var(--surface-2)] text-[var(--text)]" : "text-[var(--text-2)] hover:bg-[var(--bg)] hover:text-[var(--text)]"
                   }`}
                 >
-                  <span className="text-xs text-amber-400">★</span>
+                  <span className="text-xs text-[var(--accent)]">★</span>
                   <span className="min-w-0 flex-1 truncate">{scene.title || "Untitled scene"}</span>
                 </button>
               ))}
@@ -440,11 +440,11 @@ export function ContentBrowser() {
 
           {searchQuery ? (
             <div>
-              <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-600">
+              <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-3)]">
                 Search results
               </div>
               {searchResults.length === 0 ? (
-                <div className="px-2 py-2 text-sm text-zinc-600">No matches in Story.</div>
+                <div className="px-2 py-2 text-sm text-[var(--text-3)]">No matches in Story.</div>
               ) : (
                 searchResults.map((node) => {
                   const name = node.kind === "folder" ? node.name : scenesById.get(node.id)?.title ?? "Untitled scene";
@@ -453,7 +453,7 @@ export function ContentBrowser() {
                       key={node.id}
                       type="button"
                       onClick={() => jumpToSearchResult(node)}
-                      className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-sm text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+                      className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-sm text-[var(--text-2)] hover:bg-[var(--bg)] hover:text-[var(--text)]"
                     >
                       <span className="text-xs">{node.kind === "folder" ? "📁" : "📄"}</span>
                       <span className="min-w-0 flex-1 truncate">{name}</span>
@@ -469,9 +469,9 @@ export function ContentBrowser() {
                 onContextMenu={(e) => openContextMenu(e, null)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDropOnStoryRoot}
-                className="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-zinc-300 hover:bg-zinc-900"
+                className="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--bg)]"
               >
-                <span className="w-3 text-[10px] text-zinc-500">{expanded.has(STORY_ROOT) ? "▾" : "▸"}</span>
+                <span className="w-3 text-[10px] text-[var(--text-3)]">{expanded.has(STORY_ROOT) ? "▾" : "▸"}</span>
                 <span>📖</span>
                 <span>Story</span>
               </div>
@@ -480,19 +480,19 @@ export function ContentBrowser() {
                 <div>
                   {!hasAnyScenes ? (
                     <div className="px-3 py-4 text-center">
-                      <p className="mb-3 text-sm text-zinc-600">No story yet.</p>
+                      <p className="mb-3 text-sm text-[var(--text-3)]">No story yet.</p>
                       <div className="flex flex-col gap-1.5">
                         <button
                           type="button"
                           onClick={() => createScene(null)}
-                          className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500"
+                          className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[var(--accent-text-on)] hover:bg-[var(--accent-hover)]"
                         >
                           Create Scene
                         </button>
                         <button
                           type="button"
                           onClick={() => createFolder(null)}
-                          className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+                          className="rounded-md border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
                         >
                           Create Folder
                         </button>
@@ -511,14 +511,14 @@ export function ContentBrowser() {
               <div key={cat.key} className="mb-1">
                 <div
                   onClick={() => toggleExpand(cat.key)}
-                  className="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-zinc-500 hover:bg-zinc-900"
+                  className="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-[var(--text-3)] hover:bg-[var(--bg)]"
                 >
-                  <span className="w-3 text-[10px] text-zinc-600">{expanded.has(cat.key) ? "▾" : "▸"}</span>
+                  <span className="w-3 text-[10px] text-[var(--text-3)]">{expanded.has(cat.key) ? "▾" : "▸"}</span>
                   <span>{cat.icon}</span>
                   <span>{cat.label}</span>
                 </div>
                 {expanded.has(cat.key) && (
-                  <div className="px-3 py-2 text-xs text-zinc-600">Coming soon.</div>
+                  <div className="px-3 py-2 text-xs text-[var(--text-3)]">Coming soon.</div>
                 )}
               </div>
             ))}

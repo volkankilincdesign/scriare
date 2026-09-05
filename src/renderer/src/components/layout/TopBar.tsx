@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useProjectStore } from "../../state/projectStore";
 import { ProjectSettingsDialog } from "./ProjectSettingsDialog";
+import logoMark from "../../assets/logo-mark.png";
 
 const SAVE_STATUS_LABEL = {
   saved: "All changes saved",
@@ -18,20 +19,21 @@ export function TopBar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between border-b border-zinc-800 bg-zinc-950 px-4">
+    <header className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--border-soft)] bg-[var(--surface)] px-4">
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={closeProject}
-          className="text-sm font-semibold tracking-wide text-zinc-100 hover:text-emerald-400"
+          className="flex items-center gap-2 text-sm font-semibold tracking-wide text-[var(--text)] hover:text-[var(--accent)]"
           title="Back to Welcome screen"
         >
-          Scriare
+          <img src={logoMark} alt="" className="h-5 w-5 shrink-0 rounded-[6px]" />
+          <span className="font-serif-narrative italic">Scriare</span>
         </button>
-        <span className="text-zinc-600">/</span>
-        <span className="text-sm text-zinc-300">{projectName}</span>
+        <span className="text-[var(--text-3)]">/</span>
+        <span className="text-sm text-[var(--text-2)]">{projectName}</span>
         {!isPlaying && (
-          <span className="ml-2 text-xs text-zinc-500">{SAVE_STATUS_LABEL[saveStatus]}</span>
+          <span className="ml-2 text-xs text-[var(--text-3)]">{SAVE_STATUS_LABEL[saveStatus]}</span>
         )}
       </div>
 
@@ -41,7 +43,7 @@ export function TopBar() {
             type="button"
             onClick={() => setSettingsOpen(true)}
             title="Project Settings"
-            className="rounded-md border border-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-300 hover:bg-zinc-800"
+            className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
           >
             ⚙
           </button>
@@ -50,7 +52,7 @@ export function TopBar() {
           <button
             type="button"
             onClick={exitPlay}
-            className="rounded-md border border-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-200 hover:bg-zinc-800"
+            className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)]"
           >
             ■ Exit Play
           </button>
@@ -58,7 +60,7 @@ export function TopBar() {
           <button
             type="button"
             onClick={startPlay}
-            className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-500"
+            className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-[var(--accent-text-on)] hover:bg-[var(--accent-hover)]"
           >
             ▶ Play
           </button>
@@ -67,7 +69,7 @@ export function TopBar() {
           type="button"
           disabled
           title="Coming in a later milestone"
-          className="cursor-not-allowed rounded-md border border-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-500"
+          className="cursor-not-allowed rounded-md border border-[var(--border-soft)] px-3 py-1.5 text-sm font-medium text-[var(--text-3)]"
         >
           Export
         </button>

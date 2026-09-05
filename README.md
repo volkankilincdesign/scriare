@@ -1,9 +1,57 @@
-# Scriare — v0.8.3 — Drag & Drop Fix
+# Scriare — v0.9.0 — Premium Redesign
 
-Scriare is still a rich text editor, first and foremost. This is a bug-fix
-release: Content Browser drag & drop (folders and scenes) had stopped
-working, while Shift/Ctrl-selection and the right-click menu kept working
-fine.
+Scriare is still a rich text editor, first and foremost. This release is a
+visual redesign only: a new colour-theme system (four switchable palettes,
+Crimson Noir default), a serif/sans font pairing, an app logo, and reskinned
+chrome across every screen. **No functionality changed** — every feature
+audited in v0.8.2 and fixed in v0.8.3 still behaves exactly as it did
+before; only how it looks changed.
+
+## What's new (v0.9.0 — Premium Redesign)
+
+- **New colour-theme system.** Four palettes, each a small set of CSS
+  custom properties in `src/renderer/src/styles/themes.css`:
+  - **Crimson Noir** (default) — cool near-black neutrals with a red accent.
+  - **Indigo Dusk** — cool blue-violet accent.
+  - **Emerald Slate** — muted forest-green accent.
+  - **Ivory Gold** — a light, warm palette (the one theme that flips to a
+    light background).
+  All four are built from [oklch](https://oklch.com) colours so lightness
+  and contrast stay consistent across hues. Switch between them any time
+  in Project Settings → Appearance; the choice is saved to
+  `localStorage` (`scriare.theme`) and applied instantly via a
+  `data-theme` attribute on `<html>`, no reload needed.
+- **Every hardcoded Tailwind colour (`zinc-*`, `emerald-*`) was replaced**
+  with a CSS-variable-backed class (e.g. `bg-[var(--surface)]`,
+  `text-[var(--accent)]`) across all 23 components that had them — Content
+  Browser, editor toolbar, Story Graph, dialogs, Play Mode, the welcome
+  screen, everywhere. Nothing was restyled by hand per-theme; changing a
+  theme's variables in `themes.css` re-themes the entire app.
+- **New app logo** (`src/renderer/src/assets/logo-mark.png`, supplied by
+  the project owner): now shown top-left in the Top Bar and on the Welcome
+  screen, and set as the Electron window icon (`build/icon.png`,
+  `resources/icon.png` — ready for `electron-builder` packaging later;
+  a `.ico`/`.icns` conversion will be needed when packaging is set up,
+  since Windows/macOS installers don't accept a bare `.png`).
+- **New font pairing**: Newsreader (a serif, for the "Scriare" wordmark and
+  other narrative-facing titles) paired with Manrope (sans, for UI chrome),
+  loaded via Google Fonts `@import` in `themes.css`.
+- **Project Settings gained an Appearance section**: a 2×2 grid of theme
+  swatches (each swatch reads its *own* theme's live CSS variables, so it
+  can never drift out of sync with `themes.css`); clicking one applies
+  instantly. The existing Start Scene field is unchanged, just visually
+  restyled and now sitting in a slightly wider dialog.
+- **Story Graph (`FlowPanel.tsx`)**: edges, the dot-grid background, the
+  minimap, and the zoom controls now read the active theme's CSS variables
+  instead of hardcoded hex, so the graph re-themes along with everything
+  else. The Left/Right edge-handle fix from earlier work (so Auto Layout's
+  left-to-right edges run straight rather than looping) was untouched.
+- Two small consistency fixes made while reskinning, both cosmetic: the
+  Play/Save/Confirm buttons' hover states no longer resolve to the exact
+  same colour as their resting state (a latent bug — hover and rest both
+  used to be `emerald-600`), and button text now uses a
+  theme-aware `--accent-text-on` instead of a hardcoded white, so text
+  stays legible against light accents (relevant on Ivory Gold).
 
 ## What's new (v0.8.3 — Drag & Drop Fix)
 

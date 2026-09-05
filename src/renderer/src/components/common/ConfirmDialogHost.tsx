@@ -15,13 +15,13 @@ export function ConfirmDialogHost() {
 
   return (
     <Modal onClose={() => resolve(false)} onEnter={() => resolve(true)}>
-      <h2 className="mb-2 text-base font-semibold text-zinc-100">{request.title}</h2>
-      <p className="mb-5 text-sm leading-relaxed text-zinc-400">{request.message}</p>
+      <h2 className="mb-2 text-base font-semibold text-[var(--text)]">{request.title}</h2>
+      <p className="mb-5 text-sm leading-relaxed text-[var(--text-2)]">{request.message}</p>
       <div className="flex justify-end gap-2">
         <button
           type="button"
           onClick={() => resolve(false)}
-          className="rounded-md border border-zinc-700 px-3 py-1.5 text-sm font-medium text-zinc-300 hover:bg-zinc-800"
+          className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
         >
           {request.cancelLabel ?? "Cancel"}
         </button>
@@ -29,8 +29,10 @@ export function ConfirmDialogHost() {
           type="button"
           autoFocus
           onClick={() => resolve(true)}
-          className={`rounded-md px-3 py-1.5 text-sm font-medium text-white ${
-            request.danger ? "bg-red-600 hover:bg-red-500" : "bg-emerald-600 hover:bg-emerald-500"
+          className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+            request.danger
+              ? "bg-red-600 text-white hover:bg-red-500"
+              : "bg-[var(--accent)] text-[var(--accent-text-on)] hover:bg-[var(--accent-hover)]"
           }`}
         >
           {request.confirmLabel ?? "Confirm"}

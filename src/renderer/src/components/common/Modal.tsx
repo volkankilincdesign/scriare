@@ -6,6 +6,8 @@ interface ModalProps {
   onClose: () => void;
   /** Fired on Enter — dialogs that have a clear default action (e.g. Confirm) wire this to it. */
   onEnter?: () => void;
+  /** Tailwind max-width class for the card. Defaults to the compact size most dialogs use. */
+  widthClassName?: string;
 }
 
 /**
@@ -14,7 +16,7 @@ interface ModalProps {
  * replaces window.confirm()/alert() app-wide — see ConfirmDialogHost for the
  * confirmation dialog built on top of it.
  */
-export function Modal({ children, onClose, onEnter }: ModalProps) {
+export function Modal({ children, onClose, onEnter, widthClassName = "max-w-sm" }: ModalProps) {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent): void {
       if (e.key === "Escape") {
@@ -31,14 +33,14 @@ export function Modal({ children, onClose, onEnter }: ModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--overlay)] backdrop-blur-sm"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className="w-full max-w-sm rounded-lg border border-zinc-700 bg-zinc-900 p-5 text-zinc-200 shadow-2xl"
+        className={`w-full ${widthClassName} rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 text-[var(--text)] shadow-2xl`}
       >
         {children}
       </div>

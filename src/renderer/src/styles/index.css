@@ -1,3 +1,4 @@
+@import "./themes.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,9 +11,9 @@ body,
 
 body {
   margin: 0;
-  background-color: #18181b; /* zinc-900 */
-  color: #e4e4e7; /* zinc-200 */
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .ProseMirror {
@@ -28,7 +29,7 @@ body {
   float: left;
   height: 0;
   pointer-events: none;
-  color: #52525b; /* zinc-600 */
+  color: var(--text-3);
 }
 
 /* Callout narrative block — one selector styles it identically wherever it
@@ -39,8 +40,8 @@ body {
   margin: 1rem 0;
   padding: 0.75rem 1rem 0.75rem 2.75rem;
   border-radius: 0.5rem;
-  background-color: rgba(16, 185, 129, 0.08); /* emerald tint */
-  border-left: 3px solid #10b981; /* emerald-500 */
+  background-color: var(--accent-soft);
+  border-left: 3px solid var(--accent);
 }
 
 [data-type="callout"]::before {
@@ -78,22 +79,22 @@ body {
 }
 
 /* React Flow's default Controls widget is styled for a light background —
-   restyle it to be legible on our dark theme. */
+   restyle it to match the active theme. */
 .react-flow__controls {
   display: flex;
   flex-direction: row;
-  box-shadow: none;
-  border: 1px solid #3f3f46; /* zinc-700 */
-  border-radius: 8px;
+  box-shadow: 0 10px 24px -10px oklch(0% 0 0 / 0.5);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
   overflow: hidden;
 }
 
 .react-flow__controls-button {
   width: 32px;
   height: 32px;
-  background: #27272a; /* zinc-800 */
+  background: var(--surface);
   border: none;
-  border-right: 1px solid #3f3f46; /* zinc-700 */
+  border-right: 1px solid var(--border-soft);
 }
 
 .react-flow__controls-button:last-child {
@@ -101,11 +102,21 @@ body {
 }
 
 .react-flow__controls-button:hover {
-  background: #3f3f46; /* zinc-700 */
+  background: var(--surface-2);
 }
 
 .react-flow__controls-button svg {
-  fill: #e4e4e7; /* zinc-200 */
+  fill: var(--text);
   max-width: 14px;
   max-height: 14px;
+}
+
+.react-flow__attribution {
+  background: transparent;
+  color: var(--text-3);
+}
+
+/* Story Graph canvas background — subtle dot grid matching the mockup. */
+.scriare-graph-bg .react-flow__background {
+  opacity: 0.9;
 }

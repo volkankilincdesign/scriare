@@ -83,15 +83,15 @@ export function PlayRuntime() {
   if (!project) return null;
 
   return (
-    <div className="absolute inset-0 z-10 flex flex-col bg-zinc-900">
-      <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-emerald-400">
+    <div className="absolute inset-0 z-10 flex flex-col bg-[var(--bg)]">
+      <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-4 py-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">
           ▶ Playing — {project.name}
         </span>
         <button
           type="button"
           onClick={exitPlay}
-          className="rounded-md border border-zinc-700 px-3 py-1 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+          className="rounded-md border border-[var(--border)] px-3 py-1 text-xs font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
         >
           ■ Exit Play
         </button>
@@ -100,7 +100,7 @@ export function PlayRuntime() {
       <div className="flex-1 overflow-y-auto px-8 py-10">
         <div className={READING_COLUMN_CLASS}>
           {!scene ? (
-            <div className="text-sm text-zinc-500">
+            <div className="text-sm text-[var(--text-3)]">
               This story doesn't have a scene to start from yet.
             </div>
           ) : (
@@ -109,7 +109,7 @@ export function PlayRuntime() {
             // a simple, dependency-free transition (see .runtime-scene-fade
             // in styles/index.css).
             <div key={scene.id} className="runtime-scene-fade">
-              <h1 className="mb-6 text-2xl font-semibold text-zinc-100">
+              <h1 className="mb-6 text-2xl font-semibold text-[var(--text)]">
                 {scene.title || "Untitled scene"}
               </h1>
 
@@ -126,20 +126,20 @@ export function PlayRuntime() {
               )}
 
               {!hasAnyLinkedChoice && (
-                <div className="mt-10 flex flex-col items-center gap-4 rounded-lg border border-zinc-800 bg-zinc-950/40 px-8 py-10 text-center">
-                  <div className="text-lg font-semibold tracking-wide text-zinc-300">The End</div>
+                <div className="mt-10 flex flex-col items-center gap-4 rounded-lg border border-[var(--border-soft)] bg-[var(--overlay)] px-8 py-10 text-center">
+                  <div className="text-lg font-semibold tracking-wide text-[var(--text-2)]">The End</div>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={restartPlay}
-                      className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+                      className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-text-on)] hover:bg-[var(--accent-hover)]"
                     >
                       ↺ Restart Story
                     </button>
                     <button
                       type="button"
                       onClick={exitPlay}
-                      className="rounded-md border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800"
+                      className="rounded-md border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
                     >
                       ✎ Return to Editor
                     </button>

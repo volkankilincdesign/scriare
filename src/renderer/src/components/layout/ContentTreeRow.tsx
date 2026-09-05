@@ -49,9 +49,9 @@ export function ContentTreeRow({ node, depth }: ContentTreeRowProps) {
   const displayName = isFolder ? node.name : scene?.title || "Untitled scene";
   const children = isFolder ? childrenOf(nodes, node.category, node.id) : [];
 
-  let rowStyle = "hover:bg-zinc-900";
-  if (isActiveScene) rowStyle = "bg-zinc-800";
-  else if (isSelected) rowStyle = "bg-emerald-950/40 ring-1 ring-inset ring-emerald-700/50";
+  let rowStyle = "hover:bg-[var(--bg)]";
+  if (isActiveScene) rowStyle = "bg-[var(--surface-2)]";
+  else if (isSelected) rowStyle = "bg-[var(--accent-soft-2)] ring-1 ring-inset ring-[var(--accent-ring)]";
 
   return (
     <div>
@@ -80,13 +80,13 @@ export function ContentTreeRow({ node, depth }: ContentTreeRowProps) {
         }`}
       >
         {dropHere === "before" && (
-          <div className="pointer-events-none absolute inset-x-1 top-0 h-0.5 bg-emerald-500" />
+          <div className="pointer-events-none absolute inset-x-1 top-0 h-0.5 bg-[var(--accent)]" />
         )}
         {dropHere === "after" && (
-          <div className="pointer-events-none absolute inset-x-1 bottom-0 h-0.5 bg-emerald-500" />
+          <div className="pointer-events-none absolute inset-x-1 bottom-0 h-0.5 bg-[var(--accent)]" />
         )}
         {dropHere === "inside" && (
-          <div className="pointer-events-none absolute inset-0.5 rounded-md border border-emerald-500" />
+          <div className="pointer-events-none absolute inset-0.5 rounded-md border border-[var(--accent)]" />
         )}
 
         {isFolder ? (
@@ -100,7 +100,7 @@ export function ContentTreeRow({ node, depth }: ContentTreeRowProps) {
                 toggleExpand(node.id);
               }
             }}
-            className="w-4 shrink-0 cursor-pointer text-center text-[10px] text-zinc-500 hover:text-zinc-300 focus:outline-none"
+            className="w-4 shrink-0 cursor-pointer text-center text-[10px] text-[var(--text-3)] hover:text-[var(--text-2)] focus:outline-none"
           >
             {isExpanded ? "▾" : "▸"}
           </div>
@@ -120,7 +120,7 @@ export function ContentTreeRow({ node, depth }: ContentTreeRowProps) {
               if (e.key === "Enter") commitRename();
               if (e.key === "Escape") cancelRename();
             }}
-            className="min-w-0 flex-1 bg-transparent px-1 py-1.5 text-sm text-zinc-100 outline-none"
+            className="min-w-0 flex-1 bg-transparent px-1 py-1.5 text-sm text-[var(--text)] outline-none"
           />
         ) : (
           // A plain div (not a <button>) on purpose: this row is the primary
@@ -146,7 +146,7 @@ export function ContentTreeRow({ node, depth }: ContentTreeRowProps) {
             }}
             title="Double-click to rename"
             className={`min-w-0 flex-1 cursor-default truncate px-1 py-1.5 text-left text-sm focus:outline-none ${
-              isActiveScene || isSelected ? "text-zinc-100" : "text-zinc-400 group-hover:text-zinc-200"
+              isActiveScene || isSelected ? "text-[var(--text)]" : "text-[var(--text-2)] group-hover:text-[var(--text)]"
             }`}
           >
             {displayName}
@@ -154,12 +154,12 @@ export function ContentTreeRow({ node, depth }: ContentTreeRowProps) {
         )}
 
         {!isFolder && isStartScene && <StartBadge />}
-        {!isFolder && isFavorite && <span className="shrink-0 text-xs text-amber-400">★</span>}
+        {!isFolder && isFavorite && <span className="shrink-0 text-xs text-[var(--accent)]">★</span>}
 
         <button
           type="button"
           onClick={(e) => openContextMenu(e, node)}
-          className="hidden shrink-0 rounded px-1 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 group-hover:block focus:outline-none"
+          className="hidden shrink-0 rounded px-1 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] group-hover:block focus:outline-none"
           title="More actions"
         >
           ⋯
@@ -169,7 +169,7 @@ export function ContentTreeRow({ node, depth }: ContentTreeRowProps) {
       {isFolder && isExpanded && (
         <div>
           {children.length === 0 ? (
-            <div style={{ paddingLeft: 8 + (depth + 1) * 16 }} className="py-1 text-xs text-zinc-600">
+            <div style={{ paddingLeft: 8 + (depth + 1) * 16 }} className="py-1 text-xs text-[var(--text-3)]">
               Empty folder
             </div>
           ) : (

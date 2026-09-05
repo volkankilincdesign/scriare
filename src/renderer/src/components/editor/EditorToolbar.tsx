@@ -19,7 +19,7 @@ function ToolbarButton({ active, onClick, label, children }: ToolbarButtonProps)
       onClick={onClick}
       title={label}
       className={`rounded px-2 py-1 text-sm font-medium transition-colors ${
-        active ? "bg-zinc-700 text-zinc-100" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+        active ? "bg-[var(--surface-3)] text-[var(--text)]" : "text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
       }`}
     >
       {children}
@@ -28,7 +28,7 @@ function ToolbarButton({ active, onClick, label, children }: ToolbarButtonProps)
 }
 
 function Divider() {
-  return <span className="mx-1 h-4 w-px shrink-0 bg-zinc-800" />;
+  return <span className="mx-1 h-4 w-px shrink-0 bg-[var(--surface-2)]" />;
 }
 
 const FONT_FAMILIES = [
@@ -50,7 +50,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   if (!editor) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-1 border-b border-zinc-800 bg-zinc-950 px-4 py-1.5">
+    <div className="flex flex-wrap items-center gap-1 border-b border-[var(--border-soft)] bg-[var(--surface)] px-4 py-1.5">
       <ToolbarButton
         label="Bold (Ctrl+B)"
         active={editor.isActive("bold")}
@@ -162,7 +162,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           if (value) editor.chain().focus().setFontFamily(value).run();
           else editor.chain().focus().unsetFontFamily().run();
         }}
-        className="rounded border border-zinc-700 bg-zinc-900 px-1.5 py-1 text-xs text-zinc-300 outline-none focus:border-emerald-600"
+        className="rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text-2)] outline-none focus:border-[var(--accent)]"
       >
         {FONT_FAMILIES.map((f) => (
           <option key={f.label} value={f.value}>
@@ -179,7 +179,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           if (value) editor.chain().focus().setFontSize(value).run();
           else editor.chain().focus().unsetFontSize().run();
         }}
-        className="rounded border border-zinc-700 bg-zinc-900 px-1.5 py-1 text-xs text-zinc-300 outline-none focus:border-emerald-600"
+        className="rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text-2)] outline-none focus:border-[var(--accent)]"
       >
         {FONT_SIZES.map((f) => (
           <option key={f.label} value={f.value}>
@@ -190,7 +190,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
       <label
         title="Text color"
-        className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded border border-zinc-700 text-xs font-semibold text-zinc-300 hover:border-zinc-500"
+        className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded border border-[var(--border)] text-xs font-semibold text-[var(--text-2)] hover:border-[var(--border-faint)]"
       >
         A
         <input
@@ -203,7 +203,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
       <label
         title="Highlight"
-        className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded border border-zinc-700 text-xs font-semibold text-amber-400 hover:border-zinc-500"
+        className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded border border-[var(--border)] text-xs font-semibold text-amber-400 hover:border-[var(--border-faint)]"
       >
         H
         <input
@@ -228,7 +228,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         type="button"
         onClick={() => editor.chain().focus().insertChoiceBlock().run()}
         title="Insert a Choice Block"
-        className="rounded bg-emerald-600/90 px-2 py-1 text-xs font-medium text-white hover:bg-emerald-500"
+        className="rounded bg-[var(--accent-fill-strong)] px-2 py-1 text-xs font-medium text-[var(--accent-text-on)] hover:bg-[var(--accent-hover)]"
       >
         + Choice
       </button>

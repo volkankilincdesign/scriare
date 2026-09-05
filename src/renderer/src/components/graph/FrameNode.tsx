@@ -26,13 +26,13 @@ export function FrameNode({ id, data, selected }: NodeProps) {
   }
 
   return (
-    <div className="h-full w-full rounded-lg border-2 border-dashed border-zinc-700 bg-zinc-800/20">
+    <div className="h-full w-full rounded-lg border-2 border-dashed border-[var(--border)] bg-[var(--surface-2-faint)]">
       <NodeResizer
         minWidth={FRAME_MIN_WIDTH}
         minHeight={FRAME_MIN_HEIGHT}
         isVisible={selected}
-        lineClassName="!border-emerald-500"
-        handleClassName="!h-2.5 !w-2.5 !rounded-sm !border-emerald-500 !bg-zinc-900"
+        lineClassName="!border-[var(--accent)]"
+        handleClassName="!h-2.5 !w-2.5 !rounded-sm !border-[var(--accent)] !bg-[var(--bg)]"
         onResizeEnd={(_event, params) => {
           updateFrameRect(id, {
             x: params.x,
@@ -42,19 +42,19 @@ export function FrameNode({ id, data, selected }: NodeProps) {
           });
         }}
       />
-      <div className="flex items-center gap-1.5 rounded-t-md bg-zinc-900/80 px-2 py-1">
+      <div className="flex items-center gap-1.5 rounded-t-md bg-[var(--surface-translucent)] px-2 py-1">
         <input
           value={title}
           onChange={(e) => renameFrame(id, e.target.value)}
           onMouseDown={(e) => e.stopPropagation()}
           placeholder="Frame title"
-          className="min-w-0 flex-1 bg-transparent text-xs font-semibold uppercase tracking-wide text-zinc-300 outline-none placeholder:text-zinc-600"
+          className="min-w-0 flex-1 bg-transparent text-xs font-semibold uppercase tracking-wide text-[var(--text-2)] outline-none placeholder:text-[var(--text-3)]"
         />
         <button
           type="button"
           onMouseDown={(e) => e.stopPropagation()}
           onClick={handleDelete}
-          className="shrink-0 rounded px-1 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-red-400"
+          className="shrink-0 rounded px-1 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-red-400"
           title="Delete frame"
         >
           ✕

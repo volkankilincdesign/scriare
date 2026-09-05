@@ -50,14 +50,14 @@ export const SlashCommandMenu = forwardRef<SlashCommandMenuHandle, SlashCommandM
 
     if (props.items.length === 0) {
       return (
-        <div className="w-64 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-500 shadow-xl">
+        <div className="w-64 rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text-3)] shadow-xl">
           No matching blocks
         </div>
       );
     }
 
     return (
-      <div className="w-64 overflow-hidden rounded-md border border-zinc-700 bg-zinc-900 py-1 shadow-xl">
+      <div className="w-64 overflow-hidden rounded-md border border-[var(--border)] bg-[var(--bg)] py-1 shadow-xl">
         {props.items.map((item, index) => (
           <button
             key={item.id}
@@ -65,15 +65,15 @@ export const SlashCommandMenu = forwardRef<SlashCommandMenuHandle, SlashCommandM
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => selectItem(index)}
             className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-left ${
-              index === selectedIndex ? "bg-zinc-800" : ""
+              index === selectedIndex ? "bg-[var(--surface-2)]" : ""
             }`}
           >
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded border border-zinc-700 bg-zinc-950 text-sm text-zinc-300">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded border border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--text-2)]">
               {item.icon}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm text-zinc-100">{item.title}</span>
-              <span className="block truncate text-xs text-zinc-500">{item.description}</span>
+              <span className="block truncate text-sm text-[var(--text)]">{item.title}</span>
+              <span className="block truncate text-xs text-[var(--text-3)]">{item.description}</span>
             </span>
           </button>
         ))}
