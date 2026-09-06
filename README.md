@@ -1,9 +1,140 @@
-# Scriare — v0.10.0 — Graph Interaction Polish
+# Scriare — v0.10.6 — MiniMap Refresh Fix, Part 2
 
-Scriare is still a rich text editor, first and foremost. This sprint touches
-only the Story Graph's *feel* — dragging, hovering, selecting, zooming — not
-its features or visual identity. **No new graph capability was added, and
-nothing about the graph looks different at rest.**
+Scriare is still a rich text editor, first and foremost. v0.10.5's MiniMap fix
+turned out to be a no-op — it forced a re-render but not a recompute, so the
+overview panel still stayed blank on launch and went blank again after
+collapsing/reopening the Flow panel. Actually fixed this time — the overview
+is correct the moment the graph opens, and stays correct through panel
+toggles. **No functionality or visual change beyond that.**
+
+## What's new (v0.10.6 — MiniMap Refresh Fix, Part 2)
+
+- **The MiniMap fix in v0.10.5 didn't actually work — now it does.** That
+  release added a state counter (`forceMeasuredRerender`) bumped whenever a
+  node's real measured size became known, intending to make `FlowPanel`'s
+  `nodes` memo pick it up right away. But the counter was never added to that
+  `useMemo`'s own dependency array — bumping it forced a re-render, but
+  `useMemo` only recomputes when something in *its own* dependency list
+  changes, so it kept returning the same stale, memoized array regardless.
+  The MiniMap (which colours/sizes nodes from that array) stayed blank until
+  an unrelated drag happened to change `frameDrag`/`sceneDrag`, which *are*
+  in the list. This also explains why collapsing and reopening the Flow panel
+  reset an already-correct MiniMap: collapsing unmounts `<ReactFlow>`
+  entirely, so on reopening, measurement starts over from scratch — and the
+  same missing-dependency bug meant that fresh measurement, again, never
+  reached the array. Fixed by renaming the counter to `measuredVersion` and
+  actually listing it in the `nodes` memo's dependency array, so a change to
+  it now does what it was always meant to: force a recompute that picks up
+  the freshly cached measured sizes.
+- Verified with `tsc --noEmit`, a production build, and confirming
+  `measuredVersion` is present in the built bundle's memo dependency array.
+
+## What's new (v0.10.5 — MiniMap Refresh Fix)
+
+- **The MiniMap now shows every node's colour immediately, without needing to
+  drag a node first.** v0.10.4 started caching each node's real measured size
+  (`measuredSizeRef`, a plain ref) so it survives being rebuilt as a fresh
+  object every drag frame — but writing into a ref doesn't itself trigger a
+  re-render. So on a freshly opened graph, a node's real size only became
+  known to `FlowPanel`'s `nodes` memo the *next* time something else forced
+  that memo to recompute (any drag) — until then, the MiniMap (which reads a
+  node's box/colour straight from the objects in `nodes`, unlike the main
+  canvas, which measures independently via its own `ResizeObserver`) kept
+  drawing every node as an unmeasured, colourless 0×0 box. Fixed by tracking
+  when a node's measured size actually changes and bumping a small piece of
+  state at that moment, which is enough to make `nodes` recompute right away
+  — so the MiniMap is correct from the moment the graph opens.
+- Verified with `tsc --noEmit`, a production build, and confirming the new
+  `forceMeasuredRerender` trigger is present in the built bundle.
+
+## What's new (v0.10.4 — Drag Freeze Fix)
+
+- **Dragging no longer randomly freezes mid-gesture.** This app never wires
+  up React Flow's `onNodesChange`, and every node object handed to
+  `<ReactFlow nodes={...}>` is a fresh object literal on every drag-frame
+  recompute (needed for live cursor-tracking, see v0.10.2/v0.10.3 below).
+  React Flow's internal reconciliation (`adoptUserNodes`) only carries a
+  node's already-measured `measured: {width, height}` forward when the
+  incoming node is *reference-identical* to the one it already has
+  internally — any other object, which every one of our nodes is on every
+  pointer-move, made it reset that node's `measured` size to
+  `{width: undefined, height: undefined}`. That silently marked the node as
+  "not initialized" (React Flow's own `error015` warning, confirmed firing
+  hundreds of times per drag via the console), hid it, and re-triggered its
+  `ResizeObserver` observe/unobserve cycle — a race that could lose outright
+  under load, freezing the node until the project was reopened. Fixed by
+  caching each node's real measured size (from React Flow's own `dimensions`
+  change events, now wired up via `onNodesChange`) and feeding it back into
+  every node object the `nodes` memo builds, so the size survives being
+  rebuilt as a new object every drag frame.
+- Investigated as a pure debugging pass first, per spec: analyzed every
+  candidate cause (pointer capture loss, event-listener recreation, ref
+  instability, zoom/pan interference, and the eventual root cause), added
+  temporary console/DOM-poll instrumentation to gather live evidence, and
+  only implemented this fix once the user's own console log confirmed the
+  `error015`/`measured`-reset theory. The temporary instrumentation has been
+  removed now that its job is done.
+- Verified with `tsc --noEmit`, a production build, and confirming both the
+  debug instrumentation is gone and the `measured`/`dimensions` fix is
+  present in the built bundle.
+
+## What's new (v0.10.3 — Drag Performance Fix)
+
+- **Dragging a scene no longer stalls the graph.** Making scene dragging
+  track the cursor (v0.10.2) meant `FlowPanel`'s node/edge computation now
+  re-ran on every pointer-move — and that computation was calling
+  `extractChoices()` (a full walk of every scene's Tiptap document, for
+  *every* scene, not just the one being dragged) to build both the choice
+  count shown on each card and the graph's edges. At mouse-move frequency,
+  on any project with a non-trivial number of scenes, that was enough
+  synchronous work per frame to stall the renderer's main thread hard
+  enough that Chromium stopped painting the canvas — recoverable only by
+  reopening the project. Fixed by splitting that computation in two: choice
+  counts and edges are now memoized on the project's actual content alone
+  (so they only recompute when a scene is actually edited), while the
+  per-frame position update during a drag is now pure arithmetic — no
+  document parsing at all. This was a latent cost of frame dragging too
+  (it always recomputed edges every frame), just never big enough to
+  notice until scene dragging started doing the same per-frame recompute.
+- Verified with `tsc --noEmit`, a production build, and confirming the new
+  memo split (`choiceCountByScene`) is present in the built bundle.
+
+## What's new (v0.10.2 — Drag Fix, Part 2)
+
+- **Scene dragging actually follows the cursor now.** v0.10.1 removed the
+  broken React-state highlight, but that also removed the *only* thing that
+  was forcing a re-render during a scene drag — this app never wires up
+  React Flow's `onNodesChange`, so nothing tells it to repaint a node's
+  position while a pointer moves; a node's `internals.positionAbsolute` is
+  set once at drag-start and never touched again until drop. Frame dragging
+  never had this problem because `handleNodeDrag` already updates a live
+  `frameDrag` offset on every pointer-move, unconditionally, which forces
+  FlowPanel to recompute the `nodes` array with the frame's *current* cursor
+  position on every frame. Scene dragging never had an equivalent — fixed by
+  adding the same live `sceneDrag` offset, updated the same unconditional
+  way, so a dragged scene's fed-in position always equals where the cursor
+  already put it (nothing for React Flow to reset).
+- The Frame drop-target highlight stays exactly as it was in v0.10.1 (a
+  plain DOM class, no React state) — that part was correct, it just wasn't
+  the piece that made the node move.
+
+## What's new (v0.10.1 — Drag Fix)
+
+- **Scene dragging works again.** v0.10.0's Frame drop-target highlight was
+  implemented by flowing an `isDropTarget`/`isDragging` flag through React
+  Flow's `nodes` array — but React Flow only keeps tracking a node's live
+  drag position when the node object it receives is reference-identical to
+  the one it already has internally; any other object (which is what our
+  highlight update produced on every frame-boundary crossing) makes it
+  reset that node's position from the (stale, not-yet-committed) value we
+  passed in, snapping the dragged card back to its start position. Fixed by
+  moving both the drag-lift look and the Frame drop-target highlight to
+  plain CSS classes toggled directly on the DOM, so a scene drag never
+  touches the `nodes` array until it's actually released — restoring the
+  exact reactivity scene dragging had before v0.10.0.
+- Verified with `tsc --noEmit`, a production build, and confirming the new
+  CSS hooks (`scriare-scene-card`, `scriare-frame-box`, `scriare-drop-target`)
+  are present in the built bundle.
 
 ## What's new (v0.10.0 — Graph Interaction Polish)
 

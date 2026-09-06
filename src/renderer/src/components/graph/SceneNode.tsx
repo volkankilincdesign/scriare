@@ -8,8 +8,6 @@ interface SceneNodeData {
   choiceCount: number;
   isActive: boolean;
   isStart: boolean;
-  /** True while this exact scene is the one currently being dragged. */
-  isDragging?: boolean;
   [key: string]: unknown;
 }
 
@@ -31,17 +29,27 @@ interface SceneNodeData {
 const HANDLE_STYLE = { opacity: 0, pointerEvents: "none" as const };
 
 export function SceneNode({ data }: NodeProps) {
-  const { label, choiceCount, isActive, isStart, isDragging } = data as SceneNodeData;
+  const { label, choiceCount, isActive, isStart } = data as SceneNodeData;
 
   return (
     <div
       style={{ width: SCENE_NODE_WIDTH, height: SCENE_NODE_HEIGHT }}
-      className={`flex flex-col justify-center rounded-lg border px-3 py-2 transition-all duration-150 ${
-        isDragging
-          ? "scale-105 cursor-grabbing border-[var(--accent)] bg-[var(--surface-2)] shadow-lg shadow-black/30"
-          : isActive
-            ? "border-[var(--accent)] bg-[var(--surface-2)]"
-            : "border-[var(--border)] bg-[var(--bg)] hover:border-[var(--border-faint)] hover:bg-[var(--surface-2-faint)]"
+      // `scriare-scene-card` is a stable hook for the graph's CSS-only
+      // drag-lift effect (see index.css) — it targets
+      // `.react-flow__node.dragging .scriare-scene-card` directly, rather
+      // than a React-state `isDragging` flag threaded through node `data`.
+      // That state-driven approach was tried first and reverted: any state
+      // update during a scene drag forces FlowPanel's `nodes` memo to
+      // recompute, which hands React Flow a *new* node object for the
+      // scene being dragged — and React Flow only preserves a node's live
+      // drag position when the incoming object is reference-identical to
+      // its internal one, so every recompute snapped the node back to its
+      // pre-drag position mid-drag. Plain CSS keyed off React Flow's own
+      // `dragging` class needs no state at all, so it can't cause that.
+      className={`scriare-scene-card flex flex-col justify-center rounded-lg border px-3 py-2 transition-colors duration-150 ${
+        isActive
+          ? "border-[var(--accent)] bg-[var(--surface-2)]"
+          : "border-[var(--border)] bg-[var(--bg)] hover:border-[var(--border-faint)] hover:bg-[var(--surface-2-faint)]"
       }`}
     >
       <Handle type="target" position={Position.Left} style={HANDLE_STYLE} />

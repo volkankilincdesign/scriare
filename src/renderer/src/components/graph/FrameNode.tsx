@@ -6,14 +6,11 @@ import { FRAME_MIN_HEIGHT, FRAME_MIN_WIDTH } from "../../utils/graphConstants";
 
 interface FrameNodeData {
   title: string;
-  /** True while a scene being dragged is currently hovering over this frame
-   * — highlighted as the frame the scene will join if released now. */
-  isDropTarget?: boolean;
   [key: string]: unknown;
 }
 
 export function FrameNode({ id, data, selected }: NodeProps) {
-  const { title, isDropTarget } = data as FrameNodeData;
+  const { title } = data as FrameNodeData;
   const renameFrame = useProjectStore((s) => s.renameFrame);
   const deleteFrame = useProjectStore((s) => s.deleteFrame);
   const updateFrameRect = useProjectStore((s) => s.updateFrameRect);
@@ -29,13 +26,12 @@ export function FrameNode({ id, data, selected }: NodeProps) {
   }
 
   return (
-    <div
-      className={`h-full w-full rounded-lg border-2 border-dashed transition-colors duration-150 ${
-        isDropTarget
-          ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-          : "border-[var(--border)] bg-[var(--surface-2-faint)]"
-      }`}
-    >
+    // `scriare-frame-box` is a stable hook for the CSS-only drop-target
+    // highlight: FlowPanel toggles a sibling `scriare-drop-target` class on
+    // this node's own `.react-flow__node` wrapper directly via the DOM
+    // while a scene is dragged over it (see FlowPanel's `setFrameHighlight`
+    // for why that's imperative DOM manipulation rather than React state).
+    <div className="scriare-frame-box h-full w-full rounded-lg border-2 border-dashed border-[var(--border)] bg-[var(--surface-2-faint)] transition-colors duration-150">
       <NodeResizer
         minWidth={FRAME_MIN_WIDTH}
         minHeight={FRAME_MIN_HEIGHT}

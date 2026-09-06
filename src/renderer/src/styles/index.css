@@ -148,3 +148,25 @@ body {
 .react-flow__node {
   cursor: grab;
 }
+
+/* The scene "lift" (scale + accent border) while dragging, and the Frame
+   drop-target highlight, are both driven by plain CSS classes rather than
+   by React state (see SceneNode.tsx / FrameNode.tsx / FlowPanel.tsx for
+   why a state-driven version of this broke actual dragging: any state
+   update mid-drag forced React Flow's controlled `nodes` array to change
+   reference, which reset the dragged node's live position from the stale,
+   not-yet-committed store value on every update). `.dragging` is React
+   Flow's own class, added automatically to whichever node is currently
+   being dragged; `.scriare-drop-target` is toggled directly via the DOM
+   by FlowPanel while a scene's center is over that frame's bounds. */
+.react-flow__node.dragging .scriare-scene-card {
+  transform: scale(1.05);
+  border-color: var(--accent);
+  background: var(--surface-2);
+  box-shadow: 0 10px 20px -6px oklch(0% 0 0 / 0.35);
+}
+
+.react-flow__node.scriare-drop-target .scriare-frame-box {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
