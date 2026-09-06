@@ -10,8 +10,9 @@ interface ProjectSettingsDialogProps {
 
 /**
  * Project-wide settings: the Start Scene (the scene Play Mode begins from)
- * and Appearance (the app-wide colour theme). Appearance applies instantly
- * as you click a swatch — it's a display preference, not something that
+ * and Appearance (Light/Dark mode, as of v0.12.0's Minimal redesign —
+ * previously a 4-way colour theme picker). Appearance applies instantly as
+ * you click a swatch — it's a display preference, not something that
  * needs a Save step — while Start Scene stays a draft until Save/Enter, to
  * match its existing behaviour.
  */
@@ -41,7 +42,7 @@ export function ProjectSettingsDialog({ onClose }: ProjectSettingsDialogProps) {
         Appearance
       </label>
       <p className="mb-2.5 text-xs text-[var(--text-3)]">
-        Choose a colour theme for the editor.
+        Light or dark mode. Your choice is remembered between sessions.
       </p>
       <div className="mb-5 grid grid-cols-2 gap-2.5">
         {THEMES.map((t) => (

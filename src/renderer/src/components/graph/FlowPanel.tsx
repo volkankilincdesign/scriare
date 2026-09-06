@@ -314,37 +314,53 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       style={{ height: collapsed ? 36 : height }}
       className="flex shrink-0 flex-col overflow-hidden border-t border-[var(--border-soft)] bg-[var(--surface)]"
     >
-      <div className="flex items-center justify-between px-3 py-2">
+      {collapsed ? (
+        // The whole collapsed bar is the click target to re-expand — matching
+        // how the Content and Scene Details panels' collapsed strips already
+        // work (click anywhere on the strip, not just the label).
         <button
           type="button"
           onClick={onToggle}
-          className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-3)] hover:text-[var(--text)]"
+          title="Expand Flow"
+          className="flex flex-1 items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-3)] hover:text-[var(--text)]"
         >
-          <span>{collapsed ? "▸" : "▾"}</span>
+          <span aria-hidden>▴</span>
           Flow
         </button>
+      ) : (
+        <div className="flex items-center justify-between px-3 py-2">
+          <button
+            type="button"
+            onClick={onToggle}
+            title="Collapse"
+            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-3)] hover:text-[var(--text)]"
+          >
+            <span aria-hidden>▾</span>
+            Flow
+          </button>
 
-        {!collapsed && project && (
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => addFrame()}
-              className="rounded px-2 py-1 text-xs font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-              title="Add a frame to visually group scenes"
-            >
-              + Frame
-            </button>
-            <button
-              type="button"
-              onClick={handleAutoLayout}
-              className="rounded px-2 py-1 text-xs font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-              title="Automatically arrange scenes that aren't in a frame"
-            >
-              Auto Layout
-            </button>
-          </div>
-        )}
-      </div>
+          {project && (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => addFrame()}
+                className="rounded px-2 py-1 text-xs font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+                title="Add a frame to visually group scenes"
+              >
+                + Frame
+              </button>
+              <button
+                type="button"
+                onClick={handleAutoLayout}
+                className="rounded px-2 py-1 text-xs font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+                title="Automatically arrange scenes that aren't in a frame"
+              >
+                Auto Layout
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {!collapsed && (
         <div ref={containerRef} className="scriare-graph-bg relative flex-1">

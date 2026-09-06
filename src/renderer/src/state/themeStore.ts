@@ -1,16 +1,14 @@
 import { create } from "zustand";
 
 export const THEMES = [
-  { id: "crimson", label: "Crimson Noir", description: "Default — cool near-black with a red accent" },
-  { id: "indigo", label: "Indigo Dusk", description: "Cool blue-violet accent" },
-  { id: "emerald", label: "Emerald Slate", description: "Muted forest green accent" },
-  { id: "ivory", label: "Ivory Gold", description: "Light, warm neutrals" },
+  { id: "dark", label: "Dark", description: "Default — minimal black/white/gray" },
+  { id: "light", label: "Light", description: "Minimal black/white/gray, light surface" },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];
 
 const STORAGE_KEY = "scriare.theme";
-const DEFAULT_THEME: ThemeId = "crimson";
+const DEFAULT_THEME: ThemeId = "dark";
 
 function isThemeId(value: string | null): value is ThemeId {
   return !!value && THEMES.some((t) => t.id === value);

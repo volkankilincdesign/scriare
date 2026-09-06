@@ -16,4 +16,4 @@ export const READING_COLUMN_CLASS = "mx-auto w-full max-w-2xl";
 /** Typography for the actual story text. `break-words` guarantees a long
  * unbroken token (a URL, a run-on word) wraps inside the column instead of
  * pushing it wider. */
-export const READING_PROSE_CLASS = "prose prose-invert max-w-none break-words";
+export const READING_PROSE_CLASS = "prose prose-invert max-w-none break-words font-reading";

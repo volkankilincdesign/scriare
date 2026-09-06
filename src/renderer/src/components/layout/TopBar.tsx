@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useProjectStore } from "../../state/projectStore";
 import { ProjectSettingsDialog } from "./ProjectSettingsDialog";
+import { BrandMark } from "../common/BrandMark";
 
 const SAVE_STATUS_LABEL = {
   saved: "All changes saved",
@@ -26,12 +27,7 @@ export function TopBar() {
           className="flex items-center gap-2 text-sm font-semibold tracking-wide text-[var(--text)] hover:text-[var(--accent)]"
           title="Back to Welcome screen"
         >
-          <span
-            aria-hidden
-            className="font-blackletter-mark shrink-0 text-[22px] text-[var(--accent)]"
-          >
-            S
-          </span>
+          <BrandMark className="h-6 w-6 shrink-0" />
           <span className="font-serif-narrative italic">Scriare</span>
         </button>
         <span className="text-[var(--text-3)]">/</span>

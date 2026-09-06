@@ -26,10 +26,11 @@ export function InspectorPanel({ collapsed, onToggle }: InspectorPanelProps) {
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-8 shrink-0 items-center justify-center border-l border-[var(--border-soft)] bg-[var(--surface)] text-[var(--text-3)] hover:text-[var(--text)]"
+        className="flex w-8 shrink-0 flex-col items-center gap-1.5 border-l border-[var(--border-soft)] bg-[var(--surface)] pt-2 text-[var(--text-3)] hover:text-[var(--text)]"
         title="Expand Scene Details"
       >
-        <span className="[writing-mode:vertical-rl] text-xs tracking-wide">
+        <span aria-hidden className="text-[10px]">◂</span>
+        <span className="[writing-mode:vertical-rl] text-xs font-semibold uppercase tracking-wide">
           Scene Details
         </span>
       </button>
@@ -38,18 +39,18 @@ export function InspectorPanel({ collapsed, onToggle }: InspectorPanelProps) {
 
   return (
     <aside className="flex w-72 shrink-0 flex-col border-l border-[var(--border-soft)] bg-[var(--surface)]">
-      <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-3 py-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
-          Scene Details
-        </span>
+      <div className="flex items-center gap-2 border-b border-[var(--border-soft)] px-3 py-2">
         <button
           type="button"
           onClick={onToggle}
           className="rounded px-1.5 text-sm text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
           title="Collapse"
         >
-          ⟩
+          <span aria-hidden>▸</span>
         </button>
+        <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+          Scene Details
+        </span>
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto p-3 text-sm">

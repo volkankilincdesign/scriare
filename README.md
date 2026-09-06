@@ -1,11 +1,106 @@
-# Scriare — v0.10.6 — MiniMap Refresh Fix, Part 2
+# Scriare — v0.13.0 — Real Logo
 
-Scriare is still a rich text editor, first and foremost. v0.10.5's MiniMap fix
-turned out to be a no-op — it forced a re-render but not a recompute, so the
-overview panel still stayed blank on launch and went blank again after
-collapsing/reopening the Flow panel. Actually fixed this time — the overview
-is correct the moment the graph opens, and stays correct through panel
-toggles. **No functionality or visual change beyond that.**
+Scriare just got a full visual reset: a new black/white/gray theme system
+(Dark and Light, switchable in Project Settings) replaces the previous four
+colourful palettes, and the app's own UI now defaults to Inter instead of
+Manrope. The rich text editor and Play Mode's own typography were
+deliberately left untouched — this redesign only changes the app's chrome,
+not how your writing looks or reads.
+
+## What's new (v0.13.0 — Real Logo)
+
+- **The typographic "S" is replaced by the actual Scriare logo**, from the
+  finished mark supplied in `other_materials/logos`. It appears on the
+  Welcome screen and in the TopBar's top-left corner, and now swaps between
+  the Primary Dark and Primary Light variants to match the active app
+  theme — Primary Dark on the Dark theme, Primary Light on the Light theme
+  — instead of always being the same single-colour accent glyph.
+- **The app's OS-facing icon (window/taskbar icon) now uses the Icon Dark
+  mark** — a solid dark circular badge — rendered to a 1024×1024 PNG and
+  used for both `build/icon.png` and `resources/icon.png`. This is a
+  single fixed icon, not theme-dependent, matching how OS taskbars work.
+- The old custom blackletter font-face and its `.font-blackletter-mark`
+  utility class were removed — they're no longer used now that the mark is
+  a real logo image, not a typographic glyph.
+- Verified with `tsc --noEmit` and a production build.
+
+## What's new (v0.12.1)
+
+- **Light mode is no longer pure white.** Its background and surface tiers
+  were shifted a uniform notch toward gray (background `oklch(95% 0 0)` /
+  `#eeeeee`, previously `oklch(99% 0 0)` / `#fdfdfd`-ish near-white) while
+  keeping every existing contrast step between background, surface, and
+  border tiers exactly as it was — nothing about the hierarchy changed,
+  just how far from white it starts. Dark mode is untouched.
+
+## What's new (v0.12.0 — Minimal)
+
+- **New theme system: Dark and Light, both strictly black/white/gray.** The
+  previous four colourful themes (Crimson Noir, Indigo Dusk, Emerald Slate,
+  Ivory Gold) are gone, replaced by two true-neutral themes with no colour
+  tint at all. Dark is the default on first launch; your choice is switched
+  and remembered exactly like before, from the same Appearance section in
+  Project Settings (⚙).
+- **Colour is now reserved for meaning, not decoration.** Destructive
+  confirmations (deleting a scene, a folder, a frame) use a dedicated red;
+  a green is defined and ready for a future "Apply"-style action (nothing
+  in the app is quite that shape yet). Everything else — buttons, badges,
+  selection highlights, the graph's MiniMap — is part of the same
+  black/white/gray palette as the rest of the UI.
+- **The app's UI now defaults to Inter**, replacing Manrope for body text,
+  labels, and buttons throughout the app's chrome. IBM Plex Mono is also
+  now available for technical/structured UI (e.g. a future Variables
+  feature) — not used anywhere yet, but ready.
+- **The rich text editor and Play Mode were not touched.** Both still
+  render your story's text in Manrope, exactly as before this redesign —
+  only the surrounding app chrome (toolbars, panels, dialogs, buttons)
+  picked up the new font and colours.
+- Verified with `tsc --noEmit`, a production build, and confirming the new
+  theme/font values are present in the built CSS.
+
+## What's new (v0.11.2 — Dockable Panels Polish)
+
+- **Content's and Scene Details' collapsed-strip labels now use the same
+  font weight and letter case.** Both now render bold and in small caps
+  (uppercase, tracking-wide) — matching the Story Graph's collapsed label and
+  the app's other section headers — instead of plain, unstyled text.
+
+## What's new (v0.11.1 — Dockable Panels Polish)
+
+- **The Story Graph's collapsed bar is now clickable anywhere, not just on
+  the word "Flow."** Content and Scene Details already worked this way —
+  their whole collapsed strip is one big click target — but the Story Graph's
+  collapsed bar only expanded if you clicked precisely on its label. Fixed by
+  making the entire collapsed bar one button, matching the sidebars.
+- **All three collapse icons are now the same shape (a solid triangle) and
+  point consistently** — instead of a mix of angle brackets (⟨ ⟩) on the
+  sidebars and sideways/vertical triangles on the Story Graph.
+- **The Scene Details toggle moved to sit right next to the page**, on the
+  left edge of its header, instead of the far-right edge of the window. The
+  Content panel's toggle already sat next to the page (the right edge of its
+  own header, bordering the editor) and is unchanged in position — only its
+  icon shape changed to match.
+- Verified with `tsc --noEmit`, a production build, and confirming the
+  updated "Expand Flow" / "Expand Scene Details" / "Expand Content" labels
+  are present in the built bundle.
+
+## What's new (v0.11.0 — Dockable Panels)
+
+- **The Content panel (left sidebar) is now collapsible.** Click the new ⟨
+  button next to its header to dock it away to a thin strip; click the strip
+  (labeled "Content") to bring it back. This mirrors how Scene Details
+  (right sidebar) already worked.
+- **All three panels — Content, Scene Details, and the Story Graph — can now
+  be collapsed independently**, so a writer who wants a clean, distraction-
+  free page can dock away everything but the editor itself, or keep whichever
+  panels they're actively using.
+- **Your layout is remembered.** Which panels are collapsed is saved locally
+  (not written into the project file — a display preference, like the
+  editor/graph split height already was) and restored the next time you open
+  Scriare, so you don't have to redock everything on every launch.
+- Verified with `tsc --noEmit`, a production build, and confirming both the
+  new storage key and the Content panel's collapsed-state label are present
+  in the built bundle.
 
 ## What's new (v0.10.6 — MiniMap Refresh Fix, Part 2)
 

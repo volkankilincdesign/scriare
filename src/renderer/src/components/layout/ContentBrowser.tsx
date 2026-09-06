@@ -37,7 +37,12 @@ interface ContextMenuState {
   node: ContentNode | null;
 }
 
-export function ContentBrowser() {
+interface ContentBrowserProps {
+  collapsed: boolean;
+  onToggle: () => void;
+}
+
+export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
   const project = useProjectStore((s) => s.project);
   const selectedSceneId = useProjectStore((s) => s.selectedSceneId);
   const selectScene = useProjectStore((s) => s.selectScene);
@@ -382,6 +387,22 @@ export function ContentBrowser() {
     onDragEnd: cleanupDrag,
   };
 
+  if (collapsed) {
+    return (
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-8 shrink-0 flex-col items-center gap-1.5 border-r border-[var(--border-soft)] bg-[var(--surface)] pt-2 text-[var(--text-3)] hover:text-[var(--text)]"
+        title="Expand Content"
+      >
+        <span aria-hidden className="text-[10px]">▸</span>
+        <span className="[writing-mode:vertical-rl] text-xs font-semibold uppercase tracking-wide">
+          Content
+        </span>
+      </button>
+    );
+  }
+
   return (
     <ContentBrowserContext.Provider value={contextValue}>
       <aside className="flex w-64 shrink-0 flex-col border-r border-[var(--border-soft)] bg-[var(--surface)]">
@@ -403,6 +424,14 @@ export function ContentBrowser() {
               title="New folder (Story root)"
             >
               + Folder
+            </button>
+            <button
+              type="button"
+              onClick={onToggle}
+              className="rounded px-1.5 text-sm text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+              title="Collapse"
+            >
+              <span aria-hidden>◂</span>
             </button>
           </div>
         </div>
