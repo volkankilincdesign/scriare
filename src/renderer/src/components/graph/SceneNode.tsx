@@ -58,7 +58,19 @@ export function SceneNode({ data, selected }: NodeProps) {
       // this kind of selection halo) — visible enough to confirm "yes, this
       // is what Ctrl+click/box-select picked up," without reading as if the
       // Scene Editor just jumped to it.
-      className={`scriare-scene-card flex flex-col justify-center rounded-lg border px-3 py-2 transition-colors duration-150 ${
+      // `transition` (not just `transition-colors`) as of Sprint 8B: this
+      // card's own `scale(1.05)` drag-lift (index.css, keyed off the
+      // ancestor `.react-flow__node.dragging`) and its selection ring
+      // (Tailwind's `ring-*`, which is a box-shadow under the hood) were
+      // both snapping in/out instantly — only border-color/background-color
+      // were ever covered. Safe to animate `transform` here specifically
+      // because it's applied to THIS inner card, never the outer
+      // `.react-flow__node` wrapper React Flow itself repositions every
+      // drag frame (see the drag-transition pitfall in the architecture
+      // doc) — this element's own transform only ever flips between "1x"
+      // and "1.05x scaled," it's never fed a continuously-updating value,
+      // so easing it can't lag behind or fight the cursor.
+      className={`scriare-scene-card flex flex-col justify-center rounded-lg border px-3 py-2 transition duration-150 ${
         isActive
           ? "border-[var(--accent)] bg-[var(--surface-2)]"
           : "border-[var(--border)] bg-[var(--bg)] hover:border-[var(--border-faint)] hover:bg-[var(--surface-2-faint)]"

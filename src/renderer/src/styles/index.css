@@ -225,3 +225,38 @@ body {
   border-color: var(--accent);
   background: var(--accent-soft);
 }
+
+/* Sprint 8B cursor-clarity fix. React Flow's default `.react-flow__pane
+   .selection { cursor: pointer; }` rule (its own style.css) is meant to
+   mark "you're about to box-select" — but that class is driven by
+   `isSelecting`, which React Flow sets true whenever `selectionOnDrag` is
+   configured at all, not just while a selection drag is actually in
+   progress (see `_selectionOnDrag` in its own Pane/ZoomPane wiring). Since
+   this app always has `selectionOnDrag` on (left-drag box-selects, per the
+   nav model below), that made the pane show a "pointer" (clickable-hand)
+   cursor permanently — including just resting over empty canvas doing
+   nothing, which reads as "there's something to click here" when there
+   isn't. `crosshair` is the conventional cursor for "drag from here to
+   select an area" in creative/design tools, and reads as clearly distinct
+   from `.react-flow__node`'s own `grab` cursor (which means "drag this
+   object to move it") — so hovering a node vs. hovering empty canvas now
+   communicate two different available actions instead of the same one. */
+.react-flow__pane.selection {
+  cursor: crosshair;
+}
+
+/* Sprint 8B hover-feedback fix. A Frame's resize handles (NodeResizer,
+   only visible while the frame is selected) had no hover state at all —
+   every other interactive surface in the graph brightens or lifts on
+   hover, so a static handle read as inert until actually grabbed. `translate`
+   (not `transform`) is what the library's own CSS uses to center each
+   handle on its corner/edge (see @xyflow/react's style.css), so animating
+   `transform` here is safe — the two properties compose independently and
+   this scale never fights the handle's own positioning. */
+.react-flow__resize-control.handle {
+  transition: transform 100ms ease;
+}
+
+.react-flow__resize-control.handle:hover {
+  transform: scale(1.4);
+}

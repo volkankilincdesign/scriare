@@ -1,4 +1,22 @@
-# Scriare — v0.16.0 — Frames in Auto Layout
+# Scriare — v0.17.0 — Story Graph Interaction Feel (Sprint 8B)
+
+## What's new (v0.17.0 — Story Graph Interaction Feel, Sprint 8B)
+
+Sprint 8B was an evaluation-and-polish pass over the Story Graph's interaction *feel* — no new graph capability, per the sprint's own "the graph should not feel different, just more refined" brief. Most existing interactions (drag responsiveness, hover states, selection, zoom/pan, edge rendering, auto-scroll while dragging near the viewport edge) were already solid and are untouched. What was actually polished:
+
+**A dragged scene's "lift" now eases in instead of snapping.** The scale-up and selection ring/border on a scene card only ever transitioned colour before — the pop to 1.05x on drag-start (and back down on drop) happened instantly. Now it eases over the same 150ms the rest of the graph's settle motion already uses.
+
+**The canvas now shows a crosshair over empty space instead of a pointer/hand cursor.** Since left-drag box-selects and right-drag pans, a "clickable hand" cursor sitting over empty canvas at all times was misleading — nothing there is actually clickable. A crosshair reads as "drag from here to select," distinct from the `grab` cursor a node itself shows.
+
+**Frame resize handles now respond to hover**, matching every other interactive surface in the graph (a subtle scale-up, not a redesign).
+
+**Edge highlighting now reacts to graph selection, not just the scene open in the editor.** Ctrl+click or box-selecting a scene already gave it its own ring highlight, but its edges stayed dim unless it was also open in the Scene Editor — inconsistent with how selection feedback works everywhere else in the graph. Now an edge lights up the moment either scene it connects touches the current graph selection.
+
+**The two camera-fit animations (opening the graph, and Auto Layout's post-layout re-frame) now share one duration** instead of two slightly different ones that had drifted apart.
+
+**A stale tooltip was fixed**: "Auto Layout" still described its pre-v0.16.0 behavior ("scenes that aren't in a frame") even though Frames have participated in Auto Layout since that release.
+
+Auto-scroll while dragging a node near the viewport edge was evaluated and found to already work (it's a React Flow default this app never disabled) — now declared explicitly in code so a future library upgrade can't silently change it.
 
 ## What's new (v0.16.0 — Frames in Auto Layout)
 

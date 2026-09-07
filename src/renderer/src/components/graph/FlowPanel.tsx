@@ -29,6 +29,17 @@ const nodeTypes: NodeTypes = {
   frame: FrameNode,
 };
 
+// Sprint 8B interaction-consistency fix: the graph's two camera-fit
+// animations (the initial mount's `fitViewOptions` and Auto Layout's own
+// post-layout `fitView` call, below) used two different durations — 300ms
+// and 400ms — for what reads as the identical gesture ("the camera glides
+// to frame everything"). Nothing about either animation actually needs a
+// different pace than the other; the mismatch was just two literals that
+// drifted apart because they live in two different call sites. One shared
+// constant keeps them identical going forward without relying on anyone
+// remembering to update both numbers together.
+const CAMERA_FIT_DURATION_MS = 350;
+
 /** Live drag offset for a single node — its position at drag-start plus the
  * current cursor-driven delta. Originally this was one object per drag
  * (`frameId`/`sceneId` + a single `dx`/`dy`), which only ever tracked the
@@ -287,8 +298,23 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   // stays as cheap as it already was.
   const edges = useMemo<Edge[]>(() => {
     return edgesBase.map((edge) => {
+      // Sprint 8B interaction-consistency fix: this used to check only
+      // `selectedSceneId` (the scene open in the Scene Editor), so a scene
+      // picked up by Ctrl+click or a box-select rectangle — which already
+      // shows its own accent-ring highlight, see SceneNode's `selected`
+      // handling — had edges that stayed unhighlighted, unlike the fuller
+      // treatment an *active* scene's edges got. Selection feedback is
+      // supposed to be "immediately understandable" everywhere at once;
+      // checking `selectedGraphIds` too means an edge lights up the moment
+      // either end of it is selected by any means (open-in-editor, click,
+      // Ctrl+click, or box-select), not just the one case that happened to
+      // be wired up first. `selectedGraphIds` can also contain frame ids,
+      // but no edge ever references one, so `.has()` on those simply never
+      // matches — nothing extra to guard against here.
       const isConnectedToSelected =
-        !!selectedSceneId && (edge.source === selectedSceneId || edge.target === selectedSceneId);
+        (!!selectedSceneId && (edge.source === selectedSceneId || edge.target === selectedSceneId)) ||
+        selectedGraphIds.has(edge.source) ||
+        selectedGraphIds.has(edge.target as string);
       return {
         ...edge,
         style: {
@@ -298,7 +324,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
         zIndex: isConnectedToSelected ? 1 : 0,
       };
     });
-  }, [edgesBase, selectedSceneId]);
+  }, [edgesBase, selectedSceneId, selectedGraphIds]);
 
   // Positions (and the two data fields that come along for free —
   // choiceCount looked up from the memo above, not recomputed) DO need to
@@ -548,7 +574,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   function handleAutoLayout(): void {
     autoLayoutScenes();
     window.requestAnimationFrame(() => {
-      flowInstanceRef.current?.fitView({ duration: 400, padding: 0.2 });
+      flowInstanceRef.current?.fitView({ duration: CAMERA_FIT_DURATION_MS, padding: 0.2 });
     });
   }
 
@@ -596,7 +622,11 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
                 type="button"
                 onClick={handleAutoLayout}
                 className="rounded px-2 py-1 text-xs font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-                title="Automatically arrange scenes that aren't in a frame"
+                // As of v0.16.0, a Frame containing scenes is arranged as
+                // one collapsed unit (see "Auto Layout and Frames
+                // architecture") rather than being skipped — this tooltip
+                // was still describing the pre-v0.16.0 behavior.
+                title="Automatically arrange scenes and frames"
               >
                 Auto Layout
               </button>
@@ -632,7 +662,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
               minZoom={0.15}
               maxZoom={1.5}
               fitView
-              fitViewOptions={{ padding: 0.2, duration: 300 }}
+              fitViewOptions={{ padding: 0.2, duration: CAMERA_FIT_DURATION_MS }}
               // Nav model (Sprint 8B): right mouse button pans, left mouse
               // button is reserved for selection — click a node to select
               // it, Ctrl/Cmd+click to add or remove one from the selection
@@ -653,6 +683,19 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
               selectionOnDrag
               selectionMode={SelectionMode.Partial}
               nodeDragThreshold={2}
+              // Sprint 8B evaluated dragging a node near the viewport edge
+              // (a large-graph usability question) and found React Flow
+              // already auto-pans the canvas while a node drag is held near
+              // an edge — `autoPanOnNodeDrag`/`autoPanSpeed` are both
+              // already React Flow's own defaults (true / 15), so this was
+              // never actually missing. Declared explicitly here, matching
+              // this codebase's standing practice of pinning any
+              // load-bearing library default rather than leaving it
+              // implicit (see e.g. `selectionMode`, `panOnDrag` above) —
+              // this way a future React Flow upgrade changing its own
+              // default can't silently change this app's feel.
+              autoPanOnNodeDrag
+              autoPanSpeed={15}
               proOptions={{ hideAttribution: true }}
             >
               <Background color="var(--border-soft)" gap={18} />
