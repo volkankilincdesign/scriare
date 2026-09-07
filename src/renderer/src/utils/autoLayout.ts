@@ -7,22 +7,37 @@ interface LayoutEdge {
 }
 
 /**
- * Computes a clean left-to-right layered layout for the given scene ids,
- * based on their choice connections, using dagre. Only meant to arrange
- * scenes that aren't manually grouped into a Frame — callers are expected
- * to filter the id list accordingly.
+ * Computes a clean left-to-right layered layout for the given node ids,
+ * based on their connections, using dagre. As of v0.16.0 a "node id" here
+ * can be either a loose scene's own id or a Frame's id (standing in for
+ * every scene grouped into it, collapsed to one node — see
+ * `projectStore.autoLayoutScenes` for how that collapsing is built) —
+ * callers are expected to have already decided which ids to pass and to
+ * filter/collapse edges accordingly; this function itself doesn't know or
+ * care what a given id "is."
+ *
+ * `nodeSize`, when given, returns the real footprint to reserve for a
+ * specific id — a Frame's own `size`, most importantly, so dagre gives it
+ * as much room as it actually needs instead of scene-card-sized space.
+ * Omitted (or returning nothing for a particular id) falls back to the
+ * standard scene card footprint, preserving the original behavior for a
+ * plain scene-only layout.
  */
 export function computeAutoLayout(
-  sceneIds: string[],
+  nodeIds: string[],
   edges: LayoutEdge[],
+  nodeSize?: (id: string) => { width: number; height: number } | undefined,
 ): Record<string, { x: number; y: number }> {
   const graph = new dagre.graphlib.Graph();
   graph.setGraph({ rankdir: "LR", nodesep: 60, ranksep: 140 });
   graph.setDefaultEdgeLabel(() => ({}));
 
-  const idSet = new Set(sceneIds);
-  sceneIds.forEach((id) => {
-    graph.setNode(id, { width: SCENE_NODE_WIDTH, height: SCENE_NODE_HEIGHT });
+  const idSet = new Set(nodeIds);
+  const sizeById = new Map<string, { width: number; height: number }>();
+  nodeIds.forEach((id) => {
+    const size = nodeSize?.(id) ?? { width: SCENE_NODE_WIDTH, height: SCENE_NODE_HEIGHT };
+    sizeById.set(id, size);
+    graph.setNode(id, size);
   });
   edges.forEach((edge) => {
     if (idSet.has(edge.source) && idSet.has(edge.target)) {
@@ -33,13 +48,14 @@ export function computeAutoLayout(
   dagre.layout(graph);
 
   const positions: Record<string, { x: number; y: number }> = {};
-  sceneIds.forEach((id) => {
+  nodeIds.forEach((id) => {
     const node = graph.node(id);
+    const size = sizeById.get(id)!;
     // dagre positions by center — convert to the top-left corner our
     // project data model expects.
     positions[id] = {
-      x: node.x - SCENE_NODE_WIDTH / 2,
-      y: node.y - SCENE_NODE_HEIGHT / 2,
+      x: node.x - size.width / 2,
+      y: node.y - size.height / 2,
     };
   });
 

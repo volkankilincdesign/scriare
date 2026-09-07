@@ -551,30 +551,107 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project } = get();
     if (!project) return;
 
-    // Only rearrange scenes that aren't manually grouped into a Frame —
-    // Auto Layout should never undo a writer's own organizing work.
+    // A Frame's own manual arrangement is never touched by Auto Layout —
+    // that part is unchanged from before v0.16.0, and is exactly what
+    // "Auto Layout should never undo a writer's own organizing work" has
+    // always meant here. What changed: previously a Frame (and everything
+    // inside it) was entirely invisible to the layout algorithm — it just
+    // sat wherever it was while loose scenes rearranged around it,
+    // regardless of whether a loose scene's own connections ran into or
+    // out of that Frame. As of v0.16.0, a Frame that contains at least one
+    // scene participates in Auto Layout as its own single node — sized to
+    // the Frame's own footprint, connected via any choice edge that
+    // crosses in or out of it — so the Frame's *position* (as a whole) is
+    // included in the layout, while every scene *inside* it keeps its
+    // exact relative arrangement, shifted only by however far the Frame
+    // itself moved. A Frame with no scenes in it isn't a stand-in for
+    // anything with connections, so it's left exactly where it is, same
+    // as before.
+    const framesWithScenes = project.frames.filter((f) =>
+      project.scenes.some((s) => s.frameId === f.id),
+    );
+    const frameIdSet = new Set(framesWithScenes.map((f) => f.id));
     const looseScenes = project.scenes.filter((s) => !s.frameId);
-    if (looseScenes.length === 0) return;
+    if (framesWithScenes.length === 0 && looseScenes.length === 0) return;
 
-    const edges = project.scenes.flatMap((scene) =>
+    // Every scene maps to the id that represents it in the layout graph:
+    // its containing Frame's id if that Frame is one of the ones being
+    // laid out, or its own id if it's loose. A scene whose `frameId`
+    // points at neither (a stale/orphaned reference) maps to nothing and
+    // is simply excluded from the layout, matching how it was already
+    // excluded from `looseScenes` before this change.
+    const layoutNodeIdForScene = (sceneId: string): string | undefined => {
+      const scene = project.scenes.find((s) => s.id === sceneId);
+      if (!scene) return undefined;
+      if (scene.frameId) return frameIdSet.has(scene.frameId) ? scene.frameId : undefined;
+      return scene.id;
+    };
+
+    const nodeIds = [...framesWithScenes.map((f) => f.id), ...looseScenes.map((s) => s.id)];
+
+    // Collapse every choice connection down to the layout-node level: an
+    // edge between two scenes grouped into the *same* Frame becomes a
+    // self-loop once both ends map to that Frame's id — dropped below,
+    // since dagre lays out relationships *between* nodes and this one is
+    // now fully internal to a single node. An edge crossing into or out of
+    // a Frame becomes an edge to/from that Frame's own node id instead of
+    // the individual scene's, which is what actually pulls a Frame into
+    // the same layout flow as everything it's connected to.
+    const rawEdges = project.scenes.flatMap((scene) =>
       extractChoices(scene.content)
         .filter((choice): choice is typeof choice & { targetSceneId: string } =>
           Boolean(choice.targetSceneId),
         )
         .map((choice) => ({ source: scene.id, target: choice.targetSceneId })),
     );
+    const seenEdges = new Set<string>();
+    const edges: { source: string; target: string }[] = [];
+    for (const edge of rawEdges) {
+      const source = layoutNodeIdForScene(edge.source);
+      const target = layoutNodeIdForScene(edge.target);
+      if (!source || !target || source === target) continue;
+      const key = `${source}->${target}`;
+      if (seenEdges.has(key)) continue;
+      seenEdges.add(key);
+      edges.push({ source, target });
+    }
 
-    const positions = computeAutoLayout(
-      looseScenes.map((s) => s.id),
-      edges,
-    );
+    const positions = computeAutoLayout(nodeIds, edges, (id) => {
+      const frame = framesWithScenes.find((f) => f.id === id);
+      return frame?.size;
+    });
+
+    // Frames move first (capturing how far each one actually moved), then
+    // every scene either rides along with its containing Frame's delta or,
+    // if it's loose, takes its own freshly computed position directly —
+    // mirroring the exact "shift the frame, carry its scenes by the same
+    // delta" pattern `updateFramePosition`/`updateFrameRect` already use
+    // for a manual Frame drag/resize, so a Frame's contained scenes never
+    // need their own position recomputed by dagre at all.
+    const frameDeltas = new Map<string, { dx: number; dy: number }>();
+    const newFrames = project.frames.map((f) => {
+      const newPos = positions[f.id];
+      if (!newPos) return f;
+      frameDeltas.set(f.id, { dx: newPos.x - f.position.x, dy: newPos.y - f.position.y });
+      return { ...f, position: newPos };
+    });
+
+    const newScenes = project.scenes.map((s) => {
+      if (s.frameId && frameDeltas.has(s.frameId)) {
+        const { dx, dy } = frameDeltas.get(s.frameId)!;
+        return dx !== 0 || dy !== 0
+          ? { ...s, position: { x: s.position.x + dx, y: s.position.y + dy } }
+          : s;
+      }
+      const newPos = positions[s.id];
+      return newPos ? { ...s, position: newPos } : s;
+    });
 
     set({
       project: {
         ...project,
-        scenes: project.scenes.map((s) =>
-          positions[s.id] ? { ...s, position: positions[s.id] } : s,
-        ),
+        frames: newFrames,
+        scenes: newScenes,
         updatedAt: new Date().toISOString(),
       },
       saveStatus: "unsaved",

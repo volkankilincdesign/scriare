@@ -1,4 +1,8 @@
-# Scriare — v0.15.1 — Story Graph Interaction Fixes
+# Scriare — v0.16.0 — Frames in Auto Layout
+
+## What's new (v0.16.0 — Frames in Auto Layout)
+
+Auto Layout used to completely ignore any Frame that had scenes grouped into it — the Frame just sat wherever it was while everything else rearranged around it, even if a scene inside it connected to scenes outside it. Frames now participate in Auto Layout as their own node: sized to the Frame's own footprint, connected to whatever it links to via its contained scenes' choices. Everything you've manually arranged *inside* a Frame (which scene sits where, relative to the others) is preserved exactly — only the Frame's overall position moves, carrying its scenes along with it. A Frame with no scenes in it still isn't touched, same as before.
 
 ## What's new (v0.15.1 — Story Graph Interaction Fixes)
 
