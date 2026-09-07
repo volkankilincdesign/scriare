@@ -178,6 +178,21 @@ body {
   box-shadow: 0 10px 20px -6px oklch(0% 0 0 / 0.35);
 }
 
+/* A dragged Frame gets the same "this is what's moving" treatment as a
+   dragged scene (accent border, a stronger shadow) but deliberately without
+   the scene's scale(1.05) — a frame is a container whose scenes are
+   independent, absolutely-positioned nodes, not real DOM children, so
+   visually scaling the frame box would make its border briefly disagree
+   with where its scenes actually sit, rather than reading as "picked up."
+   The generic `.react-flow__node.dragging` filter (drop-shadow) above
+   already applies to every node type including frames; this adds the same
+   accent-border-and-fill language `scriare-scene-card` uses so a dragged
+   frame doesn't read as a lesser, unfinished version of a dragged scene. */
+.react-flow__node.dragging .scriare-frame-box {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .react-flow__node.scriare-drop-target .scriare-frame-box {
   border-color: var(--accent);
   background: var(--accent-soft);

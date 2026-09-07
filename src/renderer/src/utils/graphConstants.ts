@@ -6,8 +6,15 @@
 export const SCENE_NODE_WIDTH = 180;
 export const SCENE_NODE_HEIGHT = 56;
 
-export const FRAME_MIN_WIDTH = 200;
-export const FRAME_MIN_HEIGHT = 140;
+// A frame this small could barely hold a single scene card once the title
+// bar and a little padding are accounted for — the old 200x140 floor let
+// someone resize a frame down to something that could never usefully group
+// anything. Raised so the smallest a frame can get still comfortably fits
+// at least one SCENE_NODE_WIDTH/HEIGHT card with room around it;
+// buildFrame's default size (types/project.ts) starts well above this
+// floor on purpose — this is just the resize-down limit.
+export const FRAME_MIN_WIDTH = 260;
+export const FRAME_MIN_HEIGHT = 170;
 
 interface FrameLike {
   id: string;

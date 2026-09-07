@@ -116,7 +116,12 @@ export function buildFrame(title: string, index = 0): Frame {
     id: nanoid(),
     title,
     position: { x: 60 + index * 40, y: 320 + index * 40 },
-    size: { width: 360, height: 260 },
+    // Roomy enough out of the box to hold a small cluster of scenes (a
+    // couple of columns of SCENE_NODE_WIDTH cards with breathing room)
+    // instead of forcing an immediate resize before the frame is usable —
+    // see the FRAME_MIN_WIDTH/HEIGHT comment in graphConstants.ts for the
+    // matching floor on how small a frame can be resized back down to.
+    size: { width: 480, height: 320 },
   };
 }
 

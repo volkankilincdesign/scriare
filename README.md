@@ -1,4 +1,4 @@
-# Scriare — v0.13.0 — Real Logo
+# Scriare — v0.14.2 — Frame Selection Fix
 
 Scriare just got a full visual reset: a new black/white/gray theme system
 (Dark and Light, switchable in Project Settings) replaces the previous four
@@ -6,6 +6,113 @@ colourful palettes, and the app's own UI now defaults to Inter instead of
 Manrope. The rich text editor and Play Mode's own typography were
 deliberately left untouched — this redesign only changes the app's chrome,
 not how your writing looks or reads.
+
+## What's new (v0.14.2 — Frame Selection Fix)
+
+v0.14.1's Frame sizing fix didn't fully land: reported back that Frames
+still couldn't be resized at all — no handles ever appeared, no matter what
+was tried, only a hover border. Found a real bug underneath it, not a sizing
+problem this time.
+
+A Frame's resize handles are only supposed to show once it's selected (same
+idea as Scene's accent border) — but a Frame never actually *stayed*
+selected. Clicking one did register the click, but the graph library's own
+internal "this node is selected" flag gets silently overwritten back to
+`false` on the very next redraw of the graph, because nothing in the app was
+telling that redraw to keep it — a redraw happens constantly (this graph
+recomputes on every drag frame, every panel resize, etc.), so in practice a
+Frame was deselected within a fraction of a second of being clicked, well
+before anyone could reach for a resize handle. Scenes never showed this
+problem because a scene's "selected" look was never wired through that
+library flag in the first place — it's tracked as the app's own explicit
+state.
+
+Fixed by giving Frame selection the same kind of explicit, app-tracked state
+scene selection already had: clicking a Frame (or starting to drag one) now
+sets it as the selected Frame in a way that survives every redraw, and
+clicking empty canvas clears it. Resize handles, and the selected-frame
+accent border added in v0.14.0, now both show up and stay up exactly when
+expected. The resize mechanism itself (`NodeResizer`) was never broken —
+once selection reliably works, resizing has worked correctly the whole time.
+
+**Frames were too small to actually use for grouping.** A new Frame
+started at 360×260 — barely enough for one or two scene cards — and could
+be resized down to 200×140, small enough to fit essentially nothing. Frames
+were already resizable (select one, drag its handles), but the sizes
+involved made that hard to discover and not very useful once found. Fixed:
+a new Frame now starts at 480×320, roomy enough for a small cluster of
+scenes right away, and the resize floor is raised to 260×170 so a frame can
+never be shrunk down to uselessness.
+
+**Choice lines connecting scenes inside a frame could render as a tangled
+loop.** Investigated a report of exactly this (screenshot showed a choice
+edge looping back on itself near a frame's corner). Root cause: each scene
+has one fixed connection point on its right edge (where choice lines leave)
+and one on its left (where they arrive), tuned for Auto Layout's normal
+left-to-right arrangement. Auto Layout always places a target to the
+right of its source, so those fixed points never caused trouble there. But
+a scene dragged freely into a frame very often ends up *behind* or *below*
+the scene it connects to instead of neatly to its right — and the previous
+edge style (`smoothstep`) can only route in straight axis-aligned segments,
+so a "backward" connection like that forced it into a hard right-angle
+loop: step out, double back, step back in. Switched connecting lines to a
+bezier curve, which bows smoothly toward its target from any relative
+direction instead of needing to stay axis-aligned — a backward or stacked
+connection now reads as a normal curved line, not a routing glitch. Auto
+Layout's ordinary forward connections look effectively unchanged.
+
+## What's new (v0.14.0 — Graph Interaction Evaluation & Polish)
+
+The Story Graph was feature-complete going into this sprint, so this was an
+evaluation-and-polish pass, not a new-features sprint: every interaction
+category below was inspected against what already existed, and only the
+categories that felt incomplete or inconsistent got changed.
+
+**Node dragging, drag responsiveness, drop predictability, zoom, and pan —
+already production-ready, untouched.** Scene and frame dragging both track
+the cursor 1:1 every pointer-move (the fix from Sprint 8A's original pass,
+v0.10.2–v0.10.6), Frame-drop detection is a predictable center-point test,
+and zoom/pan use React Flow's own well-tested defaults. Nothing here needed
+changing, so nothing was changed.
+
+**Lift state — frames now get the same "picked up" treatment scenes
+already had.** A dragged scene has always lifted with an accent border and
+a soft shadow; a dragged frame only got a generic drop-shadow, which read
+as an unfinished version of the same idea. Frames now also pick up an
+accent border and fill while dragging — deliberately without the scene's
+`scale(1.05)`, since a frame's scenes are independent nodes, not real DOM
+children, so scaling the frame box alone would visually disagree with
+where its scenes actually sit.
+
+**Selection feedback — a selected frame is now visible, not just its
+resize handles.** A selected scene has always shown a full accent border;
+a selected frame previously showed only its (small, easy-to-miss) resize
+handles, with the frame box itself looking identical to an unselected one.
+Selected frames now get the same accent border scenes do.
+
+**Hover feedback — frames now hover like scenes do.** Scene cards have
+always brightened slightly on hover; frames had no hover feedback at all.
+Frames now match.
+
+**Edge behaviour — edges connected to the selected scene are now
+highlighted.** Every edge used to render identically regardless of any
+interaction, unlike a professional graph tool where selecting a node shows
+what it connects to. Edges touching the selected scene now render bolder
+and in the accent colour; this only re-styles the existing edges (a cheap
+pass, not a re-walk of every scene's document) and doesn't add clickability
+or a new interaction model — edges stay non-interactive, per the graph's
+existing non-destructive design.
+
+**Cursor feedback — fixed a real inconsistency.** The Frame node's title
+input and delete button were inheriting the frame's "grab" cursor from
+their parent, so hovering them showed a hand instead of a text-caret or
+pointer — misleading, since those two elements don't drag the frame.
+Fixed with explicit cursor styles on each. The delete button's hover color
+was also still a hardcoded red left over from before the Minimal redesign;
+it now reads `--danger`, like every other destructive action in the app.
+
+Verified with `tsc --noEmit`, a production build, and a bundle grep
+confirming the new classes and edge-highlight logic are present.
 
 ## What's new (v0.13.0 — Real Logo)
 

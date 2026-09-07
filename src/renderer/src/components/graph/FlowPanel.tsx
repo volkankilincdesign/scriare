@@ -58,6 +58,23 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   const [frameDrag, setFrameDrag] = useState<FrameDragOffset | null>(null);
   const [sceneDrag, setSceneDrag] = useState<SceneDragOffset | null>(null);
 
+  // Frame selection lives in the same kind of app-owned state as everything
+  // else this graph tracks (frameDrag, sceneDrag, measuredSizeRef) — not in
+  // React Flow's own built-in click-to-select. That's not a style choice,
+  // it's required: React Flow's internal `selected` flag only survives from
+  // one render to the next if it's fed back into the controlled `nodes`
+  // array (the same "controlled prop must carry forward what React Flow
+  // reported" rule `measuredSizeRef` exists for — see that comment above).
+  // This app's `onNodesChange` only ever handles `dimensions`-type changes;
+  // a `select`-type change from clicking a node was silently dropped, so a
+  // frame's internal `selected` flag reset to false on the very next
+  // `nodes` memo recompute — meaning a frame could never actually stay
+  // selected long enough for `isVisible={selected}` (NodeResizer) or
+  // v0.14.0's `selected`-driven accent border to ever show. Scenes never hit
+  // this because scene "selection" was always its own explicit app concept
+  // (`selectedSceneId`), never React Flow's internal one.
+  const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
+
   // Root cause of the "drag freezes/goes blank after ~1s" bug (confirmed via
   // React Flow's own console warning, error015 — "trying to drag a node that
   // is not initialized... use onNodesChange"): this app never wired up
@@ -166,7 +183,13 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     return new Map(project.scenes.map((scene) => [scene.id, extractChoices(scene.content).length]));
   }, [project]);
 
-  const edges = useMemo<Edge[]>(() => {
+  // Kept keyed on `project` alone, deliberately not on `selectedSceneId` —
+  // this is the same expensive-per-scene extractChoices() walk the v0.10.3
+  // pitfall exists to warn about, so it must only rerun when a scene's
+  // content actually changes, never on a plain click. The lightweight
+  // selection-highlight styling below is a separate, cheap memo layered on
+  // top instead.
+  const edgesBase = useMemo<Edge[]>(() => {
     if (!project) return [];
     return project.scenes.flatMap((scene) =>
       extractChoices(scene.content)
@@ -175,15 +198,50 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
           id: `${scene.id}-${choice.id}`,
           source: scene.id,
           target: choice.targetSceneId as string,
-          type: "smoothstep",
-          pathOptions: { borderRadius: 8 },
+          // Bezier ("default"), not "smoothstep" — investigated as part of
+          // the frame-interaction pass below. SceneNode's handles are fixed
+          // to Right (source) / Left (target) for Auto Layout's normal
+          // left-to-right flow, but a scene dragged freely inside a frame
+          // (or anywhere off the auto-layout grid) very often ends up
+          // *behind* or *below* the scene it connects to rather than neatly
+          // to its right. `smoothstep`'s routing has to stay axis-aligned,
+          // so a "backward" connection like that forces it into a hard
+          // right-angle loop — step right, double back, step left again —
+          // which is exactly the tangled loop that showed up once frames
+          // made tight, non-linear scene clusters common. A bezier curve
+          // has no such constraint: from the same fixed handles it bows
+          // smoothly toward the target from any relative direction, so a
+          // backward or stacked connection reads as a graceful cable, not a
+          // routing glitch — closer to the Blueprint-style wires the frame
+          // grouping is deliberately going for. Auto-layout's ordinary
+          // forward connections look effectively identical either way.
+          type: "default",
           label: choice.text || undefined,
-          style: { stroke: "var(--border-faint)", strokeWidth: 1.6 },
           labelStyle: { fill: "var(--text-2)", fontSize: 11 },
           labelBgStyle: { fill: "var(--surface)" },
         })),
     );
   }, [project]);
+
+  // Edges connected to the selected scene read as part of what's selected,
+  // not just the node itself — matching how a selected scene already gets
+  // an accent border. This is purely a style pass over the small edges
+  // array (never a re-walk of scene content), so clicking between scenes
+  // stays as cheap as it already was.
+  const edges = useMemo<Edge[]>(() => {
+    return edgesBase.map((edge) => {
+      const isConnectedToSelected =
+        !!selectedSceneId && (edge.source === selectedSceneId || edge.target === selectedSceneId);
+      return {
+        ...edge,
+        style: {
+          stroke: isConnectedToSelected ? "var(--accent)" : "var(--border-faint)",
+          strokeWidth: isConnectedToSelected ? 2.2 : 1.6,
+        },
+        zIndex: isConnectedToSelected ? 1 : 0,
+      };
+    });
+  }, [edgesBase, selectedSceneId]);
 
   // Positions (and the two data fields that come along for free —
   // choiceCount looked up from the memo above, not recomputed) DO need to
@@ -205,6 +263,10 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
         position,
         style: { width: frame.size.width, height: frame.size.height, zIndex: 0 },
         data: { title: frame.title },
+        // Fed back in every recompute, same reasoning as `measured` below —
+        // see `selectedFrameId`'s own declaration comment for why this is
+        // required, not optional, for a frame to ever show as selected.
+        selected: frame.id === selectedFrameId,
         zIndex: 0,
         // Carries the node's last-known real DOM size across drag-frame
         // recomputes — see the `measuredSizeRef` comment above.
@@ -241,15 +303,32 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     // purely so a change to it (see its own comment above) forces this memo
     // to recompute and re-read `measuredSizeRef.current`, which the
     // computation above does use.
-  }, [project, selectedSceneId, frameDrag, sceneDrag, choiceCountByScene, measuredVersion]);
+  }, [project, selectedSceneId, selectedFrameId, frameDrag, sceneDrag, choiceCountByScene, measuredVersion]);
 
   const handleNodeClick: NodeMouseHandler = (_event, node) => {
-    if (node.type === "scene") selectScene(node.id);
+    if (node.type === "scene") {
+      selectScene(node.id);
+      setSelectedFrameId(null);
+    } else if (node.type === "frame") {
+      setSelectedFrameId(node.id);
+    }
+  };
+
+  // Clicking empty canvas deselects a frame — there's no equivalent native
+  // React Flow behaviour to fall back on here, since (per `selectedFrameId`'s
+  // own comment) frame selection is entirely this app's own state.
+  const handlePaneClick = (): void => {
+    setSelectedFrameId(null);
   };
 
   const handleNodeDragStart: OnNodeDrag = (_event, node) => {
     if (node.type === "frame") {
       setFrameDrag({ frameId: node.id, origin: { ...node.position }, dx: 0, dy: 0 });
+      // Grabbing a frame to move it is also a reasonable way to select it —
+      // matches how clicking one already selects it, and means a frame's
+      // resize handles are available immediately after a drag without a
+      // separate click first.
+      setSelectedFrameId(node.id);
     } else if (node.type === "scene" && project) {
       // Mirrors the frame branch above exactly: an unconditional setState on
       // every drag frame is what makes the node visually track the cursor at
@@ -377,6 +456,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
                 flowInstanceRef.current = instance;
               }}
               onNodeClick={handleNodeClick}
+              onPaneClick={handlePaneClick}
               onNodesChange={handleNodesChange}
               onNodeDragStart={handleNodeDragStart}
               onNodeDrag={handleNodeDrag}

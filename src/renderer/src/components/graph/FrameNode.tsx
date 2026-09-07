@@ -31,7 +31,21 @@ export function FrameNode({ id, data, selected }: NodeProps) {
     // this node's own `.react-flow__node` wrapper directly via the DOM
     // while a scene is dragged over it (see FlowPanel's `setFrameHighlight`
     // for why that's imperative DOM manipulation rather than React state).
-    <div className="scriare-frame-box h-full w-full rounded-lg border-2 border-dashed border-[var(--border)] bg-[var(--surface-2-faint)] transition-colors duration-150">
+    // As of Sprint 8A's polish pass, it also carries a hover treatment
+    // (mirroring SceneNode's own hover border) and a `selected`-driven
+    // accent border — previously a selected frame was distinguishable only
+    // by its (small, easy-to-miss) resize handles, unlike a selected scene,
+    // which gets a full accent border. Both read from the same `--accent`/
+    // `--border-faint` tokens SceneNode already uses, so there's no new
+    // visual language introduced, just applied consistently to both node
+    // types.
+    <div
+      className={`scriare-frame-box h-full w-full rounded-lg border-2 border-dashed bg-[var(--surface-2-faint)] transition-colors duration-150 ${
+        selected
+          ? "border-[var(--accent)]"
+          : "border-[var(--border)] hover:border-[var(--border-faint)]"
+      }`}
+    >
       <NodeResizer
         minWidth={FRAME_MIN_WIDTH}
         minHeight={FRAME_MIN_HEIGHT}
@@ -53,13 +67,13 @@ export function FrameNode({ id, data, selected }: NodeProps) {
           onChange={(e) => renameFrame(id, e.target.value)}
           onMouseDown={(e) => e.stopPropagation()}
           placeholder="Frame title"
-          className="min-w-0 flex-1 bg-transparent text-xs font-semibold uppercase tracking-wide text-[var(--text-2)] outline-none placeholder:text-[var(--text-3)]"
+          className="min-w-0 flex-1 cursor-text bg-transparent text-xs font-semibold uppercase tracking-wide text-[var(--text-2)] outline-none placeholder:text-[var(--text-3)]"
         />
         <button
           type="button"
           onMouseDown={(e) => e.stopPropagation()}
           onClick={handleDelete}
-          className="shrink-0 rounded px-1 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-red-400"
+          className="shrink-0 cursor-pointer rounded px-1 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
           title="Delete frame"
         >
           ✕
