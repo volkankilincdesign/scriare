@@ -51,6 +51,14 @@ export function ChoiceBlockView({ node, updateAttributes, deleteNode, selected }
         <span>Choice</span>
       </div>
 
+      {/* Sprint 8C visual-consistency fix (v0.18.0): both destructive
+          buttons below previously hovered to a hardcoded `text-red-400`
+          instead of the theme's `--danger` token — the same class of gap
+          the v0.12.0/v0.14.0 fixes already closed for FrameNode's delete
+          button and ConfirmDialogHost's destructive-confirm button, just
+          missed here. Fixed so a Light-mode/future-theme change to
+          `--danger` reaches every destructive hover in the app uniformly,
+          not just the ones that happened to get updated at the time. */}
       <div className="space-y-1.5">
         {options.map((option, index) => (
           <div key={option.id} className="flex items-center gap-1.5">
@@ -96,7 +104,7 @@ export function ChoiceBlockView({ node, updateAttributes, deleteNode, selected }
               type="button"
               onClick={() => removeOption(index)}
               title="Remove this option"
-              className="shrink-0 rounded px-1.5 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-red-400"
+              className="shrink-0 rounded px-1.5 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
             >
               ✕
             </button>
@@ -116,7 +124,7 @@ export function ChoiceBlockView({ node, updateAttributes, deleteNode, selected }
           type="button"
           onClick={deleteNode}
           title="Remove this entire Choice Block"
-          className="rounded px-1.5 py-0.5 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-red-400"
+          className="rounded px-1.5 py-0.5 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
         >
           Remove block
         </button>

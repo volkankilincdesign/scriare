@@ -1,4 +1,16 @@
-# Scriare — v0.17.0 — Story Graph Interaction Feel (Sprint 8B)
+# Scriare — v0.18.0 — Desktop Identity & Workspace Polish (Sprint 8C)
+
+## What's new (v0.18.0 — Desktop Identity & Workspace Polish, Sprint 8C)
+
+Sprint 8C evaluated Scriare as a complete desktop product — not the editor, graph, or runtime, all of which Sprints 8A/8B already covered — with the goal of the app never reading as "Electron" to whoever's running it. No new editor/graph/runtime functionality.
+
+**The app no longer shows Electron's own default branding anywhere.** Electron builds a default native menu when you don't supply your own — on macOS that menu's first entry literally reads "Electron", and its Help submenu links out to Electron's own website, docs, and Discord, regardless of platform. Both are gone: macOS now gets a minimal three-item menu (App/Edit/Window, using Scriare's own name and just enough to keep Cmd+C/V/Quit/minimize working), and Windows/Linux — where the menu bar is already auto-hidden but Alt still revealed it — no longer has an application menu at all. `app.setName("Scriare")` is now called explicitly (package.json's lowercase "scriare" was otherwise what every native surface read), the macOS About panel now shows Scriare's real name/version/copyright instead of Electron's defaults, and the window's background-flash colour (shown for an instant before the page paints) was updated to match the current Dark theme — it had been left over from the very first theme system (Crimson Noir, replaced back in v0.12.0) and no longer matched.
+
+**Two leftover hardcoded destructive-hover colours were brought in line with the rest of the app.** A Choice Block's two "remove" buttons and the Content Browser's right-click "Delete" item were still using a hardcoded red instead of the `--danger` theme token every other destructive affordance (FrameNode's delete button, the confirm-delete dialog) already reads — missed during the v0.12.0/v0.14.0 passes that fixed the others.
+
+**The Story Graph panel's visible label now reads "Story Graph"** instead of "Flow" — a leftover from before the app had real product-facing panel names, inconsistent with "Content" and "Scene Details" sitting right next to it.
+
+A full pass over spacing/padding/corner-radius/shadow conventions across every panel, dialog, and button, a review of panel resize/collapse/focus behavior, and a simulated end-to-end writing workflow (open → browse → write → link a choice → navigate the graph → return to the editor → play → save) turned up nothing else that needed changing — see the delivery notes for the full evaluation report, including what's deliberately left to actual app packaging (a real installer, a renamed executable, custom file/taskbar icons) rather than attempted here.
 
 ## What's new (v0.17.0 — Story Graph Interaction Feel, Sprint 8B)
 

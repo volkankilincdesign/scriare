@@ -587,14 +587,23 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
         // The whole collapsed bar is the click target to re-expand — matching
         // how the Content and Scene Details panels' collapsed strips already
         // work (click anywhere on the strip, not just the label).
+        // Sprint 8C naming-consistency fix (v0.18.0): this panel's visible
+        // label was "Flow" — a leftover from before the app had real
+        // product-facing panel names — while the other two dockable panels
+        // (Content, Scene Details) and every internal architecture-doc
+        // reference to this one already call it the "Story Graph". Renamed
+        // to match; purely a label change, no change to layout, state, or
+        // the `flow`/`FlowPanel` identifiers themselves (renaming those
+        // would ripple through prop names, storage keys, and this whole
+        // file for no user-visible benefit).
         <button
           type="button"
           onClick={onToggle}
-          title="Expand Flow"
+          title="Expand Story Graph"
           className="flex flex-1 items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-3)] hover:text-[var(--text)]"
         >
           <span aria-hidden>▴</span>
-          Flow
+          Story Graph
         </button>
       ) : (
         <div className="flex items-center justify-between px-3 py-2">
@@ -605,7 +614,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
             className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-3)] hover:text-[var(--text)]"
           >
             <span aria-hidden>▾</span>
-            Flow
+            Story Graph
           </button>
 
           {project && (

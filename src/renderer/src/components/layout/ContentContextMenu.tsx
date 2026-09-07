@@ -50,8 +50,13 @@ export function ContentContextMenu({ x, y, items, onClose }: ContentContextMenuP
             item.onSelect();
             onClose();
           }}
+          // Sprint 8C visual-consistency fix (v0.18.0): matches the same
+          // hardcoded-red-to-`--danger` fix applied to ChoiceBlockView's two
+          // destructive buttons — a right-click menu's "Delete" item is the
+          // same kind of destructive affordance ConfirmDialogHost/FrameNode
+          // already read the theme token for.
           className={`block w-full px-3 py-1.5 text-left text-sm hover:bg-[var(--surface-2)] ${
-            item.danger ? "text-red-400" : "text-[var(--text)]"
+            item.danger ? "text-[var(--danger)]" : "text-[var(--text)]"
           }`}
         >
           {item.label}
