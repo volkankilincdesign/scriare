@@ -4,16 +4,28 @@ import { useProjectStore } from "../../state/projectStore";
 import { confirmDialog } from "../../state/confirmDialogStore";
 import { FRAME_MIN_HEIGHT, FRAME_MIN_WIDTH } from "../../utils/graphConstants";
 
+interface FrameRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 interface FrameNodeData {
   title: string;
+  // Threaded down from FlowPanel's `nodes` memo rather than read from the
+  // store directly (unlike `renameFrame`/`deleteFrame` below) — see the
+  // `data.onResize`/`data.onResizeEnd` comment in FlowPanel.tsx for why the
+  // live resize overlay these drive has to live there, not here.
+  onResize?: (rect: FrameRect) => void;
+  onResizeEnd?: (rect: FrameRect) => void;
   [key: string]: unknown;
 }
 
 export function FrameNode({ id, data, selected }: NodeProps) {
-  const { title } = data as FrameNodeData;
+  const { title, onResize, onResizeEnd } = data as FrameNodeData;
   const renameFrame = useProjectStore((s) => s.renameFrame);
   const deleteFrame = useProjectStore((s) => s.deleteFrame);
-  const updateFrameRect = useProjectStore((s) => s.updateFrameRect);
 
   async function handleDelete(): Promise<void> {
     const confirmed = await confirmDialog({
@@ -52,13 +64,15 @@ export function FrameNode({ id, data, selected }: NodeProps) {
         isVisible={selected}
         lineClassName="!border-[var(--accent)]"
         handleClassName="!h-2.5 !w-2.5 !rounded-sm !border-[var(--accent)] !bg-[var(--bg)]"
+        // `onResize` fires on every drag tick (live) — feeding it up to
+        // FlowPanel's `frameResize` overlay is what makes the box actually
+        // track the cursor continuously instead of only settling into place
+        // on release. `onResizeEnd` is the actual commit to the project.
+        onResize={(_event, params) => {
+          onResize?.({ x: params.x, y: params.y, width: params.width, height: params.height });
+        }}
         onResizeEnd={(_event, params) => {
-          updateFrameRect(id, {
-            x: params.x,
-            y: params.y,
-            width: params.width,
-            height: params.height,
-          });
+          onResizeEnd?.({ x: params.x, y: params.y, width: params.width, height: params.height });
         }}
       />
       <div className="flex items-center gap-1.5 rounded-t-md bg-[var(--surface-translucent)] px-2 py-1">

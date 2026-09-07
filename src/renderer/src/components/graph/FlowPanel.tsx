@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { ReactFlow, Background, Controls, MiniMap } from "@xyflow/react";
+import { ReactFlow, Background, Controls, MiniMap, SelectionMode } from "@xyflow/react";
 import type {
   Node,
   Edge,
@@ -29,18 +29,33 @@ const nodeTypes: NodeTypes = {
   frame: FrameNode,
 };
 
-interface FrameDragOffset {
-  frameId: string;
+/** Live drag offset for a single node — its position at drag-start plus the
+ * current cursor-driven delta. Originally this was one object per drag
+ * (`frameId`/`sceneId` + a single `dx`/`dy`), which only ever tracked the
+ * one node the pointer grabbed. That silently broke *multi*-selection drags
+ * (bug reported right after v0.15.0): React Flow moves every selected node
+ * together and reports the whole group as the third argument to
+ * `onNodeDrag`/`onNodeDragStop` (`nodes`, not just the single `node` these
+ * handlers also receive) — but with a single-id offset, only the grabbed
+ * node's position ever got a live offset applied in the `nodes` memo below,
+ * so the rest of the selection visually stayed put while the store's
+ * eventual commit (also single-id) never touched them either. Generalizing
+ * this into a per-id map, keyed by every node actually reported in that
+ * `nodes` array, is what makes a multi-node selection move as one group. */
+interface DragOffset {
   origin: { x: number; y: number };
   dx: number;
   dy: number;
 }
 
-interface SceneDragOffset {
-  sceneId: string;
-  origin: { x: number; y: number };
-  dx: number;
-  dy: number;
+/** A frame's in-progress size/position while `NodeResizer` is being dragged —
+ * see the `frameResize` state declaration below for why this exists. */
+interface FrameResizeOverlay {
+  frameId: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps) {
@@ -49,31 +64,61 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   const selectScene = useProjectStore((s) => s.selectScene);
   const updateScenePosition = useProjectStore((s) => s.updateScenePosition);
   const updateFramePosition = useProjectStore((s) => s.updateFramePosition);
+  const updateFrameRect = useProjectStore((s) => s.updateFrameRect);
   const autoLayoutScenes = useProjectStore((s) => s.autoLayoutScenes);
   const addFrame = useProjectStore((s) => s.addFrame);
 
   const flowInstanceRef = useRef<ReactFlowInstance | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const hoverFrameIdRef = useRef<string | null>(null);
-  const [frameDrag, setFrameDrag] = useState<FrameDragOffset | null>(null);
-  const [sceneDrag, setSceneDrag] = useState<SceneDragOffset | null>(null);
+  // Map<nodeId, DragOffset> rather than a single offset — see `DragOffset`'s
+  // own comment above for why this has to cover every node being dragged
+  // together, not just the one the pointer grabbed.
+  const [frameDrag, setFrameDrag] = useState<Map<string, DragOffset> | null>(null);
+  const [sceneDrag, setSceneDrag] = useState<Map<string, DragOffset> | null>(null);
 
-  // Frame selection lives in the same kind of app-owned state as everything
-  // else this graph tracks (frameDrag, sceneDrag, measuredSizeRef) — not in
-  // React Flow's own built-in click-to-select. That's not a style choice,
-  // it's required: React Flow's internal `selected` flag only survives from
-  // one render to the next if it's fed back into the controlled `nodes`
-  // array (the same "controlled prop must carry forward what React Flow
-  // reported" rule `measuredSizeRef` exists for — see that comment above).
-  // This app's `onNodesChange` only ever handles `dimensions`-type changes;
-  // a `select`-type change from clicking a node was silently dropped, so a
-  // frame's internal `selected` flag reset to false on the very next
-  // `nodes` memo recompute — meaning a frame could never actually stay
-  // selected long enough for `isVisible={selected}` (NodeResizer) or
-  // v0.14.0's `selected`-driven accent border to ever show. Scenes never hit
-  // this because scene "selection" was always its own explicit app concept
-  // (`selectedSceneId`), never React Flow's internal one.
-  const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
+  // Graph selection (which nodes — scenes *and* frames — currently show a
+  // selected/highlighted state) lives in this app-owned Set, fed back into
+  // every node object below, for the same reason `measuredSizeRef` and
+  // `frameDrag`/`sceneDrag` do: anything React Flow tracks internally that
+  // isn't explicitly carried forward through the controlled `nodes` array
+  // gets silently reset on the very next unrelated recompute (this app's
+  // `nodes` memo rebuilds fresh node objects extremely often — every drag
+  // frame, every measured-size update). v0.14.2 first discovered this for a
+  // single selected Frame; Sprint 8B's nav-model pass (right-click-to-pan,
+  // left-drag-to-box-select, Ctrl+click to add/remove) generalizes the same
+  // fix to *every* node and to multi-selection, rather than hand-rolling
+  // click/box-select/Ctrl-click logic ourselves: React Flow already
+  // implements all of that natively (native click selects just that node,
+  // Ctrl+click toggles one node without touching the rest, a drag-select
+  // rectangle selects everything it touches, clicking the pane or pressing
+  // Escape clears it) and reports every one of those as `select`-type
+  // `NodeChange` events through `onNodesChange` — this app just needs to
+  // stop dropping them (see `handleNodesChange` below) and apply them here.
+  //
+  // This is deliberately a *separate* concept from `selectedSceneId`, which
+  // now means "the scene open in the Scene Editor," not "the scene last
+  // clicked in the graph" — see the Scene Editor focus comment on
+  // `handleNodeDoubleClick` below for why single-click and double-click
+  // needed to stop meaning the same thing.
+  const [selectedGraphIds, setSelectedGraphIds] = useState<Set<string>>(() => new Set());
+
+  // A Frame's in-progress size (and, when resizing from a top/left handle,
+  // its in-progress position) while the user is actively dragging one of
+  // `NodeResizer`'s handles — fed into the frame's node object below the
+  // same way `frameDrag`/`sceneDrag` feed in a live drag position. Without
+  // this, resizing looked like it "only updated after releasing the mouse":
+  // `NodeResizer` reports every in-progress tick as a `dimensions`-type
+  // `NodeChange` (already tracked below for `measuredSizeRef`), so resizing
+  // a frame forces this app's `nodes` memo to recompute mid-drag — and
+  // without `frameResize`, that recompute kept re-supplying the frame's
+  // OLD, not-yet-committed `frame.size` as its `style.width/height`, which
+  // is a *different* object each time, so React Flow adopted it as the new
+  // "real" size and snapped the box back — only for the very next resize
+  // tick to immediately drag it forward again. That fight between the live
+  // resize and this app's stale controlled size is what read as jittery/
+  // delayed-until-release, not any missing feature in `NodeResizer` itself.
+  const [frameResize, setFrameResize] = useState<FrameResizeOverlay | null>(null);
 
   // Root cause of the "drag freezes/goes blank after ~1s" bug (confirmed via
   // React Flow's own console warning, error015 — "trying to drag a node that
@@ -117,17 +162,29 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   const [measuredVersion, setMeasuredVersion] = useState(0);
 
   const handleNodesChange: OnNodesChange = (changes: NodeChange[]) => {
-    let changed = false;
+    let dimensionsChanged = false;
+    let nextSelected: Set<string> | null = null;
+
     for (const change of changes) {
       if (change.type === "dimensions" && change.dimensions) {
         const prev = measuredSizeRef.current.get(change.id);
         if (!prev || prev.width !== change.dimensions.width || prev.height !== change.dimensions.height) {
           measuredSizeRef.current.set(change.id, change.dimensions);
-          changed = true;
+          dimensionsChanged = true;
         }
+      } else if (change.type === "select") {
+        // Covers native click-select, Ctrl+click add/remove, the box-select
+        // rectangle, pane-click-to-deselect, and Escape — see the
+        // `selectedGraphIds` comment above for why this app has to apply
+        // these itself instead of letting React Flow track them internally.
+        if (!nextSelected) nextSelected = new Set(selectedGraphIds);
+        if (change.selected) nextSelected.add(change.id);
+        else nextSelected.delete(change.id);
       }
     }
-    if (changed) setMeasuredVersion((v) => v + 1);
+
+    if (dimensionsChanged) setMeasuredVersion((v) => v + 1);
+    if (nextSelected) setSelectedGraphIds(nextSelected);
   };
 
   /**
@@ -252,21 +309,56 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     if (!project) return [];
 
     const frameNodes: Node[] = project.frames.map((frame) => {
-      const isDragging = frameDrag?.frameId === frame.id;
-      const position = isDragging
-        ? { x: frame.position.x + frameDrag.dx, y: frame.position.y + frameDrag.dy }
-        : frame.position;
+      const dragOffset = frameDrag?.get(frame.id);
+      const isResizing = frameResize?.frameId === frame.id;
+      const position = dragOffset
+        ? { x: frame.position.x + dragOffset.dx, y: frame.position.y + dragOffset.dy }
+        : isResizing
+          ? { x: frameResize.x, y: frameResize.y }
+          : frame.position;
+      const size = isResizing ? { width: frameResize.width, height: frameResize.height } : frame.size;
 
       return {
         id: frame.id,
         type: "frame",
         position,
-        style: { width: frame.size.width, height: frame.size.height, zIndex: 0 },
-        data: { title: frame.title },
-        // Fed back in every recompute, same reasoning as `measured` below —
-        // see `selectedFrameId`'s own declaration comment for why this is
-        // required, not optional, for a frame to ever show as selected.
-        selected: frame.id === selectedFrameId,
+        style: { width: size.width, height: size.height, zIndex: 0 },
+        // Suppresses the node's own settle transition (see `.react-flow__node
+        // :not(.dragging):not(.scriare-resizing)` in index.css) only while
+        // this frame is being resized. That CSS transition exists so a
+        // *programmatic* position change (Auto Layout, a frame drag
+        // settling) eases into place — but resizing never gets React Flow's
+        // own `.dragging` class (that's drag-only), so without this, a
+        // top/left-handle resize (which moves `position`, not just
+        // width/height) had its position updates eased over 150ms while
+        // width/height applied instantly — the left/top edge visibly lagged
+        // behind the cursor while the opposite edge appeared to overshoot to
+        // compensate. Bottom/right-handle resizes never touch `position`, so
+        // they were never affected — which is exactly why only top/left felt
+        // wrong.
+        className: isResizing ? "scriare-resizing" : undefined,
+        data: {
+          title: frame.title,
+          // Threaded through `data` (rather than called straight from a
+          // store hook inside FrameNode, the way `renameFrame`/`deleteFrame`
+          // are) because the *live* overlay these drive — `frameResize` —
+          // has to live here in FlowPanel, alongside `frameDrag`/`sceneDrag`,
+          // not in FrameNode itself: FrameNode has no way to feed a value
+          // back into the `nodes` array its own node object comes from. See
+          // `frameResize`'s declaration comment for why the overlay itself
+          // is necessary.
+          onResize: (rect: { x: number; y: number; width: number; height: number }) => {
+            setFrameResize({ frameId: frame.id, ...rect });
+          },
+          onResizeEnd: (rect: { x: number; y: number; width: number; height: number }) => {
+            updateFrameRect(frame.id, rect);
+            setFrameResize(null);
+          },
+        },
+        // Fed back in every recompute — see `selectedGraphIds`'s own
+        // declaration comment for why this is required, not optional, for a
+        // frame to ever show as selected (accent border, resize handles).
+        selected: selectedGraphIds.has(frame.id),
         zIndex: 0,
         // Carries the node's last-known real DOM size across drag-frame
         // recomputes — see the `measuredSizeRef` comment above.
@@ -275,12 +367,19 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     });
 
     const sceneNodes: Node[] = project.scenes.map((scene) => {
-      const inDraggingFrame = scene.frameId && frameDrag?.frameId === scene.frameId;
-      const isDraggingThis = sceneDrag?.sceneId === scene.id;
-      const position = inDraggingFrame
-        ? { x: scene.position.x + frameDrag.dx, y: scene.position.y + frameDrag.dy }
-        : isDraggingThis
-          ? { x: scene.position.x + sceneDrag.dx, y: scene.position.y + sceneDrag.dy }
+      // A scene whose containing Frame is *also* being dragged takes the
+      // frame's offset, same precedence the store's own `updateFramePosition`
+      // commit uses (see `handleNodeDragStop`) — a contained scene that
+      // isn't itself part of the selection still has to ride along with its
+      // frame, and one that IS also directly selected/dragged already gets
+      // carried correctly by the frame's motion, so applying its own
+      // (redundant) offset on top would double it.
+      const frameOffset = scene.frameId ? frameDrag?.get(scene.frameId) : undefined;
+      const sceneOffset = sceneDrag?.get(scene.id);
+      const position = frameOffset
+        ? { x: scene.position.x + frameOffset.dx, y: scene.position.y + frameOffset.dy }
+        : sceneOffset
+          ? { x: scene.position.x + sceneOffset.dx, y: scene.position.y + sceneOffset.dy }
           : scene.position;
 
       return {
@@ -290,9 +389,18 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
         data: {
           label: scene.title || "Untitled scene",
           choiceCount: choiceCountByScene.get(scene.id) ?? 0,
+          // "Open in the Scene Editor" (thicker accent border + fill) —
+          // unchanged meaning, but no longer set by a single click; see
+          // `handleNodeDoubleClick` below.
           isActive: scene.id === selectedSceneId,
           isStart: scene.id === project.startSceneId,
         },
+        // Fed back in every recompute for the same reason a frame's
+        // `selected` is — see `selectedGraphIds`. Scenes never carried this
+        // field before Sprint 8B, so a scene could never show a "selected in
+        // the graph, but not open in the editor" state at all, nor could it
+        // ever visibly participate in Ctrl+click or box-select.
+        selected: selectedGraphIds.has(scene.id),
         zIndex: 1,
         measured: measuredSizeRef.current.get(scene.id),
       };
@@ -303,82 +411,138 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     // purely so a change to it (see its own comment above) forces this memo
     // to recompute and re-read `measuredSizeRef.current`, which the
     // computation above does use.
-  }, [project, selectedSceneId, selectedFrameId, frameDrag, sceneDrag, choiceCountByScene, measuredVersion]);
+  }, [
+    project,
+    selectedSceneId,
+    selectedGraphIds,
+    frameDrag,
+    sceneDrag,
+    frameResize,
+    choiceCountByScene,
+    measuredVersion,
+    updateFrameRect,
+  ]);
 
-  const handleNodeClick: NodeMouseHandler = (_event, node) => {
+  // Single click no longer opens a scene in the Scene Editor — it now only
+  // participates in graph selection (native React Flow click/Ctrl-click/
+  // box-select, applied via `handleNodesChange` above). A single click used
+  // to call `selectScene` directly, which meant just clicking a node to
+  // glance at or select it also blew away whatever you were mid-edit on in
+  // the Scene Editor — too aggressive for a spatial "select things" gesture.
+  // Opening a scene for editing is now its own explicit gesture instead:
+  // double-click. (Frames have no editor to focus, so double-click on one is
+  // a no-op — nothing else in this app currently wants it.)
+  const handleNodeDoubleClick: NodeMouseHandler = (_event, node) => {
     if (node.type === "scene") {
       selectScene(node.id);
-      setSelectedFrameId(null);
-    } else if (node.type === "frame") {
-      setSelectedFrameId(node.id);
     }
   };
 
-  // Clicking empty canvas deselects a frame — there's no equivalent native
-  // React Flow behaviour to fall back on here, since (per `selectedFrameId`'s
-  // own comment) frame selection is entirely this app's own state.
-  const handlePaneClick = (): void => {
-    setSelectedFrameId(null);
-  };
+  // All three handlers below read their THIRD argument, `nodes` — not just
+  // the single `node` React Flow reports as "the one the pointer grabbed" —
+  // because a multi-selection drags as a group: React Flow moves every
+  // selected node together and reports the whole set there. Building a
+  // per-id offset for everything in that array (rather than only for
+  // `node`) is what makes Ctrl+click/box-select multi-selections actually
+  // move together instead of only the grabbed node responding.
+  const handleNodeDragStart: OnNodeDrag = (_event, node, nodes) => {
+    const frameMap = new Map<string, DragOffset>();
+    const sceneMap = new Map<string, DragOffset>();
+    for (const n of nodes) {
+      if (n.type === "frame") {
+        frameMap.set(n.id, { origin: { ...n.position }, dx: 0, dy: 0 });
+      } else if (n.type === "scene") {
+        sceneMap.set(n.id, { origin: { ...n.position }, dx: 0, dy: 0 });
+      }
+    }
+    // No manual selection call needed here: React Flow's default
+    // `selectNodesOnDrag` already selects a node the moment you start
+    // dragging it (the same `select`-type `NodeChange` `handleNodesChange`
+    // now applies generally — see `selectedGraphIds`), so grabbing a frame
+    // to move it already selects it, meaning its resize handles are
+    // available immediately after a drag without a separate click first.
+    setFrameDrag(frameMap.size > 0 ? frameMap : null);
+    // Mirrors the frame branch above: an unconditional setState on every
+    // drag frame is what makes a node visually track the cursor at all.
+    // React Flow's own internal drag tracking only repaints a node when
+    // something calls `onNodesChange` (never wired up in this app) or when
+    // the *store* itself is told to update — neither happens on its own
+    // here, so without this, `internals.positionAbsolute` is computed once
+    // at drag-start and then never touched again until drop, which is
+    // exactly the "sits in place while you drag" symptom. Feeding a live
+    // dx/dy into each dragged node's fed-in `position` (below, in the nodes
+    // memo) forces a real re-render every pointer-move, and — critically —
+    // the position we feed in always equals where the cursor already put
+    // the node, so `adoptUserNodes` has nothing stale to reset it to.
+    setSceneDrag(sceneMap.size > 0 ? sceneMap : null);
 
-  const handleNodeDragStart: OnNodeDrag = (_event, node) => {
-    if (node.type === "frame") {
-      setFrameDrag({ frameId: node.id, origin: { ...node.position }, dx: 0, dy: 0 });
-      // Grabbing a frame to move it is also a reasonable way to select it —
-      // matches how clicking one already selects it, and means a frame's
-      // resize handles are available immediately after a drag without a
-      // separate click first.
-      setSelectedFrameId(node.id);
-    } else if (node.type === "scene" && project) {
-      // Mirrors the frame branch above exactly: an unconditional setState on
-      // every drag frame is what makes the node visually track the cursor at
-      // all. React Flow's own internal drag tracking only repaints a node
-      // when something calls `onNodesChange` (never wired up in this app) or
-      // when the *store* itself is told to update — neither happens on its
-      // own here, so without this, `internals.positionAbsolute` is computed
-      // once at drag-start and then never touched again until drop, which is
-      // exactly the "sits in place while you drag" symptom. Feeding a live
-      // dx/dy into the scene's fed-in `position` (below, in the nodes memo)
-      // forces a real re-render every pointer-move, and — critically — the
-      // position we feed in always equals where the cursor already put the
-      // node, so `adoptUserNodes` has nothing stale to reset it to.
-      setSceneDrag({ sceneId: node.id, origin: { ...node.position }, dx: 0, dy: 0 });
+    if (node.type === "scene" && project) {
       setFrameHighlight(findContainingFrame(project.frames, node.position)?.id ?? null);
     }
   };
 
-  const handleNodeDrag: OnNodeDrag = (_event, node) => {
-    if (node.type === "frame") {
-      setFrameDrag((prev) => {
-        if (!prev || prev.frameId !== node.id) return prev;
-        return {
-          ...prev,
-          dx: node.position.x - prev.origin.x,
-          dy: node.position.y - prev.origin.y,
-        };
-      });
-    } else if (node.type === "scene" && project) {
-      setSceneDrag((prev) => {
-        if (!prev || prev.sceneId !== node.id) return prev;
-        return {
-          ...prev,
-          dx: node.position.x - prev.origin.x,
-          dy: node.position.y - prev.origin.y,
-        };
-      });
+  const handleNodeDrag: OnNodeDrag = (_event, node, nodes) => {
+    setFrameDrag((prev) => {
+      if (!prev) return prev;
+      const next = new Map(prev);
+      let changed = false;
+      for (const n of nodes) {
+        const entry = n.type === "frame" ? next.get(n.id) : undefined;
+        if (!entry) continue;
+        const dx = n.position.x - entry.origin.x;
+        const dy = n.position.y - entry.origin.y;
+        if (dx !== entry.dx || dy !== entry.dy) {
+          next.set(n.id, { ...entry, dx, dy });
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+
+    setSceneDrag((prev) => {
+      if (!prev) return prev;
+      const next = new Map(prev);
+      let changed = false;
+      for (const n of nodes) {
+        const entry = n.type === "scene" ? next.get(n.id) : undefined;
+        if (!entry) continue;
+        const dx = n.position.x - entry.origin.x;
+        const dy = n.position.y - entry.origin.y;
+        if (dx !== entry.dx || dy !== entry.dy) {
+          next.set(n.id, { ...entry, dx, dy });
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+
+    if (node.type === "scene" && project) {
       setFrameHighlight(findContainingFrame(project.frames, node.position)?.id ?? null);
     }
   };
 
-  const handleNodeDragStop: OnNodeDrag = (_event, node) => {
-    if (node.type === "frame") {
-      updateFramePosition(node.id, node.position);
-      setFrameDrag(null);
-    } else if (node.type === "scene") {
-      updateScenePosition(node.id, node.position);
-      setSceneDrag(null);
-      setFrameHighlight(null);
+  const handleNodeDragStop: OnNodeDrag = (_event, node, nodes) => {
+    const draggedFrameIds = new Set(nodes.filter((n) => n.type === "frame").map((n) => n.id));
+
+    for (const n of nodes) {
+      if (n.type === "frame") updateFramePosition(n.id, n.position);
     }
+    for (const n of nodes) {
+      if (n.type !== "scene") continue;
+      const scene = project?.scenes.find((s) => s.id === n.id);
+      // A scene whose containing frame is *also* being dragged in this same
+      // gesture already gets carried along by `updateFramePosition` above
+      // (it shifts every scene sharing that `frameId`) — committing this
+      // scene's own position on top of that would double-apply the frame's
+      // motion. See the matching comment on `frameOffset`/`sceneOffset` in
+      // the `nodes` memo, which mirrors this same precedence while dragging.
+      if (scene?.frameId && draggedFrameIds.has(scene.frameId)) continue;
+      updateScenePosition(n.id, n.position);
+    }
+
+    setFrameDrag(null);
+    setSceneDrag(null);
+    if (node.type === "scene") setFrameHighlight(null);
   };
 
   function handleAutoLayout(): void {
@@ -455,8 +619,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
               onInit={(instance) => {
                 flowInstanceRef.current = instance;
               }}
-              onNodeClick={handleNodeClick}
-              onPaneClick={handlePaneClick}
+              onNodeDoubleClick={handleNodeDoubleClick}
               onNodesChange={handleNodesChange}
               onNodeDragStart={handleNodeDragStart}
               onNodeDrag={handleNodeDrag}
@@ -470,7 +633,25 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
               maxZoom={1.5}
               fitView
               fitViewOptions={{ padding: 0.2, duration: 300 }}
-              selectionOnDrag={false}
+              // Nav model (Sprint 8B): right mouse button pans, left mouse
+              // button is reserved for selection — click a node to select
+              // it, Ctrl/Cmd+click to add or remove one from the selection
+              // (React Flow's own default, OS-aware `multiSelectionKeyCode`
+              // — left as the default rather than hardcoded to "Control" so
+              // it stays Cmd+click if this app is ever run on macOS), and a
+              // left-drag on empty canvas draws a selection rectangle
+              // instead of panning. `panOnDrag={[2]}` is what unlocks all of
+              // this: with it set, React Flow also automatically suppresses
+              // the browser's native right-click context menu on this
+              // canvas (see Pane's own onContextMenu handler) — nothing
+              // extra needed here for that. `selectionMode="Partial"` (a
+              // node only needs to be touched by the rectangle, not fully
+              // enclosed) matches how box-select feels in most modern
+              // creative/design tools and reads as more responsive than the
+              // library's own default ("Full" containment only).
+              panOnDrag={[2]}
+              selectionOnDrag
+              selectionMode={SelectionMode.Partial}
               nodeDragThreshold={2}
               proOptions={{ hideAttribution: true }}
             >

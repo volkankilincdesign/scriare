@@ -149,8 +149,36 @@ body {
   filter: drop-shadow(0 10px 20px var(--overlay));
 }
 
-.react-flow__node:not(.dragging) {
+.react-flow__node:not(.dragging):not(.scriare-resizing) {
   transition: transform 150ms ease;
+}
+
+/* `.scriare-resizing` (set on a Frame's node object only while its
+   NodeResizer handle is actively being dragged — see FlowPanel.tsx's
+   `frameResize` overlay) excludes it from the settle-transition above the
+   same way `.dragging` already does for plain node drags. NodeResizer never
+   gets React Flow's own `.dragging` class (that's drag-only, not resize), so
+   without this a top/left-handle resize — which moves the node's `position`,
+   not just its width/height — had that position change eased over 150ms
+   while width/height (a separate style, untouched by this transition)
+   applied instantly: the edge under the handle visibly lagged the cursor
+   while the opposite edge overshot to compensate. Bottom/right-handle
+   resizes never touch `position`, so they were never affected. */
+.react-flow__node.scriare-resizing {
+  transition: none;
+}
+
+/* The persistent bounding box React Flow draws around an already-completed
+   multi-selection (`NodesSelection`, distinct from `.react-flow__selection`,
+   the marquee drawn *while* box-selecting, which stays visible on purpose)
+   — reported as an unwanted "blue-ish rectangle hovering the nodes" once
+   individual node highlighting (SceneNode's selection ring, FrameNode's
+   accent border) already communicates the same thing per-node. Hiding its
+   fill/border is purely cosmetic: the element still exists and still
+   supports dragging the whole selection by that box, just invisibly. */
+.react-flow__nodesselection-rect {
+  background: transparent;
+  border: none;
 }
 
 .react-flow__edge-path {

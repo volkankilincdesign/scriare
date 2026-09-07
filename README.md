@@ -1,4 +1,14 @@
-# Scriare — v0.14.2 — Frame Selection Fix
+# Scriare — v0.15.1 — Story Graph Interaction Fixes
+
+## What's new (v0.15.1 — Story Graph Interaction Fixes)
+
+Three bugs reported right after v0.15.0's nav/resize/selection sprint, all fixed:
+
+**Multi-selected nodes now actually move together.** Selecting several scenes (via Ctrl+click or a box-select) and dragging one used to only move that one node — the rest of the selection stayed put even though it was correctly highlighted. React Flow reports every node in a group drag through a separate argument these handlers weren't reading yet; now every dragged node in the group gets its own live offset, so the whole selection moves as one.
+
+**The blue selection-bounding-box is gone.** After a multi-selection, React Flow was drawing a translucent rectangle around the whole group in addition to each node's own selection highlight (ring/accent border). Since individual node highlighting already shows what's selected, the group box's fill/border are now hidden — the box-select marquee you draw *while* dragging is untouched.
+
+**Frame resizing from a top or left handle now feels as smooth as the others.** Resizing from the bottom-right always felt right, but the top-left, top-right, and bottom-left handles had a subtle lag — the edge under the cursor seemed to lag behind while the opposite edge overshot to compensate. That was a CSS settle-transition (meant for smoothing programmatic moves like Auto Layout) firing during a live resize, easing the frame's position while its size updated instantly. Resizing now skips that transition, matching the mouse exactly on every handle.
 
 Scriare just got a full visual reset: a new black/white/gray theme system
 (Dark and Light, switchable in Project Settings) replaces the previous four
@@ -6,6 +16,51 @@ colourful palettes, and the app's own UI now defaults to Inter instead of
 Manrope. The rich text editor and Play Mode's own typography were
 deliberately left untouched — this redesign only changes the app's chrome,
 not how your writing looks or reads.
+
+## What's new (v0.15.0 — Story Graph Interaction Polish)
+
+This sprint didn't add any new Story Graph features — it went through the
+existing navigation, selection, and resize interactions end to end and
+brought them up to the standard of a professional creative desktop app.
+
+**Navigation now matches other node-based creative tools (Unreal's
+Blueprint editor, Blender, etc.):** right mouse button pans the canvas, left
+mouse button is reserved entirely for selecting things — click a node to
+select it, Ctrl (Cmd on macOS) + click to add or remove a node from the
+selection, and dragging on empty canvas now draws a selection rectangle
+instead of panning. Previously, left-drag panned the canvas and there was no
+way to box-select or build up a multi-selection at all.
+
+**Frame resizing is now genuinely live.** Dragging a Frame's resize handle
+used to only show the final size after letting go of the mouse — the frame
+would visually fight itself mid-drag because the in-progress size wasn't
+being fed back into what the graph was rendering. It now tracks the cursor
+continuously and settles exactly where you release it, no delay.
+
+**Clicking a scene no longer immediately swaps out what's open in the Scene
+Editor.** A single click now only selects the scene in the graph — useful
+for glancing at it, multi-selecting it, or picking it up to drag, without
+losing your place in whatever you were writing. Double-click a scene to open
+or focus it in the Scene Editor, same as before.
+
+**Selection itself is now solid everywhere it wasn't.** The Frame-selection
+bug fixed in v0.14.2 turned out to be one instance of a more general gap:
+neither scenes nor multi-selected nodes could actually hold onto a
+"selected" state either, for the same underlying reason. That's now fixed
+across the board — a scene picked up by Ctrl+click or a selection rectangle
+shows its own selection ring, distinct from the stronger border a scene gets
+when it's actually open in the editor, and Escape / clicking empty canvas
+reliably clears selection again.
+
+Reviewed and confirmed already working well, left unchanged: drag
+responsiveness and the "lift" effect while dragging, edge routing, hover
+states, the Frame drop-target highlight while dragging a scene over it,
+per-node cursor states (grab/grabbing), auto-scrolling near the canvas edge
+while dragging, Frame resize's minimum-size floor, and general zoom
+behaviour. The native Electron menu bar (File/Edit/View/Window/Help) is
+already set to auto-hide on Windows/Linux; folding it into Scriare's own
+toolbar everywhere (including macOS, which always shows a system menu bar)
+is a bigger, separate change and was intentionally left for a later sprint.
 
 ## What's new (v0.14.2 — Frame Selection Fix)
 
