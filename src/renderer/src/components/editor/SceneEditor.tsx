@@ -14,6 +14,8 @@ import { FontSize } from "../../extensions/FontSize";
 import { ChoiceBlock } from "../../extensions/ChoiceBlock";
 import { Callout } from "../../extensions/Callout";
 import { SlashCommand } from "../../extensions/SlashCommand";
+import { MarkerStyleSync } from "../../extensions/MarkerStyleSync";
+import { TextStyleCleanup } from "../../extensions/TextStyleCleanup";
 import { EditorToolbar } from "./EditorToolbar";
 import { READING_COLUMN_CLASS, READING_PROSE_CLASS } from "../../utils/readingColumn";
 
@@ -40,6 +42,8 @@ export function SceneEditor() {
       ChoiceBlock,
       Callout,
       SlashCommand,
+      MarkerStyleSync,
+      TextStyleCleanup,
     ],
     content: scene?.content,
     onUpdate: ({ editor }) => {

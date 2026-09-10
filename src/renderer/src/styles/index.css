@@ -44,6 +44,47 @@ body {
   color: var(--text-3);
 }
 
+/* Bullet/number markers otherwise render in Typography's fixed
+   --tw-prose-bullets/--tw-prose-counters colour, in the body font and
+   size, regardless of any colour/font/size applied to the list item's own
+   text — extensions/MarkerStyleSync.ts sets these three custom properties
+   on each <li> from that item's own first text run. Matched against
+   Typography's own `.prose ol > li::marker` selector shape (adding
+   .ProseMirror alongside .prose) so this reliably wins on specificity
+   rather than depending on stylesheet order. Deliberately not attempting
+   background-color here — `::marker` does not accept it per the CSS
+   spec, so no rule here can make one render. */
+.prose.ProseMirror ul > li::marker,
+.prose.ProseMirror ol > li::marker {
+  color: var(--marker-color, inherit);
+  font-family: var(--marker-font, inherit);
+  font-size: var(--marker-size, inherit);
+}
+
+/* Same class of bug as the marker rule above, on `<strong>`/`<code>`
+   instead of `::marker`: Typography hardcodes their colour too —
+   `.prose strong { color: var(--tw-prose-bold) }` and
+   `.prose code { color: var(--tw-prose-code) }` — as a DIRECT rule on that
+   exact element, not an inherited one. Tiptap nests marks with the colour
+   mark on the outside (`<span style="color:red"><strong>text</strong></span>`),
+   so normally a `<strong>` would just inherit red from its ancestor span —
+   but CSS never lets an inherited value compete with a rule that targets
+   the element itself, however low that rule's specificity is. So Bold (or
+   inline code) silently reverted any custom text colour to Typography's
+   fixed bold/code colour, even though the colour mark itself was still
+   correctly there in the document the whole time — reported as "making
+   colored text bold loses the color". `color: inherit` here makes
+   `<strong>`/`<code>` fall back to whatever colour context they're
+   actually nested in, same as any other plain inline text — the custom
+   colour when one's set, the paragraph's normal text colour otherwise.
+   Matched against Typography's own selector shape (adding .ProseMirror
+   alongside .prose) for the same specificity-win reason as the marker
+   rule. */
+.prose.ProseMirror strong,
+.prose.ProseMirror code {
+  color: inherit;
+}
+
 /* Callout narrative block — one selector styles it identically wherever it
    renders: live inside the ProseMirror editor, or as static HTML generated
    for Play Mode. */
