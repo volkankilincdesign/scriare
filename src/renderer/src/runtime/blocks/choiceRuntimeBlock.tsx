@@ -20,7 +20,14 @@ function RuntimeChoiceOptions({ options, context }: RuntimeChoiceOptionsProps) {
         <button
           key={option.id}
           type="button"
-          onClick={() => context.goToScene(option.targetSceneId as string)}
+          onClick={() => {
+            // Actions run before the jump, same order a player reads them
+            // in the Inspector ("picking this does X, then goes here") —
+            // and it means goToScene's own scene-change render always sees
+            // the already-updated variable values, never a stale frame.
+            if (option.actions?.length) context.applyActions(option.actions);
+            context.goToScene(option.targetSceneId as string);
+          }}
           className="rounded-md border border-[var(--border)] bg-[var(--surface-2-translucent)] px-4 py-2 text-left text-sm text-[var(--text)] hover:border-[var(--accent)] hover:bg-[var(--surface-2)]"
         >
           {option.text || "Continue"}

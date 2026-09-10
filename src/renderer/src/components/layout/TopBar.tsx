@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useProjectStore } from "../../state/projectStore";
+import { useUIStore } from "../../state/uiStore";
 import { ProjectSettingsDialog } from "./ProjectSettingsDialog";
 import { BrandMark } from "../common/BrandMark";
 
@@ -17,6 +18,7 @@ export function TopBar() {
   const startPlay = useProjectStore((s) => s.startPlay);
   const exitPlay = useProjectStore((s) => s.exitPlay);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const openVariableManager = useUIStore((s) => s.openVariableManager);
 
   return (
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--border-soft)] bg-[var(--surface)] px-4">
@@ -38,6 +40,16 @@ export function TopBar() {
       </div>
 
       <div className="flex items-center gap-2">
+        {!isPlaying && (
+          <button
+            type="button"
+            onClick={openVariableManager}
+            title="Variables"
+            className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
+          >
+            𝑥 Variables
+          </button>
+        )}
         {!isPlaying && (
           <button
             type="button"

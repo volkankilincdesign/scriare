@@ -2,6 +2,7 @@ import { nanoid } from "nanoid";
 import { NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
 import { useProjectStore } from "../../state/projectStore";
+import { useInspectorStore } from "../../state/inspectorStore";
 import type { ChoiceOption } from "../../utils/choiceBlocks";
 
 // The React view for a `choiceBlock` node — this IS the "Choice Block" from
@@ -20,7 +21,7 @@ export function ChoiceBlockView({ node, updateAttributes, deleteNode, selected }
   }
 
   function addOption(): void {
-    updateAttributes({ options: [...options, { id: nanoid(), text: "", targetSceneId: null }] });
+    updateAttributes({ options: [...options, { id: nanoid(), text: "", targetSceneId: null, actions: [] }] });
   }
 
   function removeOption(index: number): void {
@@ -29,6 +30,22 @@ export function ChoiceBlockView({ node, updateAttributes, deleteNode, selected }
       return;
     }
     updateAttributes({ options: options.filter((_, i) => i !== index) });
+  }
+
+  // Selecting the Choice Block (via SceneEditor's onSelectionUpdate) sets
+  // the Inspector target at the block level, defaulting to the first
+  // option. Focusing one of an option's own inputs narrows that target to
+  // this specific option — this is the only way the Inspector can know
+  // *which* option's Actions to show once a block has more than one.
+  function focusOption(option: ChoiceOption): void {
+    const blockId = node.attrs.blockId as string | undefined;
+    if (!blockId || !currentSceneId) return;
+    useInspectorStore.getState().selectTarget({
+      kind: "choice",
+      sceneId: currentSceneId,
+      blockId,
+      optionId: option.id,
+    });
   }
 
   function moveOption(index: number, direction: -1 | 1): void {
@@ -85,12 +102,14 @@ export function ChoiceBlockView({ node, updateAttributes, deleteNode, selected }
             <input
               value={option.text}
               onChange={(e) => updateOption(index, { text: e.target.value })}
+              onFocus={() => focusOption(option)}
               placeholder="Choice text (e.g. Open the door)"
               className="min-w-0 flex-1 rounded bg-transparent px-1 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-3)]"
             />
             <select
               value={option.targetSceneId ?? ""}
               onChange={(e) => updateOption(index, { targetSceneId: e.target.value || null })}
+              onFocus={() => focusOption(option)}
               className="shrink-0 rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text-2)] outline-none focus:border-[var(--accent)]"
             >
               <option value="">— Not linked —</option>

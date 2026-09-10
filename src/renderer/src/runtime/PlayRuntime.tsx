@@ -45,6 +45,7 @@ export function PlayRuntime() {
   const goToPlayScene = useProjectStore((s) => s.goToPlayScene);
   const restartPlay = useProjectStore((s) => s.restartPlay);
   const exitPlay = useProjectStore((s) => s.exitPlay);
+  const applyVariableActions = useProjectStore((s) => s.applyVariableActions);
 
   const scene = project?.scenes.find((s) => s.id === playSceneId) ?? null;
 
@@ -61,7 +62,10 @@ export function PlayRuntime() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [exitPlay]);
 
-  const runtimeContext: RuntimeContext = useMemo(() => ({ goToScene: goToPlayScene }), [goToPlayScene]);
+  const runtimeContext: RuntimeContext = useMemo(
+    () => ({ goToScene: goToPlayScene, applyActions: applyVariableActions }),
+    [goToPlayScene, applyVariableActions],
+  );
 
   const renderedSegments = useMemo(() => {
     if (!scene) return [];

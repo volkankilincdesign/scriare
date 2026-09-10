@@ -1,4 +1,16 @@
-# Scriare — v0.20.3 — Bold/Code No Longer Hide Text Color
+# Scriare — v0.21.0 — Runtime Foundation & Variables (Sprint 9A)
+
+## What's new (v0.21.0 — Runtime Foundation & Variables, Sprint 9A)
+
+Scriare starts becoming an interactive narrative engine, not just a writing tool. This sprint's goal wasn't "add variables" — it was to lay down the runtime architecture that Conditions, Characters, Locations, Inventory, Relationships and Quests will all build on later, without redesigning the editor, introducing scripting, or asking a writer to type any syntax anywhere. Everything below stays visual: every field is a name box, a type dropdown, a number/toggle/text input, or a dropdown of fixed operations — never a place to type an expression.
+
+**Variables** are the first runtime entity. A Variable has a Name, a Type (Number, Boolean, or String today — the type system is a discriminated union designed so a future type is one new case, not a rewrite), a Default Value, and an optional Description. They belong to the project as a whole, not to any one scene, and are managed from a new **Variable Manager** (a "Variables" button next to Project Settings in the top bar) — add, rename, retype, redefault, describe, and delete, all committing immediately like the rest of Scriare's inline editing.
+
+**The Scene Details panel is now the Inspector.** This is more than a rename: the Inspector is designed as Scriare's central, adaptive property editor — what it shows depends on what's selected. Selecting a scene still shows the familiar Start Scene toggle and Outgoing Choices list; selecting a Choice Block's option (click into its text or destination dropdown) now shows that option's own Choice Properties instead: its Destination, a Conditions placeholder (arriving in Sprint 9B), and its **Actions** — the visual equivalent of "picking this choice does something to a variable." An Action reads exactly like the sprint's own mockup: a Variable dropdown, an Operation dropdown scoped to that variable's type (Number gets Set/+ Add/− Subtract, Boolean gets Set/Toggle, String gets Set), and a Value field matching the variable's type. A future Character or Location selection will show its own Properties view the same way, without the Inspector's architecture changing again.
+
+Picking an option with Actions attached during Play Mode runs them — in order, before the jump to the destination scene — against a live, per-playthrough snapshot of variable values seeded from each Variable's Default Value. That snapshot resets every time Play restarts and never touches the saved project or triggers autosave, the same "Play Mode is a read-only pass over your story" guarantee that's applied since Play Mode shipped.
+
+Deleting a Variable does not walk every scene rewriting Choice Actions that reference it — the same "no cascading delete" precedent scenes and their dangling links already follow. An orphaned Action is simply skipped at runtime rather than the app trying to keep every reference perfectly in sync, which would mean rewriting potentially every scene's content on every delete in a large project.
 
 ## What's new (v0.20.3 — Bold/Code No Longer Hide Text Color)
 

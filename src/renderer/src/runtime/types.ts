@@ -1,15 +1,20 @@
 import type { ReactNode } from "react";
 import type { JSONContent } from "@tiptap/react";
+import type { VariableAction } from "../types/variables";
 
 /**
  * The minimal set of capabilities a runtime block's render function can call
- * back into the player with — today just "jump to another scene" (what
- * Choice needs). Extending this object is how a future block (Variables,
- * Conditions, ...) gains a new capability without changing every existing
- * block's signature.
+ * back into the player with — "jump to another scene" (what Choice needs),
+ * and, as of Sprint 9A, "run these Variable Actions" (what a Choice's
+ * Actions need — see choiceRuntimeBlock.tsx). Extending this object is how
+ * a future block (Conditions, Characters, ...) gains a new capability
+ * without changing every existing block's signature; Sprint 9B's
+ * Conditions will most likely add a `getVariable` read-side counterpart to
+ * `applyActions` here.
  */
 export interface RuntimeContext {
   goToScene: (sceneId: string) => void;
+  applyActions: (actions: VariableAction[]) => void;
 }
 
 /**

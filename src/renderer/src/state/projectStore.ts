@@ -4,9 +4,13 @@ import type { JSONContent } from "@tiptap/react";
 import type { ContentFolder, ContentLeaf, ContentNode, Favorite, Project, Scene } from "../types/project";
 import { buildFrame, buildProject, buildScene, normalizeProject } from "../types/project";
 import { computeAutoLayout } from "../utils/autoLayout";
-import { extractChoices, regenerateChoiceIds } from "../utils/choiceBlocks";
+import { CHOICE_BLOCK_TYPE, extractChoices, regenerateChoiceIds } from "../utils/choiceBlocks";
+import type { ChoiceOption } from "../utils/choiceBlocks";
 import { childrenOf, isDescendant, nextOrder } from "../utils/contentTree";
 import { findContainingFrame } from "../utils/graphConstants";
+import type { Variable, VariableAction, VariableValue } from "../types/variables";
+import { applyVariableAction, buildVariable } from "../types/variables";
+import { useInspectorStore } from "./inspectorStore";
 
 type SaveStatus = "saved" | "saving" | "unsaved";
 
@@ -25,6 +29,18 @@ interface ProjectState {
 
   isPlaying: boolean;
   playSceneId: string | null;
+  /**
+   * Live variable values for the CURRENT play session — seeded from
+   * `project.variables`' defaultValue on startPlay/restartPlay, then
+   * mutated by applyVariableActions as Choice Actions fire. Deliberately
+   * separate from `project.variables` (the definitions) for the same
+   * reason `playSceneId` is separate from `project.scenes`: playing a
+   * story is a read-only pass over the project's data, and this is the one
+   * piece of state Play Mode is allowed to actually change — see the
+   * comment above `startPlay` below for why that never touches `project`
+   * or marks the file unsaved.
+   */
+  playVariableValues: Record<string, VariableValue>;
 
   loadRecent: () => Promise<void>;
   newProject: (name: string) => Promise<void>;
@@ -38,6 +54,15 @@ interface ProjectState {
   duplicateScene: (sceneId: string) => void;
   duplicateScenes: (sceneIds: string[]) => void;
   updateSceneContent: (sceneId: string, content: JSONContent) => void;
+  /** Patches one Choice Block option by id — how the Inspector's Choice Properties
+   * view edits Destination/Actions without duplicating ChoiceBlockView's own
+   * inline-editing logic (see the comment above this action's implementation). */
+  updateChoiceOption: (
+    sceneId: string,
+    blockId: string,
+    optionId: string,
+    patch: Partial<ChoiceOption>,
+  ) => void;
 
   createFolder: (parentId?: string | null) => void;
   renameFolder: (folderId: string, name: string) => void;
@@ -66,10 +91,20 @@ interface ProjectState {
   ) => void;
   deleteFrame: (frameId: string) => void;
 
+  /** Adds a fresh, unnamed Variable (see types/variables.ts's buildVariable) — the
+   * Variable Manager's "+ Add Variable" button. */
+  addVariable: () => void;
+  updateVariable: (variableId: string, patch: Partial<Variable>) => void;
+  /** Does NOT cascade-delete VariableActions that reference this variable across every
+   * scene — see the comment above this action's implementation for why. */
+  deleteVariable: (variableId: string) => void;
+
   startPlay: () => void;
   exitPlay: () => void;
   goToPlayScene: (sceneId: string) => void;
   restartPlay: () => void;
+  /** Runs a Choice option's Actions against the live play session — see choiceRuntimeBlock.tsx. */
+  applyVariableActions: (actions: VariableAction[]) => void;
 
   saveNow: () => Promise<void>;
   closeProject: () => void;
@@ -93,6 +128,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   isPlaying: false,
   playSceneId: null,
+  playVariableValues: {},
 
   loadRecent: async () => {
     const list = await window.api.recent.list();
@@ -148,7 +184,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }
   },
 
-  selectScene: (sceneId) => set({ selectedSceneId: sceneId }),
+  selectScene: (sceneId) => {
+    set({ selectedSceneId: sceneId });
+    // Switching scenes always leaves behind whatever Choice Block the
+    // Inspector was showing for the PREVIOUS scene — see inspectorStore.ts.
+    useInspectorStore.getState().clearTarget();
+  },
 
   createScene: (parentId = null) => {
     const { project } = get();
@@ -305,6 +346,52 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project } = get();
     if (!project) return;
 
+    set({
+      project: {
+        ...project,
+        scenes: project.scenes.map((s) => (s.id === sceneId ? { ...s, content } : s)),
+        updatedAt: new Date().toISOString(),
+      },
+      saveStatus: "unsaved",
+    });
+    scheduleAutosave(get);
+  },
+
+  // ChoiceBlockView edits an option's text/destination directly through
+  // Tiptap's own `updateAttributes` (it already has the node reference a
+  // NodeView gets for free) — that path is untouched. The Inspector's
+  // Choice Properties view has no such reference (it's a sibling panel,
+  // not part of the node's own view), so it needs a way to reach into a
+  // specific option buried inside a specific scene's content and patch it.
+  // This walks that scene's document once, replaces the matching option
+  // immutably, and goes through the exact same `updateSceneContent`-shaped
+  // set() the editor's own onUpdate already uses — so autosave, undo (via
+  // Tiptap's own content diffing on next load) and the graph's choice-based
+  // edges all stay consistent no matter which surface made the edit.
+  updateChoiceOption: (sceneId, blockId, optionId, patch) => {
+    const { project } = get();
+    if (!project) return;
+    const scene = project.scenes.find((s) => s.id === sceneId);
+    if (!scene) return;
+
+    function walk(node: JSONContent): JSONContent {
+      if (node.type === CHOICE_BLOCK_TYPE && node.attrs?.blockId === blockId) {
+        const options = (node.attrs.options as ChoiceOption[] | undefined) ?? [];
+        return {
+          ...node,
+          attrs: {
+            ...node.attrs,
+            options: options.map((option) =>
+              option.id === optionId ? { ...option, ...patch } : option,
+            ),
+          },
+        };
+      }
+      if (!node.content) return node;
+      return { ...node, content: node.content.map(walk) };
+    }
+
+    const content = walk(scene.content);
     set({
       project: {
         ...project,
@@ -788,14 +875,78 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     scheduleAutosave(get);
   },
 
-  // Play Mode is purely a read-only presentation over the existing project
-  // data — none of these actions touch `project` or trigger autosave.
-  startPlay: () => {
+  addVariable: () => {
     const { project } = get();
     if (!project) return;
     set({
+      project: {
+        ...project,
+        variables: [...project.variables, buildVariable()],
+        updatedAt: new Date().toISOString(),
+      },
+      saveStatus: "unsaved",
+    });
+    scheduleAutosave(get);
+  },
+
+  updateVariable: (variableId, patch) => {
+    const { project } = get();
+    if (!project) return;
+    set({
+      project: {
+        ...project,
+        variables: project.variables.map((v) =>
+          v.id === variableId ? ({ ...v, ...patch } as Variable) : v,
+        ),
+        updatedAt: new Date().toISOString(),
+      },
+      saveStatus: "unsaved",
+    });
+    scheduleAutosave(get);
+  },
+
+  // Deliberately does NOT walk every scene stripping out VariableActions
+  // that reference this variable — the same call this codebase already
+  // made for Choice destinations (deleteScene never rewrites other scenes'
+  // choiceBlock nodes when the scene they pointed at is deleted; the
+  // Inspector/graph just render a dangling targetSceneId as "Not linked
+  // yet"). Doing that for variables would mean a full content rewrite of
+  // every scene in the project on every delete — exactly the kind of
+  // "recompute everything" cost the architecture doc's own performance
+  // notes warn against for what should be a cheap, instant edit. A
+  // VariableAction whose variableId no longer resolves is instead handled
+  // defensively wherever it's read: the Inspector's Choice Properties flags
+  // it, and applyVariableActions below just skips it at runtime.
+  deleteVariable: (variableId) => {
+    const { project } = get();
+    if (!project) return;
+    set({
+      project: {
+        ...project,
+        variables: project.variables.filter((v) => v.id !== variableId),
+        updatedAt: new Date().toISOString(),
+      },
+      saveStatus: "unsaved",
+    });
+    scheduleAutosave(get);
+  },
+
+  // Play Mode is purely a read-only presentation over the existing project
+  // data — none of these actions touch `project` or trigger autosave.
+  // `playVariableValues` is the one exception a story actually needs to be
+  // able to change while it runs; it's seeded fresh from each variable's
+  // defaultValue here and in restartPlay, and only ever mutated by
+  // applyVariableActions below — never by anything that also touches
+  // `project`, so playing a story can never itself mark the file unsaved.
+  startPlay: () => {
+    const { project } = get();
+    if (!project) return;
+    const playVariableValues: Record<string, VariableValue> = {};
+    for (const variable of project.variables) playVariableValues[variable.id] = variable.defaultValue;
+    set({
       isPlaying: true,
       playSceneId: project.startSceneId ?? project.scenes[0]?.id ?? null,
+      playVariableValues,
     });
   },
 
@@ -806,7 +957,30 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   restartPlay: () => {
     const { project } = get();
     if (!project) return;
-    set({ playSceneId: project.startSceneId ?? project.scenes[0]?.id ?? null });
+    const playVariableValues: Record<string, VariableValue> = {};
+    for (const variable of project.variables) playVariableValues[variable.id] = variable.defaultValue;
+    set({ playSceneId: project.startSceneId ?? project.scenes[0]?.id ?? null, playVariableValues });
+  },
+
+  // Called by the Choice runtime block (runtime/blocks/choiceRuntimeBlock.tsx)
+  // right before it navigates to the picked option's destination. Resolves
+  // each action's variable fresh out of `project.variables` every call
+  // rather than trusting a stale reference, so a variable deleted mid-story
+  // (impossible today since editing is disabled in Play Mode, but this is
+  // the seam Sprint 9B's Conditions will read the same way) is silently
+  // skipped instead of throwing.
+  applyVariableActions: (actions) => {
+    const { project, playVariableValues } = get();
+    if (!project || actions.length === 0) return;
+
+    const next = { ...playVariableValues };
+    for (const action of actions) {
+      const variable = project.variables.find((v) => v.id === action.variableId);
+      if (!variable) continue;
+      const current = next[variable.id] ?? variable.defaultValue;
+      next[variable.id] = applyVariableAction(current, variable, action);
+    }
+    set({ playVariableValues: next });
   },
 
   saveNow: async () => {

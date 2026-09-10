@@ -1,6 +1,7 @@
 import { nanoid } from "nanoid";
 import type { JSONContent } from "@tiptap/react";
 import { extractChoices, buildChoiceBlockNode, migrateLegacyChoiceBlocks } from "../utils/choiceBlocks";
+import type { Variable } from "./variables";
 
 export interface Choice {
   id: string;
@@ -94,6 +95,16 @@ export interface Project {
   frames: Frame[];
   content: ContentNode[];
   favorites: Favorite[];
+  /**
+   * Sprint 9A — the project's runtime state definitions. Variables belong
+   * here, not on individual Scenes, because they're story-wide: any scene's
+   * Choice Actions can reference any variable, and (from Sprint 9B on)
+   * Conditions will need to read them regardless of which scene wrote to
+   * them last. Future runtime entities (Characters, Locations, Inventory
+   * items, ...) are expected to land as sibling arrays here, each with its
+   * own dedicated manager UI — the same shape Variables establish now.
+   */
+  variables: Variable[];
 }
 
 export const EMPTY_DOC: JSONContent = {
@@ -140,6 +151,7 @@ export function buildProject(name: string): Project {
       { id: opening.id, kind: "leaf", category: "story", parentId: null, order: 0, refType: "scene" },
     ],
     favorites: [],
+    variables: [],
   };
 }
 
@@ -161,6 +173,7 @@ export function normalizeProject(raw: Project): Project {
     scenes,
     content: migrateContentTree(raw.content, scenes),
     favorites: raw.favorites ?? [],
+    variables: raw.variables ?? [],
   };
 }
 
@@ -216,7 +229,9 @@ function migrateChoicesIntoContent(scene: Scene): Scene {
       content: [
         ...(content.content ?? []),
         ...legacyChoices.map((choice) =>
-          buildChoiceBlockNode([{ id: choice.id, text: choice.text, targetSceneId: choice.targetSceneId }]),
+          buildChoiceBlockNode([
+            { id: choice.id, text: choice.text, targetSceneId: choice.targetSceneId, actions: [] },
+          ]),
         ),
       ],
     };

@@ -1,5 +1,6 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import type { JSONContent } from "@tiptap/react";
+import { NodeSelection } from "@tiptap/pm/state";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
@@ -10,6 +11,7 @@ import TextAlign from "@tiptap/extension-text-align";
 import FontFamily from "@tiptap/extension-font-family";
 import { useEffect, useRef } from "react";
 import { useProjectStore } from "../../state/projectStore";
+import { useInspectorStore } from "../../state/inspectorStore";
 import { FontSize } from "../../extensions/FontSize";
 import { ChoiceBlock } from "../../extensions/ChoiceBlock";
 import { Callout } from "../../extensions/Callout";
@@ -48,6 +50,38 @@ export function SceneEditor() {
     content: scene?.content,
     onUpdate: ({ editor }) => {
       if (scene) updateSceneContent(scene.id, editor.getJSON() as JSONContent);
+    },
+    // Sprint 9A — the Inspector Philosophy: when the ProseMirror selection
+    // becomes a NodeSelection over a Choice Block, the Inspector switches to
+    // that block's Choice Properties (see InspectorPanel.tsx); any other
+    // selection (a text cursor, a different node) clears back to Scene
+    // Properties. This only tracks the BLOCK — ChoiceBlockView's own
+    // onFocus handlers (see ChoiceBlockView.tsx) narrow the target further
+    // to a specific option once the writer focuses one of its inputs, since
+    // a NodeSelection alone can't tell us which option they're editing.
+    onSelectionUpdate: ({ editor: e }) => {
+      if (!scene) return;
+      const { selection } = e.state;
+      if (selection instanceof NodeSelection && selection.node.type.name === "choiceBlock") {
+        const node = selection.node;
+        const blockId = node.attrs?.blockId as string | undefined;
+        const options = (node.attrs?.options as { id: string }[] | undefined) ?? [];
+        const firstOptionId = options[0]?.id;
+        if (blockId && firstOptionId) {
+          const current = useInspectorStore.getState().target;
+          // Preserve the currently-tracked option if the selection is still
+          // on the same block (e.g. ChoiceBlockView's onFocus already
+          // narrowed it) — only default to the first option when the block
+          // itself just became selected.
+          const optionId =
+            current.kind === "choice" && current.blockId === blockId
+              ? current.optionId
+              : firstOptionId;
+          useInspectorStore.getState().selectTarget({ kind: "choice", sceneId: scene.id, blockId, optionId });
+          return;
+        }
+      }
+      useInspectorStore.getState().clearTarget();
     },
     editorProps: {
       attributes: {

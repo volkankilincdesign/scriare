@@ -6,7 +6,9 @@ import { EditorGraphSplit } from "./components/layout/EditorGraphSplit";
 import { WelcomeScreen } from "./components/welcome/WelcomeScreen";
 import { PlayRuntime } from "./runtime/PlayRuntime";
 import { ConfirmDialogHost } from "./components/common/ConfirmDialogHost";
+import { VariableManagerDialog } from "./components/variables/VariableManagerDialog";
 import { useProjectStore } from "./state/projectStore";
+import { useUIStore } from "./state/uiStore";
 import { useKeyboardSave } from "./hooks/useKeyboardSave";
 
 // Dockable-panel state (Content, Scene Details, and the Flow graph) is a
@@ -60,6 +62,8 @@ export default function App() {
   const project = useProjectStore((s) => s.project);
   const isPlaying = useProjectStore((s) => s.isPlaying);
   const [panels, setPanels] = useState<PanelCollapseState>(loadPanelState);
+  const variableManagerOpen = useUIStore((s) => s.variableManagerOpen);
+  const closeVariableManager = useUIStore((s) => s.closeVariableManager);
 
   function togglePanel(key: keyof PanelCollapseState): void {
     setPanels((current) => {
@@ -115,6 +119,8 @@ export default function App() {
           />
         )}
       </div>
+
+      {variableManagerOpen && <VariableManagerDialog onClose={closeVariableManager} />}
     </div>
   );
 }
