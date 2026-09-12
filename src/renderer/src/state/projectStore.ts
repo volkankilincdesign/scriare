@@ -4,12 +4,11 @@ import type { JSONContent } from "@tiptap/react";
 import type { ContentFolder, ContentLeaf, ContentNode, Favorite, Project, Scene } from "../types/project";
 import { buildFrame, buildProject, buildScene, normalizeProject } from "../types/project";
 import { computeAutoLayout } from "../utils/autoLayout";
-import { CHOICE_BLOCK_TYPE, extractChoices, regenerateChoiceIds } from "../utils/choiceBlocks";
-import type { ChoiceOption } from "../utils/choiceBlocks";
+import { extractChoices, regenerateChoiceIds } from "../utils/choiceBlocks";
 import { childrenOf, isDescendant, nextOrder } from "../utils/contentTree";
 import { findContainingFrame } from "../utils/graphConstants";
-import type { Variable, VariableAction, VariableValue } from "../types/variables";
-import { applyVariableAction, buildVariable } from "../types/variables";
+import type { Variable, VariableAction, VariableType, VariableValue } from "../types/variables";
+import { applyVariableAction, buildVariable, changeVariableType } from "../types/variables";
 import { useInspectorStore } from "./inspectorStore";
 
 type SaveStatus = "saved" | "saving" | "unsaved";
@@ -49,20 +48,19 @@ interface ProjectState {
 
   selectScene: (sceneId: string) => void;
   createScene: (parentId?: string | null) => void;
+  /** Creates a Story scene WITHOUT selecting it or navigating away from
+   * whatever scene is currently open — the Inspector's inline "+ Create New
+   * Scene" (Sprint 9C) needs a fresh Destination to link to without
+   * interrupting the writer's current editing flow, unlike `createScene`
+   * above (the Content Browser's "+ Scene", which is meant to jump you into
+   * the new scene). Returns the new scene's id, or null if there's no open
+   * project. */
+  createUnlinkedScene: (parentId?: string | null) => string | null;
   renameScene: (sceneId: string, title: string) => void;
   deleteScene: (sceneId: string) => void;
   duplicateScene: (sceneId: string) => void;
   duplicateScenes: (sceneIds: string[]) => void;
   updateSceneContent: (sceneId: string, content: JSONContent) => void;
-  /** Patches one Choice Block option by id — how the Inspector's Choice Properties
-   * view edits Destination/Actions without duplicating ChoiceBlockView's own
-   * inline-editing logic (see the comment above this action's implementation). */
-  updateChoiceOption: (
-    sceneId: string,
-    blockId: string,
-    optionId: string,
-    patch: Partial<ChoiceOption>,
-  ) => void;
 
   createFolder: (parentId?: string | null) => void;
   renameFolder: (folderId: string, name: string) => void;
@@ -94,6 +92,14 @@ interface ProjectState {
   /** Adds a fresh, unnamed Variable (see types/variables.ts's buildVariable) — the
    * Variable Manager's "+ Add Variable" button. */
   addVariable: () => void;
+  /** Creates a fully-formed Variable (name + type, defaultValue derived from
+   * type) and returns its id — used by the Inspector's inline "+ Create
+   * Variable" (Sprint 9C), so a writer can define a new variable without
+   * leaving the Action row they were configuring. Distinct from `addVariable`
+   * (the Variable Manager's "+ Add Variable", which starts blank and is
+   * edited in place there) because this needs the finished variable's id
+   * back immediately, synchronously, to wire it into the Action being built. */
+  createVariable: (name: string, type: VariableType) => string | null;
   updateVariable: (variableId: string, patch: Partial<Variable>) => void;
   /** Does NOT cascade-delete VariableActions that reference this variable across every
    * scene — see the comment above this action's implementation for why. */
@@ -216,6 +222,36 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       saveStatus: "unsaved",
     });
     scheduleAutosave(get);
+  },
+
+  createUnlinkedScene: (parentId = null) => {
+    const { project } = get();
+    if (!project) return null;
+
+    const scene = buildScene(`Scene ${project.scenes.length + 1}`, project.scenes.length);
+    const leaf: ContentLeaf = {
+      id: scene.id,
+      kind: "leaf",
+      category: "story",
+      parentId,
+      order: nextOrder(project.content, "story", parentId),
+      refType: "scene",
+    };
+
+    set({
+      project: {
+        ...project,
+        scenes: [...project.scenes, scene],
+        content: [...project.content, leaf],
+        updatedAt: new Date().toISOString(),
+      },
+      // Deliberately does NOT set selectedSceneId — see the interface
+      // comment above `createUnlinkedScene` for why this must not navigate
+      // the writer away from the scene they're currently editing.
+      saveStatus: "unsaved",
+    });
+    scheduleAutosave(get);
+    return scene.id;
   },
 
   renameScene: (sceneId, title) => {
@@ -357,51 +393,15 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     scheduleAutosave(get);
   },
 
-  // ChoiceBlockView edits an option's text/destination directly through
-  // Tiptap's own `updateAttributes` (it already has the node reference a
-  // NodeView gets for free) — that path is untouched. The Inspector's
-  // Choice Properties view has no such reference (it's a sibling panel,
-  // not part of the node's own view), so it needs a way to reach into a
-  // specific option buried inside a specific scene's content and patch it.
-  // This walks that scene's document once, replaces the matching option
-  // immutably, and goes through the exact same `updateSceneContent`-shaped
-  // set() the editor's own onUpdate already uses — so autosave, undo (via
-  // Tiptap's own content diffing on next load) and the graph's choice-based
-  // edges all stay consistent no matter which surface made the edit.
-  updateChoiceOption: (sceneId, blockId, optionId, patch) => {
-    const { project } = get();
-    if (!project) return;
-    const scene = project.scenes.find((s) => s.id === sceneId);
-    if (!scene) return;
-
-    function walk(node: JSONContent): JSONContent {
-      if (node.type === CHOICE_BLOCK_TYPE && node.attrs?.blockId === blockId) {
-        const options = (node.attrs.options as ChoiceOption[] | undefined) ?? [];
-        return {
-          ...node,
-          attrs: {
-            ...node.attrs,
-            options: options.map((option) =>
-              option.id === optionId ? { ...option, ...patch } : option,
-            ),
-          },
-        };
-      }
-      if (!node.content) return node;
-      return { ...node, content: node.content.map(walk) };
-    }
-
-    const content = walk(scene.content);
-    set({
-      project: {
-        ...project,
-        scenes: project.scenes.map((s) => (s.id === sceneId ? { ...s, content } : s)),
-        updatedAt: new Date().toISOString(),
-      },
-      saveStatus: "unsaved",
-    });
-    scheduleAutosave(get);
-  },
+  // Sprint 9B removed the old store-level `updateChoiceOption` — Choice
+  // Block edits (from the editor's own NodeView, or from the Inspector's
+  // Choices accordion) now go through a single path instead: a real
+  // ProseMirror transaction dispatched on the live editor instance (see
+  // utils/choiceBlockEditing.ts + state/editorStore.ts). That transaction's
+  // own `onUpdate` calls `updateSceneContent` above, so there's exactly one
+  // writer of scene content no matter which surface made the edit — see
+  // editorStore.ts's comment for why a second, store-only write path caused
+  // real desync bugs between the mounted editor and the saved project.
 
   createFolder: (parentId = null) => {
     const { project } = get();
@@ -887,6 +887,22 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       saveStatus: "unsaved",
     });
     scheduleAutosave(get);
+  },
+
+  createVariable: (name, type) => {
+    const { project } = get();
+    if (!project) return null;
+    const variable = changeVariableType({ ...buildVariable(), name }, type);
+    set({
+      project: {
+        ...project,
+        variables: [...project.variables, variable],
+        updatedAt: new Date().toISOString(),
+      },
+      saveStatus: "unsaved",
+    });
+    scheduleAutosave(get);
+    return variable.id;
   },
 
   updateVariable: (variableId, patch) => {

@@ -12,6 +12,7 @@ import FontFamily from "@tiptap/extension-font-family";
 import { useEffect, useRef } from "react";
 import { useProjectStore } from "../../state/projectStore";
 import { useInspectorStore } from "../../state/inspectorStore";
+import { useEditorRefStore } from "../../state/editorStore";
 import { FontSize } from "../../extensions/FontSize";
 import { ChoiceBlock } from "../../extensions/ChoiceBlock";
 import { Callout } from "../../extensions/Callout";
@@ -51,33 +52,22 @@ export function SceneEditor() {
     onUpdate: ({ editor }) => {
       if (scene) updateSceneContent(scene.id, editor.getJSON() as JSONContent);
     },
-    // Sprint 9A — the Inspector Philosophy: when the ProseMirror selection
-    // becomes a NodeSelection over a Choice Block, the Inspector switches to
-    // that block's Choice Properties (see InspectorPanel.tsx); any other
-    // selection (a text cursor, a different node) clears back to Scene
-    // Properties. This only tracks the BLOCK — ChoiceBlockView's own
-    // onFocus handlers (see ChoiceBlockView.tsx) narrow the target further
-    // to a specific option once the writer focuses one of its inputs, since
-    // a NodeSelection alone can't tell us which option they're editing.
+    // Sprint 9A/9B — the Inspector Philosophy: when the ProseMirror
+    // selection becomes a NodeSelection over a Choice Block, the Inspector
+    // switches to that block's Choice Properties (see InspectorPanel.tsx);
+    // any other selection (a text cursor, a different node) clears back to
+    // Scene Properties. As of Sprint 9B the whole block is the unit of
+    // Inspector targeting — clicking anywhere in a Choice Block selects it
+    // as one object (see ChoiceBlockView.tsx), and the Inspector shows
+    // every one of its options as its own accordion, rather than the
+    // Inspector tracking one option at a time the way 9A did.
     onSelectionUpdate: ({ editor: e }) => {
       if (!scene) return;
       const { selection } = e.state;
       if (selection instanceof NodeSelection && selection.node.type.name === "choiceBlock") {
-        const node = selection.node;
-        const blockId = node.attrs?.blockId as string | undefined;
-        const options = (node.attrs?.options as { id: string }[] | undefined) ?? [];
-        const firstOptionId = options[0]?.id;
-        if (blockId && firstOptionId) {
-          const current = useInspectorStore.getState().target;
-          // Preserve the currently-tracked option if the selection is still
-          // on the same block (e.g. ChoiceBlockView's onFocus already
-          // narrowed it) — only default to the first option when the block
-          // itself just became selected.
-          const optionId =
-            current.kind === "choice" && current.blockId === blockId
-              ? current.optionId
-              : firstOptionId;
-          useInspectorStore.getState().selectTarget({ kind: "choice", sceneId: scene.id, blockId, optionId });
+        const blockId = selection.node.attrs?.blockId as string | undefined;
+        if (blockId) {
+          useInspectorStore.getState().selectTarget({ kind: "choice", sceneId: scene.id, blockId });
           return;
         }
       }
@@ -102,6 +92,16 @@ export function SceneEditor() {
     );
     lastLoadedSceneId.current = scene.id;
   }, [editor, scene]);
+
+  // Sprint 9B — publishes the live editor instance so the Inspector (a
+  // sibling panel, not a child of this component) can dispatch real
+  // ProseMirror transactions against it for Choice Block edits instead of
+  // writing to the store directly. See editorStore.ts's comment for why
+  // that distinction matters.
+  useEffect(() => {
+    useEditorRefStore.getState().setEditor(editor);
+    return () => useEditorRefStore.getState().setEditor(null);
+  }, [editor]);
 
   if (!project) return null;
 

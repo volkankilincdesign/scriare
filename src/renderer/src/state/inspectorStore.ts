@@ -19,10 +19,16 @@ import { create } from "zustand";
  * state in App.tsx is not project data — keeping it separate means a
  * future selectable entity's store doesn't have to grow projectStore's
  * already-large surface just to participate in Inspector targeting.
+ *
+ * Sprint 9B narrowed the Choice case from "one option" to "one block":
+ * the Inspector now shows every option in a selected Choice Block as its
+ * own accordion (see InspectorPanel.tsx's ChoiceProperties), so the unit
+ * of Inspector targeting is the block, not a single option inside it —
+ * `optionId` was dropped from this shape accordingly.
  */
 export type InspectorTarget =
   | { kind: "scene" }
-  | { kind: "choice"; sceneId: string; blockId: string; optionId: string };
+  | { kind: "choice"; sceneId: string; blockId: string };
 
 interface InspectorState {
   target: InspectorTarget;

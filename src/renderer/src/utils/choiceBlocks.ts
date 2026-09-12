@@ -60,26 +60,26 @@ export function extractChoices(content: JSONContent | undefined | null): Choice[
 }
 
 /**
- * Finds one specific option inside a scene's content by its block and
- * option id — what the Inspector's Choice Properties view (InspectorPanel.tsx)
- * uses to render the currently-targeted option (per `inspectorStore`'s
- * `{kind: "choice", blockId, optionId}`). Unlike `extractChoices`, which
- * flattens every option in a scene for read-only summaries, this needs to
- * find exactly one option including its `actions`, so it stops at the first
- * match rather than walking the whole tree.
+ * Finds one Choice Block's full option list by its block id — what the
+ * Inspector's Choice Properties view (InspectorPanel.tsx) reads to render
+ * every option as its own accordion (per `inspectorStore`'s
+ * `{kind: "choice", blockId}` — Sprint 9B moved Inspector targeting from a
+ * single option up to the whole block, since the Inspector now edits every
+ * option in the block at once rather than one at a time). Returns `null`
+ * when the block no longer exists (e.g. it was deleted while the Inspector
+ * still had it targeted).
  */
-export function findChoiceOption(
+export function findChoiceBlockOptions(
   content: JSONContent | undefined | null,
   blockId: string,
-  optionId: string,
-): ChoiceOption | null {
+): ChoiceOption[] | null {
   if (!content) return null;
-  let found: ChoiceOption | null = null;
+  let found: ChoiceOption[] | null = null;
 
   function walk(node: JSONContent): void {
     if (found) return;
     if (node.type === CHOICE_BLOCK_TYPE && node.attrs?.blockId === blockId) {
-      found = readOptions(node.attrs).find((option) => option.id === optionId) ?? null;
+      found = readOptions(node.attrs);
       return;
     }
     node.content?.forEach(walk);

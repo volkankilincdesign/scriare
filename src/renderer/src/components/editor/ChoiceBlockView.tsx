@@ -1,64 +1,67 @@
-import { nanoid } from "nanoid";
 import { NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
+import type { MouseEvent as ReactMouseEvent } from "react";
+import { nanoid } from "nanoid";
 import { useProjectStore } from "../../state/projectStore";
-import { useInspectorStore } from "../../state/inspectorStore";
 import type { ChoiceOption } from "../../utils/choiceBlocks";
+import { applyChoiceBlockOptions } from "../../utils/choiceBlockEditing";
 
-// The React view for a `choiceBlock` node — this IS the "Choice Block" from
-// the writer's point of view: one or more options, each with its own text
-// and destination, live together inline in the document. Options can be
-// added, removed, and reordered without ever leaving the editor.
-export function ChoiceBlockView({ node, updateAttributes, deleteNode, selected }: NodeViewProps) {
+/**
+ * Sprint 9B — Choice Block Inspector Refactor. This NodeView used to BE the
+ * choice-editing UI (per-option text/destination inputs, add/remove,
+ * reorder buttons) sitting inline in the document. All of that behavior
+ * editing has moved to the Inspector's new Choices accordion — this view is
+ * now a compact, read-only preview: what the block contains, at a glance,
+ * so the editor stays a writing surface rather than a form. Clicking
+ * anywhere in the block selects it as one object (a ProseMirror
+ * NodeSelection), which is what tells SceneEditor's onSelectionUpdate to
+ * switch the Inspector to this block's Choice Properties.
+ */
+export function ChoiceBlockView({ node, deleteNode, selected, editor, getPos }: NodeViewProps) {
   const project = useProjectStore((s) => s.project);
-  const currentSceneId = useProjectStore((s) => s.selectedSceneId);
   const options = (node.attrs.options as ChoiceOption[] | undefined) ?? [];
 
-  const otherScenes = project?.scenes.filter((s) => s.id !== currentSceneId) ?? [];
-
-  function updateOption(index: number, patch: Partial<ChoiceOption>): void {
-    updateAttributes({ options: options.map((o, i) => (i === index ? { ...o, ...patch } : o)) });
+  function destinationLabel(targetSceneId: string | null): string {
+    if (!targetSceneId) return "Not linked yet";
+    const target = project?.scenes.find((s) => s.id === targetSceneId);
+    return target ? `→ ${target.title || "Untitled scene"}` : "Not linked yet";
   }
 
-  function addOption(): void {
-    updateAttributes({ options: [...options, { id: nanoid(), text: "", targetSceneId: null, actions: [] }] });
+  // Selecting the block on `mousedown` (not `click`) and calling
+  // `preventDefault()` matters: this NodeView's DOM is `contentEditable=
+  // false`, so a plain click inside it makes the *browser* place its own
+  // native caret in the nearest editable text (a neighboring paragraph,
+  // often nowhere near this block) — and ProseMirror syncs its own
+  // selection from that native caret on the following `selectionchange`,
+  // silently overwriting whatever NodeSelection we'd just set. Blocking
+  // the browser's default mousedown behavior before that happens is the
+  // standard fix for "click an atom NodeView to select it" in ProseMirror.
+  function selectBlock(e: ReactMouseEvent): void {
+    e.preventDefault();
+    if (typeof getPos !== "function") return;
+    const pos = getPos();
+    if (typeof pos === "number") editor.commands.setNodeSelection(pos);
   }
 
-  function removeOption(index: number): void {
-    if (options.length <= 1) {
-      deleteNode();
-      return;
-    }
-    updateAttributes({ options: options.filter((_, i) => i !== index) });
-  }
-
-  // Selecting the Choice Block (via SceneEditor's onSelectionUpdate) sets
-  // the Inspector target at the block level, defaulting to the first
-  // option. Focusing one of an option's own inputs narrows that target to
-  // this specific option — this is the only way the Inspector can know
-  // *which* option's Actions to show once a block has more than one.
-  function focusOption(option: ChoiceOption): void {
+  // Sprint 9C — restores the Rich Text workflow for adding a Choice
+  // (previously Inspector-only, per the Sprint 9B refactor). Goes through
+  // the same `applyChoiceBlockOptions` transaction path the Inspector uses
+  // — see utils/choiceBlockEditing.ts — so both surfaces create identical
+  // Choice objects and stay synchronized with each other automatically
+  // (this block's `options` attr, read above, is the single source of
+  // truth either one is editing).
+  function addChoice(e: ReactMouseEvent): void {
+    e.stopPropagation();
     const blockId = node.attrs.blockId as string | undefined;
-    if (!blockId || !currentSceneId) return;
-    useInspectorStore.getState().selectTarget({
-      kind: "choice",
-      sceneId: currentSceneId,
-      blockId,
-      optionId: option.id,
-    });
-  }
-
-  function moveOption(index: number, direction: -1 | 1): void {
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= options.length) return;
-    const next = [...options];
-    [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
-    updateAttributes({ options: next });
+    if (!blockId) return;
+    const option: ChoiceOption = { id: nanoid(), text: "", targetSceneId: null, actions: [] };
+    applyChoiceBlockOptions(editor, blockId, [...options, option]);
   }
 
   return (
     <NodeViewWrapper
-      className={`choice-block my-3 rounded-md border px-3 py-2.5 ${
+      onMouseDown={selectBlock}
+      className={`choice-block my-3 cursor-pointer rounded-md border px-3 py-2.5 ${
         selected ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--overlay)]"
       }`}
       contentEditable={false}
@@ -66,87 +69,56 @@ export function ChoiceBlockView({ node, updateAttributes, deleteNode, selected }
       <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">
         <span>⤷</span>
         <span>Choice</span>
+        <span className="font-normal normal-case text-[var(--text-3)]">
+          ({options.length} {options.length === 1 ? "option" : "options"})
+        </span>
       </div>
 
-      {/* Sprint 8C visual-consistency fix (v0.18.0): both destructive
-          buttons below previously hovered to a hardcoded `text-red-400`
-          instead of the theme's `--danger` token — the same class of gap
-          the v0.12.0/v0.14.0 fixes already closed for FrameNode's delete
-          button and ConfirmDialogHost's destructive-confirm button, just
-          missed here. Fixed so a Light-mode/future-theme change to
-          `--danger` reaches every destructive hover in the app uniformly,
-          not just the ones that happened to get updated at the time. */}
-      <div className="space-y-1.5">
+      <ul className="space-y-1">
         {options.map((option, index) => (
-          <div key={option.id} className="flex items-center gap-1.5">
-            <div className="flex shrink-0 flex-col">
-              <button
-                type="button"
-                disabled={index === 0}
-                onClick={() => moveOption(index, -1)}
-                title="Move up"
-                className="leading-none text-[10px] text-[var(--text-3)] hover:text-[var(--text)] disabled:opacity-25"
-              >
-                ▲
-              </button>
-              <button
-                type="button"
-                disabled={index === options.length - 1}
-                onClick={() => moveOption(index, 1)}
-                title="Move down"
-                className="leading-none text-[10px] text-[var(--text-3)] hover:text-[var(--text)] disabled:opacity-25"
-              >
-                ▼
-              </button>
-            </div>
-            <input
-              value={option.text}
-              onChange={(e) => updateOption(index, { text: e.target.value })}
-              onFocus={() => focusOption(option)}
-              placeholder="Choice text (e.g. Open the door)"
-              className="min-w-0 flex-1 rounded bg-transparent px-1 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-3)]"
-            />
-            <select
-              value={option.targetSceneId ?? ""}
-              onChange={(e) => updateOption(index, { targetSceneId: e.target.value || null })}
-              onFocus={() => focusOption(option)}
-              className="shrink-0 rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text-2)] outline-none focus:border-[var(--accent)]"
+          <li key={option.id} className="flex items-baseline gap-1.5 text-sm">
+            <span className="shrink-0 text-[var(--text-3)]">{index + 1}.</span>
+            <span className={`truncate ${option.text ? "text-[var(--text)]" : "italic text-[var(--text-3)]"}`}>
+              {option.text || "Untitled choice"}
+            </span>
+            <span
+              className={`shrink-0 text-xs ${
+                option.targetSceneId ? "text-[var(--accent)]" : "text-[var(--text-3)]"
+              }`}
             >
-              <option value="">— Not linked —</option>
-              {otherScenes.map((scene) => (
-                <option key={scene.id} value={scene.id}>
-                  → {scene.title || "Untitled scene"}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={() => removeOption(index)}
-              title="Remove this option"
-              className="shrink-0 rounded px-1.5 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
-            >
-              ✕
-            </button>
-          </div>
+              {destinationLabel(option.targetSceneId)}
+            </span>
+          </li>
         ))}
-      </div>
+      </ul>
 
-      <div className="mt-2 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={addOption}
-          className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
-        >
-          + Add option
-        </button>
-        <button
-          type="button"
-          onClick={deleteNode}
-          title="Remove this entire Choice Block"
-          className="rounded px-1.5 py-0.5 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
-        >
-          Remove block
-        </button>
+      <div className="mt-2 flex items-center justify-between">
+        <span className="text-xs text-[var(--text-3)]">
+          Edit destinations and actions in the Inspector →
+        </span>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={addChoice}
+            title="Add another choice to this block"
+            className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+          >
+            + Add Choice
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              deleteNode();
+            }}
+            title="Remove this entire Choice Block"
+            className="rounded px-1.5 py-0.5 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
+          >
+            Remove block
+          </button>
+        </div>
       </div>
     </NodeViewWrapper>
   );
