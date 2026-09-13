@@ -713,8 +713,14 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
                 zoomable
                 maskColor="var(--overlay)"
                 style={{ background: "var(--surface)" }}
-                nodeColor={(node) => (node.type === "frame" ? "var(--surface-3)" : "var(--accent)")}
-                nodeStrokeColor={() => "var(--surface)"}
+                // --accent is a near-white fill in this monochrome palette,
+                // so colouring minimap nodes with it turned every scene into
+                // a blown-out white block — by some distance the loudest
+                // thing on screen, and in a corner of the UI meant to be
+                // glanced at rather than read. A minimap is a schematic;
+                // muted greys say "shape and position" without shouting.
+                nodeColor={(node) => (node.type === "frame" ? "var(--surface-3)" : "var(--text-3)")}
+                nodeStrokeColor={() => "var(--border)"}
                 position="bottom-left"
               />
               <Controls

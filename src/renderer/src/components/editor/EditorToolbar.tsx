@@ -86,7 +86,7 @@ function ToolbarButton({ active, onClick, label, children }: ToolbarButtonProps)
 }
 
 function Divider() {
-  return <span className="mx-1 h-4 w-px shrink-0 bg-[var(--surface-2)]" />;
+  return <span className="mx-1.5 h-4 w-px shrink-0 bg-[var(--border-soft)]" />;
 }
 
 const FONT_FAMILIES = [
@@ -119,7 +119,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   if (!editor) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-1 border-b border-[var(--border-soft)] bg-[var(--surface)] px-4 py-1.5">
+    <div className="flex flex-wrap items-center gap-1 border-b border-[var(--border-soft)] bg-[var(--surface)] px-5 py-2.5">
       <ToolbarButton
         label="Bold (Ctrl+B)"
         active={editor.isActive("bold")}

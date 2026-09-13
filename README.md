@@ -1,4 +1,26 @@
-# Scriare — v0.23.4 — 📌 PINNED — The Choices List Stops Moving While You Drag It
+# Scriare — v0.24.0 — Quiet
+
+## What's new (v0.24.0 — A Quieter, Better-Built Monochrome)
+
+The palette stays black and white on purpose — colour belongs to content the writer assigns meaning to (choice blocks, errors, states), and chrome that competes with it makes that colour worthless. The brief was that it nonetheless felt dull. It did, and three separate causes were found, two of which turned out to be bugs rather than taste.
+
+**The fonts were never loading.** The app requested Inter, Newsreader and Manrope from Google Fonts at runtime via an `@import`, while its own Content Security Policy was `style-src 'self' 'unsafe-inline'` — which blocks a remote stylesheet outright. The packaged app had been rendering in whatever the operating system happened to supply, in every build, online or off. All three are now bundled as variable fonts and confirmed loading; Inter and Newsreader carry their optical-size axis, so letterforms adapt to the size they're set at instead of one drawing serving both a 10px label and a dialog title. Considerable amount of the "generic" feeling was simply the intended typography never arriving.
+
+**The brand mark was broken.** The same CSP had no `img-src`, so the logo — a `data:` URI SVG — was blocked and rendered as a broken-image icon in the top-left corner of every screen. `img-src` and `font-src` are now declared.
+
+**The greys were mathematically grey.** Every neutral was chroma 0 — pure, computed grey, which reads as absence rather than as a decision. They now carry a trace of warmth (chroma 0.003–0.006 at hue 75): far too little to perceive as a colour, enough that the palette feels mixed rather than generated. The tonal ramp was also rebuilt. It used to step almost evenly (12 → 15 → 19 → 23 → 27), giving every surface identical weight and therefore no hierarchy, and it placed `--border-soft` at 22% against a `--surface-2` of 19% — a three-percent difference, meaning a large share of the app's borders were mathematically present and visually absent. Surfaces now sit closer together and borders further from what they divide, so structure comes from a few deliberate edges and from spacing.
+
+**Emoji are gone from the chrome.** The content categories and tree rows were marked with 👤🌍📝🖼📁📄 — full-colour glyphs drawn by the operating system, so they fought the monochrome palette and rendered in a different illustrative style on every platform. They're replaced by a small set of stroked icons (`components/common/Icon.tsx`) that inherit `currentColor` and follow the theme.
+
+**The minimap was the loudest thing on screen.** It coloured every scene with `--accent`, which in this palette is a near-white fill — so the graph's glance-at-it corner was a set of blown-out white blocks. Now muted, and given the same edge treatment as the Controls widget.
+
+**The light theme's editor was unreadable.** The reading column applied Typography's `prose-invert` unconditionally — correct on dark, exactly inverted on light, where it rendered pale text on a pale page. Prose colours now map to the app's own theme tokens and follow whichever theme is active. Long-form prose also gets its own tone (`--text-reading`), a step below the brightest UI text, because full white over paragraphs of story is harsh to read at length.
+
+**Density.** More air in the Inspector, top bar, toolbar and content rows; softer corners on the choice cards; the Inspector widened to 320px so a collapsed choice's summary fits on one line again. Plus the details that carry perceived quality without any colour: a single consistent keyboard focus ring, styled text selection, tabular figures, and scrollbars that recede into the surface instead of sitting there as bright light-mode artefacts inside a dark application.
+
+Nothing about the drag-reorder logic was touched. The Choices list spacing changed, which is safe by construction — the drag measures its own geometry from the rendered layout rather than assuming any particular gap.
+
+## v0.23.x — 📌 The Choices List Stops Moving While You Drag It
 
 ## What's new (v0.23.4 — Fixed: The Whole Drag Built on Measurements Taken Mid-Animation)
 

@@ -1,115 +1,163 @@
-/* Fonts. Inter is the app-wide UI default (body text, labels, buttons —
-   everything that isn't the story's own written content); IBM Plex Mono is
-   reserved for technical/structured UI (e.g. a future Variables feature)
-   via the .font-technical utility below, not used anywhere yet. Newsreader
-   and Manrope are kept only for what already used them before the v0.12.0
-   Minimal redesign: Newsreader for the brand wordmark/dialog titles
-   (.font-serif-narrative, unchanged), and Manrope pinned to the reading
-   column (.font-reading, in index.css) so the rich text editor and Play
-   Mode's typography are deliberately NOT touched by this redesign — only
-   the app's own chrome switched fonts. Loaded via @import so no <link>
-   tags are needed in index.html. Must stay the first rule in this file —
-   @import is only valid before any other CSS rule. */
-@import url("https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+/* Theme system — "Quiet" revision (v0.24.0).
+ *
+ * Fonts are no longer fetched from Google at runtime. They're bundled into
+ * the app as variable fonts (see the @fontsource-variable imports in
+ * main.tsx), which fixes a real bug as much as a cosmetic one: the app
+ * previously fell back to whatever system fonts existed whenever it was
+ * offline, so its typography quietly changed depending on the network.
+ * Variable files also carry every weight in one face, so the whole family
+ * costs less than the handful of static weights it replaces, and Inter and
+ * Newsreader are loaded with their optical-size axis — the letterforms
+ * adjust to the size they're set at, which is most of why small UI text
+ * reads cleanly rather than cramped.
+ *
+ * The palette stays black and white by design: colour is reserved for
+ * content the writer assigns meaning to (choice blocks, errors, states),
+ * so the chrome must never compete with it. What changed is how the greys
+ * are built.
+ *
+ * The previous revision set every neutral to chroma 0 — pure, mathematical
+ * grey. That is the main reason the app read as flat: a screen of pure
+ * greys has no temperature, and the eye reads it as absence rather than as
+ * a choice. Every neutral here instead carries a trace of warmth (chroma
+ * 0.003–0.006 around hue 75). It is far too little to perceive as a colour
+ * — nobody will call this beige — but it is enough that the greys feel
+ * mixed rather than generated, and it sits with Newsreader and the
+ * narrative content the app exists to hold.
+ *
+ * The tonal ramp was also rebuilt. It used to step almost evenly (12 → 15
+ * → 19 → 23 → 27), which gives every surface the same weight and so no
+ * hierarchy at all, and it put --border-soft at 22% against a --surface-2
+ * of 19% — a three-percent difference, meaning a large share of the app's
+ * borders were invisible. Now the surfaces sit closer together and the
+ * borders sit further apart from what they divide, so structure comes from
+ * a few deliberate edges and from spacing, rather than from boxing every
+ * element in a line that can't be seen anyway.
+ *
+ * --danger and --success remain the only real hues, reserved for
+ * destructive and constructive actions.
+ */
 
-/* Minimal theme system (v0.12.0): black/white/gray only. Dark is the
-   default (matches bare :root, so there's no flash of a different theme
-   before React mounts and localStorage is read) and Light is the only
-   other option — see "Minimal theme architecture" in the architecture
-   plan for why the old 4-palette, hue-based system was replaced outright
-   rather than kept alongside this one. Every neutral below has chroma 0
-   (pure grayscale, no hue tint at all, unlike the old themes' slightly
-   tinted neutrals) and --accent is simply the *inverse* of --bg — a
-   near-white fill on the dark theme, a near-black fill on the light theme
-   — so every existing "accent-coloured" button, highlight, or badge in the
-   app reads as part of the same black/white/gray palette with no code
-   changes required. --danger (red) and --success (green) are the two
-   deliberate exceptions: real hues, reserved for genuinely destructive
-   (delete/cancel) and genuinely constructive (apply/confirm) actions, per
-   an explicit request that the rest of the palette otherwise stay
-   monochrome. --danger is already wired into ConfirmDialogHost's existing
-   "danger" flag (every delete confirmation in the app); --success isn't
-   applied anywhere yet — there's no clearly "Apply"-shaped action in the
-   app today — but is defined and ready for one (Tags, a future Variables
-   "Apply" button, etc.). */
 :root, [data-theme="dark"] {
   --theme-name: "Dark";
-  --bg: oklch(12% 0 0);
-  --surface: oklch(15% 0 0);
-  --surface-2: oklch(19% 0 0);
-  --surface-3: oklch(23% 0 0);
-  --border: oklch(27% 0 0);
-  --border-soft: oklch(22% 0 0);
-  --border-faint: oklch(31% 0 0);
-  --text: oklch(96% 0 0);
-  --text-2: oklch(74% 0 0);
-  --text-3: oklch(54% 0 0);
-  --accent: oklch(94% 0 0);
-  --accent-hover: oklch(84% 0 0);
-  --accent-text-on: oklch(12% 0 0);
-  --accent-soft: oklch(94% 0 0 / 0.12);
-  --accent-soft-2: oklch(94% 0 0 / 0.22);
-  --accent-ring: oklch(94% 0 0 / 0.4);
-  --accent-fill-strong: oklch(84% 0 0 / 0.9);
-  --accent-fill-soft: oklch(94% 0 0 / 0.14);
-  --accent-fill-mid: oklch(84% 0 0 / 0.55);
+
+  /* Ground, then surfaces stepping toward the light. The gaps are
+     deliberately small: panels should read as one continuous material
+     with slight changes in depth, not as stacked boxes. */
+  --bg: oklch(11% 0.004 75);
+  --surface: oklch(13.5% 0.004 75);
+  --surface-2: oklch(17% 0.005 75);
+  --surface-3: oklch(21% 0.005 75);
+
+  /* Three border weights, faintest first. Each is far enough from the
+     surface it usually sits on to actually register — the previous
+     revision's soft border differed from its own backdrop by three
+     percent and simply didn't. --border-faint is the strongest of the
+     three despite the name (it's the most *visible*); the drag overlay's
+     lift ring depends on that, so the ordering matters. */
+  --border-soft: oklch(16.5% 0.004 75);
+  --border: oklch(20% 0.005 75);
+  --border-faint: oklch(27% 0.006 75);
+
+  /* Text does most of the hierarchy now that the surfaces are quiet.
+     Three clearly separated steps rather than a gradient. */
+  --text: oklch(95% 0.003 75);
+  --text-2: oklch(72% 0.004 75);
+  --text-3: oklch(56% 0.004 75);
+  /* Long-form prose sits a step below the UI's brightest text — full
+     white over paragraphs of story is harsh to read for any length. */
+  --text-reading: oklch(88% 0.003 75);
+
+  /* The accent is the inverse of the ground — a near-white fill on dark,
+     near-black on light — so "accent" reads as emphasis and weight rather
+     than as a colour, leaving hue free for content. */
+  --accent: oklch(93% 0.004 75);
+  --accent-hover: oklch(84% 0.004 75);
+  --accent-text-on: oklch(11% 0.004 75);
+  --accent-soft: oklch(93% 0.004 75 / 0.1);
+  --accent-soft-2: oklch(93% 0.004 75 / 0.18);
+  --accent-ring: oklch(93% 0.004 75 / 0.36);
+  --accent-fill-strong: oklch(84% 0.004 75 / 0.9);
+  --accent-fill-soft: oklch(93% 0.004 75 / 0.12);
+  --accent-fill-mid: oklch(84% 0.004 75 / 0.55);
+
   --danger: oklch(58% 0.19 27);
   --danger-hover: oklch(52% 0.2 27);
   --danger-text-on: oklch(98% 0.01 27);
   --success: oklch(64% 0.13 155);
   --success-hover: oklch(58% 0.14 155);
   --success-text-on: oklch(98% 0.01 155);
-  --overlay: oklch(0% 0 0 / 0.6);
-  --surface-translucent: oklch(15% 0 0 / 0.85);
-  --surface-2-translucent: oklch(19% 0 0 / 0.5);
-  --surface-2-faint: oklch(19% 0 0 / 0.2);
+
+  --overlay: oklch(0% 0 0 / 0.62);
+  --surface-translucent: oklch(13.5% 0.004 75 / 0.85);
+  --surface-2-translucent: oklch(17% 0.005 75 / 0.5);
+  --surface-2-faint: oklch(17% 0.005 75 / 0.2);
+
+  /* Elevation. Two layers — a tight edge and a wide cast — so a lifted
+     element separates from the ground on a dark theme, where a single
+     soft black shadow is invisible. */
+  --shadow-raised: 0 1px 2px oklch(0% 0 0 / 0.4), 0 4px 12px oklch(0% 0 0 / 0.35);
+  --shadow-floating: 0 2px 6px oklch(0% 0 0 / 0.45), 0 14px 30px oklch(0% 0 0 / 0.55);
 }
 
 [data-theme="light"] {
   --theme-name: "Light";
-  --bg: oklch(95% 0 0);
-  --surface: oklch(92% 0 0);
-  --surface-2: oklch(89% 0 0);
-  --surface-3: oklch(85% 0 0);
-  --border: oklch(81% 0 0);
-  --border-soft: oklch(85% 0 0);
-  --border-faint: oklch(76% 0 0);
-  --text: oklch(14% 0 0);
-  --text-2: oklch(35% 0 0);
-  --text-3: oklch(52% 0 0);
-  --accent: oklch(15% 0 0);
-  --accent-hover: oklch(28% 0 0);
-  --accent-text-on: oklch(98% 0 0);
-  --accent-soft: oklch(15% 0 0 / 0.08);
-  --accent-soft-2: oklch(15% 0 0 / 0.16);
-  --accent-ring: oklch(15% 0 0 / 0.35);
-  --accent-fill-strong: oklch(28% 0 0 / 0.9);
-  --accent-fill-soft: oklch(15% 0 0 / 0.1);
-  --accent-fill-mid: oklch(28% 0 0 / 0.5);
-  --danger: oklch(58% 0.19 27);
-  --danger-hover: oklch(52% 0.2 27);
+
+  --bg: oklch(96.5% 0.003 75);
+  --surface: oklch(94% 0.003 75);
+  --surface-2: oklch(91% 0.004 75);
+  --surface-3: oklch(87.5% 0.004 75);
+
+  --border-soft: oklch(90% 0.004 75);
+  --border: oklch(85% 0.005 75);
+  --border-faint: oklch(77% 0.006 75);
+
+  --text: oklch(18% 0.006 75);
+  --text-2: oklch(40% 0.005 75);
+  --text-3: oklch(56% 0.004 75);
+  --text-reading: oklch(24% 0.006 75);
+
+  --accent: oklch(19% 0.006 75);
+  --accent-hover: oklch(30% 0.006 75);
+  --accent-text-on: oklch(97% 0.003 75);
+  --accent-soft: oklch(19% 0.006 75 / 0.07);
+  --accent-soft-2: oklch(19% 0.006 75 / 0.13);
+  --accent-ring: oklch(19% 0.006 75 / 0.3);
+  --accent-fill-strong: oklch(30% 0.006 75 / 0.9);
+  --accent-fill-soft: oklch(19% 0.006 75 / 0.09);
+  --accent-fill-mid: oklch(30% 0.006 75 / 0.5);
+
+  --danger: oklch(54% 0.2 27);
+  --danger-hover: oklch(48% 0.21 27);
   --danger-text-on: oklch(98% 0.01 27);
-  --success: oklch(64% 0.13 155);
-  --success-hover: oklch(58% 0.14 155);
+  --success: oklch(58% 0.14 155);
+  --success-hover: oklch(52% 0.15 155);
   --success-text-on: oklch(98% 0.01 155);
-  --overlay: oklch(0% 0 0 / 0.35);
-  --surface-translucent: oklch(92% 0 0 / 0.85);
-  --surface-2-translucent: oklch(89% 0 0 / 0.5);
-  --surface-2-faint: oklch(89% 0 0 / 0.2);
+
+  --overlay: oklch(20% 0.006 75 / 0.28);
+  --surface-translucent: oklch(94% 0.003 75 / 0.85);
+  --surface-2-translucent: oklch(91% 0.004 75 / 0.5);
+  --surface-2-faint: oklch(91% 0.004 75 / 0.2);
+
+  --shadow-raised: 0 1px 2px oklch(20% 0.006 75 / 0.08), 0 4px 12px oklch(20% 0.006 75 / 0.08);
+  --shadow-floating: 0 2px 6px oklch(20% 0.006 75 / 0.12), 0 14px 30px oklch(20% 0.006 75 / 0.14);
 }
 
+/* Newsreader — the brand wordmark and dialog titles. Deliberately the only
+   place a serif appears in the chrome: used sparingly it reads as a
+   signature, used widely it would read as a theme. */
 .font-serif-narrative {
-  font-family: "Newsreader", Georgia, "Times New Roman", serif;
+  font-family: "Newsreader Variable", Newsreader, Georgia, "Times New Roman", serif;
 }
 
-/* IBM Plex Mono, reserved for technical/structured UI (e.g. a future
-   Variables feature) — not applied anywhere yet as of v0.12.0. */
+/* Reserved for technical/structured UI (variable names, ids, anything
+   meant to be read as data rather than prose). Set in the platform's own
+   monospace rather than a bundled face — nothing uses it yet, and shipping
+   a whole font family for an unused class is weight for nothing. If it
+   ever carries real UI, `npm i @fontsource-variable/ibm-plex-mono` and
+   swap the first entry. */
 .font-technical {
-  font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-family: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", Consolas,
+    "Liberation Mono", monospace;
+  font-variant-numeric: tabular-nums;
 }
-
-/* The Scriare brand mark is now the circular badge logo from
-   other_materials/logos (see BrandMark.tsx), swapped between its Dark and
-   Light variants to match the active theme — this replaces the previous
-   typographic "S" set in a custom blackletter font, so that font-face and
-   utility class were removed here. */

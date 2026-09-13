@@ -3,6 +3,7 @@ import type { ContentNode } from "../../types/project";
 import { childrenOf } from "../../utils/contentTree";
 import { useContentBrowser } from "./contentBrowserContext";
 import { StartBadge } from "../common/StartBadge";
+import { Icon } from "../common/Icon";
 
 interface ContentTreeRowProps {
   node: ContentNode;
@@ -108,7 +109,7 @@ export function ContentTreeRow({ node, depth }: ContentTreeRowProps) {
           <span className="w-4 shrink-0" />
         )}
 
-        <span className="shrink-0 text-xs">{isFolder ? "📁" : "📄"}</span>
+        <Icon name={isFolder ? "folder" : "scene"} className="h-3.5 w-3.5 text-[var(--text-3)]" />
 
         {isRenaming ? (
           <input

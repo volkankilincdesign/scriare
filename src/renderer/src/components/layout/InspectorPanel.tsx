@@ -61,8 +61,8 @@ export function InspectorPanel({ collapsed, onToggle }: InspectorPanelProps) {
   }
 
   return (
-    <aside className="flex w-72 shrink-0 flex-col border-l border-[var(--border-soft)] bg-[var(--surface)]">
-      <div className="flex items-center gap-2 border-b border-[var(--border-soft)] px-3 py-2">
+    <aside className="flex w-80 shrink-0 flex-col border-l border-[var(--border-soft)] bg-[var(--surface)]">
+      <div className="flex items-center gap-2 border-b border-[var(--border-soft)] px-4 py-3">
         <button
           type="button"
           onClick={onToggle}
@@ -76,7 +76,7 @@ export function InspectorPanel({ collapsed, onToggle }: InspectorPanelProps) {
         </span>
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto p-3 text-sm">
+      <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4 text-sm">
         {target.kind === "choice" ? (
           <ChoiceProperties target={target} key={target.blockId} />
         ) : (
@@ -876,7 +876,7 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
         </button>
       </div>
 
-      <div className="space-y-1.5" ref={dragContainerRef}>
+      <div className="space-y-2" ref={dragContainerRef}>
         {displayedOrder.map((id) => {
           const option = byId.get(id);
           if (!option) return null;
@@ -917,7 +917,7 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
                   position: "relative",
                   zIndex: 0,
                 }}
-                className="rounded-md border-2 border-dashed border-[var(--accent)] bg-[var(--accent-soft-2)]"
+                className="rounded-lg border-2 border-dashed border-[var(--accent)] bg-[var(--accent-soft-2)]"
                 aria-hidden
               />
             );
@@ -1086,7 +1086,7 @@ function ChoiceAccordion({
   }
 
   return (
-    <div className="rounded-md border border-[var(--border-soft)] bg-[var(--bg)]">
+    <div className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg)]">
       <div className="flex items-center gap-1">
         <span
           onPointerDown={onDragHandleDown}

@@ -21,7 +21,7 @@ export function TopBar() {
   const openVariableManager = useUIStore((s) => s.openVariableManager);
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--border-soft)] bg-[var(--surface)] px-4">
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--border-soft)] bg-[var(--surface)] px-5">
       <div className="flex items-center gap-3">
         <button
           type="button"

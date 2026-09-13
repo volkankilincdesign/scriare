@@ -2,6 +2,7 @@ import { useProjectStore } from "../../state/projectStore";
 import type { ContentFolder } from "../../types/project";
 import { childrenOf, isDescendant } from "../../utils/contentTree";
 import { Modal } from "../common/Modal";
+import { Icon } from "../common/Icon";
 
 interface MoveToDialogProps {
   nodeIds: string[];
@@ -52,7 +53,7 @@ export function MoveToDialog({ nodeIds, onClose }: MoveToDialogProps) {
           onClick={() => moveTo(null)}
           className="flex w-full items-center gap-1.5 px-2.5 py-1.5 text-left text-sm text-[var(--text)] hover:bg-[var(--surface-2)]"
         >
-          📖 Story (root)
+          <Icon name="story" className="mr-1.5 inline-block h-3.5 w-3.5 align-[-2px]" />Story (root)
         </button>
         {destinations.map((folder) => (
           <button
@@ -62,7 +63,7 @@ export function MoveToDialog({ nodeIds, onClose }: MoveToDialogProps) {
             style={{ paddingLeft: 10 + depthOf(folder) * 16 }}
             className="flex w-full items-center gap-1.5 py-1.5 pr-2.5 text-left text-sm text-[var(--text)] hover:bg-[var(--surface-2)]"
           >
-            📁 {folder.name}
+            <Icon name="folder" className="mr-1.5 inline-block h-3.5 w-3.5 align-[-2px]" />{folder.name}
           </button>
         ))}
       </div>

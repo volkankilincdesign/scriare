@@ -10,15 +10,17 @@ import { ContentTreeRow } from "./ContentTreeRow";
 import { ContentContextMenu } from "./ContentContextMenu";
 import type { ContentMenuItem } from "./ContentContextMenu";
 import { MoveToDialog } from "./MoveToDialog";
+import { Icon } from "../common/Icon";
+import type { IconName } from "../common/Icon";
 
 const EXPANDED_STORAGE_KEY = "scriare:contentExpanded";
 const STORY_ROOT = "root:story";
 
-const PLACEHOLDER_CATEGORIES = [
-  { key: "root:characters", icon: "👤", label: "Characters" },
-  { key: "root:locations", icon: "🌍", label: "Locations" },
-  { key: "root:notes", icon: "📝", label: "Notes" },
-  { key: "root:assets", icon: "🖼", label: "Assets" },
+const PLACEHOLDER_CATEGORIES: { key: string; icon: IconName; label: string }[] = [
+  { key: "root:characters", icon: "character", label: "Characters" },
+  { key: "root:locations", icon: "location", label: "Locations" },
+  { key: "root:notes", icon: "note", label: "Notes" },
+  { key: "root:assets", icon: "asset", label: "Assets" },
 ];
 
 function loadExpanded(): Set<string> {
@@ -484,7 +486,7 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
                       onClick={() => jumpToSearchResult(node)}
                       className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-sm text-[var(--text-2)] hover:bg-[var(--bg)] hover:text-[var(--text)]"
                     >
-                      <span className="text-xs">{node.kind === "folder" ? "📁" : "📄"}</span>
+                      <Icon name={node.kind === "folder" ? "folder" : "scene"} className="h-3.5 w-3.5" />
                       <span className="min-w-0 flex-1 truncate">{name}</span>
                     </button>
                   );
@@ -498,10 +500,10 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
                 onContextMenu={(e) => openContextMenu(e, null)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDropOnStoryRoot}
-                className="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--bg)]"
+                className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2-faint)]"
               >
                 <span className="w-3 text-[10px] text-[var(--text-3)]">{expanded.has(STORY_ROOT) ? "▾" : "▸"}</span>
-                <span>📖</span>
+                <Icon name="story" />
                 <span>Story</span>
               </div>
 
@@ -540,10 +542,10 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
               <div key={cat.key} className="mb-1">
                 <div
                   onClick={() => toggleExpand(cat.key)}
-                  className="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-[var(--text-3)] hover:bg-[var(--bg)]"
+                  className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-[var(--text-3)] transition-colors hover:bg-[var(--surface-2-faint)]"
                 >
                   <span className="w-3 text-[10px] text-[var(--text-3)]">{expanded.has(cat.key) ? "▾" : "▸"}</span>
-                  <span>{cat.icon}</span>
+                  <Icon name={cat.icon} />
                   <span>{cat.label}</span>
                 </div>
                 {expanded.has(cat.key) && (
