@@ -264,5 +264,89 @@ export default async function ({ api, check, seedProject }) {
     r.target.kind === "choice" && r.target.blockId === "start-block", JSON.stringify(r.target));
   check("...and gets out of the way", r.dialogClosed);
 
+  // 8 — the grouping itself (v0.36.2, reported).
+  //
+  // Six unlinked choices in one Choice Block produced six identical rows —
+  // same scene, same sentence, six times — and the panel read as a wall
+  // before it read as information. Grouped by scene it's one line, and the
+  // line has to STAY a line: counts became chips precisely because the
+  // prose version ("6 choices go nowhere and nothing leads here") wraps to
+  // two rows and breaks the rhythm of the list.
+  await api(() => {
+    const store = window.__scriareProjectStore;
+    const { buildChoiceBlockNode } = window.__scriareChoiceUtils;
+    const now = new Date().toISOString();
+    const scene = (id, title, choices) => ({
+      id, title, position: { x: 0, y: 0 }, order: 0,
+      content: { type: "doc", content: [
+        { type: "paragraph", content: [{ type: "text", text: "words" }] },
+        ...(choices ? [buildChoiceBlockNode(choices, `${id}-block`)] : []),
+      ] },
+    });
+    store.setState({
+      project: {
+        name: "Wall", createdAt: now, updatedAt: now,
+        scenes: [
+          scene("start", "Opening", [{ id: "ok", text: "Go on", targetSceneId: "pile" }]),
+          // A real scene title, not "Scene 2": the header only has to hold
+          // its line when there's something in it. With a short name the
+          // prose version of these counts fits too, and the test passes on
+          // the layout it was written to rule out.
+          scene(
+            "pile",
+            "Ercüment Çökertme — The Long Night",
+            [1, 2, 3, 4, 5, 6].map((n) => ({ id: `u${n}`, text: "", targetSceneId: null })),
+          ),
+        ],
+        content: ["start", "pile"].map((id, i) => ({
+          id, kind: "leaf", category: "story", parentId: null, order: i, refType: "scene",
+        })),
+        favorites: [], variables: [], entities: [],
+        choiceStyles: window.__scriareChoiceStyles.normalizeChoiceStyles(undefined),
+        startSceneId: "start",
+      },
+      filePath: null, selectedSceneId: "start", selectedEntityId: null, saveStatus: "saved",
+      isPlaying: false, canUndo: false, canRedo: false, undoLabel: null, redoLabel: null, undoToken: null,
+    });
+  });
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  await api(() => {
+    [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === "Check")?.click();
+  });
+  await new Promise((resolve) => setTimeout(resolve, 250));
+
+  r = await api(() => {
+    const groups = [...document.querySelectorAll("[data-scene-group]")];
+    const header = groups[0]?.querySelector("button");
+    return {
+      groups: groups.length,
+      rowsAtRest: document.querySelectorAll("[data-scene-group] button").length,
+      headerHeight: header ? Math.round(header.getBoundingClientRect().height) : null,
+      chips: [...(header?.querySelectorAll("[data-chip]") ?? [])].map((c) => c.textContent),
+      nameShown: header?.querySelector(".truncate")?.textContent ?? null,
+    };
+  });
+  check("six problems in one scene collapse to one line",
+    r.groups === 1 && r.rowsAtRest === 1, JSON.stringify(r));
+  check("the scene's name is still readable beside them",
+    r.nameShown && r.nameShown.startsWith("Ercüment"), `name: ${r.nameShown}`);
+  check("...counted in a chip rather than repeated as six sentences",
+    r.chips.join() === "6 unlinked", JSON.stringify(r.chips));
+  check("...on a header that stays one line",
+    r.headerHeight !== null && r.headerHeight <= 44, `${r.headerHeight}px`);
+
+  r = await api(() => {
+    document.querySelector("[data-scene-group] button")?.click();
+    return true;
+  });
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  r = await api(() => {
+    const rows = [...document.querySelectorAll("[data-scene-group] [data-issue]")];
+    return rows.map((b) => b.innerText.replace(/\n/g, " "));
+  });
+  check("opening it gives back every one of them, named by position",
+    r.length === 6 && r[0].includes("choice 1") && r[5].includes("choice 6"),
+    JSON.stringify(r));
+
   await seedProject();
 }

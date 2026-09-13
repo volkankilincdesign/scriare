@@ -1,6 +1,20 @@
-# Scriare — v0.36.1 — The Minimap Knows When to Leave
+# Scriare — v0.36.2 — Check Story, Grouped by Scene
 
-## What's new (v0.36.1 — The Minimap Knows When to Leave)
+## What's new (v0.36.2 — Check Story, Grouped by Scene)
+
+**Six unlinked choices in one Choice Block used to produce six identical lines.** Same scene, same sentence, six times — the panel read as a wall before it read as information.
+
+Findings are grouped by scene now, because a branching writer works scene by scene and every one of these problems is repaired *in* a scene. So the grouping that collapses the repetition is also the grouping that matches the trip you're about to take. Four rows instead of nine, and opening one still gives you every finding to click.
+
+**Counts became chips rather than prose**, and this is the part that keeps a line a line: "6 choices go nowhere and nothing leads here" wraps to two rows and breaks the rhythm of the list, while `6 unlinked` + `unreachable` doesn't — and the chip's colour carries the severity the words were spending width on. The scene name truncates rather than wrapping, because the chips are the half that has to stay visible.
+
+**A scene with one finding is one row**, not a group of one you have to open.
+
+**And "Untitled choice" is gone.** That was the panel repeating the editor's own placeholder back at the writer, and in a list of six every row claimed to be the same choice. An unwritten choice is now named by where it is — **choice 3** — which is true, different on every row, and how you'd say it out loud. Choices you have written keep their text, as before.
+
+Five new tests. 181 tests.
+
+## v0.36.1 — The Minimap Knows When to Leave
 
 **The Story Graph's minimap now appears only when part of the graph is off screen.**
 

@@ -38,10 +38,20 @@ export interface StoryIssue {
   id: string;
   kind: StoryIssueKind;
   severity: StorySeverity;
-  /** One line, in the writer's terms. */
+  /** The full sentence, for a tooltip and for anything reading this aloud. */
   title: string;
   /** What to do about it, where that isn't obvious. */
   detail: string;
+  /**
+   * The thing itself, named as briefly as it can be while staying true:
+   * a choice's own text, or WHERE it is when it hasn't been written yet.
+   * "Untitled choice" was the panel repeating the editor's placeholder
+   * back at the writer — and in a list of six, every row claimed to be
+   * the same choice.
+   */
+  label: string;
+  /** Two words for what's wrong, for chips and the right-hand column. */
+  what: string;
   /** Where to go when this is clicked. */
   sceneId?: string;
   blockId?: string;
@@ -147,9 +157,12 @@ export function checkStory(project: Project | null): StoryCheck {
     const choices = sceneChoices(scene.content);
     const targets: string[] = [];
 
-    choices.forEach(({ blockId, option }) => {
+    choices.forEach(({ blockId, option }, index) => {
       choiceCount += 1;
-      const where = `${title(scene)} — "${option.text || "Untitled choice"}"`;
+      // A choice nobody has written yet is named by its position, which is
+      // both true and different for every row.
+      const label = option.text || `choice ${index + 1}`;
+      const where = `${title(scene)} — "${label}"`;
 
       if (!option.targetSceneId) {
         issues.push({
@@ -158,6 +171,8 @@ export function checkStory(project: Project | null): StoryCheck {
           severity: "problem",
           title: where,
           detail: "This choice doesn't go anywhere yet.",
+          label,
+          what: "unlinked",
           sceneId: scene.id,
           blockId,
         });
@@ -168,6 +183,8 @@ export function checkStory(project: Project | null): StoryCheck {
           severity: "problem",
           title: where,
           detail: "It points at a scene that no longer exists.",
+          label,
+          what: "broken link",
           sceneId: scene.id,
           blockId,
         });
@@ -187,6 +204,8 @@ export function checkStory(project: Project | null): StoryCheck {
             title: where,
             detail:
               "A condition on this choice uses a variable that was deleted, so the choice can never appear.",
+            label,
+            what: "dead gate",
             sceneId: scene.id,
             blockId,
           });
@@ -201,6 +220,8 @@ export function checkStory(project: Project | null): StoryCheck {
             severity: "warning",
             title: where,
             detail: "An action on this choice sets a variable that was deleted; it does nothing.",
+            label,
+            what: "dead action",
             sceneId: scene.id,
             blockId,
           });
@@ -217,6 +238,8 @@ export function checkStory(project: Project | null): StoryCheck {
         severity: "note",
         title: title(scene),
         detail: "Nothing written here yet.",
+        label: title(scene),
+        what: "empty",
         sceneId: scene.id,
       });
     }
@@ -239,6 +262,8 @@ export function checkStory(project: Project | null): StoryCheck {
       title: "The first scene was deleted",
       detail:
         "This story starts from a scene that no longer exists, so Play Mode begins wherever it can. Set a Start Scene in Project Settings.",
+      label: "The first scene was deleted",
+      what: "no start",
     });
   } else if (!startId) {
     issues.push({
@@ -247,6 +272,8 @@ export function checkStory(project: Project | null): StoryCheck {
       severity: "problem",
       title: "This story has no scenes yet",
       detail: "Play Mode has nowhere to begin.",
+      label: "This story has no scenes yet",
+      what: "no start",
     });
   }
 
@@ -273,6 +300,8 @@ export function checkStory(project: Project | null): StoryCheck {
       severity: "warning",
       title: title(scene),
       detail: "No choice leads here, so a player can never see it.",
+      label: title(scene),
+      what: "unreachable",
       sceneId: scene.id,
     });
   });

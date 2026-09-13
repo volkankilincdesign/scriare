@@ -1,6 +1,6 @@
 {
   "name": "scriare",
-  "version": "0.36.1",
+  "version": "0.36.2",
   "description": "A writing-first workspace for branching narratives.",
   "main": "./out/main/index.js",
   "author": "Volkan",
