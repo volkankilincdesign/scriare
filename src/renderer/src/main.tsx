@@ -28,12 +28,16 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./state/toastStore"),
     import("./state/selectionStore"),
     import("./utils/contentClipboard"),
-  ]).then(([projectStore, toastStore, selectionStore, clipboardUtils]) => {
+    import("./utils/graphGroups"),
+    import("./types/project"),
+  ]).then(([projectStore, toastStore, selectionStore, clipboardUtils, groupUtils, projectTypes]) => {
     Object.assign(window, {
       __scriareProjectStore: projectStore.useProjectStore,
       __scriareToastStore: toastStore.useToastStore,
       __scriareSelectionStore: selectionStore.useSelectionStore,
       __scriareClipboardUtils: clipboardUtils,
+      __scriareGroupUtils: groupUtils,
+      __scriareProjectTypes: projectTypes,
     });
   });
 }

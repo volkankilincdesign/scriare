@@ -68,16 +68,26 @@ function seedProject() {
         createdAt: now,
         updatedAt: now,
         scenes: [scene("s1", "One", "one"), scene("s2", "Two", "two"), scene("s3", "Three", "three")],
-        content: ["s1", "s2", "s3"].map((id, i) => ({
-          id,
-          kind: "leaf",
-          category: "story",
-          parentId: null,
-          order: i,
-          refType: "scene",
-        })),
-        frames: [
-          { id: "f1", title: "Frame", position: { x: 0, y: 0 }, size: { width: 480, height: 320 }, order: 0 },
+        content: [
+          ...["s1", "s2", "s3"].map((id, i) => ({
+            id,
+            kind: "leaf",
+            category: "story",
+            parentId: null,
+            order: i,
+            refType: "scene",
+          })),
+          // An empty drawn group — the graph-side half of the model, and
+          // what the rename-coalescing case types into.
+          {
+            id: "g1",
+            kind: "folder",
+            category: "story",
+            parentId: null,
+            order: 3,
+            name: "Group",
+            rect: { x: 0, y: 0, width: 480, height: 320 },
+          },
         ],
         favorites: [],
         variables: [],

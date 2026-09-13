@@ -46,13 +46,14 @@ export function useKeyboardClipboard(): void {
 
       const { surface, contentIds, graphIds } = useSelectionStore.getState();
 
-      // A graph selection can hold frame ids as well as scene ids; only the
-      // scenes are content nodes, and frames are left out of copy/paste
-      // entirely — a frame is a piece of canvas layout, and pasting one
-      // into the Content Browser has no meaning.
-      const sceneIdSet = new Set(project.scenes.map((s) => s.id));
+      // Since v0.28.0 a graph selection holds content nodes either way — a
+      // group on the canvas IS a folder — so copy, cut, paste and delete
+      // mean the same thing whichever panel you're in. Ids are still
+      // filtered against the tree, because React Flow's selection can
+      // briefly outlive a node that has just been removed.
+      const contentIdSet = new Set(project.content.map((n) => n.id));
       const selectedIds =
-        surface === "graph" ? graphIds.filter((id) => sceneIdSet.has(id)) : contentIds;
+        surface === "graph" ? graphIds.filter((id) => contentIdSet.has(id)) : contentIds;
 
       const key = event.key.toLowerCase();
       const modifier = event.ctrlKey || event.metaKey;

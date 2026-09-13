@@ -14,9 +14,15 @@ import "@xyflow/react/dist/style.css";
 import { useProjectStore } from "../../state/projectStore";
 import { useSelectionStore } from "../../state/selectionStore";
 import { extractChoices } from "../../utils/choiceBlocks";
-import { findContainingFrame } from "../../utils/graphConstants";
+import {
+  folderSubtree,
+  graphGroups,
+  groupAtPoint,
+  hiddenSceneIds,
+  visibleStandIn,
+} from "../../utils/graphGroups";
 import { SceneNode } from "./SceneNode";
-import { FrameNode } from "./FrameNode";
+import { GroupNode } from "./GroupNode";
 
 interface FlowPanelProps {
   collapsed: boolean;
@@ -25,9 +31,12 @@ interface FlowPanelProps {
   height?: number;
 }
 
+// The group node type keeps the id "frame" so React Flow's own CSS hooks
+// and this app's `.scriare-frame-box` styling carry over untouched — only
+// what backs it changed in v0.28.0, not how it is drawn.
 const nodeTypes: NodeTypes = {
   scene: SceneNode,
-  frame: FrameNode,
+  frame: GroupNode,
 };
 
 // Sprint 8B interaction-consistency fix: the graph's two camera-fit
@@ -40,6 +49,15 @@ const nodeTypes: NodeTypes = {
 // constant keeps them identical going forward without relying on anyone
 // remembering to update both numbers together.
 const CAMERA_FIT_DURATION_MS = 350;
+
+/**
+ * A folded group's on-screen size. Fixed rather than the box's own
+ * dimensions, because the whole point of folding is that a chapter stops
+ * taking up the room its contents needed — a folded 900x600 chapter that
+ * still occupied 900x600 would fold nothing at all. The group keeps its
+ * real rectangle in the project and gets it back the moment it unfolds.
+ */
+const COLLAPSED_GROUP_SIZE = { width: 236, height: 78 };
 
 /** Live drag offset for a single node — its position at drag-start plus the
  * current cursor-driven delta. Originally this was one object per drag
@@ -75,12 +93,11 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   const selectedSceneId = useProjectStore((s) => s.selectedSceneId);
   const selectScene = useProjectStore((s) => s.selectScene);
   const updateScenePosition = useProjectStore((s) => s.updateScenePosition);
-  const updateFramePosition = useProjectStore((s) => s.updateFramePosition);
-  const updateFrameRect = useProjectStore((s) => s.updateFrameRect);
+  const updateFolderRect = useProjectStore((s) => s.updateFolderRect);
   const claimSurface = useSelectionStore((s) => s.claimSurface);
   const publishSelection = useSelectionStore((s) => s.setGraphIds);
   const autoLayoutScenes = useProjectStore((s) => s.autoLayoutScenes);
-  const addFrame = useProjectStore((s) => s.addFrame);
+  const addGraphGroup = useProjectStore((s) => s.addGraphGroup);
 
   const flowInstanceRef = useRef<ReactFlowInstance | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -270,13 +287,37 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   // top instead.
   const edgesBase = useMemo<Edge[]>(() => {
     if (!project) return [];
-    return project.scenes.flatMap((scene) =>
-      extractChoices(scene.content)
-        .filter((choice) => choice.targetSceneId)
-        .map((choice) => ({
+
+    // An endpoint hidden inside a folded group is re-pointed at the box you
+    // can actually see, so folding a chapter never makes a connection
+    // silently vanish — the story still reads as connected, just at a
+    // coarser grain. Several choices collapsing onto the same pair become
+    // ONE edge carrying the count, because a dozen identical curves between
+    // two boxes says nothing a single labelled one doesn't.
+    const bundled = new Map<string, { source: string; target: string; count: number }>();
+    const direct: Edge[] = [];
+
+    for (const scene of project.scenes) {
+      for (const choice of extractChoices(scene.content)) {
+        if (!choice.targetSceneId) continue;
+        const source = visibleStandIn(project, scene.id) ?? scene.id;
+        const target = visibleStandIn(project, choice.targetSceneId) ?? choice.targetSceneId;
+        // Both ends folded into the same box: the connection is now
+        // internal to a single block, with nothing to draw between.
+        if (source === target) continue;
+
+        if (source !== scene.id || target !== choice.targetSceneId) {
+          const key = `${source}->${target}`;
+          const existing = bundled.get(key);
+          if (existing) existing.count += 1;
+          else bundled.set(key, { source, target, count: 1 });
+          continue;
+        }
+
+        direct.push({
           id: `${scene.id}-${choice.id}`,
           source: scene.id,
-          target: choice.targetSceneId as string,
+          target: choice.targetSceneId,
           // Bezier ("default"), not "smoothstep" — investigated as part of
           // the frame-interaction pass below. SceneNode's handles are fixed
           // to Right (source) / Left (target) for Auto Layout's normal
@@ -298,8 +339,22 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
           label: choice.text || undefined,
           labelStyle: { fill: "var(--text-2)", fontSize: 11 },
           labelBgStyle: { fill: "var(--surface)" },
-        })),
-    );
+        });
+      }
+    }
+
+    const bundles: Edge[] = [...bundled.values()].map(({ source, target, count }) => ({
+      id: `bundle-${source}-${target}`,
+      source,
+      target,
+      type: "default",
+      label: `${count} link${count === 1 ? "" : "s"}`,
+      labelStyle: { fill: "var(--text-3)", fontSize: 10 },
+      labelBgStyle: { fill: "var(--surface)" },
+      data: { bundled: true },
+    }));
+
+    return [...direct, ...bundles];
   }, [project]);
 
   // Edges connected to the selected scene read as part of what's selected,
@@ -326,16 +381,72 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
         (!!selectedSceneId && (edge.source === selectedSceneId || edge.target === selectedSceneId)) ||
         selectedGraphIds.has(edge.source) ||
         selectedGraphIds.has(edge.target as string);
+      // A bundle stands for several connections at once, so it's drawn
+      // heavier — the weight is the only thing distinguishing "these two
+      // chapters are loosely related" from "everything flows through here".
+      const isBundle = Boolean((edge.data as { bundled?: boolean } | undefined)?.bundled);
       return {
         ...edge,
         style: {
           stroke: isConnectedToSelected ? "var(--accent)" : "var(--border-faint)",
-          strokeWidth: isConnectedToSelected ? 2.2 : 1.6,
+          strokeWidth: isConnectedToSelected ? 2.2 : isBundle ? 2.6 : 1.6,
         },
         zIndex: isConnectedToSelected ? 1 : 0,
       };
     });
   }, [edgesBase, selectedSceneId, selectedGraphIds]);
+
+  // Which group (if any) currently encloses a scene, mapped once per
+  // render — a scene inside a group that is being dragged has to ride along
+  // with it, and walking the content tree per scene per drag frame is
+  // exactly the kind of per-pointer-move work the v0.10.3 pitfall is about.
+  const groupOfScene = useMemo(() => {
+    const map = new Map<string, string>();
+    if (!project) return map;
+    for (const group of graphGroups(project.content)) {
+      const subtree = folderSubtree(project.content, group.id);
+      subtree.delete(group.id);
+      for (const id of subtree) {
+        // Innermost wins: a scene two levels down belongs to the box that
+        // directly holds it, and that box is itself carried by its parent.
+        if (!map.has(id)) map.set(id, group.id);
+      }
+    }
+    // graphGroups returns parents first, so the loop above records the
+    // OUTERMOST box. Re-walk deepest-first to correct that.
+    map.clear();
+    const groups = graphGroups(project.content).slice().reverse();
+    for (const group of groups) {
+      const subtree = folderSubtree(project.content, group.id);
+      subtree.delete(group.id);
+      for (const id of subtree) if (!map.has(id)) map.set(id, group.id);
+    }
+    return map;
+  }, [project]);
+
+  /** The live drag offset a scene inherits from whichever group is carrying it. */
+  function groupOffsetFor(sceneId: string): DragOffset | undefined {
+    if (!frameDrag) return undefined;
+    let current = groupOfScene.get(sceneId);
+    let guard = 0;
+    while (current && guard++ < 32) {
+      const offset = frameDrag.get(current);
+      if (offset) return offset;
+      current = project?.content.find((n) => n.id === current)?.parentId ?? undefined;
+    }
+    return undefined;
+  }
+
+  /** True when this scene sits inside one of the groups being dragged. */
+  function isInsideDraggedGroup(sceneId: string, draggedGroupIds: Set<string>): boolean {
+    let current = groupOfScene.get(sceneId);
+    let guard = 0;
+    while (current && guard++ < 32) {
+      if (draggedGroupIds.has(current)) return true;
+      current = project?.content.find((n) => n.id === current)?.parentId ?? undefined;
+    }
+    return false;
+  }
 
   // Positions (and the two data fields that come along for free —
   // choiceCount looked up from the memo above, not recomputed) DO need to
@@ -345,63 +456,77 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   const nodes = useMemo<Node[]>(() => {
     if (!project) return [];
 
-    const frameNodes: Node[] = project.frames.map((frame) => {
-      const dragOffset = frameDrag?.get(frame.id);
-      const isResizing = frameResize?.frameId === frame.id;
+    // Groups come from the content tree, parents before children, so a
+    // nested box paints above the one that owns it (React Flow honours
+    // array order for equal z-index). Everything below is unchanged from
+    // the Frame era apart from where the data comes from.
+    const groups = graphGroups(project.content);
+    const sceneCounts = new Map<string, number>();
+    for (const group of groups) {
+      const subtree = folderSubtree(project.content, group.id);
+      subtree.delete(group.id);
+      let count = 0;
+      for (const scene of project.scenes) if (subtree.has(scene.id)) count += 1;
+      sceneCounts.set(group.id, count);
+    }
+
+    const groupNodes: Node[] = groups.map((group, index) => {
+      const dragOffset = frameDrag?.get(group.id);
+      const isResizing = frameResize?.frameId === group.id;
       const position = dragOffset
-        ? { x: frame.position.x + dragOffset.dx, y: frame.position.y + dragOffset.dy }
+        ? { x: group.rect.x + dragOffset.dx, y: group.rect.y + dragOffset.dy }
         : isResizing
           ? { x: frameResize.x, y: frameResize.y }
-          : frame.position;
-      const size = isResizing ? { width: frameResize.width, height: frameResize.height } : frame.size;
+          : { x: group.rect.x, y: group.rect.y };
+      const size = isResizing
+        ? { width: frameResize.width, height: frameResize.height }
+        : group.collapsed
+          ? COLLAPSED_GROUP_SIZE
+          : { width: group.rect.width, height: group.rect.height };
 
       return {
-        id: frame.id,
+        id: group.id,
         type: "frame",
         position,
-        style: { width: size.width, height: size.height, zIndex: 0 },
+        style: { width: size.width, height: size.height, zIndex: index },
         // Suppresses the node's own settle transition (see `.react-flow__node
         // :not(.dragging):not(.scriare-resizing)` in index.css) only while
-        // this frame is being resized. That CSS transition exists so a
-        // *programmatic* position change (Auto Layout, a frame drag
-        // settling) eases into place — but resizing never gets React Flow's
-        // own `.dragging` class (that's drag-only), so without this, a
-        // top/left-handle resize (which moves `position`, not just
-        // width/height) had its position updates eased over 150ms while
-        // width/height applied instantly — the left/top edge visibly lagged
-        // behind the cursor while the opposite edge appeared to overshoot to
-        // compensate. Bottom/right-handle resizes never touch `position`, so
-        // they were never affected — which is exactly why only top/left felt
-        // wrong.
+        // this box is being resized — resizing never gets React Flow's own
+        // `.dragging` class, so without this a top/left-handle resize had
+        // its position eased over 150ms while width/height applied
+        // instantly, and the moving edge visibly lagged the cursor.
         className: isResizing ? "scriare-resizing" : undefined,
         data: {
-          title: frame.title,
-          // Threaded through `data` (rather than called straight from a
-          // store hook inside FrameNode, the way `renameFrame`/`deleteFrame`
-          // are) because the *live* overlay these drive — `frameResize` —
-          // has to live here in FlowPanel, alongside `frameDrag`/`sceneDrag`,
-          // not in FrameNode itself: FrameNode has no way to feed a value
-          // back into the `nodes` array its own node object comes from. See
-          // `frameResize`'s declaration comment for why the overlay itself
-          // is necessary.
+          name: group.name,
+          collapsed: group.collapsed,
+          sceneCount: sceneCounts.get(group.id) ?? 0,
+          // Threaded through `data` (rather than read from a store hook
+          // inside GroupNode, the way rename/delete/fold are) because the
+          // live overlay these drive — `frameResize` — has to live here
+          // alongside `frameDrag`/`sceneDrag`: GroupNode has no way to feed
+          // a value back into the `nodes` array its own node comes from.
           onResize: (rect: { x: number; y: number; width: number; height: number }) => {
-            setFrameResize({ frameId: frame.id, ...rect });
+            setFrameResize({ frameId: group.id, ...rect });
           },
           onResizeEnd: (rect: { x: number; y: number; width: number; height: number }) => {
-            updateFrameRect(frame.id, rect);
+            // `false` — a resize changes the box's shape, not where the
+            // writer means it to live, so it must never re-file the folder
+            // just because a corner happened to cross another box's edge.
+            updateFolderRect(group.id, rect, false);
             setFrameResize(null);
           },
         },
         // Fed back in every recompute — see `selectedGraphIds`'s own
         // declaration comment for why this is required, not optional, for a
-        // frame to ever show as selected (accent border, resize handles).
-        selected: selectedGraphIds.has(frame.id),
-        zIndex: 0,
+        // box to ever show as selected (accent border, resize handles).
+        selected: selectedGraphIds.has(group.id),
+        zIndex: index,
         // Carries the node's last-known real DOM size across drag-frame
         // recomputes — see the `measuredSizeRef` comment above.
-        measured: measuredSizeRef.current.get(frame.id),
+        measured: measuredSizeRef.current.get(group.id),
       };
     });
+
 
     const sceneNodes: Node[] = project.scenes.map((scene) => {
       // A scene whose containing Frame is *also* being dragged takes the
@@ -411,7 +536,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       // frame, and one that IS also directly selected/dragged already gets
       // carried correctly by the frame's motion, so applying its own
       // (redundant) offset on top would double it.
-      const frameOffset = scene.frameId ? frameDrag?.get(scene.frameId) : undefined;
+      const frameOffset = groupOffsetFor(scene.id);
       const sceneOffset = sceneDrag?.get(scene.id);
       const position = frameOffset
         ? { x: scene.position.x + frameOffset.dx, y: scene.position.y + frameOffset.dy }
@@ -443,7 +568,11 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       };
     });
 
-    return [...frameNodes, ...sceneNodes];
+    // A scene inside a folded group isn't drawn at all — that's what
+    // folding means. Its edges are re-pointed at the folded box instead
+    // (see `edges` above), so nothing about the story silently disappears.
+    const hidden = hiddenSceneIds(project);
+    return [...groupNodes, ...sceneNodes.filter((n) => !hidden.has(n.id))];
     // `measuredVersion` isn't read inside this computation — it's listed here
     // purely so a change to it (see its own comment above) forces this memo
     // to recompute and re-read `measuredSizeRef.current`, which the
@@ -457,7 +586,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     frameResize,
     choiceCountByScene,
     measuredVersion,
-    updateFrameRect,
+    updateFolderRect,
   ]);
 
   // Single click no longer opens a scene in the Scene Editor — it now only
@@ -514,7 +643,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     setSceneDrag(sceneMap.size > 0 ? sceneMap : null);
 
     if (node.type === "scene" && project) {
-      setFrameHighlight(findContainingFrame(project.frames, node.position)?.id ?? null);
+      setFrameHighlight(groupAtPoint(graphGroups(project.content), node.position)?.id ?? null);
     }
   };
 
@@ -554,26 +683,35 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     });
 
     if (node.type === "scene" && project) {
-      setFrameHighlight(findContainingFrame(project.frames, node.position)?.id ?? null);
+      setFrameHighlight(groupAtPoint(graphGroups(project.content), node.position)?.id ?? null);
     }
   };
 
   const handleNodeDragStop: OnNodeDrag = (_event, node, nodes) => {
-    const draggedFrameIds = new Set(nodes.filter((n) => n.type === "frame").map((n) => n.id));
+    const draggedGroupIds = new Set(nodes.filter((n) => n.type === "frame").map((n) => n.id));
 
     for (const n of nodes) {
-      if (n.type === "frame") updateFramePosition(n.id, n.position);
+      if (n.type === "frame") {
+        updateFolderRect(
+          n.id,
+          {
+            x: n.position.x,
+            y: n.position.y,
+            width: (n.style?.width as number) ?? 0,
+            height: (n.style?.height as number) ?? 0,
+          },
+          true,
+        );
+      }
     }
     for (const n of nodes) {
       if (n.type !== "scene") continue;
-      const scene = project?.scenes.find((s) => s.id === n.id);
-      // A scene whose containing frame is *also* being dragged in this same
-      // gesture already gets carried along by `updateFramePosition` above
-      // (it shifts every scene sharing that `frameId`) — committing this
-      // scene's own position on top of that would double-apply the frame's
-      // motion. See the matching comment on `frameOffset`/`sceneOffset` in
-      // the `nodes` memo, which mirrors this same precedence while dragging.
-      if (scene?.frameId && draggedFrameIds.has(scene.frameId)) continue;
+      // A scene inside a group that is ALSO being dragged in this gesture is
+      // already carried by `updateFolderRect` above (it shifts everything in
+      // the subtree) — committing its own position on top would double-apply
+      // the group's motion. Mirrors the same precedence the `nodes` memo
+      // applies while the drag is still in flight.
+      if (isInsideDraggedGroup(n.id, draggedGroupIds)) continue;
       updateScenePosition(n.id, n.position);
     }
 
@@ -632,21 +770,21 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => addFrame()}
+                onClick={() => addGraphGroup()}
                 className="rounded px-2 py-1 text-xs font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-                title="Add a frame to visually group scenes"
+                title="Add a group — a chapter box on the canvas that is also a folder in Content"
               >
-                + Frame
+                + Group
               </button>
               <button
                 type="button"
                 onClick={handleAutoLayout}
                 className="rounded px-2 py-1 text-xs font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-                // As of v0.16.0, a Frame containing scenes is arranged as
-                // one collapsed unit (see "Auto Layout and Frames
-                // architecture") rather than being skipped — this tooltip
-                // was still describing the pre-v0.16.0 behavior.
-                title="Automatically arrange scenes and frames"
+                // A group containing scenes is arranged as one unit
+                // (v0.16.0's behaviour, retargeted from Frames to folders in
+                // v0.28.0) rather than being skipped, and everything inside
+                // keeps its own relative arrangement.
+                title="Arrange scenes and groups automatically"
               >
                 Auto Layout
               </button>

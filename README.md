@@ -1,6 +1,24 @@
-# Scriare — v0.27.0 — Keys That Work Everywhere
+# Scriare — v0.28.0 — One Hierarchy
 
-## What's new (v0.27.0 — Keys That Work Everywhere)
+## What's new (v0.28.0 — One Hierarchy)
+
+Scriare used to group scenes twice. Folders organised them in the Content Browser; Frames grouped them on the canvas; neither knew the other existed. A scene could be in the Prologue folder and inside the Ashfall frame at the same time and nothing was wrong — they were answers to different questions. The trouble is that two hierarchies over the same scenes don't stay parallel. Every drag in the graph made the panels disagree a little more, and only the writer knew which answer counted.
+
+**Frames are gone. A folder now owns its box on the graph.** The rectangle you see and the folder in the Content Browser are one object: renaming it on the canvas renames the folder, deleting it there ungroups exactly as deleting the folder does, and dragging a scene into a box genuinely moves it into that folder — the tree reorganises itself as you rearrange the picture. Dropping a scene on open canvas moves it back out to the Story root. There is nothing left that can drift.
+
+**Groups fold.** A chapter collapses to a single block carrying its scene count, and every connection crossing its boundary bundles into one labelled edge — "3 links" rather than three identical curves. Everything inside is hidden, at any depth, and comes back exactly as it was. Fold from the box's own caret, from the folded block, or by double-clicking it.
+
+**Groups nest, which Frames never could.** A sub-chapter inside a chapter is a box inside a box, and the two rules that keep the picture honest are the ones worth knowing: dragging a box carries everything inside it recursively — scenes and sub-boxes alike — and a box dragged clear of its parent really leaves that folder, because where something sits is what decides who owns it. A scene joins the *deepest* box it lands in, so dropping into a sub-chapter joins the sub-chapter, not its parent.
+
+A box resized past its parent's edge **grows the parent** rather than spilling outside it. Clamping the child instead would mean silently refusing a resize the writer clearly asked for, and letting it overflow would mean the picture contradicting the tree — which is the whole thing this version exists to stop. A resize never re-files anything, however the corners land: changing a box's shape isn't a statement about where it should live.
+
+Auto Layout works the same as it did — a group containing scenes is arranged as one unit while everything inside keeps its exact relative arrangement — just driven by folders now instead of frames.
+
+**Old projects convert on open**, with two rules chosen so nothing gets quietly rearranged. A frame becomes a folder carrying its rectangle, and the scenes that were inside it move into that folder — *unless* a scene was already filed in a folder by hand, in which case the folder wins and the frame becomes an empty group. Where the two hierarchies disagreed, the deliberately-built one is the one to trust. An empty frame survives as an empty folder rather than vanishing: it may be a chapter drawn before it was written, and silently deleting a named thing is never the right default. The legacy `frames` array and `scene.frameId` are dropped once converted.
+
+Sixteen new tests cover exactly the ways the two systems used to drift apart, and the two that matter most — a scene drop re-filing in the tree, and a group drag re-filing itself — were confirmed to fail on builds with that logic removed. 50 tests total.
+
+## v0.27.0 — Keys That Work Everywhere
 
 **Ctrl+C, Ctrl+X, Ctrl+V and Delete now work on scenes and folders**, not just on text. Until now the Content Browser was the one part of the app that didn't behave like a file manager — everything had to go through the right-click menu. They follow the same rule Ctrl+Z got in v0.25.0: if focus is in the editor or a text field, the keys belong to that field; anywhere else they're about the project. All four are undoable, and Delete raises the same undo toast the right-click menu does, so no path through the app is quieter or less reversible than another.
 

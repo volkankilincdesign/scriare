@@ -1,12 +1,28 @@
 import { create } from "zustand";
 import { nanoid } from "nanoid";
 import type { JSONContent } from "@tiptap/react";
-import type { ContentFolder, ContentLeaf, ContentNode, Favorite, Project, Scene } from "../types/project";
-import { buildFrame, buildProject, buildScene, normalizeProject } from "../types/project";
+import type {
+  ContentFolder,
+  ContentLeaf,
+  ContentNode,
+  Favorite,
+  FolderRect,
+  Project,
+  Scene,
+} from "../types/project";
+import { buildProject, buildScene, buildStoryFolder, normalizeProject } from "../types/project";
 import { computeAutoLayout } from "../utils/autoLayout";
 import { extractChoices, regenerateChoiceIds } from "../utils/choiceBlocks";
 import { childrenOf, isDescendant, nextOrder } from "../utils/contentTree";
-import { findContainingFrame } from "../utils/graphConstants";
+import { FOLDER_PADDING } from "../utils/graphConstants";
+import {
+  contentBounds,
+  folderSubtree,
+  graphGroups,
+  groupAtPoint,
+  groupContaining,
+  unionRect,
+} from "../utils/graphGroups";
 import type { ContentClipboard } from "../utils/contentClipboard";
 import type { Variable, VariableAction, VariableType, VariableValue } from "../types/variables";
 import { applyVariableAction, buildVariable, changeVariableType } from "../types/variables";
@@ -118,14 +134,21 @@ interface ProjectState {
    * Mode then falls back to the first Story scene, same as an unset project). */
   setStartScene: (sceneId: string | null) => void;
 
-  addFrame: () => void;
-  renameFrame: (frameId: string, title: string) => void;
-  updateFramePosition: (frameId: string, position: { x: number; y: number }) => void;
-  updateFrameRect: (
-    frameId: string,
-    rect: { x: number; y: number; width: number; height: number },
-  ) => void;
-  deleteFrame: (frameId: string) => void;
+  /**
+   * Creates a Story folder that is drawn on the graph immediately — the
+   * graph's "+ Group" button. A folder made from the Content Browser has no
+   * rectangle and isn't on the canvas until it's given one.
+   */
+  addGraphGroup: () => void;
+  /**
+   * Moves and/or resizes a folder's box, carrying everything inside it, and
+   * re-files the folder itself if it was dropped inside (or dragged out of)
+   * another group. `reparent` is false during a resize, where the box
+   * changes shape without the writer meaning to move it anywhere.
+   */
+  updateFolderRect: (folderId: string, rect: FolderRect, reparent?: boolean) => void;
+  /** Folds a group down to a single block on the graph, or unfolds it. */
+  toggleFolderCollapsed: (folderId: string) => void;
 
   /** Adds a fresh, unnamed Variable (see types/variables.ts's buildVariable) — the
    * Variable Manager's "+ Add Variable" button. */
@@ -854,21 +877,33 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     if (!project) return;
 
     pushHistory(set, get, "Move Scene");
-    // Figma-style auto-grouping: if the scene's new position lands inside a
-    // Frame's rectangle, it joins that frame; otherwise it's ungrouped. Uses
-    // the same containment check the graph's live drag-hover preview uses,
-    // so what the user sees highlighted while dragging is always what
-    // actually happens on drop.
-    const containingFrame = findContainingFrame(project.frames, position);
+
+    // Figma-style auto-grouping, except the group is now a real folder: a
+    // scene dropped inside a group's box moves INTO that folder, and one
+    // dropped on open canvas moves out to the Story root. Since v0.28.0
+    // that's one fact rather than two — the Content Browser reorganises
+    // itself as you rearrange the graph, instead of the two panels drifting
+    // apart. Uses the same containment check the live drag-hover highlight
+    // uses, so what lights up while dragging is always what you get.
+    const groups = graphGroups(project.content);
+    const target = groupAtPoint(groups, position);
+    const leaf = project.content.find((n) => n.id === sceneId);
+    const nextParentId = target?.id ?? null;
+    const reparenting = Boolean(leaf) && leaf!.parentId !== nextParentId;
+
+    const content = reparenting
+      ? project.content.map((n) =>
+          n.id === sceneId
+            ? { ...n, parentId: nextParentId, order: nextOrder(project.content, "story", nextParentId) }
+            : n,
+        )
+      : project.content;
 
     set({
       project: {
         ...project,
-        scenes: project.scenes.map((s) =>
-          s.id === sceneId
-            ? { ...s, position, frameId: containingFrame?.id ?? null }
-            : s,
-        ),
+        scenes: project.scenes.map((s) => (s.id === sceneId ? { ...s, position } : s)),
+        content,
         updatedAt: new Date().toISOString(),
       },
       saveStatus: "unsaved",
@@ -880,53 +915,55 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project } = get();
     if (!project) return;
 
-    // A Frame's own manual arrangement is never touched by Auto Layout —
-    // that part is unchanged from before v0.16.0, and is exactly what
+    // A group's internal arrangement is never touched by Auto Layout —
     // "Auto Layout should never undo a writer's own organizing work" has
-    // always meant here. What changed: previously a Frame (and everything
-    // inside it) was entirely invisible to the layout algorithm — it just
-    // sat wherever it was while loose scenes rearranged around it,
-    // regardless of whether a loose scene's own connections ran into or
-    // out of that Frame. As of v0.16.0, a Frame that contains at least one
-    // scene participates in Auto Layout as its own single node — sized to
-    // the Frame's own footprint, connected via any choice edge that
-    // crosses in or out of it — so the Frame's *position* (as a whole) is
-    // included in the layout, while every scene *inside* it keeps its
-    // exact relative arrangement, shifted only by however far the Frame
-    // itself moved. A Frame with no scenes in it isn't a stand-in for
-    // anything with connections, so it's left exactly where it is, same
-    // as before.
-    const framesWithScenes = project.frames.filter((f) =>
-      project.scenes.some((s) => s.frameId === f.id),
+    // meant that since v0.16.0, and folding Frames into folders (v0.28.0)
+    // doesn't change it. A top-level group that contains at least one
+    // scene participates as its own single node, sized to its own box and
+    // connected by any choice edge crossing in or out of it, so the group
+    // as a whole is placed in the flow while everything inside keeps its
+    // exact relative arrangement and is simply carried along. A group with
+    // nothing in it stands in for no connections, so it stays put.
+    //
+    // Only TOP-LEVEL drawn groups are laid out. A nested group already
+    // travels with its parent, and giving dagre both would place the same
+    // scenes twice.
+    const groups = graphGroups(project.content);
+    const topGroups = groups.filter((g) => g.parentId === null);
+
+    // Which layout node stands in for each scene: the outermost drawn group
+    // containing it, or the scene itself when it's loose on the canvas.
+    const standIn = new Map<string, string>();
+    for (const group of topGroups) {
+      const subtree = folderSubtree(project.content, group.id);
+      subtree.delete(group.id);
+      for (const id of subtree) standIn.set(id, group.id);
+    }
+
+    const groupsWithScenes = topGroups.filter((g) =>
+      project.scenes.some((s) => standIn.get(s.id) === g.id),
     );
-    const frameIdSet = new Set(framesWithScenes.map((f) => f.id));
-    const looseScenes = project.scenes.filter((s) => !s.frameId);
-    if (framesWithScenes.length === 0 && looseScenes.length === 0) return;
+    const withSceneIds = new Set(groupsWithScenes.map((g) => g.id));
+    const looseScenes = project.scenes.filter((s) => !standIn.has(s.id));
+    if (groupsWithScenes.length === 0 && looseScenes.length === 0) return;
 
     pushHistory(set, get, "Auto Layout");
-    // Every scene maps to the id that represents it in the layout graph:
-    // its containing Frame's id if that Frame is one of the ones being
-    // laid out, or its own id if it's loose. A scene whose `frameId`
-    // points at neither (a stale/orphaned reference) maps to nothing and
-    // is simply excluded from the layout, matching how it was already
-    // excluded from `looseScenes` before this change.
+
     const layoutNodeIdForScene = (sceneId: string): string | undefined => {
-      const scene = project.scenes.find((s) => s.id === sceneId);
-      if (!scene) return undefined;
-      if (scene.frameId) return frameIdSet.has(scene.frameId) ? scene.frameId : undefined;
-      return scene.id;
+      const host = standIn.get(sceneId);
+      if (host) return withSceneIds.has(host) ? host : undefined;
+      return project.scenes.some((s) => s.id === sceneId) ? sceneId : undefined;
     };
 
-    const nodeIds = [...framesWithScenes.map((f) => f.id), ...looseScenes.map((s) => s.id)];
+    const nodeIds = [...groupsWithScenes.map((g) => g.id), ...looseScenes.map((s) => s.id)];
 
-    // Collapse every choice connection down to the layout-node level: an
-    // edge between two scenes grouped into the *same* Frame becomes a
-    // self-loop once both ends map to that Frame's id — dropped below,
-    // since dagre lays out relationships *between* nodes and this one is
-    // now fully internal to a single node. An edge crossing into or out of
-    // a Frame becomes an edge to/from that Frame's own node id instead of
-    // the individual scene's, which is what actually pulls a Frame into
-    // the same layout flow as everything it's connected to.
+    // Collapse every choice connection to the layout-node level: an edge
+    // between two scenes in the same group becomes a self-loop once both
+    // ends map to that group's id, and is dropped — dagre lays out
+    // relationships *between* nodes, and that one is now internal to a
+    // single node. An edge crossing in or out becomes an edge to or from
+    // the group itself, which is what pulls a chapter into the same flow as
+    // whatever it connects to.
     const rawEdges = project.scenes.flatMap((scene) =>
       extractChoices(scene.content)
         .filter((choice): choice is typeof choice & { targetSceneId: string } =>
@@ -947,31 +984,40 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }
 
     const positions = computeAutoLayout(nodeIds, edges, (id) => {
-      const frame = framesWithScenes.find((f) => f.id === id);
-      return frame?.size;
+      const group = groupsWithScenes.find((g) => g.id === id);
+      return group ? { width: group.rect.width, height: group.rect.height } : undefined;
     });
 
-    // Frames move first (capturing how far each one actually moved), then
-    // every scene either rides along with its containing Frame's delta or,
-    // if it's loose, takes its own freshly computed position directly —
-    // mirroring the exact "shift the frame, carry its scenes by the same
-    // delta" pattern `updateFramePosition`/`updateFrameRect` already use
-    // for a manual Frame drag/resize, so a Frame's contained scenes never
-    // need their own position recomputed by dagre at all.
-    const frameDeltas = new Map<string, { dx: number; dy: number }>();
-    const newFrames = project.frames.map((f) => {
-      const newPos = positions[f.id];
-      if (!newPos) return f;
-      frameDeltas.set(f.id, { dx: newPos.x - f.position.x, dy: newPos.y - f.position.y });
-      return { ...f, position: newPos };
+    // Groups move first, capturing how far each one actually travelled;
+    // then everything inside rides along by that same delta, and loose
+    // scenes take their own freshly computed position. Same "shift the box,
+    // carry its contents" pattern `updateFolderRect` uses for a manual
+    // drag, so nothing inside a group ever needs its position recomputed.
+    const deltas = new Map<string, { dx: number; dy: number }>();
+    let content = project.content.map((n) => {
+      if (n.kind !== "folder" || !n.rect) return n;
+      const newPos = positions[n.id];
+      if (!newPos) return n;
+      deltas.set(n.id, { dx: newPos.x - n.rect.x, dy: newPos.y - n.rect.y });
+      return { ...n, rect: { ...n.rect, x: newPos.x, y: newPos.y } };
+    });
+
+    // Nested groups are carried by their top-level ancestor's delta.
+    content = content.map((n) => {
+      if (n.kind !== "folder" || !n.rect) return n;
+      if (deltas.has(n.id)) return n;
+      const host = standIn.get(n.id);
+      const delta = host ? deltas.get(host) : undefined;
+      if (!delta || (delta.dx === 0 && delta.dy === 0)) return n;
+      return { ...n, rect: { ...n.rect, x: n.rect.x + delta.dx, y: n.rect.y + delta.dy } };
     });
 
     const newScenes = project.scenes.map((s) => {
-      if (s.frameId && frameDeltas.has(s.frameId)) {
-        const { dx, dy } = frameDeltas.get(s.frameId)!;
-        return dx !== 0 || dy !== 0
-          ? { ...s, position: { x: s.position.x + dx, y: s.position.y + dy } }
-          : s;
+      const host = standIn.get(s.id);
+      if (host) {
+        const delta = deltas.get(host);
+        if (!delta || (delta.dx === 0 && delta.dy === 0)) return s;
+        return { ...s, position: { x: s.position.x + delta.dx, y: s.position.y + delta.dy } };
       }
       const newPos = positions[s.id];
       return newPos ? { ...s, position: newPos } : s;
@@ -980,7 +1026,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set({
       project: {
         ...project,
-        frames: newFrames,
+        content,
         scenes: newScenes,
         updatedAt: new Date().toISOString(),
       },
@@ -988,6 +1034,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     });
     scheduleAutosave(get);
   },
+
 
   setStartScene: (sceneId) => {
     const { project } = get();
@@ -1009,16 +1056,28 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     scheduleAutosave(get);
   },
 
-  addFrame: () => {
+  addGraphGroup: () => {
     const { project } = get();
     if (!project) return;
 
-    pushHistory(set, get, "Add Frame");
-    const frame = buildFrame("New Frame", project.frames.length);
+    pushHistory(set, get, "Add Group");
+
+    // Offset each new group so a second one doesn't land exactly on top of
+    // the first — the same trick `buildScene` uses for new scenes.
+    const existing = project.content.filter(
+      (n) => n.kind === "folder" && n.category === "story" && n.rect,
+    ).length;
+    const folder = buildStoryFolder(
+      "New Group",
+      null,
+      nextOrder(project.content, "story", null),
+      { x: 60 + existing * 40, y: 320 + existing * 40, width: 480, height: 320 },
+    );
+
     set({
       project: {
         ...project,
-        frames: [...project.frames, frame],
+        content: [...project.content, folder],
         updatedAt: new Date().toISOString(),
       },
       saveStatus: "unsaved",
@@ -1026,42 +1085,112 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     scheduleAutosave(get);
   },
 
-  renameFrame: (frameId, title) => {
+  updateFolderRect: (folderId, rect, reparent = true) => {
     const { project } = get();
     if (!project) return;
 
-    pushHistory(set, get, "Rename Frame", `rename-frame:${frameId}`);
+    const folder = project.content.find(
+      (n): n is ContentFolder => n.id === folderId && n.kind === "folder",
+    );
+    if (!folder?.rect) return;
+
+    pushHistory(set, get, reparent ? "Move Group" : "Resize Group");
+
+    const dx = rect.x - folder.rect.x;
+    const dy = rect.y - folder.rect.y;
+    const moved = dx !== 0 || dy !== 0;
+
+    // Everything inside travels with the box. A group is the thing that
+    // contains its scenes, so dragging one and leaving its contents behind
+    // would be a lie about what the box means — the same rule frames had,
+    // now applied recursively, since folders nest and frames never could.
+    const subtree = folderSubtree(project.content, folderId);
+    subtree.delete(folderId);
+
+    let content = project.content.map((n) => {
+      if (n.id === folderId && n.kind === "folder") return { ...n, rect };
+      if (moved && subtree.has(n.id) && n.kind === "folder" && n.rect) {
+        return { ...n, rect: { ...n.rect, x: n.rect.x + dx, y: n.rect.y + dy } };
+      }
+      return n;
+    });
+
+    const scenes = moved
+      ? project.scenes.map((s) =>
+          subtree.has(s.id) ? { ...s, position: { x: s.position.x + dx, y: s.position.y + dy } } : s,
+        )
+      : project.scenes;
+
+    // Where a box sits decides which box owns it, exactly as it does for a
+    // scene — drag a sub-chapter out of its chapter and it really leaves.
+    // Full containment rather than a centre point, because a chapter's
+    // centre can easily land inside a small sub-chapter it visually
+    // swallows; see groupContaining.
+    if (reparent) {
+      const groups = graphGroups(content);
+      const excluded = folderSubtree(content, folderId);
+      const host = groupContaining(groups, rect, excluded);
+      const nextParentId = host?.id ?? null;
+      if (folder.parentId !== nextParentId) {
+        content = content.map((n) =>
+          n.id === folderId
+            ? { ...n, parentId: nextParentId, order: nextOrder(content, "story", nextParentId) }
+            : n,
+        );
+      }
+    }
+
+    // A child resized past its parent's edge grows the parent rather than
+    // spilling out of it — the picture and the tree must never disagree
+    // about what is inside what, and clamping the child instead would mean
+    // silently refusing a resize the writer clearly asked for.
+    const grown = { ...project, scenes, content };
+    let ancestorId = content.find((n) => n.id === folderId)?.parentId ?? null;
+    let guard = 0;
+    while (ancestorId && guard++ < 32) {
+      const ancestor = grown.content.find(
+        (n): n is ContentFolder => n.id === ancestorId && n.kind === "folder",
+      );
+      if (!ancestor?.rect) break;
+      const needed = contentBounds(grown, ancestor.id, FOLDER_PADDING);
+      if (needed) {
+        const merged = unionRect(ancestor.rect, needed);
+        if (
+          merged.x !== ancestor.rect.x ||
+          merged.y !== ancestor.rect.y ||
+          merged.width !== ancestor.rect.width ||
+          merged.height !== ancestor.rect.height
+        ) {
+          grown.content = grown.content.map((n) =>
+            n.id === ancestor.id && n.kind === "folder" ? { ...n, rect: merged } : n,
+          );
+        }
+      }
+      ancestorId = ancestor.parentId;
+    }
+
     set({
-      project: {
-        ...project,
-        frames: project.frames.map((f) => (f.id === frameId ? { ...f, title } : f)),
-        updatedAt: new Date().toISOString(),
-      },
+      project: { ...project, scenes: grown.scenes, content: grown.content, updatedAt: new Date().toISOString() },
       saveStatus: "unsaved",
     });
     scheduleAutosave(get);
   },
 
-  updateFramePosition: (frameId, position) => {
+  toggleFolderCollapsed: (folderId) => {
     const { project } = get();
     if (!project) return;
+    const folder = project.content.find(
+      (n): n is ContentFolder => n.id === folderId && n.kind === "folder",
+    );
+    if (!folder?.rect) return;
 
-    const frame = project.frames.find((f) => f.id === frameId);
-    if (!frame) return;
-
-    pushHistory(set, get, "Move Frame");
-
-    const dx = position.x - frame.position.x;
-    const dy = position.y - frame.position.y;
+    pushHistory(set, get, folder.collapsed ? "Unfold Group" : "Fold Group");
 
     set({
       project: {
         ...project,
-        frames: project.frames.map((f) => (f.id === frameId ? { ...f, position } : f)),
-        scenes: project.scenes.map((s) =>
-          s.frameId === frameId
-            ? { ...s, position: { x: s.position.x + dx, y: s.position.y + dy } }
-            : s,
+        content: project.content.map((n) =>
+          n.id === folderId && n.kind === "folder" ? { ...n, collapsed: !n.collapsed } : n,
         ),
         updatedAt: new Date().toISOString(),
       },
@@ -1070,61 +1199,6 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     scheduleAutosave(get);
   },
 
-  updateFrameRect: (frameId, rect) => {
-    const { project } = get();
-    if (!project) return;
-
-    const frame = project.frames.find((f) => f.id === frameId);
-    if (!frame) return;
-
-    pushHistory(set, get, "Resize Frame");
-
-    const dx = rect.x - frame.position.x;
-    const dy = rect.y - frame.position.y;
-
-    set({
-      project: {
-        ...project,
-        frames: project.frames.map((f) =>
-          f.id === frameId
-            ? { ...f, position: { x: rect.x, y: rect.y }, size: { width: rect.width, height: rect.height } }
-            : f,
-        ),
-        // Resizing from the top-left handle shifts the frame's origin —
-        // keep contained scenes moving with it, same as a plain drag.
-        scenes:
-          dx !== 0 || dy !== 0
-            ? project.scenes.map((s) =>
-                s.frameId === frameId
-                  ? { ...s, position: { x: s.position.x + dx, y: s.position.y + dy } }
-                  : s,
-              )
-            : project.scenes,
-        updatedAt: new Date().toISOString(),
-      },
-      saveStatus: "unsaved",
-    });
-    scheduleAutosave(get);
-  },
-
-  deleteFrame: (frameId) => {
-    const { project } = get();
-    if (!project) return;
-
-    pushHistory(set, get, "Delete Frame");
-    set({
-      project: {
-        ...project,
-        frames: project.frames.filter((f) => f.id !== frameId),
-        scenes: project.scenes.map((s) =>
-          s.frameId === frameId ? { ...s, frameId: null } : s,
-        ),
-        updatedAt: new Date().toISOString(),
-      },
-      saveStatus: "unsaved",
-    });
-    scheduleAutosave(get);
-  },
 
   addVariable: () => {
     const { project } = get();

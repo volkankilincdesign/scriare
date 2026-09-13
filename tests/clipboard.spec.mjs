@@ -57,7 +57,6 @@ export default async function ({ page, api, check, seedProject }) {
             { id: "b", kind: "leaf", category: "story", parentId: "fold", order: 1, refType: "scene" },
             { id: "outside", kind: "leaf", category: "story", parentId: null, order: 1, refType: "scene" },
           ],
-          frames: [],
           favorites: [],
           variables: [],
           startSceneId: "a",
@@ -191,28 +190,27 @@ export default async function ({ page, api, check, seedProject }) {
   });
   check("Delete in a text field does NOT delete the selected scene", r === 2, `${r} scenes`);
 
-  // 7 — the graph surface only ever offers its scenes, never its frames
+  // 7 — a graph selection is made of content nodes now, so Delete there
+  // means exactly what it means in the Content Browser: the scene goes, the
+  // group ungroups rather than taking its contents with it.
+  await seedLinked();
   r = await api(() => {
     const store = window.__scriareProjectStore;
     const sel = window.__scriareSelectionStore;
-    store.setState({
-      project: {
-        ...store.getState().project,
-        frames: [
-          { id: "fr1", title: "F", position: { x: 0, y: 0 }, size: { width: 300, height: 200 }, order: 0 },
-        ],
-      },
-    });
-    sel.setState({ surface: "graph", graphIds: ["fr1", "a"] });
+    sel.setState({ surface: "graph", graphIds: ["fold", "a"] });
     document.body.dispatchEvent(
       new KeyboardEvent("keydown", { key: "Delete", bubbles: true, cancelable: true }),
     );
     const p = store.getState().project;
-    return { scenes: p.scenes.map((s) => s.id), frames: p.frames.map((f) => f.id) };
+    return {
+      scenes: p.scenes.map((s) => s.id),
+      nodes: p.content.map((n) => n.id),
+      bParent: p.content.find((n) => n.id === "b")?.parentId ?? null,
+    };
   });
-  check("Delete on a graph selection removes its scenes and leaves frames alone",
-    r.scenes.join() === "b" && r.frames.join() === "fr1",
-    `scenes [${r.scenes}], frames [${r.frames}]`);
+  check("Delete on a graph selection deletes the scene and ungroups the folder",
+    r.scenes.join() === "b,outside" && !r.nodes.includes("fold") && r.bParent === null,
+    `scenes [${r.scenes}], nodes [${r.nodes}], b's parent is ${r.bParent}`);
 
   // 8 — the same thing through the real UI: a click claims the panel, the
   // keys go through the window handler, and the selection published by the
@@ -239,7 +237,7 @@ export default async function ({ page, api, check, seedProject }) {
         content: ["s1", "s2", "s3"].map((id, i) => ({
           id, kind: "leaf", category: "story", parentId: null, order: i, refType: "scene",
         })),
-        frames: [], favorites: [], variables: [], startSceneId: "s1",
+        favorites: [], variables: [], startSceneId: "s1",
       },
       filePath: null, selectedSceneId: "s1", saveStatus: "saved", isPlaying: false,
       canUndo: false, canRedo: false, undoLabel: null, redoLabel: null, undoToken: null,

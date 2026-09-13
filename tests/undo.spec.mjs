@@ -70,13 +70,13 @@ export default async function ({ api, check }) {
   // — exactly like real typing, and NOT coalescable by the same-task rule.
   // Only the mergeKey window can fold these together, which is the point.
   {
-    const before = await api(() => window.__scriareProjectStore.getState().project.frames[0].title);
+    const before = await api(() => window.__scriareProjectStore.getState().project.content.find((n) => n.id === "g1").name);
     for (const t of ['C','Ch','Cha','Chap','Chapt','Chapte','Chapter']) {
-      await api((title) => window.__scriareProjectStore.getState().renameFrame('f1', title), t);
+      await api((title) => window.__scriareProjectStore.getState().renameFolder('g1', title), t);
     }
-    const typed = await api(() => window.__scriareProjectStore.getState().project.frames[0].title);
+    const typed = await api(() => window.__scriareProjectStore.getState().project.content.find((n) => n.id === "g1").name);
     await api(() => window.__scriareProjectStore.getState().undo());
-    r = { before, typed, afterOneUndo: await api(() => window.__scriareProjectStore.getState().project.frames[0].title) };
+    r = { before, typed, afterOneUndo: await api(() => window.__scriareProjectStore.getState().project.content.find((n) => n.id === "g1").name) };
   }
   check('typing a name is ONE undo step', r.afterOneUndo === r.before,
     `"${r.before}" → typed "${r.typed}" → one undo gave "${r.afterOneUndo}"`);
@@ -136,7 +136,7 @@ export default async function ({ api, check }) {
   // 9 — closing the project wipes history
   r = await api(() => {
     const s = window.__scriareProjectStore;
-    s.setState({ project: { name:'x', createdAt:'', updatedAt:'', scenes:[{id:'a',title:'a',content:{type:'doc',content:[]},position:{x:0,y:0},frameId:null,order:0}], content:[], frames:[], favorites:[], variables:[], startSceneId:'a' } });
+    s.setState({ project: { name:'x', createdAt:'', updatedAt:'', scenes:[{id:'a',title:'a',content:{type:'doc',content:[]},position:{x:0,y:0},frameId:null,order:0}], content:[], favorites:[], variables:[], startSceneId:'a' } });
     s.getState().createFolder(null);
     const had = s.getState().canUndo;
     s.getState().closeProject();
@@ -148,7 +148,7 @@ export default async function ({ api, check }) {
   // that field's own undo and must never reach through to project history.
   await api(() => {
     const s = window.__scriareProjectStore;
-    s.setState({ project: { name:'k', createdAt:'', updatedAt:'', scenes:[{id:'a',title:'a',content:{type:'doc',content:[]},position:{x:0,y:0},frameId:null,order:0}], content:[], frames:[], favorites:[], variables:[], startSceneId:'a' }, selectedSceneId:'a', isPlaying:false });
+    s.setState({ project: { name:'k', createdAt:'', updatedAt:'', scenes:[{id:'a',title:'a',content:{type:'doc',content:[]},position:{x:0,y:0},frameId:null,order:0}], content:[], favorites:[], variables:[], startSceneId:'a' }, selectedSceneId:'a', isPlaying:false });
   });
   await api(() => window.__scriareProjectStore.getState().createFolder(null));
   await api(() => window.__scriareProjectStore.getState().createFolder(null));
