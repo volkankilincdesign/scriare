@@ -1,7 +1,7 @@
 import { NodeResizer } from "@xyflow/react";
 import type { NodeProps } from "@xyflow/react";
 import { useProjectStore } from "../../state/projectStore";
-import { confirmDialog } from "../../state/confirmDialogStore";
+import { useToastStore } from "../../state/toastStore";
 import { FRAME_MIN_HEIGHT, FRAME_MIN_WIDTH } from "../../utils/graphConstants";
 
 interface FrameRect {
@@ -27,14 +27,11 @@ export function FrameNode({ id, data, selected }: NodeProps) {
   const renameFrame = useProjectStore((s) => s.renameFrame);
   const deleteFrame = useProjectStore((s) => s.deleteFrame);
 
-  async function handleDelete(): Promise<void> {
-    const confirmed = await confirmDialog({
-      title: "Delete frame?",
-      message: `Delete the "${title || "Untitled"}" frame? Its scenes won't be deleted — they'll just stop being grouped.`,
-      confirmLabel: "Delete",
-      danger: true,
-    });
-    if (confirmed) deleteFrame(id);
+  function handleDelete(): void {
+    deleteFrame(id);
+    useToastStore
+      .getState()
+      .showUndo(`Deleted the "${title || "Untitled"}" frame — its scenes are now ungrouped`);
   }
 
   return (

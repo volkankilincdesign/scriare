@@ -6,10 +6,13 @@ import { EditorGraphSplit } from "./components/layout/EditorGraphSplit";
 import { WelcomeScreen } from "./components/welcome/WelcomeScreen";
 import { PlayRuntime } from "./runtime/PlayRuntime";
 import { ConfirmDialogHost } from "./components/common/ConfirmDialogHost";
+import { ToastHost } from "./components/common/ToastHost";
 import { VariableManagerDialog } from "./components/variables/VariableManagerDialog";
 import { useProjectStore } from "./state/projectStore";
 import { useUIStore } from "./state/uiStore";
 import { useKeyboardSave } from "./hooks/useKeyboardSave";
+import { useKeyboardHistory } from "./hooks/useKeyboardHistory";
+import { useKeyboardClipboard } from "./hooks/useKeyboardClipboard";
 
 // Dockable-panel state (Content, Scene Details, and the Flow graph) is a
 // personal layout preference, not story data — same reasoning as the
@@ -74,12 +77,15 @@ export default function App() {
   }
 
   useKeyboardSave();
+  useKeyboardHistory();
+  useKeyboardClipboard();
 
   if (!project) {
     return (
       <>
         <WelcomeScreen />
         <ConfirmDialogHost />
+        <ToastHost />
       </>
     );
   }
@@ -87,6 +93,7 @@ export default function App() {
   return (
     <div className="flex h-screen w-screen flex-col bg-[var(--bg)] text-[var(--text)]">
       <ConfirmDialogHost />
+      <ToastHost />
       <TopBar />
 
       <div className="flex flex-1 overflow-hidden">

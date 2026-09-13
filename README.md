@@ -1,6 +1,54 @@
-# Scriare — v0.24.0 — Quiet
+# Scriare — v0.27.0 — Keys That Work Everywhere
 
-## What's new (v0.24.0 — A Quieter, Better-Built Monochrome)
+## What's new (v0.27.0 — Keys That Work Everywhere)
+
+**Ctrl+C, Ctrl+X, Ctrl+V and Delete now work on scenes and folders**, not just on text. Until now the Content Browser was the one part of the app that didn't behave like a file manager — everything had to go through the right-click menu. They follow the same rule Ctrl+Z got in v0.25.0: if focus is in the editor or a text field, the keys belong to that field; anywhere else they're about the project. All four are undoable, and Delete raises the same undo toast the right-click menu does, so no path through the app is quieter or less reversible than another.
+
+**Which selection they act on** is decided the way every desktop app decides it without ever explaining: the panel you touched last owns the keyboard. The Content Browser and the Story Graph both keep their selection visible at the same time, deliberately, so "the visible selection" isn't one thing and something has to arbitrate. Each panel claims the keyboard on pointer-down — the gesture that precedes reaching for a key — and publishes its ids to a small store the shortcut layer reads. The selections themselves stay local to their panels; this is a mirror, not a second source of truth.
+
+**Copying a set of linked scenes gives you the branch, not two loose scenes.** This is the part that would look right and be wrong. Copy two scenes that link to each other, paste, and the copies link to *each other* — while a choice pointing at a scene *outside* the copied set still points where it always did, because copying a scene that leads to Chapter Three should still lead to Chapter Three. Copying a folder brings everything inside it, selected or not. Pasting a root whose name already exists among its new siblings gets a " Copy" suffix; scenes inside a pasted folder keep their titles, since the folder already tells them apart.
+
+Multi-scene **Duplicate** now rewires the same way, for the same reason — it was the one case that had always produced copies feeding back into the originals.
+
+**Playwright is `playwright-core` now.** The full `playwright` package pulls browser binaries these tests never use: they launch Electron, not Chromium. `playwright-core` is 14MB instead of several hundred, and it was also the fix for `npm test` failing with *Cannot find package 'playwright'* — the dependency was added to `package.json` but never made it into `package-lock.json`, so an install that trusted the lockfile didn't get it. Both are corrected; run `npm install` once.
+
+The suite is 34 cases now. The two new ones that guard real bugs — the link rewiring and the folder-contents copy — were each confirmed to fail on a build with that logic removed. One case drives the actual UI with real clicks and real keystrokes, because everything else drives the stores directly and something has to prove they're wired to each other.
+
+## v0.26.0 — Undo, Out Loud
+
+v0.25.0 made deletes reversible. This version acts on that, and puts a test setup behind both.
+
+**The delete confirmations are gone, replaced by an undo toast.** All five of them — scene, folder, bulk selection, graph Frame, variable. A modal that stops you to prevent a mistake earns its interruption only while the mistake is permanent; since undo shipped, none of these are. So the delete now happens immediately and a quiet bar appears at the bottom of the window — *Deleted "The Ration Tin"  ·  Undo* — for nine seconds. The way out is offered after the fact, where it interrupts nobody, instead of in front of every single delete.
+
+**The toast will not undo the wrong thing.** This is the part that would have made the feature worse than useless if it were left implicit. Delete a scene, drag two nodes in the graph, then click the toast: a naive implementation undoes the drag and leaves the scene deleted. So each toast records the identity of the history step it was raised for, and drops its button the moment that step stops being the one undo would reverse — whether because you did something else, or because you already undid it with Ctrl+Z. It keeps its message, so it never turns into a button that lies about what it does.
+
+The confirm-dialog machinery itself is kept, unused and documented as such. The next thing that needs confirming probably won't be undoable — overwriting a file, discarding unsaved work on quit — and that is exactly what a blocking dialog is for.
+
+**Tests are now a first-class part of the project.** `npm test` builds the app in a test mode and runs every `tests/*.spec.mjs` against the real packaged Electron app: 21 cases across undo and toasts. The test-mode build exposes the app's stores on `window` through a branch that `import.meta.env.DEV` strips from production entirely — verified by grepping the production bundle, so shipping costs nothing and nobody has to hand-edit `main.tsx` to run the suite, which is what made v0.25.0's standalone script easy to forget. Playwright is a devDependency now, so `npm install` before `npm test`.
+
+There is no test framework, deliberately. What these tests need is to launch the real app and assert on its real stores; a framework adds configuration and vocabulary without adding any of that. If the suite outgrows a handful of files, Playwright's own runner is already sitting in the dependency tree.
+
+**Three of the tests were confirmed to fail before being trusted**, on builds broken on purpose: neutering the prose merge made "undo keeps prose written after the undone action" report the old text; disabling the typing window made "typing a name is ONE undo step" undo one letter at a time; and removing the staleness check made "a stale toast does NOT undo the wrong action" undo the unrelated rename. A test that has never been seen to fail proves nothing.
+
+## v0.25.0 — Undo
+
+Until now the app had no undo at all outside a scene's prose. Ctrl+Z inside the editor was Tiptap's, and it worked; everything else — deleting a scene, deleting a folder, a bulk delete from a multi-selection, a move, a rename, an Auto Layout that rearranged the whole graph — was permanent the moment it happened, and autosave committed it to disk about a second and a half later. Confirmation dialogs ask "are you sure"; only undo answers "no, actually".
+
+**Ctrl+Z / Ctrl+Shift+Z now step through project history** (Ctrl+Y also redoes, for the Windows habit), with an undo/redo pair in the top bar that names what it will reverse — "Undo Delete Scene" — so the shortcut is discoverable rather than folklore. Every structural action is covered: create, rename, delete and duplicate for scenes and folders; moves and multi-moves; bulk delete; favourites; scene and frame positions; frame resize; Auto Layout; the Start Scene; and every variable operation.
+
+**It is snapshot-based, and that is cheaper than it sounds.** Every action in the store already builds a new project object out of the old one and never mutates in place, so the previous version stays intact for free and the two versions *share structure* — renaming one scene in a 200-scene project allocates one scene object and one array; the other 199 scenes are the same objects in both. A history step therefore costs roughly the size of that action's diff, not the size of the story. (Deep-cloning would have destroyed exactly that, which is why it isn't done.)
+
+**Undo never rolls back your writing.** This is the part that would have been a data-loss bug if it were left implicit. Restoring a whole-project snapshot would also revert every word typed since — delete a scene, write two paragraphs somewhere else, press Ctrl+Z, lose the paragraphs. So scene content is treated as belonging to the live project rather than to the snapshot: for any scene that exists in both, today's prose wins. A scene that exists only in the snapshot — because the action being undone deleted it — keeps its own text, which by then is the only copy of it anywhere. The result is a clean division of labour between the app's two undo stacks: this one moves structure, Tiptap's moves words, and neither can clobber the other. Ctrl+Z routes between them by focus — in the editor or any text field it is that field's own undo, anywhere else it is the project's.
+
+**One gesture is one step.** Two different things would otherwise have made undo tedious. Dragging a multi-selection in the graph calls the store once per selected scene from a single drop, so five scenes would have cost five presses; those are folded together by the task they arrive in, automatically, without every call site having to remember to open a transaction. And a text field wired to `onChange` fires once per keystroke, so renaming a frame to "Chapter Two" would have undone itself letter by letter; runs of edits to the same thing inside a 700ms window collapse into the step holding the name as it was before typing started.
+
+History holds 50 steps, is wiped when a project is opened or closed, and is inert during Play Mode.
+
+**This ships with the project's first automated test** (`tests/undo.spec.mjs`), deliberately standalone — no runner, no config, nothing added to `package.json`, so `npm install` is unchanged for anyone who never runs it. It drives the real packaged app and covers fourteen cases. The two that guard actual bugs were each confirmed to fail on a deliberately broken build before being trusted: neutering the prose merge made the "keeps prose written after the undone action" case report the old text, and disabling the typing window made "typing a name is ONE undo step" undo one letter at a time.
+
+Confirmation dialogs were left exactly as they are. With undo in place, some of them are arguably redundant now — but that is a separate decision about how much friction a delete should carry, not something to change quietly in the same pass that built the safety net.
+
+## v0.24.0 — A Quieter, Better-Built Monochrome
 
 The palette stays black and white on purpose — colour belongs to content the writer assigns meaning to (choice blocks, errors, states), and chrome that competes with it makes that colour worthless. The brief was that it nonetheless felt dull. It did, and three separate causes were found, two of which turned out to be bugs rather than taste.
 

@@ -1,6 +1,6 @@
 import { Modal } from "../common/Modal";
 import { useProjectStore } from "../../state/projectStore";
-import { confirmDialog } from "../../state/confirmDialogStore";
+import { useToastStore } from "../../state/toastStore";
 import { VARIABLE_TYPE_LABELS, changeVariableType } from "../../types/variables";
 import type { Variable, VariableType, VariableValue } from "../../types/variables";
 
@@ -30,14 +30,11 @@ export function VariableManagerDialog({ onClose }: VariableManagerDialogProps) {
   if (!project) return null;
   const variables = project.variables;
 
-  async function handleDelete(variable: Variable): Promise<void> {
-    const ok = await confirmDialog({
-      title: "Delete variable?",
-      message: `"${variable.name || "Untitled variable"}" will be removed. Any Choice Actions referencing it will stop taking effect, but won't be deleted themselves.`,
-      confirmLabel: "Delete",
-      danger: true,
-    });
-    if (ok) deleteVariable(variable.id);
+  function handleDelete(variable: Variable): void {
+    deleteVariable(variable.id);
+    useToastStore
+      .getState()
+      .showUndo(`Deleted "${variable.name || "Untitled variable"}"`);
   }
 
   return (

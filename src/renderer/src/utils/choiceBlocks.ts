@@ -114,12 +114,25 @@ export function stripChoiceBlocks(content: JSONContent | undefined | null): JSON
 
 /**
  * Returns a deep copy of `content` with every choiceBlock's `blockId` and
- * every option's `id` replaced with a fresh id — used when duplicating a
- * Scene, so the copy's choices are distinct nodes (each option's
- * `targetSceneId` is left untouched, so the duplicate still branches to the
- * same destinations as the original).
+ * every option's `id` replaced with a fresh id — used whenever a Scene is
+ * copied, so the copy's choices are distinct nodes rather than two scenes
+ * claiming the same block ids.
+ *
+ * `sceneIdMap` handles the case where a WHOLE SET of scenes is copied at
+ * once (a multi-scene duplicate, or a paste). Any choice pointing at a
+ * scene inside that set is rewritten to point at that scene's copy, so
+ * copying a two-scene branch gives you a branch — the copies link to each
+ * other, not back to the originals. A choice pointing at a scene *outside*
+ * the set is left alone, which is equally deliberate: copying a scene that
+ * leads to Chapter Three should still lead to Chapter Three.
+ *
+ * Omit the map (a single-scene duplicate) and every destination is left
+ * untouched, which is the behaviour this function has always had.
  */
-export function regenerateChoiceIds(content: JSONContent | undefined | null): JSONContent {
+export function regenerateChoiceIds(
+  content: JSONContent | undefined | null,
+  sceneIdMap?: ReadonlyMap<string, string>,
+): JSONContent {
   const EMPTY: JSONContent = { type: "doc", content: [{ type: "paragraph" }] };
   if (!content) return EMPTY;
 
@@ -133,6 +146,10 @@ export function regenerateChoiceIds(content: JSONContent | undefined | null): JS
           options: readOptions(node.attrs).map((option) => ({
             ...option,
             id: nanoid(),
+            targetSceneId:
+              option.targetSceneId && sceneIdMap?.has(option.targetSceneId)
+                ? sceneIdMap.get(option.targetSceneId)!
+                : option.targetSceneId,
             actions: option.actions.map((action) => ({ ...action, id: nanoid() })),
           })),
         },

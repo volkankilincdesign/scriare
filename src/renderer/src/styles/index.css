@@ -412,3 +412,29 @@ input[type="number"],
   --tw-prose-td-borders: var(--border-soft);
   --tw-prose-links: var(--accent);
 }
+
+/* Toast entrance (v0.26.0). A short rise rather than a fade alone, so a
+   notice that appears at the bottom of the window reads as having arrived
+   from off-screen instead of materialising over the work. Kept under
+   200ms: this is a receipt, and anything slower starts to feel like the
+   app is asking for attention it doesn't need. */
+@keyframes scriare-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.scriare-toast {
+  animation: scriare-toast-in 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scriare-toast {
+    animation: none;
+  }
+}

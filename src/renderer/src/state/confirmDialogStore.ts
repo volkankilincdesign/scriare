@@ -23,11 +23,20 @@ interface ConfirmDialogState {
 let nextId = 0;
 
 /**
- * A single in-app replacement for window.confirm(), used app-wide so every
- * destructive action (deleting a scene, a folder, a graph Frame, and
- * whatever needs confirming next) shares one dark-themed modal instead of
- * the OS's native dialog. `<ConfirmDialogHost />` (mounted once near the
- * app root) renders whatever `request` is currently pending.
+ * A single in-app replacement for window.confirm(), so anything that needs
+ * a yes/no shares one themed modal instead of the OS's native dialog.
+ * `<ConfirmDialogHost />` (mounted once near the app root) renders whatever
+ * `request` is currently pending.
+ *
+ * NOTHING CALLS THIS RIGHT NOW, and that's deliberate rather than an
+ * oversight. Every caller it had was a delete — scene, folder, bulk, frame,
+ * variable — and v0.26.0 replaced those with an undo toast: a modal that
+ * stops the writer to prevent a mistake earns its interruption only while
+ * the mistake is permanent, and since v0.25.0 none of them are. The store
+ * stays because the *next* thing that needs confirming probably won't be
+ * undoable — overwriting a file, discarding unsaved work on quit — and
+ * that is exactly the case a blocking dialog is for. Deleting it would
+ * mean rebuilding it, worse, under time pressure.
  */
 export const useConfirmDialogStore = create<ConfirmDialogState>((set, get) => ({
   request: null,

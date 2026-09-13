@@ -25,7 +25,9 @@ export type IconName =
   | "note"
   | "asset"
   | "folder"
-  | "scene";
+  | "scene"
+  | "undo"
+  | "redo";
 
 const PATHS: Record<IconName, JSX.Element> = {
   // An open book — the Story root.
@@ -73,6 +75,20 @@ const PATHS: Record<IconName, JSX.Element> = {
     <>
       <path d="M4.2 2.9h4.9L11.8 5.6v7.5H4.2Z" />
       <path d="M9 2.9v2.8h2.8" />
+    </>
+  ),
+  // An arrow curving back on itself. Mirrored for redo rather than drawn
+  // twice, so the pair can never drift apart visually.
+  undo: (
+    <>
+      <path d="M3.2 6.4h6.1a3.4 3.4 0 0 1 0 6.8H6.2" />
+      <path d="M5.7 3.9 3.2 6.4l2.5 2.5" />
+    </>
+  ),
+  redo: (
+    <>
+      <path d="M12.8 6.4H6.7a3.4 3.4 0 0 0 0 6.8h3.1" />
+      <path d="M10.3 3.9l2.5 2.5-2.5 2.5" />
     </>
   ),
 };

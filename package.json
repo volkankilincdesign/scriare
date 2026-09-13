@@ -1,6 +1,6 @@
 {
   "name": "scriare",
-  "version": "0.24.0",
+  "version": "0.27.0",
   "description": "A writing-first workspace for branching narratives.",
   "main": "./out/main/index.js",
   "author": "Volkan",
@@ -9,7 +9,8 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
-    "start": "electron-vite preview"
+    "start": "electron-vite preview",
+    "test": "electron-vite build --mode test && node tests/run.mjs"
   },
   "dependencies": {
     "@dagrejs/dagre": "^1.1.4",
@@ -45,13 +46,10 @@
     "autoprefixer": "^10.4.20",
     "electron": "^33.2.1",
     "electron-vite": "^2.3.0",
+    "playwright-core": "^1.49.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
     "typescript": "^5.6.3",
     "vite": "^5.4.11"
-  },
-  "allowScripts": {
-    "electron@33.4.11": true,
-    "esbuild@0.21.5": true
   }
 }

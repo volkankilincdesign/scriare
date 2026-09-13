@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ReactFlow, Background, Controls, MiniMap, SelectionMode } from "@xyflow/react";
 import type {
   Node,
@@ -12,6 +12,7 @@ import type {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useProjectStore } from "../../state/projectStore";
+import { useSelectionStore } from "../../state/selectionStore";
 import { extractChoices } from "../../utils/choiceBlocks";
 import { findContainingFrame } from "../../utils/graphConstants";
 import { SceneNode } from "./SceneNode";
@@ -76,6 +77,8 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   const updateScenePosition = useProjectStore((s) => s.updateScenePosition);
   const updateFramePosition = useProjectStore((s) => s.updateFramePosition);
   const updateFrameRect = useProjectStore((s) => s.updateFrameRect);
+  const claimSurface = useSelectionStore((s) => s.claimSurface);
+  const publishSelection = useSelectionStore((s) => s.setGraphIds);
   const autoLayoutScenes = useProjectStore((s) => s.autoLayoutScenes);
   const addFrame = useProjectStore((s) => s.addFrame);
 
@@ -113,6 +116,14 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   // `handleNodeDoubleClick` below for why single-click and double-click
   // needed to stop meaning the same thing.
   const [selectedGraphIds, setSelectedGraphIds] = useState<Set<string>>(() => new Set());
+
+  // Mirror the graph's selection out for the app-wide Delete/copy/paste
+  // shortcuts — see state/selectionStore.ts. This set can hold frame ids
+  // as well as scene ids; the shortcut layer filters, because what a frame
+  // means to those operations is its business, not the graph's.
+  useEffect(() => {
+    publishSelection([...selectedGraphIds]);
+  }, [selectedGraphIds, publishSelection]);
 
   // A Frame's in-progress size (and, when resizing from a top/left handle,
   // its in-progress position) while the user is actively dragging one of
@@ -645,7 +656,14 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       )}
 
       {!collapsed && (
-        <div ref={containerRef} className="scriare-graph-bg relative flex-1">
+        <div
+          ref={containerRef}
+          // Touching the graph makes it the panel the keyboard means —
+          // see state/selectionStore.ts. Capture phase, because React Flow
+          // stops propagation on its own pointer handling.
+          onPointerDownCapture={() => claimSurface("graph")}
+          className="scriare-graph-bg relative flex-1"
+        >
           {!project || project.scenes.length === 0 ? (
             <div className="flex h-full items-center justify-center text-sm text-[var(--text-3)]">
               Scenes will appear here as you write.

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { DragEvent, MouseEvent } from "react";
 import { useProjectStore } from "../../state/projectStore";
-import { confirmDialog } from "../../state/confirmDialogStore";
+import { useToastStore } from "../../state/toastStore";
+import { useSelectionStore } from "../../state/selectionStore";
 import type { ContentNode, Scene } from "../../types/project";
 import { ancestorsOf, childrenOf, computeDropPosition, flattenVisible } from "../../utils/contentTree";
 import { ContentBrowserContext } from "./contentBrowserContext";
@@ -61,6 +62,9 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
   const toggleFavorite = useProjectStore((s) => s.toggleFavorite);
   const setFavorites = useProjectStore((s) => s.setFavorites);
   const setStartScene = useProjectStore((s) => s.setStartScene);
+  const showUndo = useToastStore((s) => s.showUndo);
+  const claimSurface = useSelectionStore((s) => s.claimSurface);
+  const publishSelection = useSelectionStore((s) => s.setContentIds);
 
   const [expanded, setExpanded] = useState<Set<string>>(loadExpanded);
   const [search, setSearch] = useState("");
@@ -100,6 +104,17 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
         .filter((s): s is Scene => Boolean(s)),
     [project, scenesById],
   );
+
+  // Mirror the selection out for the app-wide shortcuts (see
+  // state/selectionStore.ts). Published in the project's own node order
+  // rather than click order, so a copied or deleted group keeps the
+  // arrangement the writer sees. Must sit above the `!project` early
+  // return — a hook after a conditional return is a hook that sometimes
+  // doesn't run.
+  useEffect(() => {
+    const ids = (project?.content ?? []).filter((n) => selectedIds.has(n.id)).map((n) => n.id);
+    publishSelection(ids);
+  }, [project, selectedIds, publishSelection]);
 
   if (!project) return null;
 
@@ -283,15 +298,9 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
       items.push({
         label: `Delete ${ids.length} items`,
         danger: true,
-        onSelect: async () => {
-          const confirmed = await confirmDialog({
-            title: `Delete ${ids.length} items?`,
-            message:
-              "Folders in the selection will be removed and their contents moved up one level. Scenes will be deleted permanently.",
-            confirmLabel: "Delete",
-            danger: true,
-          });
-          if (confirmed) deleteContentNodes(ids);
+        onSelect: () => {
+          deleteContentNodes(ids);
+          showUndo(`Deleted ${ids.length} items`);
         },
       });
       return items;
@@ -305,14 +314,9 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
         {
           label: "Delete",
           danger: true,
-          onSelect: async () => {
-            const confirmed = await confirmDialog({
-              title: "Delete folder?",
-              message: `Delete folder "${node.name}"? Its contents move up one level — nothing inside it is deleted.`,
-              confirmLabel: "Delete",
-              danger: true,
-            });
-            if (confirmed) deleteFolder(node.id);
+          onSelect: () => {
+            deleteFolder(node.id);
+            showUndo(`Deleted folder "${node.name}" — its contents moved up one level`);
           },
         },
       ];
@@ -337,14 +341,9 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
       items.push({
         label: "Delete",
         danger: true,
-        onSelect: async () => {
-          const confirmed = await confirmDialog({
-            title: "Delete scene?",
-            message: `Delete "${scene?.title || "this scene"}"? This can't be undone.`,
-            confirmLabel: "Delete",
-            danger: true,
-          });
-          if (confirmed) deleteScene(node.id);
+        onSelect: () => {
+          deleteScene(node.id);
+          showUndo(`Deleted "${scene?.title || "Untitled scene"}"`);
         },
       });
     }
@@ -407,7 +406,13 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
 
   return (
     <ContentBrowserContext.Provider value={contextValue}>
-      <aside className="flex w-64 shrink-0 flex-col border-r border-[var(--border-soft)] bg-[var(--surface)]">
+      <aside
+        // Touching a panel is what makes it the one the keyboard means —
+        // see state/selectionStore.ts. Capture phase, so it still fires when
+        // a child stops propagation for its own drag handling.
+        onPointerDownCapture={() => claimSurface("content")}
+        className="flex w-64 shrink-0 flex-col border-r border-[var(--border-soft)] bg-[var(--surface)]"
+      >
         <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-3 py-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">Content</span>
           <div className="flex items-center gap-0.5">

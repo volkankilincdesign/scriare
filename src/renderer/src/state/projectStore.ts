@@ -7,9 +7,18 @@ import { computeAutoLayout } from "../utils/autoLayout";
 import { extractChoices, regenerateChoiceIds } from "../utils/choiceBlocks";
 import { childrenOf, isDescendant, nextOrder } from "../utils/contentTree";
 import { findContainingFrame } from "../utils/graphConstants";
+import type { ContentClipboard } from "../utils/contentClipboard";
 import type { Variable, VariableAction, VariableType, VariableValue } from "../types/variables";
 import { applyVariableAction, buildVariable, changeVariableType } from "../types/variables";
 import { useInspectorStore } from "./inspectorStore";
+import {
+  clearHistory,
+  historyFlags,
+  mergeLiveProse,
+  recordSnapshot,
+  takeRedo,
+  takeUndo,
+} from "./history";
 
 type SaveStatus = "saved" | "saving" | "unsaved";
 
@@ -41,6 +50,29 @@ interface ProjectState {
    */
   playVariableValues: Record<string, VariableValue>;
 
+  /**
+   * Mirrors of the history stacks in state/history.ts, kept here so the UI
+   * can enable/disable its controls and name what it's about to reverse.
+   * The stacks themselves live in that module rather than in this store on
+   * purpose — they hold references to previous `project` objects, and
+   * putting those in React state would make every component that
+   * subscribes to the whole store re-render on each history push for no
+   * visible reason.
+   */
+  canUndo: boolean;
+  canRedo: boolean;
+  undoLabel: string | null;
+  redoLabel: string | null;
+  /**
+   * Identity of the step `undo()` would currently reverse. The undo toast
+   * captures this when it appears and stops offering its action if it
+   * changes — see state/toastStore.ts.
+   */
+  undoToken: number | null;
+  /** Steps back one structural change. Prose is never rolled back — see history.ts. */
+  undo: () => void;
+  redo: () => void;
+
   loadRecent: () => Promise<void>;
   newProject: (name: string) => Promise<void>;
   openProject: () => Promise<void>;
@@ -69,6 +101,12 @@ interface ProjectState {
   moveContentNodes: (nodeIds: string[], newParentId: string | null, newIndex: number) => void;
   /** Bulk delete for multi-selection: scenes are removed, folders are ungrouped (never destroyed). */
   deleteContentNodes: (nodeIds: string[]) => void;
+  /**
+   * Inserts a clipboard payload under `parentId`, with fresh ids
+   * throughout. Returns the ids of the top-level nodes it created (for
+   * selecting them), or an empty array if there was nothing to paste.
+   */
+  pasteContentNodes: (clipboard: ContentClipboard, parentId: string | null) => string[];
 
   toggleFavorite: (refType: Favorite["refType"], refId: string) => void;
   setFavorites: (refType: Favorite["refType"], refIds: string[], value: boolean) => void;
@@ -125,6 +163,25 @@ function scheduleAutosave(get: () => ProjectState): void {
   }, 1500);
 }
 
+type SetState = (partial: Partial<ProjectState>) => void;
+
+/**
+ * Call at the top of any action that changes project STRUCTURE, after that
+ * action's early-return guards but before its `set` — while `project` is
+ * still the version the user is about to move away from. Deliberately not
+ * called by `updateSceneContent`: prose belongs to Tiptap's own history
+ * (see state/history.ts for why the two stacks can coexist safely).
+ *
+ * `mergeKey` folds a run of keystroke-level edits to the same thing into
+ * one undo step; omit it for anything that happens once per gesture.
+ */
+function pushHistory(set: SetState, get: () => ProjectState, label: string, mergeKey?: string): void {
+  const { project, selectedSceneId } = get();
+  if (!project) return;
+  recordSnapshot({ label, project, selectedSceneId, mergeKey });
+  set(historyFlags());
+}
+
 export const useProjectStore = create<ProjectState>((set, get) => ({
   project: null,
   filePath: null,
@@ -135,6 +192,61 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   isPlaying: false,
   playSceneId: null,
   playVariableValues: {},
+
+  canUndo: false,
+  canRedo: false,
+  undoLabel: null,
+  redoLabel: null,
+  undoToken: null,
+
+  undo: () => {
+    const { project, selectedSceneId, isPlaying } = get();
+    // Play Mode is a read-only pass over the project; nothing there can
+    // have created a history step, and letting Ctrl+Z reach through it
+    // would change the story out from under a playthrough in progress.
+    if (!project || isPlaying) return;
+
+    const entry = takeUndo({ label: "", project, selectedSceneId });
+    if (!entry) return;
+
+    set({
+      project: mergeLiveProse(entry.project, project),
+      // A scene that was open before the undone action may no longer
+      // exist (undoing a Create), so fall back rather than pointing the
+      // editor at nothing.
+      selectedSceneId:
+        entry.selectedSceneId && entry.project.scenes.some((s) => s.id === entry.selectedSceneId)
+          ? entry.selectedSceneId
+          : selectedSceneId,
+      saveStatus: "unsaved",
+      ...historyFlags(),
+    });
+    // The Inspector's target is a Choice Block inside a specific scene's
+    // document; after a structural change it may be pointing at a scene
+    // that just stopped existing (same reasoning as selectScene).
+    useInspectorStore.getState().clearTarget();
+    scheduleAutosave(get);
+  },
+
+  redo: () => {
+    const { project, selectedSceneId, isPlaying } = get();
+    if (!project || isPlaying) return;
+
+    const entry = takeRedo({ label: "", project, selectedSceneId });
+    if (!entry) return;
+
+    set({
+      project: mergeLiveProse(entry.project, project),
+      selectedSceneId:
+        entry.selectedSceneId && entry.project.scenes.some((s) => s.id === entry.selectedSceneId)
+          ? entry.selectedSceneId
+          : selectedSceneId,
+      saveStatus: "unsaved",
+      ...historyFlags(),
+    });
+    useInspectorStore.getState().clearTarget();
+    scheduleAutosave(get);
+  },
 
   loadRecent: async () => {
     const list = await window.api.recent.list();
@@ -149,12 +261,17 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     );
     if (!result) return; // user canceled the save dialog
 
+    // History belongs to one project in one editing session — never carry
+    // steps across a project boundary, where "undo" would try to restore
+    // scenes that belong to a different file.
+    clearHistory();
     set({
       project,
       filePath: result.filePath,
       selectedSceneId: project.startSceneId,
       saveStatus: "saved",
       recentProjects: result.recent,
+      ...historyFlags(),
     });
   },
 
@@ -163,12 +280,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     if (!result) return;
 
     const project: Project = normalizeProject(JSON.parse(result.raw));
+    clearHistory();
     set({
       project,
       filePath: result.filePath,
       selectedSceneId: project.startSceneId ?? project.scenes[0]?.id ?? null,
       saveStatus: "saved",
       recentProjects: result.recent,
+      ...historyFlags(),
     });
   },
 
@@ -176,12 +295,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     try {
       const result = await window.api.project.openPath(filePath);
       const project: Project = normalizeProject(JSON.parse(result.raw));
+      clearHistory();
       set({
         project,
         filePath: result.filePath,
         selectedSceneId: project.startSceneId ?? project.scenes[0]?.id ?? null,
         saveStatus: "saved",
         recentProjects: result.recent,
+        ...historyFlags(),
       });
     } catch {
       // The file was probably moved or deleted — drop it from the recent list.
@@ -201,6 +322,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project } = get();
     if (!project) return;
 
+    pushHistory(set, get, "Create Scene");
     const scene = buildScene(`Scene ${project.scenes.length + 1}`, project.scenes.length);
     const leaf: ContentLeaf = {
       id: scene.id,
@@ -228,6 +350,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project } = get();
     if (!project) return null;
 
+    pushHistory(set, get, "Create Scene");
     const scene = buildScene(`Scene ${project.scenes.length + 1}`, project.scenes.length);
     const leaf: ContentLeaf = {
       id: scene.id,
@@ -258,6 +381,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project } = get();
     if (!project) return;
 
+    pushHistory(set, get, "Rename Scene", `rename-scene:${sceneId}`);
     set({
       project: {
         ...project,
@@ -274,6 +398,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     if (!project) return;
     if (project.scenes.length <= 1) return; // always keep at least one scene
 
+    pushHistory(set, get, "Delete Scene");
     const remaining = project.scenes.filter((s) => s.id !== sceneId);
     const nextStart =
       project.startSceneId === sceneId ? remaining[0]?.id ?? null : project.startSceneId;
@@ -303,6 +428,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     );
     if (!original || !originalLeaf) return;
 
+    pushHistory(set, get, "Duplicate Scene");
     const newId = nanoid();
     const duplicated: Scene = {
       ...original,
@@ -338,6 +464,18 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const newLeaves: ContentLeaf[] = [];
     let lastNewId: string | null = null;
 
+    // Assign every copy's id up front so the choices in each one can be
+    // rewritten to point at the OTHER copies rather than at the originals
+    // — duplicating a two-scene branch should give you a branch, not two
+    // loose scenes both feeding back into the source material.
+    const idMap = new Map<string, string>();
+    for (const sceneId of sceneIds) {
+      const exists =
+        project.scenes.some((s) => s.id === sceneId) &&
+        project.content.some((n) => n.id === sceneId && n.kind === "leaf");
+      if (exists) idMap.set(sceneId, nanoid());
+    }
+
     for (const sceneId of sceneIds) {
       const original = project.scenes.find((s) => s.id === sceneId);
       const originalLeaf = project.content.find(
@@ -345,12 +483,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       );
       if (!original || !originalLeaf) continue;
 
-      const newId = nanoid();
+      const newId = idMap.get(sceneId)!;
       newScenes.push({
         ...original,
         id: newId,
         title: `${original.title} Copy`,
-        content: regenerateChoiceIds(original.content),
+        content: regenerateChoiceIds(original.content, idMap),
         position: { x: original.position.x + 40, y: original.position.y + 40 },
       });
       newLeaves.push({
@@ -365,6 +503,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
     if (newScenes.length === 0) return;
 
+    pushHistory(set, get, "Duplicate Scenes");
     set({
       project: {
         ...project,
@@ -407,6 +546,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project } = get();
     if (!project) return;
 
+    pushHistory(set, get, "Create Folder");
     const folder: ContentFolder = {
       id: nanoid(),
       kind: "folder",
@@ -431,6 +571,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project } = get();
     if (!project) return;
 
+    pushHistory(set, get, "Rename Folder", `rename-folder:${folderId}`);
     set({
       project: {
         ...project,
@@ -449,6 +590,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const folder = project.content.find((n) => n.id === folderId);
     if (!folder) return;
 
+    pushHistory(set, get, "Delete Folder");
     // Ungroup, don't destroy: a folder's children move up to its parent —
     // same non-destructive philosophy as deleting a graph Frame. Nothing
     // inside a folder is ever deleted just because the folder was.
@@ -486,6 +628,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     );
     if (wouldCycle) return; // would nest a folder inside its own descendant — refuse the whole move
 
+    pushHistory(set, get, nodeIds.length > 1 ? "Move Items" : "Move Item");
     const updates = new Map<string, { parentId: string | null; order: number }>();
 
     const destSiblings = childrenOf(project.content, category, newParentId).filter((n) => !movingSet.has(n.id));
@@ -518,6 +661,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project, selectedSceneId } = get();
     if (!project) return;
 
+    pushHistory(set, get, nodeIds.length > 1 ? "Delete Items" : "Delete Item");
     const idsToDelete = new Set(nodeIds);
     const folderIdsToDelete = new Set(
       project.content.filter((n) => idsToDelete.has(n.id) && n.kind === "folder").map((n) => n.id),
@@ -575,10 +719,106 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     scheduleAutosave(get);
   },
 
+  pasteContentNodes: (clipboard, parentId) => {
+    const { project } = get();
+    if (!project || clipboard.nodes.length === 0) return [];
+
+    // Pasting a folder into its own copied descendant is impossible here
+    // (the payload is a snapshot with fresh ids), but pasting into a
+    // folder that no longer exists is not — a writer can copy, delete the
+    // destination folder, then paste. Fall back to the root rather than
+    // creating orphans with a dangling parentId.
+    const destination =
+      parentId && project.content.some((n) => n.id === parentId && n.kind === "folder")
+        ? parentId
+        : null;
+
+    pushHistory(set, get, "Paste");
+
+    const idMap = new Map<string, string>();
+    for (const node of clipboard.nodes) idMap.set(node.id, nanoid());
+
+    const copiedIds = new Set(clipboard.nodes.map((n) => n.id));
+    const rootIds: string[] = [];
+
+    // Roots append to the end of the destination; everything else keeps
+    // the relative order it had inside its own copied folder.
+    let nextRootOrder = nextOrder(project.content, "story", destination);
+
+    const newNodes: ContentNode[] = clipboard.nodes.map((node) => {
+      const isRoot = node.parentId === null || !copiedIds.has(node.parentId);
+      const newId = idMap.get(node.id)!;
+      if (isRoot) rootIds.push(newId);
+      return {
+        ...node,
+        id: newId,
+        parentId: isRoot ? destination : idMap.get(node.parentId!)!,
+        order: isRoot ? nextRootOrder++ : node.order,
+      };
+    });
+
+    // Pasting next to the thing you copied gives two rows with the same
+    // name, which is a worse list than it was before. So a pasted ROOT
+    // whose name already exists among its new siblings gets a suffix, the
+    // way every file manager does it. Nodes *inside* a pasted folder are
+    // left alone: their folder already tells them apart, and renaming them
+    // would quietly rewrite scene titles the writer chose.
+    const rootIdSet = new Set(rootIds);
+    const siblingNames = new Set(
+      project.content
+        .filter((n) => n.parentId === destination && n.category === "story")
+        .map((n) => (n.kind === "folder" ? n.name : project.scenes.find((s) => s.id === n.id)?.title))
+        .filter((name): name is string => Boolean(name)),
+    );
+
+    function uniqueName(original: string): string {
+      if (!siblingNames.has(original)) {
+        siblingNames.add(original);
+        return original;
+      }
+      let candidate = `${original} Copy`;
+      let n = 2;
+      while (siblingNames.has(candidate)) candidate = `${original} Copy ${n++}`;
+      siblingNames.add(candidate);
+      return candidate;
+    }
+
+    for (const node of newNodes) {
+      if (node.kind === "folder" && rootIdSet.has(node.id)) node.name = uniqueName(node.name);
+    }
+
+    // Scene ids are remapped through the same map, so choices pointing
+    // inside the copied set follow the copies — see regenerateChoiceIds.
+    const newScenes: Scene[] = clipboard.scenes.map((scene) => ({
+      ...scene,
+      id: idMap.get(scene.id)!,
+      title: rootIdSet.has(idMap.get(scene.id)!) ? uniqueName(scene.title) : scene.title,
+      content: regenerateChoiceIds(scene.content, idMap),
+      position: { x: scene.position.x + 40, y: scene.position.y + 40 },
+      // Frames aren't part of the payload, so inheriting a frameId would
+      // point at a group the pasted scene isn't visually inside — or, after
+      // a paste into a different project, at nothing at all.
+      frameId: null,
+    }));
+
+    set({
+      project: {
+        ...project,
+        scenes: [...project.scenes, ...newScenes],
+        content: [...project.content, ...newNodes],
+        updatedAt: new Date().toISOString(),
+      },
+      saveStatus: "unsaved",
+    });
+    scheduleAutosave(get);
+    return rootIds;
+  },
+
   toggleFavorite: (refType, refId) => {
     const { project } = get();
     if (!project) return;
 
+    pushHistory(set, get, "Favorite");
     const existing = project.favorites.find((f) => f.refType === refType && f.refId === refId);
     const favorites: Favorite[] = existing
       ? project.favorites.filter((f) => f !== existing)
@@ -595,6 +835,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project } = get();
     if (!project) return;
 
+    pushHistory(set, get, "Favorite");
     const idsSet = new Set(refIds);
     let favorites = project.favorites.filter((f) => !(f.refType === refType && idsSet.has(f.refId)));
     if (value) {
@@ -612,6 +853,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project } = get();
     if (!project) return;
 
+    pushHistory(set, get, "Move Scene");
     // Figma-style auto-grouping: if the scene's new position lands inside a
     // Frame's rectangle, it joins that frame; otherwise it's ungrouped. Uses
     // the same containment check the graph's live drag-hover preview uses,
@@ -661,6 +903,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const looseScenes = project.scenes.filter((s) => !s.frameId);
     if (framesWithScenes.length === 0 && looseScenes.length === 0) return;
 
+    pushHistory(set, get, "Auto Layout");
     // Every scene maps to the id that represents it in the layout graph:
     // its containing Frame's id if that Frame is one of the ones being
     // laid out, or its own id if it's loose. A scene whose `frameId`
@@ -758,6 +1001,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     // node badge) reads this same field, so they can never disagree.
     if (sceneId !== null && !project.scenes.some((s) => s.id === sceneId)) return;
 
+    pushHistory(set, get, "Set Start Scene");
     set({
       project: { ...project, startSceneId: sceneId, updatedAt: new Date().toISOString() },
       saveStatus: "unsaved",
@@ -769,6 +1013,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project } = get();
     if (!project) return;
 
+    pushHistory(set, get, "Add Frame");
     const frame = buildFrame("New Frame", project.frames.length);
     set({
       project: {
@@ -785,6 +1030,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project } = get();
     if (!project) return;
 
+    pushHistory(set, get, "Rename Frame", `rename-frame:${frameId}`);
     set({
       project: {
         ...project,
@@ -802,6 +1048,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
     const frame = project.frames.find((f) => f.id === frameId);
     if (!frame) return;
+
+    pushHistory(set, get, "Move Frame");
 
     const dx = position.x - frame.position.x;
     const dy = position.y - frame.position.y;
@@ -828,6 +1076,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
     const frame = project.frames.find((f) => f.id === frameId);
     if (!frame) return;
+
+    pushHistory(set, get, "Resize Frame");
 
     const dx = rect.x - frame.position.x;
     const dy = rect.y - frame.position.y;
@@ -861,6 +1111,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project } = get();
     if (!project) return;
 
+    pushHistory(set, get, "Delete Frame");
     set({
       project: {
         ...project,
@@ -878,7 +1129,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   addVariable: () => {
     const { project } = get();
     if (!project) return;
-    set({
+
+    pushHistory(set, get, "Add Variable");    set({
       project: {
         ...project,
         variables: [...project.variables, buildVariable()],
@@ -892,7 +1144,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   createVariable: (name, type) => {
     const { project } = get();
     if (!project) return null;
-    const variable = changeVariableType({ ...buildVariable(), name }, type);
+
+    pushHistory(set, get, "Create Variable");    const variable = changeVariableType({ ...buildVariable(), name }, type);
     set({
       project: {
         ...project,
@@ -908,7 +1161,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   updateVariable: (variableId, patch) => {
     const { project } = get();
     if (!project) return;
-    set({
+
+    pushHistory(set, get, "Edit Variable", `variable:${variableId}`);    set({
       project: {
         ...project,
         variables: project.variables.map((v) =>
@@ -936,7 +1190,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   deleteVariable: (variableId) => {
     const { project } = get();
     if (!project) return;
-    set({
+
+    pushHistory(set, get, "Delete Variable");    set({
       project: {
         ...project,
         variables: project.variables.filter((v) => v.id !== variableId),
@@ -1010,6 +1265,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   closeProject: () => {
     if (autosaveTimer) clearTimeout(autosaveTimer);
+    clearHistory();
     set({
       project: null,
       filePath: null,
@@ -1017,6 +1273,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       saveStatus: "saved",
       isPlaying: false,
       playSceneId: null,
+      ...historyFlags(),
     });
   },
 }));

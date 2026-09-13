@@ -3,6 +3,7 @@ import { useProjectStore } from "../../state/projectStore";
 import { useUIStore } from "../../state/uiStore";
 import { ProjectSettingsDialog } from "./ProjectSettingsDialog";
 import { BrandMark } from "../common/BrandMark";
+import { Icon } from "../common/Icon";
 
 const SAVE_STATUS_LABEL = {
   saved: "All changes saved",
@@ -19,6 +20,14 @@ export function TopBar() {
   const exitPlay = useProjectStore((s) => s.exitPlay);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const openVariableManager = useUIStore((s) => s.openVariableManager);
+  const undo = useProjectStore((s) => s.undo);
+  const redo = useProjectStore((s) => s.redo);
+  const canUndo = useProjectStore((s) => s.canUndo);
+  const canRedo = useProjectStore((s) => s.canRedo);
+  const undoLabel = useProjectStore((s) => s.undoLabel);
+  const redoLabel = useProjectStore((s) => s.redoLabel);
+
+  const modifier = navigator.platform.toLowerCase().includes("mac") ? "⌘" : "Ctrl+";
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--border-soft)] bg-[var(--surface)] px-5">
@@ -36,6 +45,39 @@ export function TopBar() {
         <span className="text-sm text-[var(--text-2)]">{projectName}</span>
         {!isPlaying && (
           <span className="ml-2 text-xs text-[var(--text-3)]">{SAVE_STATUS_LABEL[saveStatus]}</span>
+        )}
+
+        {/* Undo/redo sit with the project's identity rather than with the
+            actions on the right, because they're about the file's state,
+            not about starting something. Kept icon-only and disabled-quiet:
+            for a writer with nothing to undo they should read as absent,
+            not as two buttons refusing to work. The keyboard shortcut is
+            the real interface; these exist so it's discoverable. */}
+        {!isPlaying && (
+          <div className="ml-3 flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={undo}
+              disabled={!canUndo}
+              title={canUndo ? `Undo ${undoLabel} (${modifier}Z)` : `Nothing to undo (${modifier}Z)`}
+              aria-label={canUndo ? `Undo ${undoLabel}` : "Nothing to undo"}
+              className="rounded-md p-1.5 text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)] disabled:pointer-events-none disabled:text-[var(--border-faint)]"
+            >
+              <Icon name="undo" className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={redo}
+              disabled={!canRedo}
+              title={
+                canRedo ? `Redo ${redoLabel} (${modifier}⇧Z)` : `Nothing to redo (${modifier}⇧Z)`
+              }
+              aria-label={canRedo ? `Redo ${redoLabel}` : "Nothing to redo"}
+              className="rounded-md p-1.5 text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)] disabled:pointer-events-none disabled:text-[var(--border-faint)]"
+            >
+              <Icon name="redo" className="h-4 w-4" />
+            </button>
+          </div>
         )}
       </div>
 

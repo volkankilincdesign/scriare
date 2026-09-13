@@ -17,6 +17,27 @@ import "@fontsource-variable/manrope";
 import App from "./App";
 import "./styles/index.css";
 
+// Dev-only test hook. `import.meta.env.DEV` is replaced with a literal at
+// build time and the whole branch is dropped from a production bundle, so
+// this costs the shipped app nothing — but it means tests/*.spec.mjs can
+// drive the real stores without anyone hand-editing this file first, which
+// is what made the standalone script in v0.25.0 easy to forget to run.
+if (import.meta.env.DEV || import.meta.env.MODE === "test") {
+  void Promise.all([
+    import("./state/projectStore"),
+    import("./state/toastStore"),
+    import("./state/selectionStore"),
+    import("./utils/contentClipboard"),
+  ]).then(([projectStore, toastStore, selectionStore, clipboardUtils]) => {
+    Object.assign(window, {
+      __scriareProjectStore: projectStore.useProjectStore,
+      __scriareToastStore: toastStore.useToastStore,
+      __scriareSelectionStore: selectionStore.useSelectionStore,
+      __scriareClipboardUtils: clipboardUtils,
+    });
+  });
+}
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <App />
