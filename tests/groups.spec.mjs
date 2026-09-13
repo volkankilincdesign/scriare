@@ -348,5 +348,113 @@ export default async function ({ api, check, seedProject }) {
       r.inner.y + r.inner.height <= r.outer.y + r.outer.height,
     `outer ${r.outer.width}x${r.outer.height} at ${r.outer.x},${r.outer.y}; inner ${r.inner.width}x${r.inner.height} at ${r.inner.x},${r.inner.y}`);
 
+  // 13 — a group made in the Content Browser appears on the graph as soon
+  // as it holds a scene (v0.31.0). Before this, the tree could say "this
+  // scene lives in Chapter Two" while the canvas showed it loose with no
+  // box at all — a softer version of exactly the drift v0.28.0 killed.
+  const drawn = () =>
+    api(() => {
+      const p = window.__scriareProjectStore.getState().project;
+      return window.__scriareGroupUtils
+        .graphGroups(p.content, p.scenes)
+        .map((g) => `${g.name}${g.derived ? ":derived" : ":stored"}`);
+    });
+
+  await api(() => {
+    const store = window.__scriareProjectStore;
+    const now = new Date().toISOString();
+    store.setState({
+      project: {
+        name: "Sym", createdAt: now, updatedAt: now,
+        scenes: [
+          { id: "s1", title: "One", position: { x: 100, y: 100 }, order: 0,
+            content: { type: "doc", content: [{ type: "paragraph" }] } },
+          { id: "s2", title: "Two", position: { x: 400, y: 100 }, order: 0,
+            content: { type: "doc", content: [{ type: "paragraph" }] } },
+        ],
+        content: [
+          { id: "s1", kind: "leaf", category: "story", parentId: null, order: 0, refType: "scene" },
+          { id: "s2", kind: "leaf", category: "story", parentId: null, order: 1, refType: "scene" },
+          // Made in the Content Browser: no rect of its own.
+          { id: "ch", kind: "folder", category: "story", parentId: null, order: 2, name: "Chapter" },
+        ],
+        favorites: [], variables: [], startSceneId: "s1",
+      },
+      filePath: null, selectedSceneId: "s1", saveStatus: "saved", isPlaying: false,
+      canUndo: false, canRedo: false, undoLabel: null, redoLabel: null, undoToken: null,
+    });
+  });
+
+  r = await drawn();
+  check("an EMPTY group made in Content is not drawn on the graph", r.length === 0,
+    `drawn: [${r}]`);
+
+  await api(() => window.__scriareProjectStore.getState().moveContentNode("s1", "ch", 0));
+  r = await drawn();
+  check("it appears the moment it holds a scene",
+    r.length === 1 && r[0] === "Chapter:derived", `drawn: [${r}]`);
+
+  // The derived box must actually bound its scene — a box that doesn't
+  // contain its own contents is the bug, not the fix.
+  r = await api(() => {
+    const p = window.__scriareProjectStore.getState().project;
+    const g = window.__scriareGroupUtils.graphGroups(p.content, p.scenes)[0];
+    const s = p.scenes.find((x) => x.id === "s1");
+    return {
+      fits:
+        s.position.x >= g.rect.x && s.position.y >= g.rect.y &&
+        s.position.x + 180 <= g.rect.x + g.rect.width &&
+        s.position.y + 56 <= g.rect.y + g.rect.height,
+      rect: g.rect, pos: s.position,
+    };
+  });
+  check("the derived box bounds its own scene", r.fits,
+    `box ${r.rect.width}x${r.rect.height} at ${r.rect.x},${r.rect.y}; scene at ${r.pos.x},${r.pos.y}`);
+
+  // 14 — a derived box is still a real target: dropping another scene in
+  // files it, and dragging one out un-files it, exactly as a stored box.
+  r = await api(() => {
+    const store = window.__scriareProjectStore;
+    const p = store.getState().project;
+    const g = window.__scriareGroupUtils.graphGroups(p.content, p.scenes)[0];
+    store.getState().updateScenePosition("s2", { x: g.rect.x + 20, y: g.rect.y + 40 });
+    return store.getState().project.content.find((n) => n.id === "s2").parentId;
+  });
+  check("a scene dropped into a derived box joins that group", r === "ch", `parent is ${r}`);
+
+  r = await api(() => {
+    const store = window.__scriareProjectStore;
+    store.getState().updateScenePosition("s2", { x: 3000, y: 3000 });
+    return store.getState().project.content.find((n) => n.id === "s2").parentId;
+  });
+  check("a scene dragged clear of a derived box leaves the group", r === null, `parent is ${r}`);
+
+  // 15 — touching the box is what makes its geometry real
+  r = await api(() => {
+    const store = window.__scriareProjectStore;
+    const p = store.getState().project;
+    const g = window.__scriareGroupUtils.graphGroups(p.content, p.scenes)[0];
+    store.getState().updateFolderRect("ch", { ...g.rect, x: g.rect.x + 100 }, true);
+    const after = store.getState().project.content.find((n) => n.id === "ch");
+    return { stored: Boolean(after.rect), x: after.rect?.x, wasAt: g.rect.x };
+  });
+  check("moving a derived box stores its geometry from where it appeared",
+    r.stored && r.x === r.wasAt + 100, `stored: ${r.stored}, x ${r.wasAt} → ${r.x}`);
+
+  // 16 — emptying a group takes its box away again rather than leaving a
+  // stored rectangle around nothing... unless the writer gave it one.
+  r = await api(() => {
+    const store = window.__scriareProjectStore;
+    store.getState().updateScenePosition("s1", { x: 5000, y: 5000 });
+    const p = store.getState().project;
+    return {
+      s1Parent: p.content.find((n) => n.id === "s1").parentId,
+      stillDrawn: window.__scriareGroupUtils.graphGroups(p.content, p.scenes).length,
+    };
+  });
+  check("a group the writer has placed keeps its box even when emptied",
+    r.s1Parent === null && r.stillDrawn === 1,
+    `s1's parent: ${r.s1Parent}, groups drawn: ${r.stillDrawn}`);
+
   await seedProject();
 }

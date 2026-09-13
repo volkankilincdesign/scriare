@@ -403,7 +403,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   const groupOfScene = useMemo(() => {
     const map = new Map<string, string>();
     if (!project) return map;
-    for (const group of graphGroups(project.content)) {
+    for (const group of graphGroups(project.content, project.scenes)) {
       const subtree = folderSubtree(project.content, group.id);
       subtree.delete(group.id);
       for (const id of subtree) {
@@ -415,7 +415,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     // graphGroups returns parents first, so the loop above records the
     // OUTERMOST box. Re-walk deepest-first to correct that.
     map.clear();
-    const groups = graphGroups(project.content).slice().reverse();
+    const groups = graphGroups(project.content, project.scenes).slice().reverse();
     for (const group of groups) {
       const subtree = folderSubtree(project.content, group.id);
       subtree.delete(group.id);
@@ -460,7 +460,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     // nested box paints above the one that owns it (React Flow honours
     // array order for equal z-index). Everything below is unchanged from
     // the Frame era apart from where the data comes from.
-    const groups = graphGroups(project.content);
+    const groups = graphGroups(project.content, project.scenes);
     const sceneCounts = new Map<string, number>();
     for (const group of groups) {
       const subtree = folderSubtree(project.content, group.id);
@@ -643,7 +643,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     setSceneDrag(sceneMap.size > 0 ? sceneMap : null);
 
     if (node.type === "scene" && project) {
-      setFrameHighlight(groupAtPoint(graphGroups(project.content), node.position)?.id ?? null);
+      setFrameHighlight(groupAtPoint(graphGroups(project.content, project.scenes), node.position)?.id ?? null);
     }
   };
 
@@ -683,7 +683,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     });
 
     if (node.type === "scene" && project) {
-      setFrameHighlight(groupAtPoint(graphGroups(project.content), node.position)?.id ?? null);
+      setFrameHighlight(groupAtPoint(graphGroups(project.content, project.scenes), node.position)?.id ?? null);
     }
   };
 
@@ -772,7 +772,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
                 type="button"
                 onClick={() => addGraphGroup()}
                 className="rounded px-2 py-1 text-xs font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-                title="Add a group — a chapter box on the canvas that is also a folder in Content"
+                title="Add a group — a box on the canvas, and the same group in Content"
               >
                 + Group
               </button>

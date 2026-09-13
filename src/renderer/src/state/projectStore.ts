@@ -135,9 +135,11 @@ interface ProjectState {
   setStartScene: (sceneId: string | null) => void;
 
   /**
-   * Creates a Story folder that is drawn on the graph immediately — the
-   * graph's "+ Group" button. A folder made from the Content Browser has no
-   * rectangle and isn't on the canvas until it's given one.
+   * Creates a Story group placed on the canvas, empty — the graph's
+   * "+ Group" button. A group made from the Content Browser starts with no
+   * rectangle and appears on the graph as soon as it holds a scene (see
+   * utils/graphGroups.ts); this one is drawn from the moment it exists,
+   * because placing it IS the gesture.
    */
   addGraphGroup: () => void;
   /**
@@ -569,14 +571,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project } = get();
     if (!project) return;
 
-    pushHistory(set, get, "Create Folder");
+    pushHistory(set, get, "Create Group");
     const folder: ContentFolder = {
       id: nanoid(),
       kind: "folder",
       category: "story",
       parentId,
       order: nextOrder(project.content, "story", parentId),
-      name: "New Folder",
+      name: "New Group",
     };
 
     set({
@@ -594,7 +596,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project } = get();
     if (!project) return;
 
-    pushHistory(set, get, "Rename Folder", `rename-folder:${folderId}`);
+    pushHistory(set, get, "Rename Group", `rename-folder:${folderId}`);
     set({
       project: {
         ...project,
@@ -613,7 +615,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const folder = project.content.find((n) => n.id === folderId);
     if (!folder) return;
 
-    pushHistory(set, get, "Delete Folder");
+    pushHistory(set, get, "Delete Group");
     // Ungroup, don't destroy: a folder's children move up to its parent —
     // same non-destructive philosophy as deleting a graph Frame. Nothing
     // inside a folder is ever deleted just because the folder was.
@@ -885,7 +887,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     // itself as you rearrange the graph, instead of the two panels drifting
     // apart. Uses the same containment check the live drag-hover highlight
     // uses, so what lights up while dragging is always what you get.
-    const groups = graphGroups(project.content);
+    const groups = graphGroups(project.content, project.scenes);
     const target = groupAtPoint(groups, position);
     const leaf = project.content.find((n) => n.id === sceneId);
     const nextParentId = target?.id ?? null;
@@ -997,12 +999,22 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const folder = project.content.find(
       (n): n is ContentFolder => n.id === folderId && n.kind === "folder",
     );
-    if (!folder?.rect) return;
+    if (!folder) return;
+
+    // A group drawn only because it holds scenes has no stored rectangle —
+    // its box is derived from those scenes (see graphGroups). Touching it is
+    // what makes it real: we take the box the writer was actually looking
+    // at as the starting point, so the first drag moves it from exactly
+    // where it appeared rather than snapping from some default.
+    const currentRect =
+      folder.rect ??
+      graphGroups(project.content, project.scenes).find((g) => g.id === folderId)?.rect;
+    if (!currentRect) return;
 
     pushHistory(set, get, reparent ? "Move Group" : "Resize Group");
 
-    const dx = rect.x - folder.rect.x;
-    const dy = rect.y - folder.rect.y;
+    const dx = rect.x - currentRect.x;
+    const dy = rect.y - currentRect.y;
     const moved = dx !== 0 || dy !== 0;
 
     // Everything inside travels with the box. A group is the thing that
@@ -1032,7 +1044,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     // centre can easily land inside a small sub-chapter it visually
     // swallows; see groupContaining.
     if (reparent) {
-      const groups = graphGroups(content);
+      const groups = graphGroups(content, project.scenes);
       const excluded = folderSubtree(content, folderId);
       const host = groupContaining(groups, rect, excluded);
       const nextParentId = host?.id ?? null;
@@ -1087,7 +1099,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const folder = project.content.find(
       (n): n is ContentFolder => n.id === folderId && n.kind === "folder",
     );
-    if (!folder?.rect) return;
+    // Drawn at all — stored rectangle or derived from its scenes. A group
+    // that isn't on the canvas has nothing to fold.
+    const drawn =
+      Boolean(folder?.rect) ||
+      graphGroups(project.content, project.scenes).some((g) => g.id === folderId);
+    if (!folder || !drawn) return;
 
     pushHistory(set, get, folder.collapsed ? "Unfold Group" : "Fold Group");
 

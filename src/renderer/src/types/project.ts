@@ -84,7 +84,20 @@ interface ContentNodeBase {
 }
 
 /**
- * Pure organization — a folder never holds data itself.
+ * Pure organization — a group never holds data itself.
+ *
+ * NAMING: the writer-facing word is "Group" everywhere in the UI as of
+ * v0.31.0. `kind: "folder"` stays in the data model because renaming it
+ * would mean migrating every saved project to change a string nobody sees,
+ * and a migration that can only break things and never fix one is not worth
+ * running. The old word survives in identifiers (`createFolder`,
+ * `folderSubtree`, `ContentFolder`) for the same reason; where it appears
+ * in a string a person can read, it says Group.
+ *
+ * The rename followed the model rather than the other way round: folders
+ * and graph groups were two names for one object from v0.28.0 on, and
+ * calling it two things was the last place the old two-hierarchy split was
+ * still visible.
  *
  * As of v0.28.0 a Story folder also carries how it's drawn on the Story
  * Graph. That looks like mixing presentation into structure, and it is —

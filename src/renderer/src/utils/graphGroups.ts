@@ -17,12 +17,46 @@ export interface GraphGroup {
   collapsed: boolean;
   /** How deeply nested this box is, for paint order — a child must sit above its parent. */
   depth: number;
+  /**
+   * True when this group has no stored rectangle and is being drawn around
+   * its own scenes instead. It becomes false the first time the writer
+   * moves or resizes it — see graphGroups.
+   */
+  derived: boolean;
 }
 
-/** Every Story folder currently drawn on the canvas, parents before children. */
-export function graphGroups(content: ContentNode[]): GraphGroup[] {
+/**
+ * Every Story group currently drawn on the canvas, parents before children.
+ *
+ * A group is drawn when it has a stored `rect` OR when it contains at least
+ * one scene (v0.31.0). The second rule closes an asymmetry that made the
+ * app feel inconsistent: a group made on the graph appeared in the Content
+ * Browser instantly, while one made in the Content Browser never appeared
+ * on the graph — not even after scenes were filed into it, which left the
+ * tree saying "this scene lives in Chapter Two" and the canvas showing it
+ * loose with no box around it. That is a softer version of exactly the
+ * drift v0.28.0 existed to eliminate.
+ *
+ * "Contains a scene" is the right trigger rather than "exists", because an
+ * EMPTY group cannot create that drift — there is no scene whose home is
+ * being misrepresented — and a writer filing things into an empty group
+ * ("Cut scenes", "Notes to self") shouldn't have boxes appear on a canvas
+ * they never asked to change.
+ *
+ * A derived rect is not written to the project. It bounds the group's own
+ * scenes, so it follows them until the writer first moves or resizes the
+ * box, at which point `updateFolderRect` stores a real rect and the group
+ * owns its geometry from then on. Deriving here rather than migrating
+ * means no project file changes, and no writing to the store from a render.
+ */
+export function graphGroups(content: ContentNode[], scenes?: Scene[]): GraphGroup[] {
+  const derivedRects = scenes ? deriveMissingRects(content, scenes) : new Map<string, FolderRect>();
+
   const folders = content.filter(
-    (n): n is ContentFolder => n.kind === "folder" && n.category === "story" && Boolean(n.rect),
+    (n): n is ContentFolder =>
+      n.kind === "folder" &&
+      n.category === "story" &&
+      (Boolean(n.rect) || derivedRects.has(n.id)),
   );
   const drawn = new Set(folders.map((f) => f.id));
   const byId = new Map(content.map((n) => [n.id, n]));
@@ -44,7 +78,9 @@ export function graphGroups(content: ContentNode[]): GraphGroup[] {
   const groups = folders.map((folder) => ({
     id: folder.id,
     name: folder.name,
-    rect: folder.rect!,
+    rect: folder.rect ?? derivedRects.get(folder.id)!,
+    /** True while this box is only implied by its contents — see above. */
+    derived: !folder.rect,
     parentId: drawnParent(folder),
     collapsed: Boolean(folder.collapsed),
     depth: 0,
@@ -249,3 +285,74 @@ export function visibleStandIn(project: Project, sceneId: string): string | null
   }
   return outermostFolded;
 }
+
+
+/**
+ * Bounding rectangles for Story groups that hold scenes but have no stored
+ * geometry of their own — see graphGroups.
+ *
+ * Computed deepest-first so a nested group's derived box is already known
+ * when its parent's is computed, and the parent ends up enclosing it rather
+ * than only the scenes directly inside it.
+ */
+function deriveMissingRects(content: ContentNode[], scenes: Scene[]): Map<string, FolderRect> {
+  const derived = new Map<string, FolderRect>();
+
+  const folders = content.filter(
+    (n): n is ContentFolder => n.kind === "folder" && n.category === "story" && !n.rect,
+  );
+  if (folders.length === 0) return derived;
+
+  const scenesById = new Map(scenes.map((s) => [s.id, s]));
+  const byId = new Map(content.map((n) => [n.id, n]));
+
+  function depthOf(node: ContentNode): number {
+    let depth = 0;
+    let current = node.parentId;
+    while (current && depth < 64) {
+      depth += 1;
+      current = byId.get(current)?.parentId ?? null;
+    }
+    return depth;
+  }
+
+  for (const folder of [...folders].sort((a, b) => depthOf(b) - depthOf(a))) {
+    const subtree = folderSubtree(content, folder.id);
+    subtree.delete(folder.id);
+
+    const rects: FolderRect[] = [];
+    for (const id of subtree) {
+      const scene = scenesById.get(id);
+      if (scene) {
+        rects.push({
+          x: scene.position.x,
+          y: scene.position.y,
+          width: SCENE_NODE_WIDTH,
+          height: SCENE_NODE_HEIGHT,
+        });
+        continue;
+      }
+      const child = byId.get(id);
+      const childRect = child?.kind === "folder" ? (child.rect ?? derived.get(id)) : undefined;
+      if (childRect) rects.push(childRect);
+    }
+    if (rects.length === 0) continue; // empty group — deliberately not drawn
+
+    const minX = Math.min(...rects.map((r) => r.x));
+    const minY = Math.min(...rects.map((r) => r.y));
+    derived.set(folder.id, {
+      x: minX - DERIVED_PADDING,
+      // Extra room at the top for the group's own title bar, which is drawn
+      // inside its rectangle and would otherwise sit over the first scene.
+      y: minY - DERIVED_PADDING - DERIVED_HEADER,
+      width: Math.max(...rects.map((r) => r.x + r.width)) - minX + DERIVED_PADDING * 2,
+      height:
+        Math.max(...rects.map((r) => r.y + r.height)) - minY + DERIVED_PADDING * 2 + DERIVED_HEADER,
+    });
+  }
+
+  return derived;
+}
+
+const DERIVED_PADDING = 26;
+const DERIVED_HEADER = 26;

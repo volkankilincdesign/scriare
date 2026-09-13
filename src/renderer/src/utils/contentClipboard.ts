@@ -76,6 +76,6 @@ export function describeClipboard(clipboard: ContentClipboard): string {
   const scenes = clipboard.scenes.length;
   const parts: string[] = [];
   if (scenes > 0) parts.push(`${scenes} scene${scenes === 1 ? "" : "s"}`);
-  if (folders > 0) parts.push(`${folders} folder${folders === 1 ? "" : "s"}`);
+  if (folders > 0) parts.push(`${folders} group${folders === 1 ? "" : "s"}`);
   return parts.join(" and ") || "nothing";
 }

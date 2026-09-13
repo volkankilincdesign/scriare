@@ -109,7 +109,7 @@ export function useKeyboardClipboard(): void {
       const single = ids.length === 1 ? project.content.find((n) => n.id === ids[0]) : undefined;
       const name =
         single?.kind === "folder"
-          ? `folder "${single.name}"`
+          ? `"${single.name}"`
           : single
             ? `"${project.scenes.find((s) => s.id === single.id)?.title || "Untitled scene"}"`
             : `${ids.length} items`;

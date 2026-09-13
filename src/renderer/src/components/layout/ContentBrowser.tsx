@@ -273,7 +273,7 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
     if (node === null) {
       return [
         { label: "New Scene", onSelect: () => createScene(null) },
-        { label: "New Folder", onSelect: () => createFolder(null) },
+        { label: "New Group", onSelect: () => createFolder(null) },
       ];
     }
 
@@ -309,14 +309,14 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
     if (node.kind === "folder") {
       return [
         { label: "New Scene", onSelect: () => createScene(node.id) },
-        { label: "New Folder", onSelect: () => createFolder(node.id) },
+        { label: "New Group", onSelect: () => createFolder(node.id) },
         { label: "Rename", onSelect: () => startRename(node.id, node.name) },
         {
           label: "Delete",
           danger: true,
           onSelect: () => {
             deleteFolder(node.id);
-            showUndo(`Deleted folder "${node.name}" — its contents moved up one level`);
+            showUndo(`Deleted "${node.name}" — its contents moved up one level`);
           },
         },
       ];
@@ -428,9 +428,9 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
               type="button"
               onClick={() => createFolder(null)}
               className="rounded px-1.5 text-xs text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-              title="New folder (Story root)"
+              title="New group (Story root)"
             >
-              + Folder
+              + Group
             </button>
             <button
               type="button"
@@ -530,7 +530,7 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
                           onClick={() => createFolder(null)}
                           className="rounded-md border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
                         >
-                          Create Folder
+                          Create Group
                         </button>
                       </div>
                     </div>

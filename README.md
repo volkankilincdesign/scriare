@@ -1,6 +1,20 @@
-# Scriare — v0.30.0 — Conditions
+# Scriare — v0.31.0 — One Word, Both Ways
 
-## What's new (v0.30.0 — Conditions)
+## What's new (v0.31.0 — One Word, Both Ways)
+
+Two loose ends from folding Frames into folders, both of which made a single object look like two.
+
+**A group made in the Content Browser now appears on the graph.** It already worked the other way — "+ Group" on the canvas created a group in the tree instantly — but not in reverse, and not even after scenes were filed into it. The tree would say a scene lived in Chapter Two while the canvas showed it loose with no box around it. Not a contradiction, since the graph was simply silent, but it's a softer version of exactly the drift v0.28.0 existed to eliminate.
+
+The rule is **a group is drawn once it holds a scene**, rather than the moment it exists. An empty group can't misrepresent anything — there's no scene whose home is being hidden — and a writer filing things into an empty "Cut scenes" shouldn't have boxes appear on a canvas they never asked to change. The box is drawn around the group's own scenes, which is the only truthful place for it; if they're scattered, it's big, and Auto Layout tidies that.
+
+A box that appears this way isn't written to the project. It follows its scenes until the first time you move or resize it, at which point the group takes ownership of its geometry from exactly where it appeared. So it costs nothing until you touch it, and behaves like any other box the moment you do — dropping a scene inside files it, dragging one clear un-files it, folding works.
+
+**"Folder" is now "Group" everywhere.** They have been one object since v0.28.0, and calling it two things was the last place the old two-hierarchy split was still visible in the UI. The internal `kind: "folder"` stays, along with identifiers like `createFolder` and `ContentFolder` — renaming those would mean migrating every saved project to change a string nobody reads, and a migration that can only break things and never fix one isn't worth running. Wherever the word appears somewhere a person can read it, it says Group.
+
+Four new tests, including the two that matter: the box has to actually bound its own scene, and the auto-draw rule has to be what puts it there. 75 tests.
+
+## v0.30.0 — Conditions
 
 Variables have been able to change since v0.19.0 and nothing has ever been able to read them. Actions could set Trust to 3; no part of the story could ask whether it was. That made the branching model one-way — state could be written and never consulted — and it's the hole this version closes.
 

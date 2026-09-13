@@ -47,7 +47,7 @@ interface Member {
 }
 
 export function computeGraphLayout(project: Project): LayoutResult | null {
-  const groups = graphGroups(project.content);
+  const groups = graphGroups(project.content, project.scenes);
   const groupIds = new Set(groups.map((g) => g.id));
 
   // A scene or sub-group belongs to the nearest DRAWN folder above it; an
