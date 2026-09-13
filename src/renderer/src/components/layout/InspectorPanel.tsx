@@ -478,6 +478,10 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
    * and leaves anything the writer opened by hand exactly as they left it.
    */
   const autoOpenedRef = useRef<string | null>(null);
+  /** Which choices were open last time the list was measured — see the
+   *  FLIP effect for why "did this row open or close?" decides whether it
+   *  is animated. */
+  const prevExpandedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     const focused = target.optionId ?? null;
     if (!focused) return;
@@ -640,11 +644,34 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
       const el = itemRefs.current.get(id);
       if (el) newRects.set(id, el.getBoundingClientRect());
     });
+    // v0.33.2 — a choice that just opened or closed is NOT animated into
+    // place, however far its top moved.
+    //
+    // Reported: opening choices top-down looked broken while bottom-up
+    // looked fine. Both were the same code. Opening choice 2 while choice
+    // 1 is open does two things at once — 1 collapses, 2 expands — and
+    // collapsing 1 lifts 2 several hundred pixels up the panel. FLIP saw
+    // an element whose top moved 348px and did what it is for: put it
+    // back where it was and slide it to where it now is. So the choice
+    // the writer had just clicked came racing up from the bottom of the
+    // panel. Bottom-up never showed it because collapsing a choice BELOW
+    // the one being opened doesn't move it; the row that travelled was
+    // the one closing, which nobody was looking at.
+    //
+    // The distinction that matters is what the movement MEANS. A row that
+    // shifts because something else changed size did travel, and animating
+    // it explains the layout. A row that opened or closed didn't travel at
+    // all — its content changed, and it belongs exactly where the new
+    // layout puts it. Animating that is telling the writer a story about
+    // motion that never happened.
+    const wasExpanded = prevExpandedRef.current;
+    const changedOpenState = (id: string): boolean => wasExpanded.has(id) !== expanded.has(id);
+
     displayedOrder.forEach((id) => {
       const el = itemRefs.current.get(id);
       const oldRect = prevRectsRef.current.get(id);
       const newRect = newRects.get(id);
-      if (el && oldRect && newRect) {
+      if (el && oldRect && newRect && !changedOpenState(id)) {
         const dy = oldRect.top - newRect.top;
         if (Math.abs(dy) > 0.5) {
           // transform/transition were already reset above; just set the
@@ -661,6 +688,7 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
       }
     });
     prevRectsRef.current = newRects;
+    prevExpandedRef.current = expanded;
     // `expanded` is intentionally included (via its size + membership
     // changing the Set reference every toggle) so a choice expanding or
     // collapsing — which reflows every choice below it — also refreshes

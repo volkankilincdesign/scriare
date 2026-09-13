@@ -1,6 +1,20 @@
-# Scriare — v0.33.1 — The Panel Follows the Caret
+# Scriare — v0.33.2 — Fixed: Choices Flying In From the Bottom of the Inspector
 
-## What's new (v0.33.1 — The Panel Follows the Caret)
+## What's new (v0.33.2 — Fixed: Choices Flying In From the Bottom of the Inspector)
+
+**Confirmed, and it was real.** Opening choices from the top down (1 → 2 → 3 → 4) made each newly-opened choice race up from the bottom of the panel; going bottom-up (4 → 3 → 2 → 1) looked perfectly normal. Same code both ways.
+
+Opening choice 2 while choice 1 is open does two things in one go: 1 closes and 2 opens. Closing 1 lifts 2 about 350 pixels up the panel — and the Choices list animates anything whose position changes, so it did exactly what it was built to do: put choice 2 back where it had been and slide it to where it now is. Going bottom-up, closing choice 4 doesn't move choice 3 at all; the row that travelled was the one closing, below the one being read, so nobody ever saw it.
+
+The rule now distinguishes between two kinds of movement. A choice that shifted because something else changed size really did travel, and animating it explains the layout. A choice that just opened or closed didn't travel at all — its contents changed, and it belongs where the new layout puts it. Animating that is describing motion that never happened.
+
+So choices still slide into place when the one above them opens — that part was never the problem — while the choice you clicked opens where it is.
+
+Measured rather than eyeballed, in both directions: the tests read the actual transform on every row across the frames after a change and fail if a row that opened or closed is given one. On the previous build they report 348px.
+
+Three new tests. 116 tests.
+
+## v0.33.1 — The Panel Follows the Caret
 
 Two fixes, both reported.
 

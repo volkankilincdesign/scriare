@@ -140,5 +140,114 @@ export default async function ({ api, check, seedProject }) {
   t = await target();
   check("leaving the choice returns to Scene Properties", t.kind === "scene", `target: ${t.kind}`);
 
+  // 7 — the accordions must not FLY (v0.33.2, reported).
+  //
+  // Opening choices top-down looked broken while bottom-up looked fine,
+  // from the same code. Opening choice 2 while 1 is open collapses 1 and
+  // expands 2 in one commit, and collapsing 1 lifts 2 hundreds of pixels
+  // up the panel — which the list's FLIP animation faithfully played back
+  // as the clicked choice racing up from the bottom. Bottom-up hid it
+  // because the row that travelled was the one closing, below the one
+  // being read.
+  //
+  // Measured as the actual transform on each row across the frames after
+  // the change, because "does it look right" is not a thing a test can
+  // ask. On the build before the fix these report 348px.
+  const peakTransforms = (fromId, toId) =>
+    api(
+      async ([from, to]) => {
+        const put = (oid) => {
+          const editor = window.__scriareEditorStore.getState().editor;
+          let pos = -1;
+          editor.state.doc.descendants((n, at) => {
+            if (pos !== -1) return false;
+            if (n.type.name === "choiceOption" && n.attrs.optionId === oid) pos = at + 1;
+            return true;
+          });
+          editor.chain().focus().setTextSelection(pos).run();
+        };
+        const peak = {};
+        put(from);
+        await new Promise((r) => setTimeout(r, 300));
+        let frames = 0;
+        const sample = () => {
+          for (const el of document.querySelectorAll("[data-option-id]")) {
+            const matrix = getComputedStyle(el.parentElement).transform;
+            let ty = 0;
+            if (matrix && matrix !== "none") {
+              const parts = matrix.match(/matrix\(([^)]+)\)/);
+              if (parts) ty = parseFloat(parts[1].split(",")[5]);
+            }
+            const id = el.dataset.optionId;
+            peak[id] = Math.max(peak[id] ?? 0, Math.abs(ty));
+          }
+          if (++frames < 20) requestAnimationFrame(sample);
+        };
+        put(to);
+        requestAnimationFrame(sample);
+        await new Promise((r) => setTimeout(r, 420));
+        return Object.fromEntries(Object.entries(peak).map(([k, v]) => [k, Math.round(v)]));
+      },
+      [fromId, toId],
+    );
+
+  // A block with enough choices that an expanded one moves the rest a
+  // long way — the whole bug is about distance.
+  await api(() => {
+    const editor = window.__scriareEditorStore.getState().editor;
+    editor.commands.setContent(
+      {
+        type: "doc",
+        content: [
+          { type: "paragraph", content: [{ type: "text", text: "prose" }] },
+          window.__scriareChoiceUtils.buildChoiceBlockNode(
+            [1, 2, 3, 4].map((n) => ({ id: "c" + n, text: "Choice " + n, targetSceneId: "s2" })),
+            "b2",
+          ),
+        ],
+      },
+      true,
+    );
+  });
+  await settle();
+
+  let peaks = await peakTransforms("c1", "c2");
+  check("opening the NEXT choice down doesn't make it fly up the panel",
+    Object.values(peaks).every((px) => px === 0), JSON.stringify(peaks));
+
+  peaks = await peakTransforms("c4", "c3");
+  check("...and the same going the other way, which always happened to look fine",
+    Object.values(peaks).every((px) => px === 0), JSON.stringify(peaks));
+
+  // 8 — but the list still animates what genuinely moves. Expanding a
+  // choice by hand shifts everything below it, and that motion explains
+  // the layout rather than inventing it. Without this, "nothing flies" is
+  // satisfied just as well by animating nothing at all.
+  const shiftBelow = await api(async () => {
+    const rows = [...document.querySelectorAll("[data-option-id]")];
+    const header = rows[0].querySelector("button");
+    const peak = {};
+    let frames = 0;
+    const sample = () => {
+      for (const el of document.querySelectorAll("[data-option-id]")) {
+        const matrix = getComputedStyle(el.parentElement).transform;
+        let ty = 0;
+        if (matrix && matrix !== "none") {
+          const parts = matrix.match(/matrix\(([^)]+)\)/);
+          if (parts) ty = parseFloat(parts[1].split(",")[5]);
+        }
+        peak[el.dataset.optionId] = Math.max(peak[el.dataset.optionId] ?? 0, Math.abs(ty));
+      }
+      if (++frames < 20) requestAnimationFrame(sample);
+    };
+    header.click();
+    requestAnimationFrame(sample);
+    await new Promise((r) => setTimeout(r, 420));
+    return Object.fromEntries(Object.entries(peak).map(([k, v]) => [k, Math.round(v)]));
+  });
+  check("choices below an opening one still slide into their new places",
+    Object.entries(shiftBelow).some(([id, px]) => id !== "c1" && px > 20),
+    JSON.stringify(shiftBelow));
+
   await seedProject();
 }
