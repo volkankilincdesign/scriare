@@ -66,35 +66,70 @@ export function SceneEditor() {
     // every one of its options as its own accordion, rather than the
     // Inspector tracking one option at a time the way 9A did.
     onSelectionUpdate: ({ editor: e }) => {
-      if (!scene) return;
+      // The scene id comes from the store rather than from `scene` in this
+      // closure. `useEditor`'s callbacks are bound when the editor is
+      // created — which happens on the first render, when `project` may
+      // still be loading and `scene` is therefore null — so a captured
+      // `scene` can be permanently stale, and every branch below would
+      // silently do nothing forever. Reading the store at call time is the
+      // only version of this that can't go quietly wrong.
+      const sceneId = useProjectStore.getState().selectedSceneId;
+      if (!sceneId) return;
       const { selection } = e.state;
+      const inspector = useInspectorStore.getState();
+
       if (selection instanceof NodeSelection && selection.node.type.name === "choiceBlock") {
         const blockId = selection.node.attrs?.blockId as string | undefined;
         if (blockId) {
-          useInspectorStore.getState().selectTarget({ kind: "choice", sceneId: scene.id, blockId });
+          inspector.selectTarget({ kind: "choice", sceneId, blockId });
           return;
         }
       }
-      // A Conditional Block holds real prose, so the writer's cursor sits
-      // inside it rather than selecting it as a node. Walking up the
-      // selection's ancestors is what lets "I'm typing in a gated
-      // paragraph" show that gate's conditions in the Inspector, without
-      // requiring a click on some separate handle.
+
+      // One walk up the ancestors, answering all three questions at once:
+      // which Choice Block the caret is in, which option inside it, and —
+      // failing those — whether it's inside a Conditional Block.
+      //
+      // v0.33.1 added the Choice half. Before v0.32.0 a Choice Block was an
+      // atom: there was nowhere for a caret to go, so a NodeSelection over
+      // the whole block (above) was the only way to be "in" one. Now that a
+      // choice label is real text the writer types into, the ordinary way
+      // to work on a choice is to have the caret in it — and until this
+      // version that showed Scene Properties, telling the writer to select
+      // a Choice Block while they were typing inside one.
       const { $from } = selection;
+      let optionId: string | null = null;
       for (let depth = $from.depth; depth > 0; depth -= 1) {
         const ancestor = $from.node(depth);
-        if (ancestor.type.name === "conditionalBlock") {
+        const name = ancestor.type.name;
+
+        if (name === "choiceOption") {
+          optionId = (ancestor.attrs?.optionId as string) ?? null;
+          continue;
+        }
+        if (name === "choiceBlock") {
           const blockId = ancestor.attrs?.blockId as string | undefined;
           if (blockId) {
-            useInspectorStore
-              .getState()
-              .selectTarget({ kind: "conditional", sceneId: scene.id, blockId });
+            // The option rides along so the Inspector can open that
+            // option's accordion; the block is still what's targeted.
+            inspector.selectTarget({ kind: "choice", sceneId, blockId, optionId });
+            return;
+          }
+        }
+        // A Conditional Block holds real prose, so the writer's cursor sits
+        // inside it rather than selecting it as a node — which is what lets
+        // "I'm typing in a gated paragraph" show that gate's conditions in
+        // the Inspector, with no separate handle to click.
+        if (name === "conditionalBlock") {
+          const blockId = ancestor.attrs?.blockId as string | undefined;
+          if (blockId) {
+            inspector.selectTarget({ kind: "conditional", sceneId, blockId });
             return;
           }
         }
       }
 
-      useInspectorStore.getState().clearTarget();
+      inspector.clearTarget();
     },
     editorProps: {
       attributes: {

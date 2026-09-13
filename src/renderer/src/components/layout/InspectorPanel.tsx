@@ -179,6 +179,9 @@ interface ChoiceTarget {
   kind: "choice";
   sceneId: string;
   blockId: string;
+  /** Which option the caret is in — see inspectorStore's own note on why
+   *  this is a focus hint rather than part of what's targeted. */
+  optionId?: string | null;
 }
 
 /**
@@ -460,6 +463,35 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
   optionsRef.current = options ?? [];
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  /**
+   * v0.33.1 — follow the caret.
+   *
+   * The Inspector now opens whenever the writer is inside a Choice Block
+   * (see SceneEditor's onSelectionUpdate), and `target.optionId` says which
+   * option they're in. Opening that accordion is the difference between
+   * "the Choice panel is showing" and "the thing I'm editing is in front of
+   * me" — with six choices in a block, the second is the only useful one.
+   *
+   * The ref remembers which accordion was opened FOR the writer rather than
+   * BY them, so moving the caret to another choice closes the one it opened
+   * and leaves anything the writer opened by hand exactly as they left it.
+   */
+  const autoOpenedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const focused = target.optionId ?? null;
+    if (!focused) return;
+    setExpanded((prev) => {
+      if (prev.has(focused) && autoOpenedRef.current === focused) return prev;
+      const next = new Set(prev);
+      if (autoOpenedRef.current && autoOpenedRef.current !== focused) {
+        next.delete(autoOpenedRef.current);
+      }
+      next.add(focused);
+      return next;
+    });
+    autoOpenedRef.current = focused;
+  }, [target.optionId]);
 
   // The block was deleted (its last choice was removed, or the writer
   // deleted it from the editor directly) while the Inspector still had it
@@ -970,6 +1002,10 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
   }
 
   function toggleExpanded(optionId: string): void {
+    // Touching an accordion by hand takes it out of the caret's control —
+    // otherwise the writer closes the one they're typing in and it springs
+    // back open on their next keystroke.
+    if (autoOpenedRef.current === optionId) autoOpenedRef.current = null;
     setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(optionId)) next.delete(optionId);
@@ -1219,7 +1255,15 @@ function ChoiceAccordion({
   }
 
   return (
-    <div className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg)]">
+    <div
+      // Which option this accordion is for. The drag code addresses rows by
+      // index and the writer addresses them by reading them; this is for
+      // anything that needs to find one option's controls by identity —
+      // tests today, and any future "scroll the focused choice into view".
+      data-option-id={option.id}
+      data-expanded={expanded ? "true" : "false"}
+      className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg)]"
+    >
       <div className="flex items-center gap-1">
         <span
           onPointerDown={onDragHandleDown}

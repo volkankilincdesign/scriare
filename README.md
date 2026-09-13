@@ -1,6 +1,22 @@
-# Scriare — v0.33.0 — The Toolbar Learns the Language
+# Scriare — v0.33.1 — The Panel Follows the Caret
 
-## What's new (v0.33.0 — The Toolbar Learns the Language)
+## What's new (v0.33.1 — The Panel Follows the Caret)
+
+Two fixes, both reported.
+
+**The toolbar no longer changes height when the caret enters a choice.** Confirmed by measurement before touching anything: 81px with the caret in prose, 87px with it in a choice. The Choice group shipped 34px tall against the bar's 28px controls — its border and padding were being added to that height instead of taken out of it — so the whole toolbar grew six pixels the moment you clicked into a choice, pushing your own text down, and shrank again when you clicked out. The group is now exactly one control tall, borders included, and a test measures both states and fails if they ever differ again.
+
+**The Inspector now opens on the choice you're working in, the moment you touch it.** Typing in a choice used to leave the Inspector showing Scene Properties and the words "Select a Choice Block in the document" — advice you were already following.
+
+This was a leftover from the old schema. A Choice Block used to be a sealed object with nowhere to put a caret, so the only way to be "in" one was to select the whole block, and that is the only thing the editor watched for. Since v0.32.0 the ordinary way to work on a choice is to have your caret in it, which matched nothing.
+
+Now the caret is enough — and the panel opens **on the option you're actually in**, not on a list of collapsed summaries. Move to the next choice and the panel follows, closing the accordion it opened and leaving anything you opened by hand exactly as you left it. Adding a choice from the block's own button puts you in the new one, so the Inspector is already there when you go to set its destination.
+
+One cause worth recording: the editor's selection handler was reading the current scene from a value captured when the editor was first created — before the project had loaded — so it could be permanently stale. It reads the store at call time now. That class of bug fails silently forever, which is the worst way for anything to fail.
+
+Ten new tests, both fixes negative-controlled. 113 tests.
+
+## v0.33.0 — The Toolbar Learns the Language
 
 **Every control in the editor toolbar is now drawn in the app's own icon set, and a Choice group appears when your caret is inside a choice.**
 

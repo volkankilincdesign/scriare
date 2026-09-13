@@ -28,7 +28,25 @@ import { create } from "zustand";
  */
 export type InspectorTarget =
   | { kind: "scene" }
-  | { kind: "choice"; sceneId: string; blockId: string }
+  | {
+      kind: "choice";
+      sceneId: string;
+      blockId: string;
+      /**
+       * v0.33.1 — which option the writer's caret is actually in, so the
+       * Inspector can open that option's accordion instead of making them
+       * find it in a list.
+       *
+       * NOT a return to Sprint 9A's per-option targeting: the unit of
+       * targeting is still the block, and the Inspector still shows every
+       * option in it. This is a hint about where attention is. The
+       * distinction matters because the caret moves constantly — if the
+       * option were part of the target's identity, the panel would remount
+       * every time a keystroke crossed an option boundary (see the
+       * `key={target.blockId}` note in InspectorPanel).
+       */
+      optionId?: string | null;
+    }
   // v0.30.0 — a Conditional Text block. Selected by the cursor being
   // anywhere INSIDE it rather than by a NodeSelection over it, because
   // unlike a Choice Block it holds ordinary prose the writer types into;

@@ -34,6 +34,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./state/editorStore"),
     import("./utils/choiceBlocks"),
     import("./utils/choiceBlockEditing"),
+    import("./state/inspectorStore"),
   ]).then(
     ([
       projectStore,
@@ -46,6 +47,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       editorStore,
       choiceUtils,
       choiceEditing,
+      inspectorStore,
     ]) => {
       Object.assign(window, {
         __scriareProjectStore: projectStore.useProjectStore,
@@ -61,6 +63,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         __scriareEditorStore: editorStore.useEditorRefStore,
         __scriareChoiceUtils: choiceUtils,
         __scriareChoiceEditing: choiceEditing,
+        __scriareInspectorStore: inspectorStore.useInspectorStore,
       });
     },
   );

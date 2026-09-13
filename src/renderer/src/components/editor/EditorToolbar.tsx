@@ -82,10 +82,23 @@ interface ToolbarButtonProps {
   active?: boolean;
   onClick: () => void;
   label: string;
+  /**
+   * A 24px button instead of 28px, for controls sitting INSIDE a bordered
+   * group. The group's own border and padding have to come out of the row's
+   * 28px or the toolbar grows taller whenever the group appears — which it
+   * did, by six pixels, and read exactly as jumpy as it sounds.
+   */
+  compact?: boolean;
   children: ReactNode;
 }
 
-function ToolbarButton({ active = false, onClick, label, children }: ToolbarButtonProps) {
+function ToolbarButton({
+  active = false,
+  onClick,
+  label,
+  compact = false,
+  children,
+}: ToolbarButtonProps) {
   return (
     <button
       type="button"
@@ -115,7 +128,9 @@ function ToolbarButton({ active = false, onClick, label, children }: ToolbarButt
       title={label}
       aria-label={label}
       aria-pressed={active}
-      className={`flex h-7 min-w-7 shrink-0 items-center justify-center rounded-[5px] px-1.5 transition-colors ${
+      className={`flex shrink-0 items-center justify-center rounded-[5px] px-1.5 transition-colors ${
+        compact ? "h-6 min-w-6" : "h-7 min-w-7"
+      } ${
         active
           ? "bg-[var(--surface-3)] text-[var(--text)]"
           : "text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
@@ -133,7 +148,7 @@ function IconButton({
 }: Omit<ToolbarButtonProps, "children"> & { icon: IconName }) {
   return (
     <ToolbarButton {...rest}>
-      <Icon name={icon} className="h-4 w-4" />
+      <Icon name={icon} className={rest.compact ? "h-[15px] w-[15px]" : "h-4 w-4"} />
     </ToolbarButton>
   );
 }
@@ -249,14 +264,23 @@ function ColorControl({
  * are in: another option, and the option's properties. Destination and
  * conditions themselves stay in the Inspector — this doesn't duplicate
  * them, it points at them, which keeps one editor for each thing.
+ *
+ * EXACTLY 28px TALL, like every other control on the bar. Its border and
+ * padding are taken out of that height rather than added to it (hence the
+ * compact buttons inside): the first version was 34px, so the whole toolbar
+ * grew six pixels the moment a caret entered a choice and shrank again when
+ * it left. A toolbar that changes height while you type is the kind of
+ * thing you feel before you can name it.
  */
 function ChoiceContextGroup({
   editor,
   blockId,
+  optionId,
   sceneId,
 }: {
   editor: Editor;
   blockId: string;
+  optionId: string | null;
   sceneId: string;
 }) {
   const selectTarget = useInspectorStore((s) => s.selectTarget);
@@ -265,41 +289,56 @@ function ChoiceContextGroup({
     <span
       role="group"
       aria-label="The choice the caret is in"
-      className="ml-1 flex shrink-0 items-center gap-0.5 rounded-[7px] border border-[var(--accent-soft-2)] bg-[var(--accent-soft)] py-0.5 pl-1.5 pr-1"
+      className="ml-1 flex h-7 shrink-0 items-center gap-0.5 rounded-[7px] border border-[var(--accent-soft-2)] bg-[var(--accent-soft)] pl-1.5 pr-0.5"
     >
       {/* The branch mark rather than the word "Choice": the insert button
           sitting immediately to the left already says Choice, and two of
           the same word side by side read as one control with a label. */}
-      <Icon name="branch" className="mr-0.5 h-3.5 w-3.5 text-[var(--accent)]" />
+      <Icon name="branch" className="mr-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />
       <IconButton
         icon="plus"
+        compact
         label="Add another choice to this block"
         onClick={() => appendChoiceOption(editor, blockId)}
       />
       <IconButton
         icon="properties"
+        compact
         label="Choice properties (destination, conditions, actions)"
-        onClick={() => selectTarget({ kind: "choice", sceneId, blockId })}
+        // Carries the option too, so the Inspector opens on the choice the
+        // caret is in rather than on the block's first one.
+        onClick={() => selectTarget({ kind: "choice", sceneId, blockId, optionId })}
       />
     </span>
   );
 }
 
 /**
- * The id of the Choice Block the selection sits in, or null. Walks the
- * selection's ancestors rather than asking `isActive`, because what's
- * wanted is the block's identity and not merely whether one is in scope.
+ * The Choice Block the selection sits in, and the option within it, or
+ * null. Walks the selection's ancestors rather than asking `isActive`,
+ * because what's wanted is the block's identity and not merely whether one
+ * is in scope.
  */
-function enclosingChoiceBlockId(editor: Editor): string | null {
+function enclosingChoice(editor: Editor): { blockId: string; optionId: string | null } | null {
   const { selection } = editor.state;
-  const nodeSelection = selection as { node?: { type: { name: string }; attrs: Record<string, unknown> } };
+  const nodeSelection = selection as {
+    node?: { type: { name: string }; attrs: Record<string, unknown> };
+  };
   if (nodeSelection.node?.type.name === "choiceBlock") {
-    return (nodeSelection.node.attrs.blockId as string) ?? null;
+    const blockId = nodeSelection.node.attrs.blockId as string | undefined;
+    return blockId ? { blockId, optionId: null } : null;
   }
   const { $from } = selection;
+  let optionId: string | null = null;
   for (let depth = $from.depth; depth > 0; depth -= 1) {
     const ancestor = $from.node(depth);
-    if (ancestor.type.name === "choiceBlock") return (ancestor.attrs.blockId as string) ?? null;
+    if (ancestor.type.name === "choiceOption") {
+      optionId = (ancestor.attrs.optionId as string) ?? null;
+    }
+    if (ancestor.type.name === "choiceBlock") {
+      const blockId = ancestor.attrs.blockId as string | undefined;
+      return blockId ? { blockId, optionId } : null;
+    }
   }
   return null;
 }
@@ -322,7 +361,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const textStyle = editor.getAttributes("textStyle");
   const currentColor = (textStyle.color as string | undefined) ?? "";
   const currentHighlight = (editor.getAttributes("highlight").color as string | undefined) ?? "";
-  const choiceBlockId = enclosingChoiceBlockId(editor);
+  const choice = enclosingChoice(editor);
 
   return (
     <div
@@ -522,8 +561,13 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         Choice
       </button>
 
-      {choiceBlockId && selectedSceneId && (
-        <ChoiceContextGroup editor={editor} blockId={choiceBlockId} sceneId={selectedSceneId} />
+      {choice && selectedSceneId && (
+        <ChoiceContextGroup
+          editor={editor}
+          blockId={choice.blockId}
+          optionId={choice.optionId}
+          sceneId={selectedSceneId}
+        />
       )}
     </div>
   );
