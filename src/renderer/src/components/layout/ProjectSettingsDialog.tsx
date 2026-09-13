@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Modal } from "../common/Modal";
 import { useProjectStore } from "../../state/projectStore";
 import { THEMES, useThemeStore } from "../../state/themeStore";
+import { useUIStore } from "../../state/uiStore";
 import type { ThemeId } from "../../state/themeStore";
 
 interface ProjectSettingsDialogProps {
@@ -68,6 +69,26 @@ export function ProjectSettingsDialog({ onClose }: ProjectSettingsDialogProps) {
           </option>
         ))}
       </select>
+
+      <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[var(--text-3)]">
+        Choice Styles
+      </label>
+      <p className="mb-2 text-xs text-[var(--text-3)]">
+        How choices look — named once, used anywhere in the story.
+      </p>
+      <button
+        type="button"
+        onClick={() => {
+          // Closes this dialog rather than stacking one modal on another:
+          // the styles manager is a place you go, not a detail of Settings.
+          onClose();
+          useUIStore.getState().openChoiceStyles();
+        }}
+        className="mb-5 w-full rounded-md border border-[var(--border)] px-3 py-2 text-left text-sm text-[var(--text-2)] hover:border-[var(--border-faint)] hover:text-[var(--text)]"
+      >
+        {project.choiceStyles.length}{" "}
+        {project.choiceStyles.length === 1 ? "style" : "styles"} — manage…
+      </button>
 
       <div className="flex justify-end gap-2">
         <button

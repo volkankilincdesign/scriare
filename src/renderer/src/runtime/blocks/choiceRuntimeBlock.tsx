@@ -4,6 +4,7 @@ import type { ChoiceOption } from "../../utils/choiceBlocks";
 import { readChoiceBlockOptions } from "../../utils/choiceBlocks";
 import { RUNTIME_EXTENSIONS } from "../extensions";
 import { describeCondition, evaluateConditions } from "../../types/variables";
+import { choiceBoxCss, resolveChoiceBox } from "../../types/choiceStyles";
 import type { RuntimeBlockDefinition, RuntimeContext } from "../types";
 
 interface RuntimeChoiceOptionsProps {
@@ -35,6 +36,11 @@ function RuntimeChoiceOptions({ options, context }: RuntimeChoiceOptionsProps) {
         passes ? (
           <button
             key={option.id}
+            // v0.34.0 — the option's own box, resolved from the project's
+            // named styles. An unstyled choice resolves to the Default
+            // style, whose values are the theme variables this button used
+            // to hard-code, so an untouched story looks exactly as it did.
+            style={choiceBoxCss(resolveChoiceBox(context.choiceStyles, option.style))}
             type="button"
             onClick={() => {
               // Actions run before the jump, same order a player reads them
@@ -44,7 +50,7 @@ function RuntimeChoiceOptions({ options, context }: RuntimeChoiceOptionsProps) {
               if (option.actions?.length) context.applyActions(option.actions);
               context.goToScene(option.targetSceneId as string);
             }}
-            className="rounded-md border border-[var(--border)] bg-[var(--surface-2-translucent)] px-4 py-2 text-left text-sm text-[var(--text)] hover:border-[var(--accent)] hover:bg-[var(--surface-2)]"
+            className="border-solid px-4 py-2 text-left text-sm text-[var(--text)] transition-colors hover:brightness-110"
           >
             <Label option={option} />
           </button>
@@ -57,7 +63,11 @@ function RuntimeChoiceOptions({ options, context }: RuntimeChoiceOptionsProps) {
             key={option.id}
             type="button"
             disabled
-            className="cursor-not-allowed rounded-md border border-dashed border-[var(--border-soft)] bg-transparent px-4 py-2 text-left text-sm text-[var(--text-3)]"
+            // A locked choice keeps its own dashed, drained treatment —
+            // that IS the information — but borrows the style's corner
+            // radius so it still reads as one of the choices around it.
+            style={{ borderRadius: `${resolveChoiceBox(context.choiceStyles, option.style).radius}px` }}
+            className="cursor-not-allowed border border-dashed border-[var(--border-soft)] bg-transparent px-4 py-2 text-left text-sm text-[var(--text-3)]"
           >
             <span className="flex items-center gap-2">
               <span aria-hidden>✕</span>

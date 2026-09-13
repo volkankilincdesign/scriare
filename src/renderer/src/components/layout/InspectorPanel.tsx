@@ -8,6 +8,14 @@ import { useEditorRefStore } from "../../state/editorStore";
 import { extractChoices, findChoiceBlockOptions } from "../../utils/choiceBlocks";
 import type { ChoiceOption } from "../../utils/choiceBlocks";
 import {
+  DEFAULT_CHOICE_STYLE_ID,
+  choiceBoxCss,
+  hasOverrides,
+  resolveChoiceBox,
+} from "../../types/choiceStyles";
+import type { ChoiceBox } from "../../types/choiceStyles";
+import { BoxControls } from "../choices/ChoiceStylesDialog";
+import {
   appendChoiceOption,
   applyChoiceOptionAttrs,
   applyConditionalBlockConditions,
@@ -1013,6 +1021,10 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
     if ("conditions" in patch) attrs.conditions = patch.conditions ?? [];
     if ("actions" in patch) attrs.actions = patch.actions ?? [];
     if ("whenUnmet" in patch) attrs.whenUnmet = patch.whenUnmet ?? "hide";
+    // v0.34.0. `null` is meaningful here — it is "inherit the project
+    // default" — so this passes it through rather than falling back to
+    // something, unlike every line above it.
+    if ("style" in patch) attrs.style = patch.style ?? null;
     if (Object.keys(attrs).length === 0) return;
     applyChoiceOptionAttrs(editor, optionId, attrs);
   }
@@ -1225,6 +1237,109 @@ interface ChoiceAccordionProps {
 }
 
 /**
+ * A choice's appearance (v0.34.0): which named Choice Style it wears, and
+ * any one-off tweaks on top.
+ *
+ * The two-level shape is the whole design. Picking a style is the normal
+ * case and the one that scales — change "Danger" once and every dangerous
+ * choice in the story changes with it. Overriding is the escape hatch for
+ * the choice that genuinely is one of a kind, and it stays visibly an
+ * exception: the moment there is one, this section says so and offers to
+ * take it back.
+ *
+ * Text is pointedly absent. The words inside a choice are real text in the
+ * document (v0.32.0), and the toolbar already styles text — putting font
+ * controls here as well would mean two places to set one thing, which is
+ * the disagreement this app keeps deleting wherever it finds it.
+ */
+function ChoiceAppearance({
+  option,
+  onPatch,
+}: {
+  option: ChoiceOption;
+  onPatch: (patch: Partial<ChoiceOption>) => void;
+}) {
+  const styles = useProjectStore((s) => s.project?.choiceStyles) ?? [];
+  const openChoiceStyles = useUIStore((s) => s.openChoiceStyles);
+  const ref = option.style ?? null;
+  const styleId = ref?.styleId ?? DEFAULT_CHOICE_STYLE_ID;
+  const overridden = hasOverrides(ref);
+  const resolved = resolveChoiceBox(styles, ref);
+
+  function setStyle(nextId: string): void {
+    onPatch({
+      style: nextId === DEFAULT_CHOICE_STYLE_ID && !overridden
+        ? null // back to "inherit", not "explicitly the default"
+        : { ...ref, styleId: nextId },
+    });
+  }
+
+  function setOverride(patch: Partial<ChoiceBox>): void {
+    onPatch({ style: { ...ref, overrides: { ...(ref?.overrides ?? {}), ...patch } } });
+  }
+
+  function clearOverrides(): void {
+    const styleId = ref?.styleId ?? null;
+    onPatch({ style: styleId ? { styleId } : null });
+  }
+
+  return (
+    <div data-appearance-for={option.id}>
+      <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+        Appearance
+      </label>
+      <div className="flex items-center gap-1.5">
+        <select
+          value={styleId}
+          onChange={(e) => setStyle(e.target.value)}
+          className="min-w-0 flex-1 rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+        >
+          {styles.map((style) => (
+            <option key={style.id} value={style.id}>
+              {style.name || "Untitled style"}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={openChoiceStyles}
+          title="Edit the project's Choice Styles"
+          className="shrink-0 rounded px-1.5 py-1 text-xs text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+        >
+          Edit…
+        </button>
+      </div>
+
+      {/* What this choice will actually look like, resolved — including any
+          override. Small, but it's the only place the two levels are
+          visible as one answer. */}
+      <div
+        style={choiceBoxCss(resolved)}
+        className="mt-2 px-2.5 py-1.5 text-xs text-[var(--text-2)]"
+      >
+        {option.text || "Untitled choice"}
+      </div>
+
+      <details className="mt-2 [&[open]>summary]:mb-2">
+        <summary className="cursor-pointer select-none text-[11px] text-[var(--text-3)] hover:text-[var(--text-2)]">
+          {overridden ? "Custom for this choice" : "Customise just this one"}
+        </summary>
+        <BoxControls box={resolved} onChange={setOverride} />
+        {overridden && (
+          <button
+            type="button"
+            onClick={clearOverrides}
+            className="mt-2 rounded px-1.5 py-0.5 text-[11px] font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+          >
+            Back to the style
+          </button>
+        )}
+      </details>
+    </div>
+  );
+}
+
+/**
  * One Choice's accordion — collapsed, it's a single summary row (per the
  * brief: destination, condition count, action count) with a drag handle;
  * expanded, it exposes Display Text, Destination, a Conditions placeholder,
@@ -1362,6 +1477,8 @@ function ChoiceAccordion({
               </span>
             </div>
           </div>
+
+          <ChoiceAppearance option={option} onPatch={onPatch} />
 
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">

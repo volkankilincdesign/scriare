@@ -91,6 +91,9 @@ function seedProject() {
         ],
         favorites: [],
         variables: [],
+        // Real projects get this from normalizeProject on load; this seed
+        // writes the store directly, so it supplies it the same way.
+        choiceStyles: window.__scriareChoiceStyles.normalizeChoiceStyles(undefined),
         startSceneId: "s1",
       },
       filePath: null,

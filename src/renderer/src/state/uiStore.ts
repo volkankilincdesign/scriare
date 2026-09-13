@@ -14,10 +14,20 @@ interface UIState {
   variableManagerOpen: boolean;
   openVariableManager: () => void;
   closeVariableManager: () => void;
+  /** v0.34.0 — the Choice Styles manager, reachable from two places for the
+   *  same reason the Variable Manager is: Project Settings is where you go
+   *  looking for it, and the Inspector's per-choice Appearance section is
+   *  where you realise you need it. */
+  choiceStylesOpen: boolean;
+  openChoiceStyles: () => void;
+  closeChoiceStyles: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
   variableManagerOpen: false,
   openVariableManager: () => set({ variableManagerOpen: true }),
   closeVariableManager: () => set({ variableManagerOpen: false }),
+  choiceStylesOpen: false,
+  openChoiceStyles: () => set({ choiceStylesOpen: true }),
+  closeChoiceStyles: () => set({ choiceStylesOpen: false }),
 }));

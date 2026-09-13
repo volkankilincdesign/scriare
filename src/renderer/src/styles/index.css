@@ -477,10 +477,14 @@ input[type="number"],
    The caret and selection behave here exactly as they do in a paragraph,
    because it IS a paragraph as far as ProseMirror is concerned. */
 .ProseMirror .scriare-choice-option {
-  transition: background-color .12s;
+  transition: filter .12s;
 }
+/* v0.34.0: the row now paints its own Choice Style (fill, border, radius)
+   as an inline style, so hover can no longer be a background swap — it
+   would override whatever style the writer chose. Brightness leaves their
+   colours theirs and still says "this row is under the pointer". */
 .ProseMirror .scriare-choice-option:hover {
-  background: var(--surface-2-faint);
+  filter: brightness(1.12);
 }
 /* An empty label would otherwise collapse to zero height and be impossible
    to click into — the same problem Tiptap's own placeholder solves for an

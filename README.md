@@ -1,6 +1,26 @@
-# Scriare — v0.33.2 — Fixed: Choices Flying In From the Bottom of the Inspector
+# Scriare — v0.34.0 — Choice Styles
 
-## What's new (v0.33.2 — Fixed: Choices Flying In From the Bottom of the Inspector)
+## What's new (v0.34.0 — Choice Styles)
+
+**Choices can look like something, and what they look like has a name.**
+
+This is the feature the last two versions were clearing the way for. A choice is now made of two things you style separately, in the place that suits each: the **words**, which are real text and are styled with the toolbar like any other sentence, and the **box**, which is a property of the choice and lives in the Inspector.
+
+**Styles are named, not per-choice settings.** You define "Danger" once — fill, border colour, thickness, corner radius — and any choice in the story can wear it. Change the style later and every choice wearing it changes with it. That's the difference between deciding dangerous choices should be redder and *spending an afternoon* making dangerous choices redder, and it's why this wasn't built as four sliders per choice.
+
+Three places touch it:
+
+- **Project Settings → Choice Styles** manages them. Each row is a real choice rendered in that style, so what you adjust is what you'll see — there's no preview that can drift from the result.
+- **The Inspector** gives each choice a style dropdown, a live preview, and "Customise just this one" for the choice that genuinely is an exception. When a choice has its own tweaks it says so, and offers to put them back.
+- **The scene itself.** Choices are drawn in their style while you write, not only in Play Mode. A styling feature you have to leave the page to see is one you end up guessing at.
+
+A colour can also be set back to **Theme**, which is worth knowing: a style with no colour of its own follows light and dark mode, and one with a hex no longer can.
+
+**Nothing about an existing story changes.** Every choice written before this version has no style, and resolves to a Default whose values are exactly the look choices have always had — in both themes. Deleting a style doesn't rewrite a single document either: choices wearing it fall back to Default when painted, so deletion stays one cheap edit rather than a walk through every scene.
+
+Thirteen new tests. Negative-controlled against a build whose resolution rules are inverted — an unknown style id falling back to nothing, and overrides replacing the style instead of layering on it — which turns six of them red, including the two that paint real pixels in Play Mode. 129 tests.
+
+## v0.33.2 — Fixed: Choices Flying In From the Bottom of the Inspector
 
 **Confirmed, and it was real.** Opening choices from the top down (1 → 2 → 3 → 4) made each newly-opened choice race up from the bottom of the panel; going bottom-up (4 → 3 → 2 → 1) looked perfectly normal. Same code both ways.
 

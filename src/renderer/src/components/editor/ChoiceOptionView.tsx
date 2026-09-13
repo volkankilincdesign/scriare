@@ -2,6 +2,8 @@ import { NodeViewContent, NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
 import { useProjectStore } from "../../state/projectStore";
 import { removeChoiceOption } from "../../utils/choiceBlockEditing";
+import { choiceBoxCss, resolveChoiceBox } from "../../types/choiceStyles";
+import type { ChoiceStyleRef } from "../../types/choiceStyles";
 
 /**
  * One option inside a Choice Block, as it appears while writing (v0.32.0).
@@ -23,6 +25,13 @@ export function ChoiceOptionView({ node, editor, getPos }: NodeViewProps) {
   const targetSceneId = (node.attrs.targetSceneId as string | null) ?? null;
   const conditions = (node.attrs.conditions as unknown[]) ?? [];
 
+  // v0.34.0 — the option is drawn in its own style WHILE WRITING, not only
+  // in Play Mode. A styling feature you have to leave the page to see is a
+  // styling feature you end up guessing at; and since the label is real
+  // text with real marks, what's on screen here is already the finished
+  // article apart from the chrome around it.
+  const box = resolveChoiceBox(project?.choiceStyles, node.attrs.style as ChoiceStyleRef | null);
+
   const target = targetSceneId ? project?.scenes.find((s) => s.id === targetSceneId) : undefined;
   const destination = target ? `→ ${target.title || "Untitled scene"}` : "Not linked yet";
 
@@ -42,8 +51,9 @@ export function ChoiceOptionView({ node, editor, getPos }: NodeViewProps) {
 
   return (
     <NodeViewWrapper
-      className="scriare-choice-option group relative flex items-baseline gap-2 rounded-md px-2 py-1.5"
+      className="scriare-choice-option group relative flex items-baseline gap-2 px-2 py-1.5"
       data-option-id={node.attrs.optionId ?? undefined}
+      style={choiceBoxCss(box)}
     >
       <span
         contentEditable={false}

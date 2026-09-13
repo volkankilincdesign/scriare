@@ -2,6 +2,7 @@ import { nanoid } from "nanoid";
 import type { JSONContent } from "@tiptap/react";
 import type { Choice } from "../types/project";
 import type { VariableAction, VariableCondition } from "../types/variables";
+import type { ChoiceStyleRef } from "../types/choiceStyles";
 
 export const CHOICE_BLOCK_TYPE = "choiceBlock";
 export const CHOICE_OPTION_TYPE = "choiceOption";
@@ -46,6 +47,13 @@ export interface ChoiceOption {
    * a string.
    */
   node?: JSONContent;
+  /**
+   * v0.34.0 — which Choice Style this option wears, plus any one-off
+   * tweaks. `null` means "the project default", which is why the node
+   * attribute defaults to null: the Inspector has to tell "never touched"
+   * from "set to the same values" to offer a meaningful reset.
+   */
+  style: ChoiceStyleRef | null;
 }
 
 /**
@@ -91,6 +99,7 @@ function readOptions(node: JSONContent | undefined): ChoiceOption[] {
         ? (child.attrs.conditions as VariableCondition[])
         : [],
       whenUnmet: child.attrs?.whenUnmet === "lock" ? "lock" : "hide",
+      style: (child.attrs?.style as ChoiceStyleRef | null) ?? null,
       /** The node itself, for anything that needs the label's formatting. */
       node: child,
     }));

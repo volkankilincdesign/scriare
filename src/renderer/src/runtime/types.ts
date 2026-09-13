@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { JSONContent } from "@tiptap/react";
 import type { Variable, VariableAction, VariableValue } from "../types/variables";
+import type { ChoiceStyle } from "../types/choiceStyles";
 
 /**
  * The minimal set of capabilities a runtime block's render function can call
@@ -24,6 +25,14 @@ export interface RuntimeContext {
   variables: Variable[];
   /** Their live values in THIS playthrough. */
   values: Record<string, VariableValue>;
+  /**
+   * v0.34.0 — the project's named Choice Styles. Passed rather than looked
+   * up from the store inside the block for the same reason `variables` is:
+   * a runtime block renders from what it is handed, which is what makes it
+   * testable and what will let this same renderer run outside the app when
+   * Export arrives.
+   */
+  choiceStyles: ChoiceStyle[];
 }
 
 /**

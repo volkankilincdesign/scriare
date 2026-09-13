@@ -13,6 +13,12 @@ import type {
 import { buildProject, buildScene, buildStoryFolder, normalizeProject } from "../types/project";
 import { computeGraphLayout } from "../utils/autoLayoutGraph";
 import { regenerateChoiceIds } from "../utils/choiceBlocks";
+import {
+  DEFAULT_CHOICE_STYLE_ID,
+  buildChoiceStyle,
+  normalizeChoiceStyles,
+} from "../types/choiceStyles";
+import type { ChoiceBox } from "../types/choiceStyles";
 import { childrenOf, isDescendant, nextOrder } from "../utils/contentTree";
 import { FOLDER_PADDING } from "../utils/graphConstants";
 import {
@@ -167,6 +173,19 @@ interface ProjectState {
   /** Does NOT cascade-delete VariableActions that reference this variable across every
    * scene — see the comment above this action's implementation for why. */
   deleteVariable: (variableId: string) => void;
+
+  /** v0.34.0 — named Choice Styles. Creating one starts from the Default
+   *  style's values rather than from nothing, because an empty box renders
+   *  as an invisible choice and nobody means that. Returns the new id so
+   *  the caller can select it immediately. */
+  addChoiceStyle: (name: string) => string | null;
+  updateChoiceStyle: (styleId: string, patch: { name?: string; box?: Partial<ChoiceBox> }) => void;
+  /** Does NOT rewrite choices that wear this style — `resolveChoiceBox`
+   *  falls back to Default for an unknown id, so deleting a style is one
+   *  cheap edit rather than a walk through every scene's document. Same
+   *  call this codebase already makes for deleted variables and deleted
+   *  scene destinations. The Default style itself cannot be deleted. */
+  deleteChoiceStyle: (styleId: string) => void;
 
   startPlay: () => void;
   exitPlay: () => void;
@@ -1191,6 +1210,66 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       project: {
         ...project,
         variables: project.variables.filter((v) => v.id !== variableId),
+        updatedAt: new Date().toISOString(),
+      },
+      saveStatus: "unsaved",
+    });
+    scheduleAutosave(get);
+  },
+
+  addChoiceStyle: (name) => {
+    const { project } = get();
+    if (!project) return null;
+
+    // Normalized rather than indexed into directly: every path that loads a
+    // project runs normalizeProject, but a project handed to the store by
+    // some other route (a test, a future importer) might not carry the
+    // array at all, and "add a style" is not a thing that should be able to
+    // throw.
+    const styles = normalizeChoiceStyles(project.choiceStyles);
+    const style = buildChoiceStyle(name || "New style", styles[0].box);
+    pushHistory(set, get, "Add Choice Style");
+    set({
+      project: {
+        ...project,
+        choiceStyles: [...styles, style],
+        updatedAt: new Date().toISOString(),
+      },
+      saveStatus: "unsaved",
+    });
+    scheduleAutosave(get);
+    return style.id;
+  },
+
+  updateChoiceStyle: (styleId, patch) => {
+    const { project } = get();
+    if (!project) return;
+
+    // Merged by key rather than replaced, so editing one value of a style
+    // can't silently clear the others.
+    pushHistory(set, get, "Edit Choice Style", `choiceStyle:${styleId}`);
+    set({
+      project: {
+        ...project,
+        choiceStyles: normalizeChoiceStyles(project.choiceStyles).map((s) =>
+          s.id === styleId ? { ...s, ...patch, box: { ...s.box, ...(patch.box ?? {}) } } : s,
+        ),
+        updatedAt: new Date().toISOString(),
+      },
+      saveStatus: "unsaved",
+    });
+    scheduleAutosave(get);
+  },
+
+  deleteChoiceStyle: (styleId) => {
+    const { project } = get();
+    if (!project || styleId === DEFAULT_CHOICE_STYLE_ID) return;
+
+    pushHistory(set, get, "Delete Choice Style");
+    set({
+      project: {
+        ...project,
+        choiceStyles: normalizeChoiceStyles(project.choiceStyles).filter((s) => s.id !== styleId),
         updatedAt: new Date().toISOString(),
       },
       saveStatus: "unsaved",

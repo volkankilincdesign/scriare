@@ -41,6 +41,7 @@ export function PlayRuntime() {
       // The read side, added with Conditions (v0.30.0) — see runtime/types.ts.
       variables: project?.variables ?? [],
       values: playVariableValues,
+      choiceStyles: project?.choiceStyles ?? [],
     }),
     [goToPlayScene, applyVariableActions, project?.variables, playVariableValues],
   );

@@ -1,6 +1,8 @@
 import { nanoid } from "nanoid";
 import type { JSONContent } from "@tiptap/react";
 import { extractChoices, buildChoiceBlockNode, migrateLegacyChoiceBlocks } from "../utils/choiceBlocks";
+import { normalizeChoiceStyles } from "./choiceStyles";
+import type { ChoiceStyle } from "./choiceStyles";
 import type { Variable } from "./variables";
 
 export interface Choice {
@@ -170,6 +172,14 @@ export interface Project {
    * own dedicated manager UI — the same shape Variables establish now.
    */
   variables: Variable[];
+  /**
+   * v0.34.0 — named Choice Styles (see types/choiceStyles.ts). Project-wide
+   * for the same reason variables are: a choice in any scene can wear any
+   * style, and "what a dangerous choice looks like" is a fact about the
+   * story, not about one scene. Always contains a Default style;
+   * `normalizeChoiceStyles` guarantees that on load however old the file.
+   */
+  choiceStyles: ChoiceStyle[];
 }
 
 export const EMPTY_DOC: JSONContent = {
@@ -231,6 +241,7 @@ export function buildProject(name: string): Project {
     ],
     favorites: [],
     variables: [],
+    choiceStyles: normalizeChoiceStyles(undefined),
   };
 }
 
@@ -258,6 +269,7 @@ export function normalizeProject(raw: Project): Project {
     content,
     favorites: raw.favorites ?? [],
     variables: raw.variables ?? [],
+    choiceStyles: normalizeChoiceStyles(raw.choiceStyles),
   };
 }
 
