@@ -15,6 +15,7 @@ import { useProjectStore } from "../../state/projectStore";
 import { useSelectionStore } from "../../state/selectionStore";
 import { extractChoices } from "../../utils/choiceBlocks";
 import {
+  COLLAPSED_GROUP_SIZE,
   folderSubtree,
   graphGroups,
   groupAtPoint,
@@ -50,14 +51,6 @@ const nodeTypes: NodeTypes = {
 // remembering to update both numbers together.
 const CAMERA_FIT_DURATION_MS = 350;
 
-/**
- * A folded group's on-screen size. Fixed rather than the box's own
- * dimensions, because the whole point of folding is that a chapter stops
- * taking up the room its contents needed — a folded 900x600 chapter that
- * still occupied 900x600 would fold nothing at all. The group keeps its
- * real rectangle in the project and gets it back the moment it unfolds.
- */
-const COLLAPSED_GROUP_SIZE = { width: 236, height: 78 };
 
 /** Live drag offset for a single node — its position at drag-start plus the
  * current cursor-driven delta. Originally this was one object per drag
@@ -460,7 +453,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     // nested box paints above the one that owns it (React Flow honours
     // array order for equal z-index). Everything below is unchanged from
     // the Frame era apart from where the data comes from.
-    const groups = graphGroups(project.content, project.scenes);
+    const groups = graphGroups(project.content, project.scenes).filter((g) => !g.hidden);
     const sceneCounts = new Map<string, number>();
     for (const group of groups) {
       const subtree = folderSubtree(project.content, group.id);

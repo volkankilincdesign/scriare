@@ -456,5 +456,103 @@ export default async function ({ api, check, seedProject }) {
     r.s1Parent === null && r.stillDrawn === 1,
     `s1's parent: ${r.s1Parent}, groups drawn: ${r.stillDrawn}`);
 
+  // 17 — THE FOLDED HIT-AREA BUG (v0.31.1). A folded group shrinks to a
+  // small block on screen but keeps its real dimensions for when it
+  // unfolds. Hit-testing against those real dimensions meant a folded
+  // chapter went on silently swallowing anything dropped anywhere in the
+  // large area it used to occupy — an invisible target, which is the worst
+  // kind of target. Verified to fail on a build that tests `rect`.
+  const seedFolded = () =>
+    api(() => {
+      const store = window.__scriareProjectStore;
+      const now = new Date().toISOString();
+      const scene = (id, title, x, y) => ({
+        id, title, position: { x, y }, order: 0,
+        content: { type: "doc", content: [{ type: "paragraph" }] },
+      });
+      store.setState({
+        project: {
+          name: "Folded", createdAt: now, updatedAt: now,
+          scenes: [scene("in", "Inside", 100, 100), scene("loose", "Loose", 2000, 2000)],
+          content: [
+            // A big box, folded. On screen it is only 236x78 at (0,0).
+            { id: "chap", kind: "folder", category: "story", parentId: null, order: 0,
+              name: "Chapter", rect: { x: 0, y: 0, width: 900, height: 700 }, collapsed: true },
+            { id: "in", kind: "leaf", category: "story", parentId: "chap", order: 0, refType: "scene" },
+            { id: "loose", kind: "leaf", category: "story", parentId: null, order: 1, refType: "scene" },
+          ],
+          favorites: [], variables: [], startSceneId: "in",
+        },
+        filePath: null, selectedSceneId: "in", saveStatus: "saved", isPlaying: false,
+        canUndo: false, canRedo: false, undoLabel: null, redoLabel: null, undoToken: null,
+      });
+    });
+
+  await seedFolded();
+  r = await api(() => {
+    // Well inside the folded group's STORED rectangle, well outside the
+    // block actually drawn — the exact spot the bug report describes.
+    window.__scriareProjectStore.getState().updateScenePosition("loose", { x: 500, y: 400 });
+    return window.__scriareProjectStore.getState().project.content.find((n) => n.id === "loose")
+      .parentId;
+  });
+  check("a scene dropped in a folded group's EMPTY footprint is not swallowed",
+    r === null, `parent is ${r}`);
+
+  // Dropping on the block you can actually see still files it — that's a
+  // real gesture, and the only one a folded group should answer to.
+  await seedFolded();
+  r = await api(() => {
+    window.__scriareProjectStore.getState().updateScenePosition("loose", { x: 40, y: 20 });
+    return window.__scriareProjectStore.getState().project.content.find((n) => n.id === "loose")
+      .parentId;
+  });
+  check("a scene dropped ON the folded block still joins that group", r === "chap",
+    `parent is ${r}`);
+
+  // Unfolded, the whole box is a target again.
+  r = await api(() => {
+    const store = window.__scriareProjectStore;
+    store.getState().toggleFolderCollapsed("chap");
+    store.getState().updateScenePosition("loose", { x: 500, y: 400 });
+    return store.getState().project.content.find((n) => n.id === "loose").parentId;
+  });
+  check("unfolded, the full box is a drop target again", r === "chap", `parent is ${r}`);
+
+  // 18 — folding a group takes its SUB-groups off screen too, so a folded
+  // chapter can't leave a sub-chapter's box floating over empty canvas.
+  r = await api(() => {
+    const store = window.__scriareProjectStore;
+    const p = store.getState().project;
+    store.setState({
+      project: {
+        ...p,
+        content: [
+          ...p.content,
+          { id: "sub", kind: "folder", category: "story", parentId: "chap", order: 5,
+            name: "Sub", rect: { x: 50, y: 50, width: 300, height: 200 } },
+        ],
+      },
+    });
+    const { graphGroups } = window.__scriareGroupUtils;
+    const q = store.getState().project;
+    const unfolded = graphGroups(q.content, q.scenes).filter((g) => !g.hidden).map((g) => g.name);
+    store.getState().toggleFolderCollapsed("chap");
+    const t = store.getState().project;
+    const folded = graphGroups(t.content, t.scenes).filter((g) => !g.hidden).map((g) => g.name);
+    return { unfolded, folded };
+  });
+  check("folding a group hides its sub-groups as well",
+    r.unfolded.length === 2 && r.folded.join() === "Chapter",
+    `unfolded: [${r.unfolded}] → folded: [${r.folded}]`);
+
+  // ...and a hidden sub-group can't catch a drop either.
+  r = await api(() => {
+    const store = window.__scriareProjectStore;
+    store.getState().updateScenePosition("loose", { x: 100, y: 100 });
+    return store.getState().project.content.find((n) => n.id === "loose").parentId;
+  });
+  check("a hidden sub-group cannot catch a drop", r === null, `parent is ${r}`);
+
   await seedProject();
 }

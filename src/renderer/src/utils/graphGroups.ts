@@ -23,7 +23,32 @@ export interface GraphGroup {
    * moves or resizes it — see graphGroups.
    */
   derived: boolean;
+  /**
+   * The rectangle actually ON SCREEN, which is NOT `rect` for a folded
+   * group: folding shrinks the box to a small block while the group keeps
+   * its real dimensions for when it unfolds.
+   *
+   * Everything that answers "what did the writer drop this on?" must use
+   * this rather than `rect`, or a folded chapter goes on silently
+   * swallowing anything dropped anywhere in the large area it used to
+   * occupy — an invisible target, which is the worst kind.
+   */
+  displayRect: FolderRect;
+  /**
+   * True when this group is inside a folded one and therefore isn't drawn
+   * at all. Hidden groups are neither rendered nor droppable, for the same
+   * reason: nothing invisible should be able to catch a drop.
+   */
+  hidden: boolean;
 }
+
+/**
+ * A folded group's on-screen size. Fixed rather than the group's own
+ * dimensions, because the whole point of folding is that a chapter stops
+ * taking up the room its contents needed — a folded 900x600 chapter still
+ * occupying 900x600 would fold nothing at all.
+ */
+export const COLLAPSED_GROUP_SIZE = { width: 236, height: 78 };
 
 /**
  * Every Story group currently drawn on the canvas, parents before children.
@@ -75,16 +100,21 @@ export function graphGroups(content: ContentNode[], scenes?: Scene[]): GraphGrou
     return null;
   }
 
-  const groups = folders.map((folder) => ({
-    id: folder.id,
-    name: folder.name,
-    rect: folder.rect ?? derivedRects.get(folder.id)!,
-    /** True while this box is only implied by its contents — see above. */
-    derived: !folder.rect,
-    parentId: drawnParent(folder),
-    collapsed: Boolean(folder.collapsed),
-    depth: 0,
-  }));
+  const groups: GraphGroup[] = folders.map((folder) => {
+    const rect = folder.rect ?? derivedRects.get(folder.id)!;
+    const collapsed = Boolean(folder.collapsed);
+    return {
+      id: folder.id,
+      name: folder.name,
+      rect,
+      derived: !folder.rect,
+      parentId: drawnParent(folder),
+      collapsed,
+      depth: 0,
+      displayRect: collapsed ? { x: rect.x, y: rect.y, ...COLLAPSED_GROUP_SIZE } : rect,
+      hidden: false,
+    };
+  });
 
   const index = new Map(groups.map((g) => [g.id, g]));
   for (const group of groups) {
@@ -95,6 +125,23 @@ export function graphGroups(content: ContentNode[], scenes?: Scene[]): GraphGrou
       parent = index.get(parent)?.parentId ?? null;
     }
     group.depth = depth;
+  }
+
+  // A group inside a folded one isn't on screen — folding a chapter has to
+  // take its sub-chapters with it, or a folded chapter leaves its
+  // sub-chapter's box floating over empty canvas with nothing in it.
+  for (const group of groups) {
+    let parent = group.parentId;
+    let guard = 0;
+    while (parent && guard++ < 32) {
+      const ancestor = index.get(parent);
+      if (!ancestor) break;
+      if (ancestor.collapsed) {
+        group.hidden = true;
+        break;
+      }
+      parent = ancestor.parentId;
+    }
   }
 
   // Parents first: React Flow paints in array order, and a child box drawn
@@ -140,7 +187,10 @@ export function groupAtPoint(
   };
   let best: GraphGroup | null = null;
   for (const group of groups) {
-    if (!containsPoint(group.rect, centre)) continue;
+    if (group.hidden) continue;
+    // `displayRect`, not `rect` — a folded group must only catch what is
+    // dropped on the block you can actually see.
+    if (!containsPoint(group.displayRect, centre)) continue;
     if (!best || group.depth > best.depth) best = group;
   }
   return best;
@@ -166,8 +216,9 @@ export function groupContaining(
 ): GraphGroup | null {
   let best: GraphGroup | null = null;
   for (const group of groups) {
+    if (group.hidden) continue;
     if (excludeIds.has(group.id)) continue;
-    if (!containsRect(group.rect, rect)) continue;
+    if (!containsRect(group.displayRect, rect)) continue;
     if (!best || group.depth > best.depth) best = group;
   }
   return best;

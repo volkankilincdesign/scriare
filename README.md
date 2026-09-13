@@ -1,6 +1,18 @@
-# Scriare — v0.31.0 — One Word, Both Ways
+# Scriare — v0.31.1 — Folded Means Folded
 
-## What's new (v0.31.0 — One Word, Both Ways)
+## What's new (v0.31.1 — Folded Means Folded)
+
+**A folded group no longer swallows scenes dropped in the empty space it used to occupy.**
+
+Folding shrinks a group to a small block on screen, but it keeps its real dimensions so it can spring back to the right size when unfolded. Drop targeting was testing against those real dimensions rather than the block you can see — so a folded chapter went on quietly catching anything dropped anywhere in the large area it no longer appeared to own. You'd drag a scene into what looks like empty canvas, let go, and find it filed into a chapter that isn't visibly there. An invisible target is the worst kind, because nothing on screen explains what just happened.
+
+Hit-testing now uses the rectangle actually being drawn. Dropping **on** the folded block still files the scene into that group — that's a real gesture, and the only one a folded group should answer to. Unfold it and the whole box is a target again.
+
+**Folding a group now hides its sub-groups too.** The same oversight in a different place: a folded chapter left its sub-chapter's box floating over empty canvas with nothing in it, and that box could catch drops as well. Anything inside a folded group is off screen and undroppable, at any depth.
+
+Five new tests, including the exact reported scenario. Both fixes were confirmed to fail on a build that tests the stored rectangle instead of the drawn one. 80 tests.
+
+## v0.31.0 — One Word, Both Ways
 
 Two loose ends from folding Frames into folders, both of which made a single object look like two.
 
