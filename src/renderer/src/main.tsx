@@ -31,8 +31,22 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./utils/graphGroups"),
     import("./types/project"),
     import("./types/variables"),
+    import("./state/editorStore"),
+    import("./utils/choiceBlocks"),
+    import("./utils/choiceBlockEditing"),
   ]).then(
-    ([projectStore, toastStore, selectionStore, clipboardUtils, groupUtils, projectTypes, variables]) => {
+    ([
+      projectStore,
+      toastStore,
+      selectionStore,
+      clipboardUtils,
+      groupUtils,
+      projectTypes,
+      variables,
+      editorStore,
+      choiceUtils,
+      choiceEditing,
+    ]) => {
       Object.assign(window, {
         __scriareProjectStore: projectStore.useProjectStore,
         __scriareToastStore: toastStore.useToastStore,
@@ -41,6 +55,12 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         __scriareGroupUtils: groupUtils,
         __scriareProjectTypes: projectTypes,
         __scriareVariables: variables,
+        // The live editor and the Choice Block helpers that act on it. A
+        // schema is only real through ProseMirror, so the v0.32.0 tests
+        // drive actual transactions rather than reasoning about JSON.
+        __scriareEditorStore: editorStore.useEditorRefStore,
+        __scriareChoiceUtils: choiceUtils,
+        __scriareChoiceEditing: choiceEditing,
       });
     },
   );

@@ -1,6 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
-import { nanoid } from "nanoid";
 import { useProjectStore } from "../../state/projectStore";
 import { useInspectorStore } from "../../state/inspectorStore";
 import type { InspectorTarget } from "../../state/inspectorStore";
@@ -9,9 +8,12 @@ import { useEditorRefStore } from "../../state/editorStore";
 import { extractChoices, findChoiceBlockOptions } from "../../utils/choiceBlocks";
 import type { ChoiceOption } from "../../utils/choiceBlocks";
 import {
-  applyChoiceBlockOptions,
+  appendChoiceOption,
+  applyChoiceOptionAttrs,
   applyConditionalBlockConditions,
   findConditionalBlockConditions,
+  removeChoiceOption,
+  reorderChoiceOptions,
 } from "../../utils/choiceBlockEditing";
 import {
   COMPARATORS_BY_TYPE,
@@ -834,7 +836,7 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
           .map((id) => optionsRef.current.find((o) => o.id === id))
           .filter((o): o is ChoiceOption => Boolean(o));
         if (finalOptions.length === optionsRef.current.length && finalOptions.length > 0) {
-          applyChoiceBlockOptions(editor, target.blockId, finalOptions);
+          reorderChoiceOptions(editor, target.blockId, finalOptions.map((o) => o.id));
         }
       }
 
@@ -937,30 +939,34 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
     return <p className="text-[var(--text-3)]">This Choice Block is no longer in the document.</p>;
   }
 
-  function commit(nextOptions: ChoiceOption[]): void {
-    if (!editor) return;
-    applyChoiceBlockOptions(editor, target.blockId, nextOptions);
-  }
-
+  /**
+   * Since v0.32.0 an option is its own document node, so the Inspector
+   * edits one option's ATTRIBUTES rather than replacing the block's whole
+   * list. The label isn't among them — it's inline content the writer types
+   * in the editor, and writing it from here too would give the same text
+   * two writers and the desync that always follows.
+   */
   function patchOption(optionId: string, patch: Partial<ChoiceOption>): void {
-    commit(optionsRef.current.map((o) => (o.id === optionId ? { ...o, ...patch } : o)));
+    if (!editor) return;
+    const attrs: Record<string, unknown> = {};
+    if ("targetSceneId" in patch) attrs.targetSceneId = patch.targetSceneId ?? null;
+    if ("conditions" in patch) attrs.conditions = patch.conditions ?? [];
+    if ("actions" in patch) attrs.actions = patch.actions ?? [];
+    if ("whenUnmet" in patch) attrs.whenUnmet = patch.whenUnmet ?? "hide";
+    if (Object.keys(attrs).length === 0) return;
+    applyChoiceOptionAttrs(editor, optionId, attrs);
   }
 
   function addChoice(): void {
-    const option: ChoiceOption = {
-      id: nanoid(),
-      text: "",
-      targetSceneId: null,
-      actions: [],
-      conditions: [],
-      whenUnmet: "hide",
-    };
-    commit([...optionsRef.current, option]);
-    setExpanded((prev) => new Set(prev).add(option.id));
+    if (!editor) return;
+    appendChoiceOption(editor, target.blockId);
   }
 
   function removeChoice(optionId: string): void {
-    commit(optionsRef.current.filter((o) => o.id !== optionId));
+    if (!editor) return;
+    // Removing the last option takes the block with it — a branching point
+    // that doesn't branch is not a thing to leave behind.
+    removeChoiceOption(editor, optionId);
   }
 
   function toggleExpanded(optionId: string): void {
@@ -1266,16 +1272,23 @@ function ChoiceAccordion({
 
       {expanded && (
         <div className="space-y-3 border-t border-[var(--border-soft)] px-2 py-2.5">
+          {/* The label used to be edited here, as a plain string. As of
+              v0.32.0 it's real text in the document — type it in the scene,
+              and the toolbar styles it like any other sentence. Showing it
+              here read-only keeps the accordion legible without pretending
+              there are two places to write it. */}
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
               Display Text
             </label>
-            <input
-              value={option.text}
-              onChange={(e) => onPatch({ text: e.target.value })}
-              placeholder="Choice text (e.g. Open the door)"
-              className="w-full rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
-            />
+            <div className="rounded border border-dashed border-[var(--border-soft)] px-2 py-1.5 text-xs">
+              <span className={option.text ? "text-[var(--text-2)]" : "italic text-[var(--text-3)]"}>
+                {option.text || "Untitled choice"}
+              </span>
+              <span className="mt-0.5 block text-[10px] text-[var(--text-3)]">
+                Edited in the scene — select it there to restyle it.
+              </span>
+            </div>
           </div>
 
           <div>

@@ -234,10 +234,11 @@ export default async function ({ api, check, seedProject }) {
   await api(() => {
     const store = window.__scriareProjectStore;
     const now = new Date().toISOString();
-    const ch = (t) => ({
-      type: "choiceBlock",
-      attrs: { blockId: "b" + t, options: [{ id: "o" + t, text: "go", targetSceneId: t, actions: [] }] },
-    });
+    const ch = (t) =>
+      window.__scriareChoiceUtils.buildChoiceBlockNode(
+        [{ id: "o" + t, text: "go", targetSceneId: t }],
+        "b" + t,
+      );
     const sc = (id, title, x, y, links = []) => ({
       id, title,
       content: { type: "doc", content: [{ type: "paragraph" }, ...links.map(ch)] },

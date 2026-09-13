@@ -120,7 +120,9 @@ export default async function ({ api, check, seedProject }) {
         type: "doc",
         content: [
           { type: "paragraph", content: [{ type: "text", text: title }] },
-          ...(options ? [{ type: "choiceBlock", attrs: { blockId: "b" + id, options } }] : []),
+          ...(options
+            ? [window.__scriareChoiceUtils.buildChoiceBlockNode(options, "b" + id)]
+            : []),
         ],
       },
       position: { x: 0, y: 0 }, order: 0,

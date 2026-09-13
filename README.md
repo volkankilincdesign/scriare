@@ -1,6 +1,44 @@
-# Scriare — v0.31.1 — Folded Means Folded
+# Scriare — v0.33.0 — The Toolbar Learns the Language
 
-## What's new (v0.31.1 — Folded Means Folded)
+## What's new (v0.33.0 — The Toolbar Learns the Language)
+
+**Every control in the editor toolbar is now drawn in the app's own icon set, and a Choice group appears when your caret is inside a choice.**
+
+The toolbar was the last place in Scriare still written in plain characters — `B`, `H1`, `•`, `"`, `⟸`, `⌫`, and two anonymous `✕` buttons — while the Content Browser, the graph and the tabs all speak in stroked icons on a 16-unit grid. That mismatch is most of why it read as dull: not under-designed so much as written in a different language from everything around it. Some of those characters were also simply wrong. Arrows are not text alignment. A straight typewriter quote is the one punctuation mark a writing tool should never show.
+
+Nineteen controls, redrawn to the same grid and the same 1.3 stroke as the rest of the app. **Nothing moved and nothing was removed** — the complaint was about how the bar is drawn, not where its controls sit.
+
+Three decisions worth naming:
+
+- **B, I and U stay as letterforms**, but as real specimens: the B is bold, the I is italic, the U is underlined. Drawing those three as pictures would be less legible than the convention every editor already uses.
+- **The colour controls now wear their colour.** A letter above a bar filled with the colour currently in effect, so the control answers "what will this apply?" without being opened. That is also what lets the two unlabelled `✕` buttons become proper reset controls, each sitting beside the thing it resets.
+- **A Choice group appends when the caret is inside a Choice Block**, holding the two things you want without leaving the sentence: another option, and that choice's properties. It *appends* — nothing already on the bar ever moves sideways because of where your caret happens to be.
+
+Every control now carries a real label, which matters more than it did: when a button was the letter `B` you could read it even with no tooltip. An unlabelled icon tells you nothing.
+
+Seven new tests, on the two things here that aren't a matter of taste: the contextual group appends rather than inserts, and no control ships without a label. Both confirmed to fail on builds that break them. 101 tests.
+
+## v0.32.0 — Choices Are Written, Not Configured
+
+**A choice's text is now real writing, and everything the toolbar does to a sentence it does to a choice.**
+
+Until this version a Choice Block was a single sealed object holding its options as strings in a hidden property. You typed a choice into a field in the Inspector, and what appeared on the page was a preview of that string. That is why the toolbar could never touch it: formatting in a rich text editor applies to *text in the document*, and a choice's label was not text in the document — it was data about the document. No amount of rearranging the interface could have fixed that. The floor had to move.
+
+It has. Each option is now its own node in the scene, and its label is ordinary inline content — the same kind of thing as any other sentence you write. Which means:
+
+- **You type choices where the choices are.** The caret goes into the choice on the page. The Inspector's Display Text field is gone, because there is nothing left for it to do.
+- **The toolbar reaches them.** Bold a single word in one choice. Colour another. Change the size of a third. Nothing new was built for this — the toolbar already knew how to style text, and a choice label is finally text.
+- **Undo, find and Play Mode treat it as prose**, because it is prose. Formatting written into a choice arrives in Play Mode intact, through the same rendering path as the rest of the scene.
+
+Everything about an option that *isn't* its label — where it leads, what it requires, what it changes, and soon how the box around it looks — stays in the Inspector. That split is the one the whole app draws: styling belongs to text, properties belong to the thing.
+
+**Every project written before this version converts on load**, losing nothing: destinations, conditions, actions and hide-or-lock all move across untouched. Two generations of the old shape are handled, and a project already in the new one passes through unchanged however many times it's opened.
+
+This is groundwork as much as a feature. Per-choice appearance — a different fill on one option, a heavier border on another, set against a project-wide Choice Style — needs labels that can be styled independently, and now they can be.
+
+Fourteen new tests. The migration was confirmed to fail on a build that copies only the label, the reorder on one that drops options it wasn't told about, the last-option removal on one that leaves an empty block behind, and the Play Mode formatting on one that falls back to plain text. 94 tests.
+
+## v0.31.1 — Folded Means Folded
 
 **A folded group no longer swallows scenes dropped in the empty space it used to occupy.**
 

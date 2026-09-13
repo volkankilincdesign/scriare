@@ -1,10 +1,47 @@
 import { useMemo, useRef } from "react";
 import type { ReactNode } from "react";
 import type { Editor } from "@tiptap/react";
+import { Icon } from "../common/Icon";
+import type { IconName } from "../common/Icon";
+import { useProjectStore } from "../../state/projectStore";
+import { useInspectorStore } from "../../state/inspectorStore";
+import { appendChoiceOption } from "../../utils/choiceBlockEditing";
 
 interface EditorToolbarProps {
   editor: Editor | null;
 }
+
+/**
+ * The editor toolbar (redrawn in v0.33.0).
+ *
+ * Every control was previously a literal character: `B`, `H1`, `•`, `"`,
+ * `⟸`, `⌫`, and two anonymous `✕`s. That made the bar the one part of the
+ * app not speaking its own visual language — the Content Browser, the
+ * graph and the tabs are all drawn with the stroked 16-grid icons in
+ * components/common/Icon.tsx, and the toolbar was typography pretending to
+ * be iconography. Worse, some of those characters were simply wrong:
+ * arrows standing in for text alignment, a straight typewriter quote for
+ * blockquote, and a backspace glyph for "clear formatting".
+ *
+ * What changed and what deliberately didn't:
+ *
+ *  - EVERY control is now an icon from the app's own set, at the same grid
+ *    and stroke as everything else. Nothing moved and nothing was removed,
+ *    because the complaint was about how the bar is drawn, not where its
+ *    controls sit.
+ *  - B / I / U stay as letterforms, but as real specimens — the B is bold,
+ *    the I is italic and set in the app's reading face, the U is
+ *    underlined. Drawing those three as pictures would be less legible
+ *    than the convention every editor already uses.
+ *  - The colour controls now WEAR the colour they apply, as a bar beneath
+ *    the letter, rather than hiding it inside a bordered box. That is also
+ *    what lets the two unlabelled ✕ buttons become real reset controls
+ *    sitting with the thing they reset.
+ *  - When the caret is inside a Choice Block, a small Choice group appends
+ *    to the END of the bar (see ChoiceContextGroup). Appending rather than
+ *    inserting matters: nothing already on the toolbar ever moves under
+ *    the writer's cursor because of where their caret happens to be.
+ */
 
 /**
  * A native `<input type="color">` fires its `input`/`onChange` event on
@@ -42,13 +79,13 @@ function useRafThrottledCallback<T extends (value: string) => void>(callback: T)
 }
 
 interface ToolbarButtonProps {
-  active: boolean;
+  active?: boolean;
   onClick: () => void;
   label: string;
   children: ReactNode;
 }
 
-function ToolbarButton({ active, onClick, label, children }: ToolbarButtonProps) {
+function ToolbarButton({ active = false, onClick, label, children }: ToolbarButtonProps) {
   return (
     <button
       type="button"
@@ -76,8 +113,12 @@ function ToolbarButton({ active, onClick, label, children }: ToolbarButtonProps)
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
       title={label}
-      className={`rounded px-2 py-1 text-sm font-medium transition-colors ${
-        active ? "bg-[var(--surface-3)] text-[var(--text)]" : "text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+      aria-label={label}
+      aria-pressed={active}
+      className={`flex h-7 min-w-7 shrink-0 items-center justify-center rounded-[5px] px-1.5 transition-colors ${
+        active
+          ? "bg-[var(--surface-3)] text-[var(--text)]"
+          : "text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
       }`}
     >
       {children}
@@ -85,8 +126,20 @@ function ToolbarButton({ active, onClick, label, children }: ToolbarButtonProps)
   );
 }
 
+/** An icon control — the shape of nearly every button on this bar. */
+function IconButton({
+  icon,
+  ...rest
+}: Omit<ToolbarButtonProps, "children"> & { icon: IconName }) {
+  return (
+    <ToolbarButton {...rest}>
+      <Icon name={icon} className="h-4 w-4" />
+    </ToolbarButton>
+  );
+}
+
 function Divider() {
-  return <span className="mx-1.5 h-4 w-px shrink-0 bg-[var(--border-soft)]" />;
+  return <span className="mx-1.5 h-4 w-px shrink-0 bg-[var(--border)]" aria-hidden />;
 }
 
 const FONT_FAMILIES = [
@@ -104,6 +157,153 @@ const FONT_SIZES = [
   { label: "Huge", value: "28px" },
 ];
 
+/**
+ * A native `<select>` inside a bordered shell with the family/size icon
+ * beside it. Native on purpose: a hand-built dropdown next to a
+ * contenteditable is a focus-management problem with no upside here, and
+ * the OS one already handles keyboard, scrolling and long lists.
+ */
+function SelectControl({
+  icon,
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  icon: IconName;
+  label: string;
+  value: string;
+  options: { label: string; value: string }[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label
+      title={label}
+      className="flex h-7 shrink-0 cursor-pointer items-center gap-1 rounded-[5px] border border-[var(--border)] pl-1.5 pr-0.5 text-[var(--text-2)] transition-colors hover:border-[var(--border-faint)] hover:text-[var(--text)] focus-within:border-[var(--accent)]"
+    >
+      <Icon name={icon} className="h-3.5 w-3.5" />
+      <span className="sr-only">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-full cursor-pointer bg-transparent pr-1 text-xs text-inherit outline-none"
+      >
+        {options.map((o) => (
+          <option key={o.label} value={o.value} className="bg-[var(--surface)] text-[var(--text)]">
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+/**
+ * A colour control that shows its colour. The letterform sits above a bar
+ * filled with the colour currently in effect, so the button answers "what
+ * will this apply?" without being opened — which the old bordered box with
+ * a hidden input never did.
+ */
+function ColorControl({
+  icon,
+  label,
+  swatch,
+  value,
+  onChange,
+}: {
+  icon: IconName;
+  label: string;
+  /** What the bar shows. Separate from `value` so an unset colour can read
+   *  as the text's own default rather than as an arbitrary swatch. */
+  swatch: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label
+      title={label}
+      className="flex h-7 w-7 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[5px] text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+    >
+      <Icon name={icon} className="h-3.5 w-3.5" />
+      <span className="sr-only">{label}</span>
+      <span
+        aria-hidden
+        className="h-[3px] w-4 rounded-[1px] ring-1 ring-inset ring-black/20"
+        style={{ background: swatch }}
+      />
+      <input
+        type="color"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-0 w-0 opacity-0"
+      />
+    </label>
+  );
+}
+
+/**
+ * The contextual group (v0.33.0). Present only while the caret is inside a
+ * Choice Block, appended after everything else.
+ *
+ * It holds the two things a writer wants without leaving the sentence they
+ * are in: another option, and the option's properties. Destination and
+ * conditions themselves stay in the Inspector — this doesn't duplicate
+ * them, it points at them, which keeps one editor for each thing.
+ */
+function ChoiceContextGroup({
+  editor,
+  blockId,
+  sceneId,
+}: {
+  editor: Editor;
+  blockId: string;
+  sceneId: string;
+}) {
+  const selectTarget = useInspectorStore((s) => s.selectTarget);
+
+  return (
+    <span
+      role="group"
+      aria-label="The choice the caret is in"
+      className="ml-1 flex shrink-0 items-center gap-0.5 rounded-[7px] border border-[var(--accent-soft-2)] bg-[var(--accent-soft)] py-0.5 pl-1.5 pr-1"
+    >
+      {/* The branch mark rather than the word "Choice": the insert button
+          sitting immediately to the left already says Choice, and two of
+          the same word side by side read as one control with a label. */}
+      <Icon name="branch" className="mr-0.5 h-3.5 w-3.5 text-[var(--accent)]" />
+      <IconButton
+        icon="plus"
+        label="Add another choice to this block"
+        onClick={() => appendChoiceOption(editor, blockId)}
+      />
+      <IconButton
+        icon="properties"
+        label="Choice properties (destination, conditions, actions)"
+        onClick={() => selectTarget({ kind: "choice", sceneId, blockId })}
+      />
+    </span>
+  );
+}
+
+/**
+ * The id of the Choice Block the selection sits in, or null. Walks the
+ * selection's ancestors rather than asking `isActive`, because what's
+ * wanted is the block's identity and not merely whether one is in scope.
+ */
+function enclosingChoiceBlockId(editor: Editor): string | null {
+  const { selection } = editor.state;
+  const nodeSelection = selection as { node?: { type: { name: string }; attrs: Record<string, unknown> } };
+  if (nodeSelection.node?.type.name === "choiceBlock") {
+    return (nodeSelection.node.attrs.blockId as string) ?? null;
+  }
+  const { $from } = selection;
+  for (let depth = $from.depth; depth > 0; depth -= 1) {
+    const ancestor = $from.node(depth);
+    if (ancestor.type.name === "choiceBlock") return (ancestor.attrs.blockId as string) ?? null;
+  }
+  return null;
+}
+
 export function EditorToolbar({ editor }: EditorToolbarProps) {
   // Called before the `editor` null-check below so hook order never
   // changes across renders — see useRafThrottledCallback's own comment
@@ -115,167 +315,164 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const setHighlightThrottled = useRafThrottledCallback((value: string) => {
     editor?.chain().focus().setHighlight({ color: value }).run();
   });
+  const selectedSceneId = useProjectStore((s) => s.selectedSceneId);
 
   if (!editor) return null;
 
+  const textStyle = editor.getAttributes("textStyle");
+  const currentColor = (textStyle.color as string | undefined) ?? "";
+  const currentHighlight = (editor.getAttributes("highlight").color as string | undefined) ?? "";
+  const choiceBlockId = enclosingChoiceBlockId(editor);
+
   return (
-    <div className="flex flex-wrap items-center gap-1 border-b border-[var(--border-soft)] bg-[var(--surface)] px-5 py-2.5">
+    <div
+      role="toolbar"
+      aria-label="Formatting"
+      className="flex flex-wrap items-center gap-1 border-b border-[var(--border-soft)] bg-[var(--surface)] px-5 py-2.5"
+    >
+      {/* B / I / U as specimens rather than characters: each one is set in
+          the style it applies, which is the clearest possible label. */}
       <ToolbarButton
         label="Bold (Ctrl+B)"
         active={editor.isActive("bold")}
         onClick={() => editor.chain().focus().toggleBold().run()}
       >
-        B
+        <span className="text-[13px] font-bold leading-none">B</span>
       </ToolbarButton>
       <ToolbarButton
         label="Italic (Ctrl+I)"
         active={editor.isActive("italic")}
         onClick={() => editor.chain().focus().toggleItalic().run()}
       >
-        I
+        {/* Inter's own italic, which is bundled (main.tsx loads the
+            opsz-italic face) — not a browser-synthesised slant. */}
+        <span className="text-[14px] italic leading-none">I</span>
       </ToolbarButton>
       <ToolbarButton
         label="Underline (Ctrl+U)"
         active={editor.isActive("underline")}
         onClick={() => editor.chain().focus().toggleUnderline().run()}
       >
-        U
+        <span className="text-[13px] leading-none underline underline-offset-[3px]">U</span>
       </ToolbarButton>
 
       <Divider />
 
-      <ToolbarButton
+      <IconButton
+        icon="heading1"
         label="Heading 1"
         active={editor.isActive("heading", { level: 1 })}
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-      >
-        H1
-      </ToolbarButton>
-      <ToolbarButton
+      />
+      <IconButton
+        icon="heading2"
         label="Heading 2"
         active={editor.isActive("heading", { level: 2 })}
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-      >
-        H2
-      </ToolbarButton>
+      />
 
       <Divider />
 
-      <ToolbarButton
+      <IconButton
+        icon="bulletList"
         label="Bullet list"
         active={editor.isActive("bulletList")}
         onClick={() => editor.chain().focus().toggleBulletList().run()}
-      >
-        •
-      </ToolbarButton>
-      <ToolbarButton
+      />
+      <IconButton
+        icon="orderedList"
         label="Numbered list"
         active={editor.isActive("orderedList")}
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
-      >
-        1.
-      </ToolbarButton>
-      <ToolbarButton
+      />
+      <IconButton
+        icon="quote"
         label="Quote"
         active={editor.isActive("blockquote")}
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
-      >
-        "
-      </ToolbarButton>
-      <ToolbarButton
+      />
+      <IconButton
+        icon="rule"
         label="Horizontal divider"
-        active={false}
         onClick={() => editor.chain().focus().setHorizontalRule().run()}
-      >
-        ―
-      </ToolbarButton>
+      />
 
       <Divider />
 
-      <ToolbarButton
+      <IconButton
+        icon="alignLeft"
         label="Align left"
         active={editor.isActive({ textAlign: "left" })}
         onClick={() => editor.chain().focus().setTextAlign("left").run()}
-      >
-        ⟸
-      </ToolbarButton>
-      <ToolbarButton
-        label="Align center"
+      />
+      <IconButton
+        icon="alignCenter"
+        label="Align centre"
         active={editor.isActive({ textAlign: "center" })}
         onClick={() => editor.chain().focus().setTextAlign("center").run()}
-      >
-        ⇔
-      </ToolbarButton>
-      <ToolbarButton
+      />
+      <IconButton
+        icon="alignRight"
         label="Align right"
         active={editor.isActive({ textAlign: "right" })}
         onClick={() => editor.chain().focus().setTextAlign("right").run()}
-      >
-        ⟹
-      </ToolbarButton>
-      <ToolbarButton
+      />
+      <IconButton
+        icon="alignJustify"
         label="Justify"
         active={editor.isActive({ textAlign: "justify" })}
         onClick={() => editor.chain().focus().setTextAlign("justify").run()}
-      >
-        ≡
-      </ToolbarButton>
+      />
 
       <Divider />
 
-      <select
-        title="Font family"
-        value={editor.getAttributes("textStyle").fontFamily ?? ""}
-        onChange={(e) => {
-          const value = e.target.value;
+      <SelectControl
+        icon="fontFamily"
+        label="Font family"
+        value={(textStyle.fontFamily as string | undefined) ?? ""}
+        options={FONT_FAMILIES}
+        onChange={(value) => {
           if (value) editor.chain().focus().setFontFamily(value).run();
           // Not unsetFontFamily() — see TextStyleCleanup's own comment for
           // why its removeEmptyTextStyle() step silently also strips
           // color/fontSize whenever the selection is inside a list.
-          else editor.chain().focus().setMark("textStyle", { fontFamily: null }).cleanupTextStyle().run();
+          else
+            editor
+              .chain()
+              .focus()
+              .setMark("textStyle", { fontFamily: null })
+              .cleanupTextStyle()
+              .run();
         }}
-        className="rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text-2)] outline-none focus:border-[var(--accent)]"
-      >
-        {FONT_FAMILIES.map((f) => (
-          <option key={f.label} value={f.value}>
-            {f.label}
-          </option>
-        ))}
-      </select>
-
-      <select
-        title="Font size"
-        value={editor.getAttributes("textStyle").fontSize ?? ""}
-        onChange={(e) => {
-          const value = e.target.value;
+      />
+      <SelectControl
+        icon="fontSize"
+        label="Font size"
+        value={(textStyle.fontSize as string | undefined) ?? ""}
+        options={FONT_SIZES}
+        onChange={(value) => {
           if (value) editor.chain().focus().setFontSize(value).run();
-          // See the fontFamily <select> above / TextStyleCleanup's comment.
-          else editor.chain().focus().setMark("textStyle", { fontSize: null }).cleanupTextStyle().run();
+          // See the font family control above / TextStyleCleanup's comment.
+          else
+            editor
+              .chain()
+              .focus()
+              .setMark("textStyle", { fontSize: null })
+              .cleanupTextStyle()
+              .run();
         }}
-        className="rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text-2)] outline-none focus:border-[var(--accent)]"
-      >
-        {FONT_SIZES.map((f) => (
-          <option key={f.label} value={f.value}>
-            {f.label}
-          </option>
-        ))}
-      </select>
+      />
 
-      <label
-        title="Text color"
-        className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded border border-[var(--border)] text-xs font-semibold text-[var(--text-2)] hover:border-[var(--border-faint)]"
-      >
-        A
-        <input
-          type="color"
-          value={editor.getAttributes("textStyle").color ?? "#e4e4e7"}
-          onChange={(e) => setColorThrottled(e.target.value)}
-          className="h-0 w-0 opacity-0"
-        />
-      </label>
-      <ToolbarButton
-        label="Default text color"
-        active={false}
+      <ColorControl
+        icon="textColor"
+        label="Text colour"
+        swatch={currentColor || "var(--text-reading)"}
+        value={currentColor || "#e4e4e7"}
+        onChange={setColorThrottled}
+      />
+      <IconButton
+        icon="colorReset"
+        label="Default text colour"
         // Not unsetColor() — it internally chains
         // .setMark('textStyle', {color: null}).removeEmptyTextStyle(), and
         // that second step is what was silently also wiping font
@@ -285,38 +482,29 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         // cleanup, just scoped correctly to actual text nodes instead of
         // every node — including list containers — the selection passes
         // through.
-        onClick={() => editor.chain().focus().setMark("textStyle", { color: null }).cleanupTextStyle().run()}
-      >
-        <span className="text-[10px] leading-none">✕</span>
-      </ToolbarButton>
+        onClick={() =>
+          editor.chain().focus().setMark("textStyle", { color: null }).cleanupTextStyle().run()
+        }
+      />
 
-      <label
-        title="Highlight"
-        className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded border border-[var(--border)] text-xs font-semibold text-amber-400 hover:border-[var(--border-faint)]"
-      >
-        H
-        <input
-          type="color"
-          defaultValue="#f5d90a"
-          onChange={(e) => setHighlightThrottled(e.target.value)}
-          className="h-0 w-0 opacity-0"
-        />
-      </label>
-      <ToolbarButton
-        label="No highlight"
-        active={false}
+      <ColorControl
+        icon="highlight"
+        label="Highlight"
+        swatch={currentHighlight || "#f5d90a"}
+        value={currentHighlight || "#f5d90a"}
+        onChange={setHighlightThrottled}
+      />
+      <IconButton
+        icon="colorReset"
+        label="Remove highlight"
         onClick={() => editor.chain().focus().unsetHighlight().run()}
-      >
-        <span className="text-[10px] leading-none">✕</span>
-      </ToolbarButton>
+      />
 
-      <ToolbarButton
+      <IconButton
+        icon="clearFormat"
         label="Clear formatting"
-        active={false}
         onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()}
-      >
-        ⌫
-      </ToolbarButton>
+      />
 
       <Divider />
 
@@ -328,10 +516,15 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => editor.chain().focus().insertChoiceBlock().run()}
         title="Insert a Choice Block"
-        className="rounded bg-[var(--accent-fill-strong)] px-2 py-1 text-xs font-medium text-[var(--accent-text-on)] hover:bg-[var(--accent-hover)]"
+        className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] bg-[var(--accent-fill-strong)] px-2.5 text-xs font-semibold text-[var(--accent-text-on)] transition-colors hover:bg-[var(--accent)]"
       >
-        + Choice
+        <Icon name="branch" className="h-[15px] w-[15px]" />
+        Choice
       </button>
+
+      {choiceBlockId && selectedSceneId && (
+        <ChoiceContextGroup editor={editor} blockId={choiceBlockId} sceneId={selectedSceneId} />
+      )}
     </div>
   );
 }

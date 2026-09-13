@@ -20,13 +20,15 @@ export default async function ({ page, api, check, seedProject }) {
     api(() => {
       const store = window.__scriareProjectStore;
       const now = new Date().toISOString();
-      const choice = (target) => ({
-        type: "choiceBlock",
-        attrs: {
-          blockId: "b-" + target,
-          options: [{ id: "o-" + target, text: "go", targetSceneId: target, actions: [] }],
-        },
-      });
+      // Built through the app's own helper rather than hand-written JSON:
+      // v0.32.0 moved an option's label out of an attribute and into real
+      // inline content, and a spec that hard-codes the old shape would go
+      // on reporting green while testing a document the app can't read.
+      const choice = (target) =>
+        window.__scriareChoiceUtils.buildChoiceBlockNode(
+          [{ id: "o-" + target, text: "go", targetSceneId: target }],
+          "b-" + target,
+        );
       const scene = (id, title, links) => ({
         id,
         title,
@@ -82,7 +84,9 @@ export default async function ({ page, api, check, seedProject }) {
       const out = [];
       (function walk(n) {
         if (n.type === "choiceBlock") {
-          (n.attrs?.options ?? []).forEach((o) => out.push(o.targetSceneId));
+          window.__scriareChoiceUtils
+            .readChoiceBlockOptions(n)
+            .forEach((o) => out.push(o.targetSceneId));
           return;
         }
         (n.content ?? []).forEach(walk);

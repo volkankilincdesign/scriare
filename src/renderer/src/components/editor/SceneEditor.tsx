@@ -17,6 +17,7 @@ import { FontSize } from "../../extensions/FontSize";
 import { ChoiceBlock } from "../../extensions/ChoiceBlock";
 import { Callout } from "../../extensions/Callout";
 import { ConditionalBlock } from "../../extensions/ConditionalBlock";
+import { ChoiceOption } from "../../extensions/ChoiceOption";
 import { SlashCommand } from "../../extensions/SlashCommand";
 import { MarkerStyleSync } from "../../extensions/MarkerStyleSync";
 import { TextStyleCleanup } from "../../extensions/TextStyleCleanup";
@@ -44,6 +45,7 @@ export function SceneEditor() {
       FontSize,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       ChoiceBlock,
+      ChoiceOption,
       Callout,
       ConditionalBlock,
       SlashCommand,
