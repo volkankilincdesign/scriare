@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ReactFlow, Background, Controls, MiniMap, SelectionMode } from "@xyflow/react";
+import { ReactFlow, Background, Controls, SelectionMode } from "@xyflow/react";
 import type {
   Node,
   Edge,
@@ -23,6 +23,7 @@ import {
   visibleStandIn,
 } from "../../utils/graphGroups";
 import { SceneNode } from "./SceneNode";
+import { GraphMiniMap } from "./GraphMiniMap";
 import { GroupNode } from "./GroupNode";
 
 interface FlowPanelProps {
@@ -857,21 +858,9 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
               proOptions={{ hideAttribution: true }}
             >
               <Background color="var(--border-soft)" gap={18} />
-              <MiniMap
-                pannable
-                zoomable
-                maskColor="var(--overlay)"
-                style={{ background: "var(--surface)" }}
-                // --accent is a near-white fill in this monochrome palette,
-                // so colouring minimap nodes with it turned every scene into
-                // a blown-out white block — by some distance the loudest
-                // thing on screen, and in a corner of the UI meant to be
-                // glanced at rather than read. A minimap is a schematic;
-                // muted greys say "shape and position" without shouting.
-                nodeColor={(node) => (node.type === "frame" ? "var(--surface-3)" : "var(--text-3)")}
-                nodeStrokeColor={() => "var(--border)"}
-                position="bottom-left"
-              />
+              {/* Shown only when part of the graph is off screen — see
+                  GraphMiniMap for why that is the whole of its logic. */}
+              <GraphMiniMap />
               <Controls
                 showInteractive={false}
                 orientation="horizontal"

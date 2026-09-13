@@ -486,6 +486,17 @@ input[type="number"],
 .ProseMirror .scriare-choice-option:hover {
   filter: brightness(1.12);
 }
+/* The Story Graph's minimap (v0.36.1). Even when it's needed, what sits
+   under it is a scene somebody wrote — so it waits at a low opacity until
+   the pointer arrives. */
+.scriare-minimap {
+  opacity: .45;
+  transition: opacity .15s ease;
+}
+.scriare-minimap:hover {
+  opacity: 1;
+}
+
 /* A mention (v0.35.0). Quiet by design: this is a writing tool, and a
    character's name in the middle of a sentence is a word, not a database
    record. A dotted underline appears only on hover, which is enough to say

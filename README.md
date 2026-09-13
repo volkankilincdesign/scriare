@@ -1,6 +1,18 @@
-# Scriare — v0.36.0 — Check Story
+# Scriare — v0.36.1 — The Minimap Knows When to Leave
 
-## What's new (v0.36.0 — Check Story)
+## What's new (v0.36.1 — The Minimap Knows When to Leave)
+
+**The Story Graph's minimap now appears only when part of the graph is off screen.**
+
+On a small story it sat in the bottom-left corner covering a scene, with no way to move it. That complaint has a definition-shaped answer rather than a setting: a minimap exists to show you where you are in something too big to see. When the whole story is already on screen it isn't an overview of anything — it's an opaque rectangle parked on top of the thing it claims to summarise.
+
+So it comes and goes on its own. Nothing to toggle, nothing to remember, and the answer to "why is this in my way" is that it stops being there. It uses a small dead band rather than an exact comparison, so panning along the boundary doesn't make it blink.
+
+**And while it is shown it waits at a low opacity**, coming up to full when the pointer reaches it. Even when a minimap is needed, what's underneath it is a scene somebody wrote.
+
+Three new tests. The one that matters is the second: "it's gone" and "it never comes back" look identical until the day you need it, so the test that would rot silently is the one checking it returns.
+
+## v0.36.0 — Check Story
 
 **Everything the story looks like from the outside, in one place — and every line takes you to the thing it's about.**
 
