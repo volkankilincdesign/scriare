@@ -238,5 +238,88 @@ export default async function ({ api, check, seedProject }) {
   check("...and leaves the sentence she was in exactly as written",
     r.text.includes("Mara"), `"${r.text}"`);
 
+  // 7 — a mention must be invisible to the pointer in Play Mode
+  // (v0.35.1, reported).
+  //
+  // Mentions carried `cursor: text` unscoped, so crossing a character's
+  // name in a choice button turned the hand into an I-beam: the story
+  // telling the player where its database records are. Every hint a
+  // mention gives is now scoped to the editor, and in Play Mode a mention
+  // simply inherits — so it shows whatever the thing around it shows,
+  // whatever that turns out to be.
+  await api(() => {
+    const store = window.__scriareProjectStore;
+    const now = new Date().toISOString();
+    const block = window.__scriareChoiceUtils.buildChoiceBlockNode(
+      [{ id: "o1", text: "", targetSceneId: "s2" }],
+      "b1",
+    );
+    // A choice whose label contains a mention — the exact reported case.
+    block.content[0].content = [
+      { type: "text", text: "Follow " },
+      { type: "mention", attrs: { entityId: "c1", label: "Mara" } },
+    ];
+    store.setState({
+      project: {
+        name: "Cursor", createdAt: now, updatedAt: now,
+        scenes: [
+          {
+            id: "s1", title: "Door", position: { x: 0, y: 0 }, order: 0,
+            content: {
+              type: "doc",
+              content: [
+                { type: "paragraph", content: [
+                  { type: "text", text: "Behind it, " },
+                  { type: "mention", attrs: { entityId: "c1", label: "Mara" } },
+                  { type: "text", text: " waits." },
+                ] },
+                block,
+              ],
+            },
+          },
+          { id: "s2", title: "After", position: { x: 0, y: 0 }, order: 1,
+            content: { type: "doc", content: [{ type: "paragraph" }] } },
+        ],
+        content: [
+          { id: "s1", kind: "leaf", category: "story", parentId: null, order: 0, refType: "scene" },
+          { id: "s2", kind: "leaf", category: "story", parentId: null, order: 1, refType: "scene" },
+          { id: "c1", kind: "leaf", category: "characters", parentId: null, order: 0, refType: "character" },
+        ],
+        favorites: [], variables: [],
+        entities: [{ id: "c1", kind: "character", name: "Mara", aliases: [],
+          content: { type: "doc", content: [{ type: "paragraph" }] } }],
+        choiceStyles: window.__scriareChoiceStyles.normalizeChoiceStyles(undefined),
+        startSceneId: "s1",
+      },
+      filePath: null, selectedSceneId: "s1", selectedEntityId: null, saveStatus: "saved",
+      isPlaying: false, canUndo: false, canRedo: false, undoLabel: null, redoLabel: null, undoToken: null,
+    });
+    store.getState().startPlay();
+  });
+  await new Promise((resolve) => setTimeout(resolve, 350));
+
+  r = await api(() => {
+    const root = document.querySelector("[data-play-root]");
+    const button = [...root.querySelectorAll("button")].find((b) =>
+      b.textContent.includes("Follow"),
+    );
+    const inButton = button?.querySelector(".scriare-mention");
+    const inProse = root.querySelector("p .scriare-mention");
+    const cursor = (el) => (el ? getComputedStyle(el).cursor : null);
+    return {
+      button: cursor(button),
+      mentionInButton: cursor(inButton),
+      paragraph: cursor(inProse?.closest("p")),
+      mentionInProse: cursor(inProse),
+    };
+  });
+  check("a name inside a choice keeps the choice's pointer, not a text cursor",
+    r.mentionInButton === r.button && r.button === "pointer", JSON.stringify(r));
+  check("...and a name in prose matches the prose around it",
+    r.mentionInProse === r.paragraph, JSON.stringify(r));
+
+  await api(() => window.__scriareProjectStore.getState().exitPlay());
+  await new Promise((resolve) => setTimeout(resolve, 150));
+
   await seedProject();
 }

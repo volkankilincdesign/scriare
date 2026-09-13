@@ -1,6 +1,16 @@
-# Scriare — v0.35.0 — Characters and Locations
+# Scriare — v0.35.1 — Fixed: The Cursor Giving Away Where the Characters Are
 
-## What's new (v0.35.0 — Characters and Locations)
+## What's new (v0.35.1 — Fixed: The Cursor Giving Away Where the Characters Are)
+
+**In Play Mode, crossing a character's name no longer changes the mouse cursor.**
+
+Mentions carried `cursor: text` with no scope, so the pointer changed as it passed over a name — most visibly inside a choice, where the hand you get over a button turned into a text I-beam for the width of "Mara" and back again. Small, and exactly the kind of thing that tells a player they are looking at a database record rather than a sentence.
+
+Every hint a mention gives — the hover underline, the dotted mark on a deleted one, the text cursor — is now scoped to the editor, where those things are notes to the writer. In Play Mode a mention simply **inherits**: it shows whatever the thing around it shows, so a name in a choice gets the choice's hand and a name in prose gets whatever the prose has. Inheriting rather than restating means this can't drift the next time something around it changes.
+
+Two new tests, on the reported case and its sibling, both confirmed to fail on the previous build. 151 tests.
+
+## v0.35.0 — Characters and Locations
 
 **The two categories that said "Coming soon" are real, and your prose can point at them.**
 

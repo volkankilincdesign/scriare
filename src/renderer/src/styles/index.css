@@ -494,6 +494,20 @@ input[type="number"],
 .scriare-mention {
   border-bottom: 1px solid transparent;
   transition: border-color .12s, color .12s;
+}
+
+/* v0.35.1 — every hint a mention gives is scoped to the EDITOR.
+   In Play Mode a mention is not a mention: it is a character's name in a
+   sentence someone is reading, and it must be indistinguishable from the
+   words either side of it. It carried `cursor: text` unscoped, so the
+   pointer changed to an I-beam as it crossed a name — the story quietly
+   telling the player where its database records are. Inheriting means a
+   mention shows whatever the paragraph around it shows, whatever that
+   turns out to be, which is the only version that can't drift. */
+.scriare-mention {
+  cursor: inherit;
+}
+.ProseMirror .scriare-mention {
   cursor: text;
 }
 .ProseMirror .scriare-mention:hover {
@@ -502,8 +516,9 @@ input[type="number"],
 }
 /* An entity that was deleted. The words stay exactly as written — the
    sentence is the writer's, not the app's — but the app stops claiming
-   they point anywhere. */
-.scriare-mention-missing {
+   they point anywhere. Scoped to the editor for the same reason: it is a
+   note to the writer, not something to show a reader. */
+.ProseMirror .scriare-mention-missing {
   border-bottom: 1px dotted var(--border-faint);
 }
 
