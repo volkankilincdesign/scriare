@@ -140,6 +140,81 @@ export default async function ({ api, check, seedProject }) {
   t = await target();
   check("leaving the choice returns to Scene Properties", t.kind === "scene", `target: ${t.kind}`);
 
+  // 6b — WORKING IN THE INSPECTOR MUST NOT CLOSE IT (v0.34.1, reported).
+  //
+  // Dragging a choice into a new order and releasing the mouse threw the
+  // panel back to Scene Properties, mid-edit. Reordering rewrites the
+  // block's children, which remaps the editor's selection; releasing the
+  // mouse outside the editor can also make ProseMirror resync its selection
+  // from the DOM. Either way the caret ends up somewhere neutral, and the
+  // selection handler read that as "they've left the choice".
+  //
+  // The editor being unfocused is what stands in here for "the writer is
+  // in the Inspector" — which is exactly the condition the fix turns on.
+  await putCaret("o1");
+  await settle();
+  const beforeEdit = await target();
+  let r = await api(() => {
+    const editor = window.__scriareEditorStore.getState().editor;
+    const idsOf = () => {
+      const block = editor.getJSON().content.find((n) => n.type === "choiceBlock");
+      return (block?.content ?? []).map((c) => c.attrs.optionId);
+    };
+    const before = idsOf();
+    // Swap the first two, whatever they are — earlier cases in this spec
+    // have added a choice, and this one is about the Inspector, not about
+    // any particular order.
+    editor.commands.blur();
+    window.__scriareChoiceEditing.reorderChoiceOptions(editor, "b1", [
+      before[1], before[0], ...before.slice(2),
+    ]);
+    return { before, after: idsOf() };
+  });
+  await settle();
+  t = await target();
+  check("reordering really did reorder",
+    r.after[0] === r.before[1] && r.after[1] === r.before[0] &&
+      r.after.length === r.before.length,
+    `${JSON.stringify(r.before)} → ${JSON.stringify(r.after)}`);
+  check("an edit made from the Inspector doesn't close the Inspector",
+    t.kind === "choice" && t.blockId === beforeEdit.blockId && t.optionId === beforeEdit.optionId,
+    `${JSON.stringify(beforeEdit)} → ${JSON.stringify(t)}`);
+
+  // 6c — clicking a Choice Block's own header opens it, by putting the
+  // caret in it. Before v0.34.1 the click pointed the Inspector at the
+  // block and then ProseMirror placed the caret outside it, so the panel
+  // opened and closed within the same click.
+  await putCaret(null);
+  await settle();
+  r = await api(() => {
+    const header = [...document.querySelectorAll(".choice-block div")].find((d) =>
+      d.textContent?.trim().startsWith("⤷"),
+    );
+    if (!header) return null;
+    const box = header.getBoundingClientRect();
+    for (const type of ["mousedown", "mouseup", "click"]) {
+      header.dispatchEvent(
+        new MouseEvent(type, {
+          bubbles: true, cancelable: true,
+          clientX: box.x + 30, clientY: box.y + box.height / 2,
+        }),
+      );
+    }
+    return true;
+  });
+  await settle();
+  t = await target();
+  check("clicking a Choice Block's header opens it in the Inspector",
+    r === true && t.kind === "choice" && t.blockId === "b1", JSON.stringify(t));
+  check("...and puts the caret inside it, so one rule explains the panel",
+    await api(() => {
+      const { $from } = window.__scriareEditorStore.getState().editor.state.selection;
+      for (let d = $from.depth; d > 0; d -= 1) {
+        if ($from.node(d).type.name === "choiceBlock") return true;
+      }
+      return false;
+    }));
+
   // 7 — the accordions must not FLY (v0.33.2, reported).
   //
   // Opening choices top-down looked broken while bottom-up looked fine,

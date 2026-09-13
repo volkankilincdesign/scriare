@@ -23,20 +23,46 @@ export function ChoiceBlockView({ node, deleteNode, selected, editor }: NodeView
   const count = node.childCount;
 
   /**
-   * Focuses this block in the Inspector without stealing the caret.
+   * Clicking the block's chrome selects the block — by putting the caret in
+   * it (v0.34.1).
    *
-   * The old version set a ProseMirror NodeSelection over the whole block on
-   * mousedown, because an atom node had no inside to put a cursor in. That
-   * would now fight the writer: clicking a choice has to place a caret in
-   * its label, which is the whole reason this schema changed. So the
-   * Inspector is pointed at the block directly instead — SceneEditor's
-   * selection handler does the same thing whenever the caret is inside a
-   * choice, and this covers a click on the block's own chrome.
+   * The version before this only pointed the Inspector at the block and
+   * deliberately left the caret alone. That was wrong in a way that looked
+   * right: the click still travelled on to ProseMirror, which placed the
+   * caret at the nearest editable position — OUTSIDE the block, since the
+   * header isn't editable — and the selection handler then saw a caret in
+   * ordinary prose and cleared the Inspector straight back to Scene
+   * Properties. The panel opened and closed within the same click.
+   *
+   * Placing the caret in the block's first choice makes one thing true
+   * instead of two: the Inspector shows what the caret is in, always, with
+   * no second mechanism that can disagree with it.
    */
-  function focusInspector(): void {
+  function focusInspector(e: ReactMouseEvent): void {
     const blockId = node.attrs.blockId as string | undefined;
     if (!blockId || !selectedSceneId) return;
-    selectTarget({ kind: "choice", sceneId: selectedSceneId, blockId });
+    // Stops ProseMirror placing its own caret from this click — this
+    // handler is choosing where the caret goes.
+    e.preventDefault();
+
+    let inside = -1;
+    editor.state.doc.descendants((candidate, pos) => {
+      if (inside !== -1) return false;
+      if (candidate.type.name === "choiceBlock" && candidate.attrs.blockId === blockId) {
+        // +1 into the block, +1 into its first option.
+        inside = pos + 2;
+        return false;
+      }
+      return true;
+    });
+
+    if (inside === -1) {
+      selectTarget({ kind: "choice", sceneId: selectedSceneId, blockId });
+      return;
+    }
+    // The selection handler picks the Inspector target up from here, so
+    // there is no second call to make.
+    editor.chain().focus().setTextSelection(inside).run();
   }
 
   function addChoice(e: ReactMouseEvent): void {

@@ -1,6 +1,22 @@
-# Scriare — v0.34.0 — Choice Styles
+# Scriare — v0.34.1 — Fixed: The Inspector Closing While You Use It
 
-## What's new (v0.34.0 — Choice Styles)
+## What's new (v0.34.1 — Fixed: The Inspector Closing While You Use It)
+
+**Reordering a choice no longer throws the Inspector back to Scene Properties the moment you let go of the mouse.**
+
+The cause is one wrong assumption, and it had grown a second symptom nobody had reported yet.
+
+Since v0.33.1 the Inspector follows the caret: put your cursor in a choice and the panel opens on it. The handler behind that treated **every** change of selection as the writer moving their caret. But some selection changes aren't that. Reordering rewrites the choice block's children, which remaps the caret as a side effect, and releasing the mouse outside the editor can make the editor resync its selection from the page. The caret ends up somewhere neutral, the handler concluded "they've left the choice", and the panel being actively used closed itself.
+
+Two rules now, and the asymmetry is the fix. A selection **inside** a choice always opens that choice — it's unambiguous evidence about what you're working on, whoever moved it. A selection inside **nothing** only closes the panel when you moved it there yourself, in the editor. An edit never re-aims the Inspector at all, in either direction: a reorder moves options past the caret, so following it would swap which choice is open underneath your hands, halfway through the gesture that caused it.
+
+**The same assumption was breaking something else.** Clicking a Choice Block's header — the obvious way to say "show me this choice" — pointed the Inspector at the block and then let the click travel on to the editor, which placed the caret outside the block, which closed the panel again. It opened and shut within one click. Clicking the header now puts the caret **in** the block, so there's one rule explaining the panel instead of two that could disagree.
+
+Found by tracing the real gesture in the running app rather than by reading the code: the header-click case showed up first, in a test that was only supposed to be setting the scene for the drag.
+
+Four new tests. Negative-controlled against a build with the old assumption restored. 133 tests.
+
+## v0.34.0 — Choice Styles
 
 **Choices can look like something, and what they look like has a name.**
 

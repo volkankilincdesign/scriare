@@ -65,7 +65,38 @@ export function SceneEditor() {
     // as one object (see ChoiceBlockView.tsx), and the Inspector shows
     // every one of its options as its own accordion, rather than the
     // Inspector tracking one option at a time the way 9A did.
-    onSelectionUpdate: ({ editor: e }) => {
+    onSelectionUpdate: ({ editor: e, transaction }) => {
+      // v0.34.1 — landing IN something always targets it; landing in
+      // nothing only clears the Inspector if the writer is actually in the
+      // editor.
+      //
+      // Reported: dragging a choice into a new order and releasing the
+      // mouse threw the Inspector back to Scene Properties, mid-edit. This
+      // handler was treating every selection change as the writer moving
+      // their caret, when some of them are side effects of the Inspector's
+      // own work — reordering rewrites the block's children, which remaps
+      // the selection, and releasing the mouse outside the editor can make
+      // ProseMirror resync its selection from the DOM. The caret ends up
+      // somewhere neutral, the handler concluded "they've left the choice",
+      // and the panel being actively used closed itself.
+      //
+      // The asymmetry below is the fix, and it is not a special case: a
+      // selection inside a choice is unambiguous evidence about what the
+      // writer is working on, whoever moved it. A selection that is inside
+      // nothing is only evidence when the writer moved it there themselves
+      // — otherwise it is just where a rewrite happened to leave the caret.
+      //
+      // Two tests, both needed:
+      //  - `docChanged` catches every edit the Inspector itself makes —
+      //    reorder, remove, add, change a destination — since all of them
+      //    rewrite the document and remap the selection as a side effect.
+      //    None of them is the writer leaving the choice.
+      //  - focus (or an explicitly set selection) catches the rest. This
+      //    can't be a blanket `if (!isFocused) return`, because `.focus()`
+      //    lands a frame AFTER the selection it sets, so the update for a
+      //    deliberate click arrives while `isFocused` is still false.
+      const cameFromAnEdit = transaction.docChanged;
+      const theWriterMovedIt = e.isFocused || transaction.selectionSet;
       // The scene id comes from the store rather than from `scene` in this
       // closure. `useEditor`'s callbacks are bound when the editor is
       // created — which happens on the first render, when `project` may
@@ -110,8 +141,16 @@ export function SceneEditor() {
         if (name === "choiceBlock") {
           const blockId = ancestor.attrs?.blockId as string | undefined;
           if (blockId) {
-            // The option rides along so the Inspector can open that
-            // option's accordion; the block is still what's targeted.
+            // An edit never re-aims the Inspector inside the block it is
+            // already showing. Reordering moves options past the caret, so
+            // the caret ends up in a DIFFERENT choice than the one the
+            // writer was working on — following that would swap which
+            // accordion is open underneath their hands, halfway through
+            // the gesture that caused it.
+            const already = inspector.target;
+            if (cameFromAnEdit && already.kind === "choice" && already.blockId === blockId) return;
+            // Otherwise the option rides along so the Inspector can open
+            // that option's accordion; the block is still what's targeted.
             inspector.selectTarget({ kind: "choice", sceneId, blockId, optionId });
             return;
           }
@@ -129,7 +168,7 @@ export function SceneEditor() {
         }
       }
 
-      inspector.clearTarget();
+      if (!cameFromAnEdit && theWriterMovedIt) inspector.clearTarget();
     },
     editorProps: {
       attributes: {
