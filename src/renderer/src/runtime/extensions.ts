@@ -8,6 +8,9 @@ import FontFamily from "@tiptap/extension-font-family";
 import { FontSize } from "../extensions/FontSize";
 import { Callout } from "../extensions/Callout";
 import { ConditionalBlock } from "../extensions/ConditionalBlock";
+import { ChoiceBlock } from "../extensions/ChoiceBlock";
+import { ChoiceOption } from "../extensions/ChoiceOption";
+import { Mention } from "../extensions/Mention";
 
 /**
  * The runtime's own extension set, deliberately independent of the editor's
@@ -34,8 +37,19 @@ export const RUNTIME_EXTENSIONS = [
   FontSize,
   TextAlign.configure({ types: ["heading", "paragraph"] }),
   Callout,
+  // v0.35.0 — so a mention in someone's prose renders as the name rather
+  // than vanishing. The runtime swaps each mention's stored label for the
+  // entity's current name first (utils/mentions.ts's resolveMentions), so
+  // renaming a character updates what a player reads too.
+  Mention,
   // Registered so a conditional section nested inside other content
   // still parses; the runtime renders top-level ones through its own
   // block renderer rather than this static pass.
   ConditionalBlock,
+  // Registered so a choice's LABEL can be rendered through the same
+  // generateHTML pass as prose (see choiceRuntimeBlock). The block itself
+  // is still drawn by its own runtime renderer — this is only here so the
+  // schema knows these node types exist when a label is generated.
+  ChoiceBlock,
+  ChoiceOption,
 ];

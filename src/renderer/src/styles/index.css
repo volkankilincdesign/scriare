@@ -486,6 +486,27 @@ input[type="number"],
 .ProseMirror .scriare-choice-option:hover {
   filter: brightness(1.12);
 }
+/* A mention (v0.35.0). Quiet by design: this is a writing tool, and a
+   character's name in the middle of a sentence is a word, not a database
+   record. A dotted underline appears only on hover, which is enough to say
+   "this is a thing" to anyone looking for it and nothing at all to someone
+   reading. */
+.scriare-mention {
+  border-bottom: 1px solid transparent;
+  transition: border-color .12s, color .12s;
+  cursor: text;
+}
+.ProseMirror .scriare-mention:hover {
+  border-bottom-color: var(--border-faint);
+  color: var(--text);
+}
+/* An entity that was deleted. The words stay exactly as written — the
+   sentence is the writer's, not the app's — but the app stops claiming
+   they point anywhere. */
+.scriare-mention-missing {
+  border-bottom: 1px dotted var(--border-faint);
+}
+
 /* An empty label would otherwise collapse to zero height and be impossible
    to click into — the same problem Tiptap's own placeholder solves for an
    empty paragraph. */

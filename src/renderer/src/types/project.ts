@@ -2,6 +2,7 @@ import { nanoid } from "nanoid";
 import type { JSONContent } from "@tiptap/react";
 import { extractChoices, buildChoiceBlockNode, migrateLegacyChoiceBlocks } from "../utils/choiceBlocks";
 import { normalizeChoiceStyles } from "./choiceStyles";
+import type { Entity, EntityKind } from "./entities";
 import type { ChoiceStyle } from "./choiceStyles";
 import type { Variable } from "./variables";
 
@@ -131,7 +132,13 @@ export interface ContentFolder extends ContentNodeBase {
  */
 export interface ContentLeaf extends ContentNodeBase {
   kind: "leaf";
-  refType: "scene";
+  /**
+   * v0.35.0 widened this from `"scene"` to include entities, which is what
+   * the comment above always said it would be. A leaf's `id` is the id of
+   * the thing it refers to — a Scene in `project.scenes`, or an Entity in
+   * `project.entities`.
+   */
+  refType: "scene" | EntityKind;
 }
 
 export type ContentNode = ContentFolder | ContentLeaf;
@@ -180,6 +187,13 @@ export interface Project {
    * `normalizeChoiceStyles` guarantees that on load however old the file.
    */
   choiceStyles: ChoiceStyle[];
+  /**
+   * v0.35.0 — the story's people and places (see types/entities.ts). A
+   * sibling array alongside `variables` and `choiceStyles`, exactly as the
+   * note on `variables` predicted: an entity is project-wide, referenced
+   * from any scene, and owns nothing about where it appears.
+   */
+  entities: Entity[];
 }
 
 export const EMPTY_DOC: JSONContent = {
@@ -242,6 +256,7 @@ export function buildProject(name: string): Project {
     favorites: [],
     variables: [],
     choiceStyles: normalizeChoiceStyles(undefined),
+    entities: [],
   };
 }
 
@@ -270,6 +285,7 @@ export function normalizeProject(raw: Project): Project {
     favorites: raw.favorites ?? [],
     variables: raw.variables ?? [],
     choiceStyles: normalizeChoiceStyles(raw.choiceStyles),
+    entities: raw.entities ?? [],
   };
 }
 

@@ -13,13 +13,79 @@ import type { ContentMenuItem } from "./ContentContextMenu";
 import { MoveToDialog } from "./MoveToDialog";
 import { Icon } from "../common/Icon";
 import type { IconName } from "../common/Icon";
+import { ENTITY_LABEL } from "../../types/entities";
+import type { EntityKind } from "../../types/entities";
+
+/**
+ * One category's entities, flat. Entities can't be foldered yet — a story
+ * with enough characters to need chapters of characters is a problem worth
+ * having first, and the tree machinery (drag, multi-select, context menus)
+ * is built around scenes.
+ */
+function EntityList({ kind }: { kind: EntityKind }) {
+  const entities = useProjectStore((s) => s.project?.entities) ?? [];
+  const selectedEntityId = useProjectStore((s) => s.selectedEntityId);
+  const selectEntity = useProjectStore((s) => s.selectEntity);
+  const createEntity = useProjectStore((s) => s.createEntity);
+  const mine = entities.filter((e) => e.kind === kind);
+
+  if (mine.length === 0) {
+    return (
+      <div className="px-3 py-3 text-center">
+        <p className="mb-2 text-xs text-[var(--text-3)]">
+          No {ENTITY_LABEL[kind].toLowerCase()}s yet.
+        </p>
+        <button
+          type="button"
+          onClick={() => createEntity(kind)}
+          className="rounded-md border border-[var(--border)] px-2.5 py-1 text-xs font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
+        >
+          Create {ENTITY_LABEL[kind]}
+        </button>
+        <p className="mt-2 text-[11px] text-[var(--text-3)]">
+          Or type @ while writing a scene.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {mine.map((entity) => (
+        <div
+          key={entity.id}
+          data-entity-row={entity.id}
+          onClick={() => selectEntity(entity.id)}
+          className={`ml-3 flex cursor-default items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
+            entity.id === selectedEntityId
+              ? "bg-[var(--surface-2)] text-[var(--text)]"
+              : "text-[var(--text-2)] hover:bg-[var(--bg)] hover:text-[var(--text)]"
+          }`}
+        >
+          <Icon name={kind === "character" ? "character" : "location"} />
+          <span className="min-w-0 flex-1 truncate">
+            {entity.name || `Untitled ${ENTITY_LABEL[kind].toLowerCase()}`}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const EXPANDED_STORAGE_KEY = "scriare:contentExpanded";
 const STORY_ROOT = "root:story";
 
+/**
+ * v0.35.0 — Characters and Locations are real now (see types/entities.ts).
+ * Notes and Assets keep the "Coming soon" treatment until they are, because
+ * a category that quietly does nothing is worse than one that says so.
+ */
+const ENTITY_CATEGORIES: { kind: EntityKind; key: string; icon: IconName; label: string }[] = [
+  { kind: "character", key: "root:characters", icon: "character", label: "Characters" },
+  { kind: "location", key: "root:locations", icon: "location", label: "Locations" },
+];
+
 const PLACEHOLDER_CATEGORIES: { key: string; icon: IconName; label: string }[] = [
-  { key: "root:characters", icon: "character", label: "Characters" },
-  { key: "root:locations", icon: "location", label: "Locations" },
   { key: "root:notes", icon: "note", label: "Notes" },
   { key: "root:assets", icon: "asset", label: "Assets" },
 ];
@@ -50,6 +116,7 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
   const selectedSceneId = useProjectStore((s) => s.selectedSceneId);
   const selectScene = useProjectStore((s) => s.selectScene);
   const createScene = useProjectStore((s) => s.createScene);
+  const createEntity = useProjectStore((s) => s.createEntity);
   const renameScene = useProjectStore((s) => s.renameScene);
   const deleteScene = useProjectStore((s) => s.deleteScene);
   const duplicateScene = useProjectStore((s) => s.duplicateScene);
@@ -541,6 +608,35 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
               )}
             </div>
           )}
+
+          {!searchQuery &&
+            ENTITY_CATEGORIES.map((cat) => (
+              <div key={cat.key} className="mb-1">
+                <div
+                  onClick={() => toggleExpand(cat.key)}
+                  className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2-faint)]"
+                >
+                  <span className="w-3 text-[10px] text-[var(--text-3)]">
+                    {expanded.has(cat.key) ? "▾" : "▸"}
+                  </span>
+                  <Icon name={cat.icon} />
+                  <span className="flex-1">{cat.label}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!expanded.has(cat.key)) toggleExpand(cat.key);
+                      createEntity(cat.kind);
+                    }}
+                    title={`New ${cat.label.slice(0, -1).toLowerCase()}`}
+                    className="rounded px-1.5 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+                  >
+                    +
+                  </button>
+                </div>
+                {expanded.has(cat.key) && <EntityList kind={cat.kind} />}
+              </div>
+            ))}
 
           {!searchQuery &&
             PLACEHOLDER_CATEGORIES.map((cat) => (

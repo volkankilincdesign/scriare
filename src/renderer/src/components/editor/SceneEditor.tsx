@@ -18,6 +18,7 @@ import { ChoiceBlock } from "../../extensions/ChoiceBlock";
 import { Callout } from "../../extensions/Callout";
 import { ConditionalBlock } from "../../extensions/ConditionalBlock";
 import { ChoiceOption } from "../../extensions/ChoiceOption";
+import { Mention } from "../../extensions/Mention";
 import { SlashCommand } from "../../extensions/SlashCommand";
 import { MarkerStyleSync } from "../../extensions/MarkerStyleSync";
 import { TextStyleCleanup } from "../../extensions/TextStyleCleanup";
@@ -46,6 +47,7 @@ export function SceneEditor() {
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       ChoiceBlock,
       ChoiceOption,
+      Mention,
       Callout,
       ConditionalBlock,
       SlashCommand,

@@ -11,6 +11,8 @@ import type {
   Scene,
 } from "../types/project";
 import { buildProject, buildScene, buildStoryFolder, normalizeProject } from "../types/project";
+import { ENTITY_CATEGORY, ENTITY_LABEL, buildEntity } from "../types/entities";
+import type { EntityKind } from "../types/entities";
 import { computeGraphLayout } from "../utils/autoLayoutGraph";
 import { regenerateChoiceIds } from "../utils/choiceBlocks";
 import {
@@ -54,6 +56,14 @@ interface ProjectState {
   project: Project | null;
   filePath: string | null;
   selectedSceneId: string | null;
+  /**
+   * v0.35.0 — the Character or Location page currently open in the editor,
+   * if one is. Exactly one of this and `selectedSceneId` is ever set: the
+   * workspace shows one document at a time, and two "what's open" fields
+   * that could both be set is precisely the kind of pair that drifts (see
+   * the folder/frame split v0.28.0 spent a version undoing).
+   */
+  selectedEntityId: string | null;
   saveStatus: SaveStatus;
   recentProjects: RecentProjectEntry[];
 
@@ -115,6 +125,22 @@ interface ProjectState {
   duplicateScene: (sceneId: string) => void;
   duplicateScenes: (sceneIds: string[]) => void;
   updateSceneContent: (sceneId: string, content: JSONContent) => void;
+
+  /**
+   * v0.35.0 — entities. Creating one files it in its kind's category and
+   * opens it. `name` is optional so the @ menu can create "Kestrel"
+   * mid-sentence without a dialog; it returns the id so the caller can
+   * link to what it just made.
+   */
+  createEntity: (kind: EntityKind, name?: string, options?: { select?: boolean }) => string | null;
+  renameEntity: (entityId: string, name: string) => void;
+  setEntityAliases: (entityId: string, aliases: string[]) => void;
+  updateEntityContent: (entityId: string, content: JSONContent) => void;
+  /** Removes the entity and its row in the tree. Mentions of it in scenes
+   *  are deliberately NOT rewritten — see the comment on the implementation. */
+  deleteEntity: (entityId: string) => void;
+  /** Opens an entity's page in the editor (and closes whatever was open). */
+  selectEntity: (entityId: string | null) => void;
 
   createFolder: (parentId?: string | null) => void;
   renameFolder: (folderId: string, name: string) => void;
@@ -230,6 +256,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   project: null,
   filePath: null,
   selectedSceneId: null,
+  selectedEntityId: null,
   saveStatus: "saved",
   recentProjects: [],
 
@@ -356,7 +383,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   selectScene: (sceneId) => {
-    set({ selectedSceneId: sceneId });
+    // Opening a scene closes an entity page, and vice versa — one document
+    // is open at a time.
+    set({ selectedSceneId: sceneId, selectedEntityId: null });
     // Switching scenes always leaves behind whatever Choice Block the
     // Inspector was showing for the PREVIOUS scene — see inspectorStore.ts.
     useInspectorStore.getState().clearTarget();
@@ -585,6 +614,119 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   // writer of scene content no matter which surface made the edit — see
   // editorStore.ts's comment for why a second, store-only write path caused
   // real desync bugs between the mounted editor and the saved project.
+
+  createEntity: (kind, name = "", options) => {
+    const { project } = get();
+    if (!project) return null;
+
+    const category = ENTITY_CATEGORY[kind];
+    const existing = project.entities.filter((e) => e.kind === kind).length;
+    const entity = buildEntity(kind, name || `${ENTITY_LABEL[kind]} ${existing + 1}`);
+    const leaf: ContentLeaf = {
+      id: entity.id,
+      kind: "leaf",
+      category,
+      parentId: null,
+      order: nextOrder(project.content, category, null),
+      refType: kind,
+    };
+
+    pushHistory(set, get, `Create ${ENTITY_LABEL[kind]}`);
+    set({
+      project: {
+        ...project,
+        entities: [...project.entities, entity],
+        content: [...project.content, leaf],
+        updatedAt: new Date().toISOString(),
+      },
+      // The @ menu creates without navigating: a writer mid-sentence is not
+      // asking to be taken somewhere else.
+      ...(options?.select === false
+        ? {}
+        : { selectedEntityId: entity.id, selectedSceneId: null }),
+      saveStatus: "unsaved",
+    });
+    scheduleAutosave(get);
+    return entity.id;
+  },
+
+  renameEntity: (entityId, name) => {
+    const { project } = get();
+    if (!project) return;
+
+    // Coalesced like a scene rename, so typing a name is one undo step
+    // rather than one per keystroke.
+    pushHistory(set, get, "Rename", `entity:${entityId}`);
+    set({
+      project: {
+        ...project,
+        entities: project.entities.map((e) => (e.id === entityId ? { ...e, name } : e)),
+        updatedAt: new Date().toISOString(),
+      },
+      saveStatus: "unsaved",
+    });
+    scheduleAutosave(get);
+  },
+
+  setEntityAliases: (entityId, aliases) => {
+    const { project } = get();
+    if (!project) return;
+
+    pushHistory(set, get, "Edit Aliases", `aliases:${entityId}`);
+    set({
+      project: {
+        ...project,
+        entities: project.entities.map((e) => (e.id === entityId ? { ...e, aliases } : e)),
+        updatedAt: new Date().toISOString(),
+      },
+      saveStatus: "unsaved",
+    });
+    scheduleAutosave(get);
+  },
+
+  updateEntityContent: (entityId, content) => {
+    const { project } = get();
+    if (!project) return;
+
+    set({
+      project: {
+        ...project,
+        entities: project.entities.map((e) => (e.id === entityId ? { ...e, content } : e)),
+        updatedAt: new Date().toISOString(),
+      },
+      saveStatus: "unsaved",
+    });
+    scheduleAutosave(get);
+  },
+
+  // Mentions of a deleted entity are NOT stripped from the scenes that
+  // contain them — the same call this codebase makes for deleted variables
+  // and deleted choice destinations. Walking every scene's document to
+  // delete words out of someone's prose is both expensive and presumptuous;
+  // a mention whose entity is gone renders as the plain text it was written
+  // with (see extensions/Mention.ts), so the sentence still reads.
+  deleteEntity: (entityId) => {
+    const { project, selectedEntityId } = get();
+    if (!project) return;
+
+    pushHistory(set, get, "Delete");
+    set({
+      project: {
+        ...project,
+        entities: project.entities.filter((e) => e.id !== entityId),
+        content: project.content.filter((n) => n.id !== entityId),
+        updatedAt: new Date().toISOString(),
+      },
+      selectedEntityId: selectedEntityId === entityId ? null : selectedEntityId,
+      saveStatus: "unsaved",
+    });
+    scheduleAutosave(get);
+  },
+
+  selectEntity: (entityId) => {
+    set({ selectedEntityId: entityId, selectedSceneId: entityId ? null : get().selectedSceneId });
+    useInspectorStore.getState().clearTarget();
+  },
 
   createFolder: (parentId = null) => {
     const { project } = get();

@@ -1,6 +1,26 @@
-# Scriare — v0.34.1 — Fixed: The Inspector Closing While You Use It
+# Scriare — v0.35.0 — Characters and Locations
 
-## What's new (v0.34.1 — Fixed: The Inspector Closing While You Use It)
+## What's new (v0.35.0 — Characters and Locations)
+
+**The two categories that said "Coming soon" are real, and your prose can point at them.**
+
+A Character and a Location are one kind of object with a different label — the same lesson as folders and graph groups in v0.28.0. Each has a name, the other names it answers to, and a page you write freely in the same editor as a scene.
+
+**Type `@` in a scene.** The menu offers the characters and locations you already have, matched on any of their names. Choose one and the name lands in your sentence as a reference rather than as typed text. Its page then lists every scene it appears in, derived from the documents themselves, so it can't disagree with them.
+
+**Rename a character and every sentence she's in says the new name.** Nothing is rewritten and nothing goes stale, because no sentence ever stored the old name — only her id. This is true for the player as well as for you.
+
+**`@Kestrel` when Kestrel doesn't exist yet offers to create her, right there.** You keep typing; the Content Browser fills in behind you. Writing shouldn't stop so you can go and file paperwork.
+
+**Aliases are in from the start.** Mara is also "the doctor" and "Dr. Aydın". Type `@the doc` and you get her — and the sentence says "the doctor", because that's what you meant. A story where every alias silently collapses into one canonical name is a worse story. Matching is case- and accent-insensitive, and handles Turkish properly: `@ist` finds İstanbul and `@aydin` finds Aydın, which neither of the obvious implementations manages.
+
+**Deleting a character never blanks out your prose.** The words stay exactly as written; the app just stops claiming they point anywhere.
+
+Also in this version: **Play Mode had two Exit Play buttons**, one in the top bar and one just below it. The way out is now the button you came in by, in the place you pressed it, and the strip says what the top bar can't — that Esc works too.
+
+Sixteen new tests. Two negative controls worth recording: making the runtime keep a mention's stored text caught the rename failure only after the test was scoped to Play Mode's own DOM — the editor is merely hidden during Play, and its (correct) copy of the sentence was passing the test for the wrong reason. 149 tests.
+
+## v0.34.1 — Fixed: The Inspector Closing While You Use It
 
 **Reordering a choice no longer throws the Inspector back to Scene Properties the moment you let go of the mouse.**
 

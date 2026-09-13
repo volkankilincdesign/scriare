@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SceneEditor } from "../editor/SceneEditor";
+import { EntityEditor } from "../editor/EntityEditor";
+import { useProjectStore } from "../../state/projectStore";
 import { FlowPanel } from "../graph/FlowPanel";
 
 const MIN_FLOW_HEIGHT = 120;
@@ -34,6 +36,11 @@ interface EditorGraphSplitProps {
  * file) so it doesn't clutter what gets synced/shared.
  */
 export function EditorGraphSplit({ flowCollapsed, onToggleFlow }: EditorGraphSplitProps) {
+  // v0.35.0 — a Character or Location page takes the whole area. The Story
+  // Graph is a map of the story's branching, and a character page isn't in
+  // it: leaving the graph on screen below an unrelated page would suggest
+  // the two were showing the same thing.
+  const entityOpen = useProjectStore((s) => Boolean(s.selectedEntityId));
   const [flowHeight, setFlowHeight] = useState(loadStoredHeight);
   const [dragging, setDragging] = useState(false);
   const dragStart = useRef<{ y: number; height: number } | null>(null);
@@ -82,6 +89,14 @@ export function EditorGraphSplit({ flowCollapsed, onToggleFlow }: EditorGraphSpl
       window.removeEventListener("pointerup", handleUp);
     };
   }, [dragging]);
+
+  if (entityOpen) {
+    return (
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <EntityEditor />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">

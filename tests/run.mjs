@@ -94,10 +94,12 @@ function seedProject() {
         // Real projects get this from normalizeProject on load; this seed
         // writes the store directly, so it supplies it the same way.
         choiceStyles: window.__scriareChoiceStyles.normalizeChoiceStyles(undefined),
+        entities: [],
         startSceneId: "s1",
       },
       filePath: null,
       selectedSceneId: "s1",
+      selectedEntityId: null,
       saveStatus: "saved",
       isPlaying: false,
       canUndo: false,

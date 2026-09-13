@@ -545,6 +545,12 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()}
       />
 
+      {/* Only where a Choice Block can actually go. An entity page uses
+          this same toolbar with a prose-only schema, and a button that
+          inserts something the document can't hold is worse than a missing
+          one. Asking the schema means no component has to be told. */}
+      {editor.schema.nodes.choiceBlock && (
+        <>
       <Divider />
 
       <button
@@ -560,6 +566,8 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         <Icon name="branch" className="h-[15px] w-[15px]" />
         Choice
       </button>
+        </>
+      )}
 
       {choice && selectedSceneId && (
         <ChoiceContextGroup
