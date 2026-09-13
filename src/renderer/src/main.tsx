@@ -30,16 +30,20 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./utils/contentClipboard"),
     import("./utils/graphGroups"),
     import("./types/project"),
-  ]).then(([projectStore, toastStore, selectionStore, clipboardUtils, groupUtils, projectTypes]) => {
-    Object.assign(window, {
-      __scriareProjectStore: projectStore.useProjectStore,
-      __scriareToastStore: toastStore.useToastStore,
-      __scriareSelectionStore: selectionStore.useSelectionStore,
-      __scriareClipboardUtils: clipboardUtils,
-      __scriareGroupUtils: groupUtils,
-      __scriareProjectTypes: projectTypes,
-    });
-  });
+    import("./types/variables"),
+  ]).then(
+    ([projectStore, toastStore, selectionStore, clipboardUtils, groupUtils, projectTypes, variables]) => {
+      Object.assign(window, {
+        __scriareProjectStore: projectStore.useProjectStore,
+        __scriareToastStore: toastStore.useToastStore,
+        __scriareSelectionStore: selectionStore.useSelectionStore,
+        __scriareClipboardUtils: clipboardUtils,
+        __scriareGroupUtils: groupUtils,
+        __scriareProjectTypes: projectTypes,
+        __scriareVariables: variables,
+      });
+    },
+  );
 }
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(

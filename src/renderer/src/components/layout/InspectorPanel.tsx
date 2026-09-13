@@ -3,18 +3,31 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import { nanoid } from "nanoid";
 import { useProjectStore } from "../../state/projectStore";
 import { useInspectorStore } from "../../state/inspectorStore";
+import type { InspectorTarget } from "../../state/inspectorStore";
 import { useUIStore } from "../../state/uiStore";
 import { useEditorRefStore } from "../../state/editorStore";
 import { extractChoices, findChoiceBlockOptions } from "../../utils/choiceBlocks";
 import type { ChoiceOption } from "../../utils/choiceBlocks";
-import { applyChoiceBlockOptions } from "../../utils/choiceBlockEditing";
 import {
+  applyChoiceBlockOptions,
+  applyConditionalBlockConditions,
+  findConditionalBlockConditions,
+} from "../../utils/choiceBlockEditing";
+import {
+  COMPARATORS_BY_TYPE,
   OPERATIONS_BY_TYPE,
   VARIABLE_TYPE_LABELS,
   buildVariableAction,
+  buildVariableCondition,
   defaultValueForType,
 } from "../../types/variables";
-import type { Variable, VariableAction, VariableType, VariableValue } from "../../types/variables";
+import type {
+  Variable,
+  VariableAction,
+  VariableCondition,
+  VariableType,
+  VariableValue,
+} from "../../types/variables";
 
 interface InspectorPanelProps {
   collapsed: boolean;
@@ -79,6 +92,8 @@ export function InspectorPanel({ collapsed, onToggle }: InspectorPanelProps) {
       <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4 text-sm">
         {target.kind === "choice" ? (
           <ChoiceProperties target={target} key={target.blockId} />
+        ) : target.kind === "conditional" ? (
+          <ConditionalProperties target={target} key={target.blockId} />
         ) : (
           <SceneProperties />
         )}
@@ -340,6 +355,95 @@ function nearestSlot(layout: DragLayout, top: number, current: number, hysteresi
  * why that matters. `editor` can briefly be null (e.g. during initial
  * mount); every handler below no-ops if so rather than crashing.
  */
+/**
+ * Properties for a Conditional Text block (v0.30.0) — the conditions that
+ * decide whether its prose appears at all.
+ *
+ * Much simpler than ChoiceProperties because there is nothing else to edit:
+ * the text inside the block is written in the editor like any other prose,
+ * and the only structured data the block carries is its condition list.
+ * Reuses the same ConditionRow the Choice accordion does, so "a condition"
+ * looks and behaves identically wherever it appears.
+ */
+function ConditionalProperties({
+  target,
+}: {
+  target: Extract<InspectorTarget, { kind: "conditional" }>;
+}) {
+  const project = useProjectStore((s) => s.project);
+  const editor = useEditorRefStore((s) => s.editor);
+  const openVariableManager = useUIStore((s) => s.openVariableManager);
+
+  const scene = project?.scenes.find((s) => s.id === target.sceneId) ?? null;
+  const conditions = scene ? findConditionalBlockConditions(scene.content, target.blockId) : null;
+  const variables = project?.variables ?? [];
+
+  // The block was deleted while the Inspector still had it targeted — fall
+  // back to Scene Properties rather than showing a dead panel, same as
+  // ChoiceProperties does.
+  useEffect(() => {
+    if (!scene || !conditions) useInspectorStore.getState().clearTarget();
+  }, [scene, conditions]);
+
+  if (!scene || !conditions) return null;
+
+  function commit(next: VariableCondition[]): void {
+    if (!editor) return;
+    applyConditionalBlockConditions(editor, target.blockId, next);
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+          Conditional Text
+        </div>
+        <p className="text-xs text-[var(--text-3)]">
+          This passage appears only when every condition below holds. With no
+          conditions it always appears.
+        </p>
+      </div>
+
+      {variables.length === 0 ? (
+        <div className="space-y-2 rounded-md border border-dashed border-[var(--border-soft)] px-2 py-2 text-xs text-[var(--text-3)]">
+          <p>Create a project Variable first to give this passage something to test.</p>
+          <button
+            type="button"
+            onClick={openVariableManager}
+            className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+          >
+            Open Variable Manager
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {conditions.map((condition) => (
+            <ConditionRow
+              key={condition.id}
+              condition={condition}
+              variables={variables}
+              onChange={(patch) =>
+                commit(conditions.map((c) => (c.id === condition.id ? { ...c, ...patch } : c)))
+              }
+              onRemove={() => commit(conditions.filter((c) => c.id !== condition.id))}
+            />
+          ))}
+          <button
+            type="button"
+            onClick={() => {
+              const condition = buildVariableCondition(variables);
+              if (condition) commit([...conditions, condition]);
+            }}
+            className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+          >
+            + Add Condition
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ChoiceProperties({ target }: { target: ChoiceTarget }) {
   const project = useProjectStore((s) => s.project);
   const editor = useEditorRefStore((s) => s.editor);
@@ -843,7 +947,14 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
   }
 
   function addChoice(): void {
-    const option: ChoiceOption = { id: nanoid(), text: "", targetSceneId: null, actions: [] };
+    const option: ChoiceOption = {
+      id: nanoid(),
+      text: "",
+      targetSceneId: null,
+      actions: [],
+      conditions: [],
+      whenUnmet: "hide",
+    };
     commit([...optionsRef.current, option]);
     setExpanded((prev) => new Set(prev).add(option.id));
   }
@@ -1062,13 +1173,29 @@ function ChoiceAccordion({
   onOpenVariableManager,
   removeDisabled,
 }: ChoiceAccordionProps) {
-  const conditionCount = 0; // Conditions data model doesn't exist yet (Sprint 9B placeholder — see below).
+  const conditionCount = option.conditions.length;
   const actionCount = option.actions.length;
 
   function destinationLabel(targetSceneId: string | null): string {
     if (!targetSceneId) return "Not linked yet";
     const target = otherScenes.find((sc) => sc.id === targetSceneId);
     return target ? `→ ${target.title || "Untitled scene"}` : "Not linked yet";
+  }
+
+  function addCondition(): void {
+    const condition = buildVariableCondition(variables);
+    if (!condition) return;
+    onPatch({ conditions: [...option.conditions, condition] });
+  }
+
+  function updateCondition(conditionId: string, patch: Partial<VariableCondition>): void {
+    onPatch({
+      conditions: option.conditions.map((c) => (c.id === conditionId ? { ...c, ...patch } : c)),
+    });
+  }
+
+  function removeCondition(conditionId: string): void {
+    onPatch({ conditions: option.conditions.filter((c) => c.id !== conditionId) });
   }
 
   function addAction(): void {
@@ -1129,7 +1256,9 @@ function ChoiceAccordion({
             {destinationLabel(option.targetSceneId)}
           </span>
           <span>·</span>
-          <span>{conditionCount} conditions</span>
+          <span>
+            {conditionCount} {conditionCount === 1 ? "condition" : "conditions"}
+          </span>
           <span>·</span>
           <span>{actionCount} {actionCount === 1 ? "action" : "actions"}</span>
         </div>
@@ -1185,10 +1314,55 @@ function ChoiceAccordion({
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
               Conditions
             </label>
-            <p className="rounded-md border border-dashed border-[var(--border-soft)] px-2 py-2 text-xs text-[var(--text-3)]">
-              Coming in a future sprint — this choice will be able to require
-              a variable's state before it's offered.
-            </p>
+
+            {variables.length === 0 ? (
+              <div className="space-y-2 rounded-md border border-dashed border-[var(--border-soft)] px-2 py-2 text-xs text-[var(--text-3)]">
+                <p>Create a project Variable first to give this choice something to test.</p>
+                <button
+                  type="button"
+                  onClick={onOpenVariableManager}
+                  className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+                >
+                  Open Variable Manager
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {option.conditions.map((condition) => (
+                  <ConditionRow
+                    key={condition.id}
+                    condition={condition}
+                    variables={variables}
+                    onChange={(next) => updateCondition(condition.id, next)}
+                    onRemove={() => removeCondition(condition.id)}
+                  />
+                ))}
+                <button
+                  type="button"
+                  onClick={addCondition}
+                  className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+                >
+                  + Add Condition
+                </button>
+
+                {/* Only meaningful once there's something to fail. Showing
+                    it on an unconditional choice would be asking about a
+                    state that can never happen. */}
+                {option.conditions.length > 0 && (
+                  <div className="flex items-center gap-1.5 pt-0.5">
+                    <span className="shrink-0 text-xs text-[var(--text-3)]">If not met:</span>
+                    <select
+                      value={option.whenUnmet}
+                      onChange={(e) => onPatch({ whenUnmet: e.target.value as "hide" | "lock" })}
+                      className="min-w-0 flex-1 rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                    >
+                      <option value="hide">Hide the choice</option>
+                      <option value="lock">Show it locked</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div>
@@ -1396,6 +1570,112 @@ function ActionRow({ action, variables, onChange, onRemove }: ActionRowProps) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+interface ConditionRowProps {
+  condition: VariableCondition;
+  variables: Variable[];
+  onChange: (patch: Partial<VariableCondition>) => void;
+  onRemove: () => void;
+}
+
+/**
+ * One "is this true?" row. Deliberately the same shape as ActionRow — a
+ * condition IS an action read instead of written, so making the two look
+ * and behave differently would be inventing a distinction the model
+ * doesn't have.
+ *
+ * The one thing it doesn't carry is ActionRow's inline "+ Create Variable".
+ * A condition tests state that already exists; a variable invented at the
+ * moment you gate something on it is, by definition, still at its default
+ * and so the gate either always passes or never does. The Variable Manager
+ * link in the empty state covers the genuine "I have no variables yet"
+ * case.
+ */
+function ConditionRow({ condition, variables, onChange, onRemove }: ConditionRowProps) {
+  const variable = variables.find((v) => v.id === condition.variableId) ?? variables[0];
+  if (!variable) return null;
+
+  const missing = !variables.some((v) => v.id === condition.variableId);
+  const comparators = COMPARATORS_BY_TYPE[variable.type];
+
+  function handleVariableChange(variableId: string): void {
+    const next = variables.find((v) => v.id === variableId);
+    if (!next) return;
+    // The comparator and value are re-derived rather than carried across:
+    // "is at least" means nothing on a boolean, and a leftover number would
+    // be compared against a true/false.
+    onChange({
+      variableId,
+      comparator: COMPARATORS_BY_TYPE[next.type][0].value,
+      value: defaultValueForType(next.type),
+    });
+  }
+
+  return (
+    <div className="space-y-1 rounded-md border border-[var(--border-soft)] bg-[var(--surface)] px-2 py-1.5">
+      <div className="flex items-center justify-between">
+        <select
+          value={variable.id}
+          onChange={(e) => handleVariableChange(e.target.value)}
+          className={`min-w-0 flex-1 rounded border bg-[var(--bg)] px-1.5 py-1 text-xs outline-none focus:border-[var(--accent)] ${
+            missing
+              ? "border-[var(--danger)] text-[var(--danger)]"
+              : "border-[var(--border)] text-[var(--text)]"
+          }`}
+          title={missing ? "This condition's variable no longer exists — it will never pass" : undefined}
+        >
+          {variables.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.name || "Untitled variable"}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={onRemove}
+          title="Remove this condition"
+          className="shrink-0 rounded px-1.5 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => onChange({ negate: !condition.negate })}
+          aria-pressed={Boolean(condition.negate)}
+          title="Invert this condition"
+          className={`shrink-0 rounded border px-1.5 py-1 text-xs font-medium transition-colors ${
+            condition.negate
+              ? "border-[var(--accent-ring)] bg-[var(--accent-soft-2)] text-[var(--text)]"
+              : "border-[var(--border)] text-[var(--text-3)] hover:text-[var(--text-2)]"
+          }`}
+        >
+          NOT
+        </button>
+
+        <select
+          value={condition.comparator}
+          onChange={(e) => onChange({ comparator: e.target.value })}
+          className="shrink-0 rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+        >
+          {comparators.map((c) => (
+            <option key={c.value} value={c.value}>
+              {c.label}
+            </option>
+          ))}
+        </select>
+
+        <ValueInput
+          type={variable.type}
+          value={condition.value}
+          onChange={(value) => onChange({ value })}
+        />
+      </div>
     </div>
   );
 }

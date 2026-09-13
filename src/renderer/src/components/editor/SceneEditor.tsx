@@ -16,6 +16,7 @@ import { useEditorRefStore } from "../../state/editorStore";
 import { FontSize } from "../../extensions/FontSize";
 import { ChoiceBlock } from "../../extensions/ChoiceBlock";
 import { Callout } from "../../extensions/Callout";
+import { ConditionalBlock } from "../../extensions/ConditionalBlock";
 import { SlashCommand } from "../../extensions/SlashCommand";
 import { MarkerStyleSync } from "../../extensions/MarkerStyleSync";
 import { TextStyleCleanup } from "../../extensions/TextStyleCleanup";
@@ -44,6 +45,7 @@ export function SceneEditor() {
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       ChoiceBlock,
       Callout,
+      ConditionalBlock,
       SlashCommand,
       MarkerStyleSync,
       TextStyleCleanup,
@@ -71,6 +73,25 @@ export function SceneEditor() {
           return;
         }
       }
+      // A Conditional Block holds real prose, so the writer's cursor sits
+      // inside it rather than selecting it as a node. Walking up the
+      // selection's ancestors is what lets "I'm typing in a gated
+      // paragraph" show that gate's conditions in the Inspector, without
+      // requiring a click on some separate handle.
+      const { $from } = selection;
+      for (let depth = $from.depth; depth > 0; depth -= 1) {
+        const ancestor = $from.node(depth);
+        if (ancestor.type.name === "conditionalBlock") {
+          const blockId = ancestor.attrs?.blockId as string | undefined;
+          if (blockId) {
+            useInspectorStore
+              .getState()
+              .selectTarget({ kind: "conditional", sceneId: scene.id, blockId });
+            return;
+          }
+        }
+      }
+
       useInspectorStore.getState().clearTarget();
     },
     editorProps: {

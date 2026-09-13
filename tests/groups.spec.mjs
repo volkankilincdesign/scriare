@@ -228,5 +228,125 @@ export default async function ({ api, check, seedProject }) {
     r.hasFramesKey === false && r.frameIdGone === true,
     `frames key present: ${r.hasFramesKey}, frameId present: ${!r.frameIdGone}`);
 
+  // 10 — Auto Layout reaches inside groups (v0.29.0). Before this, a
+  // group's contents were deliberately left alone, so there was no way to
+  // tidy the inside of a chapter at all.
+  await api(() => {
+    const store = window.__scriareProjectStore;
+    const now = new Date().toISOString();
+    const ch = (t) => ({
+      type: "choiceBlock",
+      attrs: { blockId: "b" + t, options: [{ id: "o" + t, text: "go", targetSceneId: t, actions: [] }] },
+    });
+    const sc = (id, title, x, y, links = []) => ({
+      id, title,
+      content: { type: "doc", content: [{ type: "paragraph" }, ...links.map(ch)] },
+      position: { x, y }, order: 0,
+    });
+    store.setState({
+      project: {
+        name: "Messy", createdAt: now, updatedAt: now,
+        // Three scenes inside one chapter, in a deliberately terrible
+        // arrangement: a chain a→b→c scattered so that b is far left of a.
+        scenes: [
+          sc("a", "A", 900, 700, ["b"]),
+          sc("b", "B", 100, 30, ["c"]),
+          sc("c", "C", 500, 450, []),
+          sc("loose", "Loose", 2000, 2000, []),
+        ],
+        content: [
+          {
+            id: "chap", kind: "folder", category: "story", parentId: null, order: 0,
+            name: "Chapter", rect: { x: 0, y: 0, width: 1200, height: 900 },
+          },
+          { id: "a", kind: "leaf", category: "story", parentId: "chap", order: 0, refType: "scene" },
+          { id: "b", kind: "leaf", category: "story", parentId: "chap", order: 1, refType: "scene" },
+          { id: "c", kind: "leaf", category: "story", parentId: "chap", order: 2, refType: "scene" },
+          { id: "loose", kind: "leaf", category: "story", parentId: null, order: 1, refType: "scene" },
+        ],
+        favorites: [], variables: [], startSceneId: "a",
+      },
+      filePath: null, selectedSceneId: "a", saveStatus: "saved", isPlaying: false,
+      canUndo: false, canRedo: false, undoLabel: null, redoLabel: null, undoToken: null,
+    });
+  });
+
+  r = await api(() => {
+    const store = window.__scriareProjectStore;
+    const before = store.getState().project.scenes.map((s) => `${s.id}:${s.position.x},${s.position.y}`);
+    store.getState().autoLayoutScenes();
+    const p = store.getState().project;
+    const pos = Object.fromEntries(p.scenes.map((s) => [s.id, s.position]));
+    const rect = p.content.find((n) => n.id === "chap").rect;
+    return { before, pos, rect };
+  });
+  check("Auto Layout arranges the scenes INSIDE a group",
+    r.pos.a.x < r.pos.b.x && r.pos.b.x < r.pos.c.x,
+    `a.x=${r.pos.a.x} b.x=${r.pos.b.x} c.x=${r.pos.c.x} (must follow the a→b→c chain left to right)`);
+
+  check("every scene in the group ends up inside its box",
+    ["a", "b", "c"].every(
+      (id) =>
+        r.pos[id].x >= r.rect.x &&
+        r.pos[id].y >= r.rect.y &&
+        r.pos[id].x + 180 <= r.rect.x + r.rect.width &&
+        r.pos[id].y + 56 <= r.rect.y + r.rect.height,
+    ),
+    `box ${r.rect.width}x${r.rect.height} at ${r.rect.x},${r.rect.y}`);
+
+  check("the group shrinks to fit what it actually holds",
+    r.rect.width < 1200 && r.rect.height < 900,
+    `was 1200x900, now ${r.rect.width}x${r.rect.height}`);
+
+  check("a loose scene is laid out too, and clear of the group",
+    r.pos.loose.x !== 2000 || r.pos.loose.y !== 2000,
+    `loose at ${r.pos.loose.x},${r.pos.loose.y}`);
+
+  // 11 — and it's one undo step, which is the whole reason it's allowed to
+  // be this destructive.
+  r = await api(() => {
+    const store = window.__scriareProjectStore;
+    store.getState().undo();
+    const p = store.getState().project;
+    return {
+      a: p.scenes.find((s) => s.id === "a").position,
+      rect: p.content.find((n) => n.id === "chap").rect,
+    };
+  });
+  check("one undo puts the whole layout back",
+    r.a.x === 900 && r.a.y === 700 && r.rect.width === 1200,
+    `a back at ${r.a.x},${r.a.y}; box ${r.rect.width}x${r.rect.height}`);
+
+  // 12 — nested groups are laid out innermost-first, so a parent sizes
+  // itself around a child that has already been arranged.
+  r = await api(() => {
+    const store = window.__scriareProjectStore;
+    const p = store.getState().project;
+    store.setState({
+      project: {
+        ...p,
+        content: [
+          ...p.content.map((n) =>
+            n.id === "a" || n.id === "b" ? { ...n, parentId: "inner" } : n,
+          ),
+          {
+            id: "inner", kind: "folder", category: "story", parentId: "chap", order: 3,
+            name: "Inner", rect: { x: 10, y: 10, width: 300, height: 200 },
+          },
+        ],
+      },
+    });
+    store.getState().autoLayoutScenes();
+    const q = store.getState().project;
+    const outer = q.content.find((n) => n.id === "chap").rect;
+    const inner = q.content.find((n) => n.id === "inner").rect;
+    return { outer, inner };
+  });
+  check("a nested group ends up fully inside its parent after Auto Layout",
+    r.inner.x >= r.outer.x && r.inner.y >= r.outer.y &&
+      r.inner.x + r.inner.width <= r.outer.x + r.outer.width &&
+      r.inner.y + r.inner.height <= r.outer.y + r.outer.height,
+    `outer ${r.outer.width}x${r.outer.height} at ${r.outer.x},${r.outer.y}; inner ${r.inner.width}x${r.inner.height} at ${r.inner.x},${r.inner.y}`);
+
   await seedProject();
 }

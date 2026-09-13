@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import type { JSONContent } from "@tiptap/react";
 import type { Choice } from "../types/project";
-import type { VariableAction } from "../types/variables";
+import type { VariableAction, VariableCondition } from "../types/variables";
 
 export const CHOICE_BLOCK_TYPE = "choiceBlock";
 
@@ -14,12 +14,29 @@ export const CHOICE_BLOCK_TYPE = "choiceBlock";
  * that). `conditions` (Sprint 9B) is intentionally NOT a field yet: nothing
  * reads it this sprint, and adding an empty array no code touches would
  * just be dead data — see the Inspector's Conditions placeholder instead.
+ *
+ * v0.30.0 filled that gap: `conditions` are the tests that must all hold
+ * for this option to be offered, and `whenUnmet` says what the player sees
+ * when they don't. Both default so that every choice written before this
+ * existed behaves exactly as it always did — no conditions means always
+ * available, which is what `evaluateConditions` returns for an empty list.
  */
 export interface ChoiceOption {
   id: string;
   text: string;
   targetSceneId: string | null;
   actions: VariableAction[];
+  /** All must be true for the option to be offered. Empty means always. */
+  conditions: VariableCondition[];
+  /**
+   * What a player sees when the conditions fail. "hide" removes the option
+   * entirely — the player never learns it was there, which is what most
+   * branching fiction wants. "lock" shows it greyed out with the reason,
+   * for the "you need 3 Trust" moments where knowing the door exists is
+   * the point. Per option rather than per project, because a story usually
+   * wants both in different places.
+   */
+  whenUnmet: "hide" | "lock";
 }
 
 function readOptions(attrs: Record<string, unknown> | undefined): ChoiceOption[] {
@@ -30,6 +47,12 @@ function readOptions(attrs: Record<string, unknown> | undefined): ChoiceOption[]
     text: (option?.text as string) ?? "",
     targetSceneId: (option?.targetSceneId as string | null) ?? null,
     actions: Array.isArray(option?.actions) ? (option.actions as VariableAction[]) : [],
+    // Defaulted here rather than migrated into every saved document: this
+    // is the one place options are ever read, so an older project gets the
+    // current shape for free the moment it's loaded, and nothing has to
+    // rewrite files that were perfectly valid.
+    conditions: Array.isArray(option?.conditions) ? (option.conditions as VariableCondition[]) : [],
+    whenUnmet: option?.whenUnmet === "lock" ? "lock" : "hide",
   }));
 }
 
@@ -151,6 +174,7 @@ export function regenerateChoiceIds(
                 ? sceneIdMap.get(option.targetSceneId)!
                 : option.targetSceneId,
             actions: option.actions.map((action) => ({ ...action, id: nanoid() })),
+            conditions: option.conditions.map((condition) => ({ ...condition, id: nanoid() })),
           })),
         },
       };
@@ -170,8 +194,8 @@ export function regenerateChoiceIds(
  */
 export function buildChoiceBlockNode(
   options: ChoiceOption[] = [
-    { id: nanoid(), text: "", targetSceneId: null, actions: [] },
-    { id: nanoid(), text: "", targetSceneId: null, actions: [] },
+    { id: nanoid(), text: "", targetSceneId: null, actions: [], conditions: [], whenUnmet: "hide" },
+    { id: nanoid(), text: "", targetSceneId: null, actions: [], conditions: [], whenUnmet: "hide" },
   ],
   blockId = nanoid(),
 ): JSONContent {
@@ -205,6 +229,8 @@ export function migrateLegacyChoiceBlocks(content: JSONContent | undefined | nul
               text: (attrs.text as string) ?? "",
               targetSceneId: (attrs.targetSceneId as string | null) ?? null,
               actions: [],
+              conditions: [],
+              whenUnmet: "hide",
             },
           ],
         },

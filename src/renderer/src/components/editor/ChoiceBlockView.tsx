@@ -54,7 +54,14 @@ export function ChoiceBlockView({ node, deleteNode, selected, editor, getPos }: 
     e.stopPropagation();
     const blockId = node.attrs.blockId as string | undefined;
     if (!blockId) return;
-    const option: ChoiceOption = { id: nanoid(), text: "", targetSceneId: null, actions: [] };
+    const option: ChoiceOption = {
+      id: nanoid(),
+      text: "",
+      targetSceneId: null,
+      actions: [],
+      conditions: [],
+      whenUnmet: "hide",
+    };
     applyChoiceBlockOptions(editor, blockId, [...options, option]);
   }
 

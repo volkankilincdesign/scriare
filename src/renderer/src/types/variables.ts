@@ -180,3 +180,156 @@ export function applyVariableAction(
   // string
   return typeof action.value === "string" ? action.value : String(action.value ?? "");
 }
+
+/* ------------------------------------------------------------------ *
+ * Conditions (Sprint 9B / v0.30.0)
+ * ------------------------------------------------------------------ */
+
+/**
+ * One "is this true?" test against a variable. Deliberately the mirror
+ * image of a VariableAction — variable + comparator + literal value — for
+ * the reason the module comment predicted: a condition is the same shape
+ * as an action, read instead of written. Reusing it means the Inspector's
+ * Conditions rows are the Actions rows with a different verb, and nothing
+ * about variables had to change to support them.
+ *
+ * There is no expression field, and deliberately no way to type one. A
+ * writer picks a variable, a comparator and a value from controls that
+ * already know the variable's type — the same "visual, no syntax" rule the
+ * rest of the runtime follows.
+ *
+ * `negate` covers "only if you HAVEN'T met her" without a second operator
+ * list per type: it flips whatever the comparator decided. Rendering it as
+ * its own small toggle, rather than doubling every comparator into an "is
+ * not" twin, keeps the dropdowns short.
+ */
+export interface VariableCondition {
+  id: string;
+  variableId: string;
+  comparator: string;
+  value: VariableValue;
+  negate?: boolean;
+}
+
+/**
+ * Comparators per variable type. Numbers get the full ordering; booleans
+ * and strings only get equality, because "greater than" on a boolean is a
+ * question nobody means to ask and an ordering on arbitrary strings is a
+ * trap (is "Apple" < "banana"? depends on the locale). A `contains` for
+ * strings would be the obvious next entry here and needs nothing else.
+ */
+export const COMPARATORS_BY_TYPE: Record<VariableType, OperationOption[]> = {
+  number: [
+    { value: "eq", label: "is" },
+    { value: "neq", label: "is not" },
+    { value: "gt", label: "is more than" },
+    { value: "gte", label: "is at least" },
+    { value: "lt", label: "is less than" },
+    { value: "lte", label: "is at most" },
+  ],
+  boolean: [
+    { value: "eq", label: "is" },
+    { value: "neq", label: "is not" },
+  ],
+  string: [
+    { value: "eq", label: "is" },
+    { value: "neq", label: "is not" },
+  ],
+};
+
+/** A fresh condition for "+ Add Condition" — null when there are no variables to test. */
+export function buildVariableCondition(variables: Variable[]): VariableCondition | null {
+  const first = variables[0];
+  if (!first) return null;
+  return {
+    id: nanoid(),
+    variableId: first.id,
+    comparator: COMPARATORS_BY_TYPE[first.type][0].value,
+    value: defaultValueForType(first.type),
+  };
+}
+
+/**
+ * Evaluates one condition. Pure, like applyVariableAction, so the Inspector
+ * can preview "would this pass right now?" with the same function the
+ * runtime uses to decide — there is no second implementation to drift.
+ *
+ * A condition whose variable has been deleted resolves to FALSE rather than
+ * throwing or silently passing. False is the safe direction: a gate whose
+ * question can no longer be asked stays shut, so a deleted variable can
+ * never accidentally open a path the writer had locked.
+ */
+export function evaluateCondition(
+  condition: VariableCondition,
+  variable: Variable | undefined,
+  currentValue: VariableValue | undefined,
+): boolean {
+  if (!variable) return false;
+
+  const current = currentValue ?? variable.defaultValue;
+  let result: boolean;
+
+  if (variable.type === "number") {
+    const a = typeof current === "number" ? current : Number(current) || 0;
+    const b = typeof condition.value === "number" ? condition.value : Number(condition.value) || 0;
+    switch (condition.comparator) {
+      case "neq": result = a !== b; break;
+      case "gt": result = a > b; break;
+      case "gte": result = a >= b; break;
+      case "lt": result = a < b; break;
+      case "lte": result = a <= b; break;
+      default: result = a === b;
+    }
+  } else if (variable.type === "boolean") {
+    const a = typeof current === "boolean" ? current : Boolean(current);
+    const b = typeof condition.value === "boolean" ? condition.value : Boolean(condition.value);
+    result = condition.comparator === "neq" ? a !== b : a === b;
+  } else {
+    const a = String(current ?? "");
+    const b = String(condition.value ?? "");
+    result = condition.comparator === "neq" ? a !== b : a === b;
+  }
+
+  return condition.negate ? !result : result;
+}
+
+/**
+ * Whether a whole list passes. Every condition must hold — there is no
+ * OR, on purpose: nestable any/all groups turn a writing tool into a query
+ * builder, and the overwhelming majority of real branching is a list of
+ * things that all have to be true. An empty list passes, so a choice with
+ * no conditions behaves exactly as it did before this existed.
+ */
+export function evaluateConditions(
+  conditions: VariableCondition[] | undefined,
+  variables: Variable[],
+  values: Record<string, VariableValue>,
+): boolean {
+  if (!conditions || conditions.length === 0) return true;
+  return conditions.every((condition) =>
+    evaluateCondition(
+      condition,
+      variables.find((v) => v.id === condition.variableId),
+      values[condition.variableId],
+    ),
+  );
+}
+
+/** Human-readable summary of one condition — the Inspector's collapsed row, and a locked choice's reason. */
+export function describeCondition(
+  condition: VariableCondition,
+  variables: Variable[],
+): string {
+  const variable = variables.find((v) => v.id === condition.variableId);
+  if (!variable) return "an unknown variable";
+  const comparator =
+    COMPARATORS_BY_TYPE[variable.type].find((c) => c.value === condition.comparator)?.label ?? "is";
+  const value =
+    variable.type === "boolean"
+      ? condition.value
+        ? "true"
+        : "false"
+      : String(condition.value ?? "");
+  const name = variable.name || "Untitled variable";
+  return condition.negate ? `not (${name} ${comparator} ${value})` : `${name} ${comparator} ${value}`;
+}

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { JSONContent } from "@tiptap/react";
-import type { VariableAction } from "../types/variables";
+import type { Variable, VariableAction, VariableValue } from "../types/variables";
 
 /**
  * The minimal set of capabilities a runtime block's render function can call
@@ -8,13 +8,22 @@ import type { VariableAction } from "../types/variables";
  * and, as of Sprint 9A, "run these Variable Actions" (what a Choice's
  * Actions need — see choiceRuntimeBlock.tsx). Extending this object is how
  * a future block (Conditions, Characters, ...) gains a new capability
- * without changing every existing block's signature; Sprint 9B's
- * Conditions will most likely add a `getVariable` read-side counterpart to
- * `applyActions` here.
+ * without changing every existing block's signature.
+ *
+ * v0.30.0 added the read side the comment above predicted, as `variables`
+ * and `values` rather than a `getVariable` function: a block that renders
+ * conditionally needs the whole picture to decide what to show, and
+ * handing it the two arrays lets it call the same pure `evaluateConditions`
+ * the rest of the app uses instead of a runtime-only accessor that would
+ * have to be kept in step.
  */
 export interface RuntimeContext {
   goToScene: (sceneId: string) => void;
   applyActions: (actions: VariableAction[]) => void;
+  /** The project's variable definitions — names, types, defaults. */
+  variables: Variable[];
+  /** Their live values in THIS playthrough. */
+  values: Record<string, VariableValue>;
 }
 
 /**

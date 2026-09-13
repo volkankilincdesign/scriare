@@ -364,7 +364,14 @@ function migrateChoicesIntoContent(scene: Scene): Scene {
         ...(content.content ?? []),
         ...legacyChoices.map((choice) =>
           buildChoiceBlockNode([
-            { id: choice.id, text: choice.text, targetSceneId: choice.targetSceneId, actions: [] },
+            {
+              id: choice.id,
+              text: choice.text,
+              targetSceneId: choice.targetSceneId,
+              actions: [],
+              conditions: [],
+              whenUnmet: "hide",
+            },
           ]),
         ),
       ],

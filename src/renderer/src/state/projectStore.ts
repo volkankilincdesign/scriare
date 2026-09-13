@@ -11,8 +11,8 @@ import type {
   Scene,
 } from "../types/project";
 import { buildProject, buildScene, buildStoryFolder, normalizeProject } from "../types/project";
-import { computeAutoLayout } from "../utils/autoLayout";
-import { extractChoices, regenerateChoiceIds } from "../utils/choiceBlocks";
+import { computeGraphLayout } from "../utils/autoLayoutGraph";
+import { regenerateChoiceIds } from "../utils/choiceBlocks";
 import { childrenOf, isDescendant, nextOrder } from "../utils/contentTree";
 import { FOLDER_PADDING } from "../utils/graphConstants";
 import {
@@ -915,119 +915,24 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project } = get();
     if (!project) return;
 
-    // A group's internal arrangement is never touched by Auto Layout —
-    // "Auto Layout should never undo a writer's own organizing work" has
-    // meant that since v0.16.0, and folding Frames into folders (v0.28.0)
-    // doesn't change it. A top-level group that contains at least one
-    // scene participates as its own single node, sized to its own box and
-    // connected by any choice edge crossing in or out of it, so the group
-    // as a whole is placed in the flow while everything inside keeps its
-    // exact relative arrangement and is simply carried along. A group with
-    // nothing in it stands in for no connections, so it stays put.
-    //
-    // Only TOP-LEVEL drawn groups are laid out. A nested group already
-    // travels with its parent, and giving dagre both would place the same
-    // scenes twice.
-    const groups = graphGroups(project.content);
-    const topGroups = groups.filter((g) => g.parentId === null);
-
-    // Which layout node stands in for each scene: the outermost drawn group
-    // containing it, or the scene itself when it's loose on the canvas.
-    const standIn = new Map<string, string>();
-    for (const group of topGroups) {
-      const subtree = folderSubtree(project.content, group.id);
-      subtree.delete(group.id);
-      for (const id of subtree) standIn.set(id, group.id);
-    }
-
-    const groupsWithScenes = topGroups.filter((g) =>
-      project.scenes.some((s) => standIn.get(s.id) === g.id),
-    );
-    const withSceneIds = new Set(groupsWithScenes.map((g) => g.id));
-    const looseScenes = project.scenes.filter((s) => !standIn.has(s.id));
-    if (groupsWithScenes.length === 0 && looseScenes.length === 0) return;
+    // As of v0.29.0 this arranges EVERYTHING, including the inside of every
+    // group, and resizes each group to fit what it now holds. The old rule
+    // ("never rearrange what's inside a box") came from the Frame era, when
+    // a box was something drawn and filled by hand; a group is a chapter
+    // now, and the inside of a chapter is precisely what gets messy after a
+    // run of imprecise drags — which is what someone reaches for this
+    // button to fix. The safety net is that it's a single undo step, not
+    // that the button refuses to do its job.
+    const result = computeGraphLayout(project);
+    if (!result) return;
 
     pushHistory(set, get, "Auto Layout");
-
-    const layoutNodeIdForScene = (sceneId: string): string | undefined => {
-      const host = standIn.get(sceneId);
-      if (host) return withSceneIds.has(host) ? host : undefined;
-      return project.scenes.some((s) => s.id === sceneId) ? sceneId : undefined;
-    };
-
-    const nodeIds = [...groupsWithScenes.map((g) => g.id), ...looseScenes.map((s) => s.id)];
-
-    // Collapse every choice connection to the layout-node level: an edge
-    // between two scenes in the same group becomes a self-loop once both
-    // ends map to that group's id, and is dropped — dagre lays out
-    // relationships *between* nodes, and that one is now internal to a
-    // single node. An edge crossing in or out becomes an edge to or from
-    // the group itself, which is what pulls a chapter into the same flow as
-    // whatever it connects to.
-    const rawEdges = project.scenes.flatMap((scene) =>
-      extractChoices(scene.content)
-        .filter((choice): choice is typeof choice & { targetSceneId: string } =>
-          Boolean(choice.targetSceneId),
-        )
-        .map((choice) => ({ source: scene.id, target: choice.targetSceneId })),
-    );
-    const seenEdges = new Set<string>();
-    const edges: { source: string; target: string }[] = [];
-    for (const edge of rawEdges) {
-      const source = layoutNodeIdForScene(edge.source);
-      const target = layoutNodeIdForScene(edge.target);
-      if (!source || !target || source === target) continue;
-      const key = `${source}->${target}`;
-      if (seenEdges.has(key)) continue;
-      seenEdges.add(key);
-      edges.push({ source, target });
-    }
-
-    const positions = computeAutoLayout(nodeIds, edges, (id) => {
-      const group = groupsWithScenes.find((g) => g.id === id);
-      return group ? { width: group.rect.width, height: group.rect.height } : undefined;
-    });
-
-    // Groups move first, capturing how far each one actually travelled;
-    // then everything inside rides along by that same delta, and loose
-    // scenes take their own freshly computed position. Same "shift the box,
-    // carry its contents" pattern `updateFolderRect` uses for a manual
-    // drag, so nothing inside a group ever needs its position recomputed.
-    const deltas = new Map<string, { dx: number; dy: number }>();
-    let content = project.content.map((n) => {
-      if (n.kind !== "folder" || !n.rect) return n;
-      const newPos = positions[n.id];
-      if (!newPos) return n;
-      deltas.set(n.id, { dx: newPos.x - n.rect.x, dy: newPos.y - n.rect.y });
-      return { ...n, rect: { ...n.rect, x: newPos.x, y: newPos.y } };
-    });
-
-    // Nested groups are carried by their top-level ancestor's delta.
-    content = content.map((n) => {
-      if (n.kind !== "folder" || !n.rect) return n;
-      if (deltas.has(n.id)) return n;
-      const host = standIn.get(n.id);
-      const delta = host ? deltas.get(host) : undefined;
-      if (!delta || (delta.dx === 0 && delta.dy === 0)) return n;
-      return { ...n, rect: { ...n.rect, x: n.rect.x + delta.dx, y: n.rect.y + delta.dy } };
-    });
-
-    const newScenes = project.scenes.map((s) => {
-      const host = standIn.get(s.id);
-      if (host) {
-        const delta = deltas.get(host);
-        if (!delta || (delta.dx === 0 && delta.dy === 0)) return s;
-        return { ...s, position: { x: s.position.x + delta.dx, y: s.position.y + delta.dy } };
-      }
-      const newPos = positions[s.id];
-      return newPos ? { ...s, position: newPos } : s;
-    });
 
     set({
       project: {
         ...project,
-        content,
-        scenes: newScenes,
+        scenes: result.scenes,
+        content: result.content,
         updatedAt: new Date().toISOString(),
       },
       saveStatus: "unsaved",

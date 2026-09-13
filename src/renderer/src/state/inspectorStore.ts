@@ -28,7 +28,12 @@ import { create } from "zustand";
  */
 export type InspectorTarget =
   | { kind: "scene" }
-  | { kind: "choice"; sceneId: string; blockId: string };
+  | { kind: "choice"; sceneId: string; blockId: string }
+  // v0.30.0 — a Conditional Text block. Selected by the cursor being
+  // anywhere INSIDE it rather than by a NodeSelection over it, because
+  // unlike a Choice Block it holds ordinary prose the writer types into;
+  // see SceneEditor's onSelectionUpdate.
+  | { kind: "conditional"; sceneId: string; blockId: string };
 
 interface InspectorState {
   target: InspectorTarget;

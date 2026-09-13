@@ -36,6 +36,15 @@ export const NARRATIVE_BLOCKS: NarrativeBlockDefinition[] = [
     command: (editor, range) => editor.chain().focus().deleteRange(range).toggleBlockquote().run(),
   },
   {
+    id: "conditional",
+    title: "Conditional Text",
+    description: "Prose that only appears when a condition holds",
+    icon: "◇",
+    keywords: ["condition", "conditional", "if", "gate", "variable", "state", "reactive"],
+    command: (editor, range) =>
+      editor.chain().focus().deleteRange(range).insertConditionalBlock().run(),
+  },
+  {
     id: "callout",
     title: "Callout",
     description: "A highlighted note or aside",

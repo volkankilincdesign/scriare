@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { JSONContent } from "@tiptap/react";
 import type { RuntimeBlockDefinition, RuntimeContext } from "./types";
 import { choiceRuntimeBlock } from "./blocks/choiceRuntimeBlock";
+import { conditionalRuntimeBlock } from "./blocks/conditionalRuntimeBlock";
 
 /**
  * Every narrative block the Play runtime knows how to render, keyed by the
@@ -11,7 +12,10 @@ import { choiceRuntimeBlock } from "./blocks/choiceRuntimeBlock";
  * under runtime/blocks/, nothing else: the document-splitting and rendering
  * loop in documentSegments.ts / PlayRuntime.tsx never needs to change.
  */
-export const RUNTIME_BLOCKS: RuntimeBlockDefinition[] = [choiceRuntimeBlock];
+export const RUNTIME_BLOCKS: RuntimeBlockDefinition[] = [
+  choiceRuntimeBlock,
+  conditionalRuntimeBlock,
+];
 
 /**
  * Node types that must be rendered as their own segment rather than folded

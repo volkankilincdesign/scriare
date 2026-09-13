@@ -438,3 +438,34 @@ input[type="number"],
     animation: none;
   }
 }
+
+/* Conditional Text block (v0.30.0). Marked in the editor so a writer can
+   see at a glance that a passage is gated — a dashed left rule and a
+   slightly recessed ground, deliberately quieter than a Callout, because
+   this is a note about *when* the prose appears rather than emphasis on the
+   prose itself. Play Mode renders the passage with no marking at all: if
+   the reader can see it, the condition passed, and the frame would only be
+   telling them about machinery. */
+.ProseMirror div[data-type="conditional-block"] {
+  position: relative;
+  margin: 1.1em 0;
+  padding: 0.55em 0 0.55em 1.05em;
+  border-left: 2px dashed var(--border-faint);
+  background: var(--surface-2-faint);
+  border-radius: 0 6px 6px 0;
+}
+
+.ProseMirror div[data-type="conditional-block"]::before {
+  content: "IF";
+  position: absolute;
+  top: 0.3em;
+  left: 1.05em;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+}
+
+.ProseMirror div[data-type="conditional-block"] > *:first-child {
+  margin-top: 1.1em;
+}

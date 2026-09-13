@@ -1,6 +1,36 @@
-# Scriare — v0.28.0 — One Hierarchy
+# Scriare — v0.30.0 — Conditions
 
-## What's new (v0.28.0 — One Hierarchy)
+## What's new (v0.30.0 — Conditions)
+
+Variables have been able to change since v0.19.0 and nothing has ever been able to read them. Actions could set Trust to 3; no part of the story could ask whether it was. That made the branching model one-way — state could be written and never consulted — and it's the hole this version closes.
+
+**A choice can now require a variable's state.** In the Inspector, next to Actions, each choice gets a list of conditions: pick a variable, a comparator, a value. All of them must hold. There is no AND/OR nesting and no expression field, on purpose — nestable any/all groups turn a writing tool into a query builder, and the overwhelming majority of real branching is a list of things that all have to be true. Each row has a **NOT** toggle for "only if you haven't met her", which covers the inverse without doubling every comparator into an "is not" twin.
+
+A condition is the same shape as an Action — variable, operator, literal — because a condition *is* an action read instead of written. The rows look and behave identically, and nothing about variables had to change to support them.
+
+**You choose what a failed condition looks like, per choice.** *Hide* removes the option entirely, so the player never learns it was there — what most branching fiction wants. *Lock* shows it greyed out with the reason spelled out: "Requires Trust is at least 3". Per choice rather than per project, because a story usually wants both in different places, and a locked door the player can see is a different narrative device from one they can't.
+
+**Conditional Text** (`/conditional`) gates prose rather than a path. A passage that only appears when a condition holds is how a scene reflects what the player has already done without branching into a separate scene for every combination. It's a container, so everything inside is written normally — formatting, lists, even a Choice Block nested inside a gated section. In the editor it's marked with a dashed rule and a small "IF"; in Play Mode it renders with no marking at all, because if the reader can see it the condition passed, and a frame would only be telling them about machinery.
+
+**A live variable readout in Play Mode**, because conditions are the first feature in Scriare whose correct behaviour is *invisible* — a hidden choice is indistinguishable from a choice that was never written, and there is no way to tell whether a gate works without seeing the number it tests. Bottom-right, closed by default, absent entirely from a story with no variables, and read-only: being able to poke values would make playtesting faster and would also mean the thing you tested isn't the thing a player gets.
+
+Two rules are load-bearing and both are tested. **No conditions means always available** — otherwise every choice written before this version would silently vanish. And **a condition whose variable was deleted fails** rather than passing, so a gate whose question can no longer be asked stays shut. Both were confirmed to fail on builds with that logic inverted. 68 tests.
+
+## v0.29.0 — Auto Layout, All the Way Down
+
+**Auto Layout now arranges the inside of every group**, and resizes each one to fit what it holds.
+
+Until now it laid out the top level and stopped: a group was placed as a single unit and whatever was inside kept its exact arrangement, untouched. That rule came from the Frame era and was right then — a frame was a box someone had drawn and filled by hand, so rearranging its contents would have thrown away deliberate work.
+
+Folding frames into folders changed what a group *is*, and with it what "never undo the writer's organizing work" should mean. A group is a chapter now, and the inside of a chapter is precisely what ends up a mess after a run of imprecise drags — which is the exact situation someone reaches for this button to fix. Leaving it alone meant there was no way to tidy the inside of a chapter at all.
+
+So the layout runs innermost-first: each group's contents are arranged, the group resizes around the result, and only then does its parent place it — which is why a nested chapter always lands fully inside the one that owns it rather than being sized against a stale footprint. Choices between scenes in different chapters collapse into one edge between those chapters, exactly as before.
+
+It is a bigger, more destructive action than it used to be. That is the point, and the safety net is that it's a **single undo step** — one Ctrl+Z puts every position and every box size back. The button does the obvious thing; undo is there for when the obvious thing wasn't wanted. Building it any other way would have meant a second "Auto Layout (but really)" control, which is a worse answer to the same question.
+
+Seven new tests, including the nesting case and the one-undo guarantee. The recursion itself was confirmed to fail the interior-layout tests when reduced back to top-level-only. 56 tests total.
+
+## v0.28.0 — One Hierarchy
 
 Scriare used to group scenes twice. Folders organised them in the Content Browser; Frames grouped them on the canvas; neither knew the other existed. A scene could be in the Prologue folder and inside the Ashfall frame at the same time and nothing was wrong — they were answers to different questions. The trouble is that two hierarchies over the same scenes don't stay parallel. Every drag in the graph made the panels disagree a little more, and only the writer knew which answer counted.
 
