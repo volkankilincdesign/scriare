@@ -38,6 +38,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./types/choiceStyles"),
     import("./types/entities"),
     import("./utils/mentions"),
+    import("./utils/storyCheck"),
   ]).then(
     ([
       projectStore,
@@ -54,6 +55,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       choiceStyles,
       entities,
       mentions,
+      storyCheck,
     ]) => {
       Object.assign(window, {
         __scriareProjectStore: projectStore.useProjectStore,
@@ -73,6 +75,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         __scriareChoiceStyles: choiceStyles,
         __scriareEntities: entities,
         __scriareMentions: mentions,
+        __scriareStoryCheck: storyCheck,
       });
     },
   );

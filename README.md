@@ -1,6 +1,22 @@
-# Scriare — v0.35.1 — Fixed: The Cursor Giving Away Where the Characters Are
+# Scriare — v0.36.0 — Check Story
 
-## What's new (v0.35.1 — Fixed: The Cursor Giving Away Where the Characters Are)
+## What's new (v0.36.0 — Check Story)
+
+**Everything the story looks like from the outside, in one place — and every line takes you to the thing it's about.**
+
+There's a **Check** button in the top bar now. It answers the questions a branching writer asks at 2am and can't answer by looking: which scenes can nobody reach, which choices go nowhere, how many endings there are, how long the routes are, how many words you've actually written.
+
+All of this was already knowable from your project. The point is that none of it is *visible while writing*. A scene nobody can reach looks exactly like a scene you haven't linked up yet. A choice pointing at a deleted scene looks exactly like a choice. And they compound — the branch you forgot to link is the branch you then wrote four scenes into.
+
+**It's a report you can walk.** Every line is a button: click it and the scene opens with the Inspector already pointed at the choice that needs fixing. A list of problems you then have to go and find yourself is a list of reasons to close the window.
+
+**It is not a grader.** A dead end is counted as an **ending**, in the numbers rather than the problems, because a branching story is supposed to have them. An unreachable scene is "worth a look" rather than a problem, because written-but-not-wired-up-yet is a normal Tuesday. Only things that are definitely broken are called problems — including one you can't otherwise find: a choice gated on a variable that was deleted, which can never appear for anyone, in any playthrough, because conditions fail closed.
+
+Two numbers earn their own explanation. **Longest route** is withheld when the story loops, because with a cycle there is no longest route, only a longer one; the panel says "loops" instead of inventing a number. **Shortest route** is answerable either way, so it's always shown.
+
+Twenty-two new tests. The most useful negative control wasn't a failed assertion: removing the loop guard doesn't merely report a wrong number, it recurses until the stack overflows and takes the window down. The route walk now survives a cyclic story on its own rather than trusting its caller. 173 tests.
+
+## v0.35.1 — Fixed: The Cursor Giving Away Where the Characters Are
 
 **In Play Mode, crossing a character's name no longer changes the mouse cursor.**
 

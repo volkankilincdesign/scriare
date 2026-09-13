@@ -85,6 +85,16 @@ export function TopBar() {
         {!isPlaying && (
           <button
             type="button"
+            onClick={() => useUIStore.getState().openStoryCheck()}
+            title="Check the story for dead links, unreachable scenes and the shape of its routes"
+            className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
+          >
+            Check
+          </button>
+        )}
+        {!isPlaying && (
+          <button
+            type="button"
             onClick={openVariableManager}
             title="Variables"
             className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"

@@ -8,6 +8,7 @@ import { PlayRuntime } from "./runtime/PlayRuntime";
 import { ConfirmDialogHost } from "./components/common/ConfirmDialogHost";
 import { ToastHost } from "./components/common/ToastHost";
 import { ChoiceStylesDialog } from "./components/choices/ChoiceStylesDialog";
+import { StoryCheckDialog } from "./components/story/StoryCheckDialog";
 import { VariableManagerDialog } from "./components/variables/VariableManagerDialog";
 import { useProjectStore } from "./state/projectStore";
 import { useUIStore } from "./state/uiStore";
@@ -70,6 +71,8 @@ export default function App() {
   const closeVariableManager = useUIStore((s) => s.closeVariableManager);
   const choiceStylesOpen = useUIStore((s) => s.choiceStylesOpen);
   const closeChoiceStyles = useUIStore((s) => s.closeChoiceStyles);
+  const storyCheckOpen = useUIStore((s) => s.storyCheckOpen);
+  const closeStoryCheck = useUIStore((s) => s.closeStoryCheck);
 
   function togglePanel(key: keyof PanelCollapseState): void {
     setPanels((current) => {
@@ -132,6 +135,7 @@ export default function App() {
 
       {variableManagerOpen && <VariableManagerDialog onClose={closeVariableManager} />}
       {choiceStylesOpen && <ChoiceStylesDialog onClose={closeChoiceStyles} />}
+      {storyCheckOpen && <StoryCheckDialog onClose={closeStoryCheck} />}
     </div>
   );
 }

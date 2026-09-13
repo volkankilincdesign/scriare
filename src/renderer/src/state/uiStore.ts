@@ -21,6 +21,10 @@ interface UIState {
   choiceStylesOpen: boolean;
   openChoiceStyles: () => void;
   closeChoiceStyles: () => void;
+  /** v0.36.0 — Check Story. */
+  storyCheckOpen: boolean;
+  openStoryCheck: () => void;
+  closeStoryCheck: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -30,4 +34,7 @@ export const useUIStore = create<UIState>((set) => ({
   choiceStylesOpen: false,
   openChoiceStyles: () => set({ choiceStylesOpen: true }),
   closeChoiceStyles: () => set({ choiceStylesOpen: false }),
+  storyCheckOpen: false,
+  openStoryCheck: () => set({ storyCheckOpen: true }),
+  closeStoryCheck: () => set({ storyCheckOpen: false }),
 }));
