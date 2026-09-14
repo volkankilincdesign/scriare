@@ -1,6 +1,28 @@
-# Scriare — v0.36.2 — Check Story, Grouped by Scene
+# Scriare — v0.37.0 — Who's Speaking
 
-## What's new (v0.36.2 — Check Story, Grouped by Scene)
+## What's new (v0.37.0 — Who's Speaking)
+
+**A line can know who is saying it.** Type `@` at the start of an empty line, pick a character, and the line is theirs — the same `@` menu you already use mid-sentence, including creating someone on the spot who doesn't exist yet. Their name appears in front of the line, and the line itself stays exactly the text you typed.
+
+**Press Enter and you're still talking.** A speech is usually more than a sentence, so the speaker carries into the next line. Backspace at the head of a carried line hands it back to narration — one key in, one key out, both without leaving the keyboard.
+
+**Click the name to change it.** Typing is for writing; clicking is for the re-read six weeks later when you notice this line should be Ercüment's. The name is a real thing you can click, but it is *not text in your document*: you can't put the caret in it, can't delete half of it, and can't end up with a line attributed to "Mar".
+
+**Rename a character and every line she speaks is renamed.** Nothing ever stored her name, so there is nothing to migrate — the same promise mentions have made since v0.35.0.
+
+**A player reads the name once per speech, not once per sentence.** Three sentences from Mara print as `Mara: I found it.` followed by two unadorned lines, the way prose and Ink both do it. The name comes back when the speaker changes, after a line of narration, or after a choice. In the editor it stays visible on every line, dimmed on the continuations — you're the one person who always has to know who's talking.
+
+**And a choice can be somebody's line.** Set *Who Says It* in the Inspector and the option is spoken: Disco Elysium's competing inner voices, a party member pressing their case. Choices always announce their speaker, because a choice is its own object read at its own moment.
+
+**The player can speak without being given a name.** "You" is in every speaker list beside your characters, so attributing the protagonist's lines never means inventing a Character page for someone you're deliberately leaving blank.
+
+### Fixed: characters inside choices were missing from the Story Graph
+
+A choice labelled "Follow @Mara" reached the graph as **"Follow "**. A mention is an atom — it carries a label rather than text — and the one function that flattens a choice's label for everything that needs a *name* stepped straight over it. That's why it was wrong in several places at once: the graph's edge labels, Check Story's rows, the Inspector's collapsed summary. All three now read the name, and read the *current* one, so renaming a character relabels the graph.
+
+Twenty new tests, every load-bearing one confirmed to fail on a deliberately broken build. One of those controls refused to go red: the Enter key that carried the speaker forward turned out to have never done anything — Tiptap already carries the attribute — so a keybinding, a priority override and a suggestion-menu guard were deleted and replaced by one declared line. 201 tests.
+
+## v0.36.2 — Check Story, Grouped by Scene
 
 **Six unlinked choices in one Choice Block used to produce six identical lines.** Same scene, same sentence, six times — the panel read as a wall before it read as information.
 

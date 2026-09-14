@@ -3,6 +3,18 @@ import type { JSONContent } from "@tiptap/react";
 import type { ContentCategory } from "./project";
 
 /**
+ * The document node type a mention is written as.
+ *
+ * It lives HERE rather than in extensions/Mention.ts — which defines the
+ * node itself and re-exports this — because the plain utilities that have
+ * to RECOGNISE a mention (choiceBlocks, storyCheck, mentions) sit well
+ * below an extension that drags in React node views, a menu component and
+ * the project store. A seven-character string shouldn't pull any of that
+ * behind it.
+ */
+export const MENTION_TYPE = "mention";
+
+/**
  * Entities (v0.35.0) — the people and places a story is about.
  *
  * A Character and a Location are ONE kind of object with a different

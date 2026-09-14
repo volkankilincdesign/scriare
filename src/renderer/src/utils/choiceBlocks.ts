@@ -2,10 +2,13 @@ import { nanoid } from "nanoid";
 import type { JSONContent } from "@tiptap/react";
 import type { Choice } from "../types/project";
 import type { VariableAction, VariableCondition } from "../types/variables";
+import { MENTION_TYPE } from "../types/entities";
+import { CHOICE_BLOCK_TYPE, CHOICE_OPTION_TYPE } from "../types/nodeTypes";
+import { nodeSpeaker } from "../types/speaker";
+import type { Speaker } from "../types/speaker";
 import type { ChoiceStyleRef } from "../types/choiceStyles";
 
-export const CHOICE_BLOCK_TYPE = "choiceBlock";
-export const CHOICE_OPTION_TYPE = "choiceOption";
+export { CHOICE_BLOCK_TYPE, CHOICE_OPTION_TYPE } from "../types/nodeTypes";
 
 /**
  * One option inside a Choice Block — a Choice Block holds one or more of
@@ -54,7 +57,21 @@ export interface ChoiceOption {
    * from "set to the same values" to offer a meaningful reset.
    */
   style: ChoiceStyleRef | null;
+  /**
+   * v0.37.0 — who says this choice, if anyone. An entity id, the player
+   * sentinel, or null for the ordinary case where a choice is just an
+   * option on a menu rather than a line somebody speaks. See
+   * types/speaker.ts; Disco Elysium's inner voices and a party game's
+   * "Ask Mara about the key" are the two shapes this is for.
+   */
+  speaker: Speaker;
 }
+
+/**
+ * Turns a mention's stored label into the name to show. Built from the
+ * project's entities by utils/mentions.ts's `mentionResolver`.
+ */
+export type MentionLabelResolver = (entityId: string | null, stored: string) => string;
 
 /**
  * Flattens a `choiceOption` node's inline content back to plain text —
@@ -63,10 +80,34 @@ export interface ChoiceOption {
  * accessible name. Marks are dropped on purpose; this is the text, not the
  * typography.
  */
-export function optionPlainText(node: JSONContent | undefined): string {
+export function optionPlainText(
+  node: JSONContent | undefined,
+  resolve?: MentionLabelResolver,
+): string {
   if (!node?.content) return "";
   let out = "";
   (function walk(n: JSONContent): void {
+    // v0.37.0 — a mention is an ATOM. It has no `text` of its own, only a
+    // label attribute, so the plain walk below used to step straight over
+    // it and "Follow @Mara" came out as "Follow ". Every surface that NAMES
+    // a choice reads this one function, which is why the character was
+    // missing from all of them at once: the Story Graph's edge labels,
+    // Check Story's rows, the Inspector's collapsed summary.
+    //
+    // The stored label is a record of what was TYPED, not the truth — a
+    // renamed character would still show her old name here. Callers that
+    // have the entity list hand in a resolver (utils/mentions.ts's
+    // `mentionResolver`) and get the current name; the graph and Check
+    // Story both do. It's a function rather than a resolved copy of the
+    // document on purpose: the graph walks every scene on every content
+    // edit, and one Map lookup per mention is a great deal cheaper than
+    // deep-copying every document to fix a handful of labels.
+    if (n.type === MENTION_TYPE) {
+      const stored = String(n.attrs?.label ?? "");
+      const id = (n.attrs?.entityId as string | null) ?? null;
+      out += resolve ? resolve(id, stored) : stored;
+      return;
+    }
     if (typeof n.text === "string") out += n.text;
     n.content?.forEach(walk);
   })(node);
@@ -82,17 +123,20 @@ export function optionPlainText(node: JSONContent | undefined): string {
  * that needs the styled version reads the node's content directly (see
  * the runtime's choice block).
  */
-export function readChoiceBlockOptions(node: JSONContent | undefined): ChoiceOption[] {
-  return readOptions(node);
+export function readChoiceBlockOptions(
+  node: JSONContent | undefined,
+  resolve?: MentionLabelResolver,
+): ChoiceOption[] {
+  return readOptions(node, resolve);
 }
 
-function readOptions(node: JSONContent | undefined): ChoiceOption[] {
+function readOptions(node: JSONContent | undefined, resolve?: MentionLabelResolver): ChoiceOption[] {
   const children = node?.content ?? [];
   return children
     .filter((child) => child.type === CHOICE_OPTION_TYPE)
     .map((child) => ({
       id: (child.attrs?.optionId as string) ?? nanoid(),
-      text: optionPlainText(child),
+      text: optionPlainText(child, resolve),
       targetSceneId: (child.attrs?.targetSceneId as string | null) || null,
       actions: Array.isArray(child.attrs?.actions) ? (child.attrs.actions as VariableAction[]) : [],
       conditions: Array.isArray(child.attrs?.conditions)
@@ -100,6 +144,7 @@ function readOptions(node: JSONContent | undefined): ChoiceOption[] {
         : [],
       whenUnmet: child.attrs?.whenUnmet === "lock" ? "lock" : "hide",
       style: (child.attrs?.style as ChoiceStyleRef | null) ?? null,
+      speaker: nodeSpeaker(child.attrs),
       /** The node itself, for anything that needs the label's formatting. */
       node: child,
     }));
@@ -115,13 +160,16 @@ function readOptions(node: JSONContent | undefined): ChoiceOption[] {
  * runtime/documentSegments.ts) but still uses it to check whether a scene
  * has any linked choice at all.
  */
-export function extractChoices(content: JSONContent | undefined | null): Choice[] {
+export function extractChoices(
+  content: JSONContent | undefined | null,
+  resolve?: MentionLabelResolver,
+): Choice[] {
   if (!content) return [];
   const found: Choice[] = [];
 
   function walk(node: JSONContent): void {
     if (node.type === CHOICE_BLOCK_TYPE) {
-      readOptions(node).forEach((option) => found.push({ ...option }));
+      readOptions(node, resolve).forEach((option) => found.push({ ...option }));
       return;
     }
     node.content?.forEach(walk);
@@ -249,6 +297,7 @@ export interface ChoiceOptionSeed {
   conditions?: VariableCondition[];
   whenUnmet?: "hide" | "lock";
   style?: Record<string, unknown> | null;
+  speaker?: Speaker;
 }
 
 /** One `choiceOption` node, its label as real inline content. */
@@ -263,6 +312,7 @@ export function buildChoiceOptionNode(seed: ChoiceOptionSeed = {}): JSONContent 
       conditions: seed.conditions ?? [],
       whenUnmet: seed.whenUnmet ?? "hide",
       style: seed.style ?? null,
+      speaker: seed.speaker ?? null,
     },
     // An empty label is an empty node, NOT a text node with an empty
     // string: ProseMirror rejects zero-length text nodes outright, and a

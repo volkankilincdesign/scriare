@@ -1,6 +1,8 @@
 import type { JSONContent } from "@tiptap/react";
 import { CHOICE_BLOCK_TYPE, readChoiceBlockOptions } from "./choiceBlocks";
-import { MENTION_TYPE } from "../extensions/Mention";
+import type { MentionLabelResolver } from "./choiceBlocks";
+import { mentionResolver } from "./mentions";
+import { MENTION_TYPE } from "../types/entities";
 import type { ChoiceOption } from "./choiceBlocks";
 import type { Project, Scene } from "../types/project";
 
@@ -89,13 +91,16 @@ interface SceneChoice {
   option: ChoiceOption;
 }
 
-function sceneChoices(content: JSONContent | undefined | null): SceneChoice[] {
+function sceneChoices(
+  content: JSONContent | undefined | null,
+  resolve?: MentionLabelResolver,
+): SceneChoice[] {
   const found: SceneChoice[] = [];
   if (!content) return found;
   (function walk(node: JSONContent): void {
     if (node.type === CHOICE_BLOCK_TYPE) {
       const blockId = (node.attrs?.blockId as string) ?? "";
-      readChoiceBlockOptions(node).forEach((option) => found.push({ blockId, option }));
+      readChoiceBlockOptions(node, resolve).forEach((option) => found.push({ blockId, option }));
       return;
     }
     node.content?.forEach(walk);
@@ -153,8 +158,12 @@ export function checkStory(project: Project | null): StoryCheck {
   const links = new Map<string, string[]>();
   let choiceCount = 0;
 
+  // A choice named after a character has to be named after the character
+  // she is NOW, not the one she was when the line was written.
+  const resolve = mentionResolver(project.entities ?? []);
+
   scenes.forEach((scene) => {
-    const choices = sceneChoices(scene.content);
+    const choices = sceneChoices(scene.content, resolve);
     const targets: string[] = [];
 
     choices.forEach(({ blockId, option }, index) => {

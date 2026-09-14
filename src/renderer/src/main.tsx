@@ -39,6 +39,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./types/entities"),
     import("./utils/mentions"),
     import("./utils/storyCheck"),
+    import("./types/speaker"),
+    import("./utils/speakerLines"),
   ]).then(
     ([
       projectStore,
@@ -56,6 +58,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       entities,
       mentions,
       storyCheck,
+      speakerTypes,
+      speakerLines,
     ]) => {
       Object.assign(window, {
         __scriareProjectStore: projectStore.useProjectStore,
@@ -76,6 +80,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         __scriareEntities: entities,
         __scriareMentions: mentions,
         __scriareStoryCheck: storyCheck,
+        __scriareSpeaker: speakerTypes,
+        __scriareSpeakerLines: speakerLines,
       });
     },
   );

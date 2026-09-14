@@ -6,6 +6,7 @@ import { extractChoices } from "../utils/choiceBlocks";
 import { READING_COLUMN_CLASS, READING_PROSE_CLASS } from "../utils/readingColumn";
 import { splitDocumentIntoSegments } from "./documentSegments";
 import { resolveMentions } from "../utils/mentions";
+import { applySpeakerPrefixes } from "../utils/speakerLines";
 import { renderRuntimeBlock } from "./registry";
 import { RUNTIME_EXTENSIONS } from "./extensions";
 import { VariableReadout } from "./VariableReadout";
@@ -56,7 +57,13 @@ export function PlayRuntime() {
     // renaming a character would update every scene on screen while a
     // player still read the old name.
     const resolved = resolveMentions(scene.content ?? EMPTY_DOC, project?.entities ?? []);
-    return splitDocumentIntoSegments(resolved).map((segment) => {
+    // v0.37.0 — and then who says each line. Both passes are the same
+    // shape: a throwaway copy of the document, correct for this instant,
+    // rendered once. Names first, speakers second — a speaker's name is
+    // read from the entity list directly, so the order only matters in
+    // that both must happen before the document becomes HTML.
+    const spoken = applySpeakerPrefixes(resolved, project?.entities ?? []);
+    return splitDocumentIntoSegments(spoken).map((segment) => {
       if (segment.kind === "block") return segment;
       try {
         return { ...segment, html: generateHTML(segment.content, RUNTIME_EXTENSIONS) };

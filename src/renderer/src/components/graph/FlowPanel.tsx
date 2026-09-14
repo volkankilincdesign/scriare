@@ -14,6 +14,7 @@ import "@xyflow/react/dist/style.css";
 import { useProjectStore } from "../../state/projectStore";
 import { useSelectionStore } from "../../state/selectionStore";
 import { extractChoices } from "../../utils/choiceBlocks";
+import { mentionResolver } from "../../utils/mentions";
 import {
   COLLAPSED_GROUP_SIZE,
   folderSubtree,
@@ -291,8 +292,14 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     const bundled = new Map<string, { source: string; target: string; count: number }>();
     const direct: Edge[] = [];
 
+    // v0.37.0 — built once for the whole walk, so an edge labelled
+    // "Follow @Mara" reads "Follow Mara" and keeps reading the right name
+    // after she's renamed. Before this, a mention contributed nothing at
+    // all to an edge label (see optionPlainText).
+    const resolve = mentionResolver(project.entities ?? []);
+
     for (const scene of project.scenes) {
-      for (const choice of extractChoices(scene.content)) {
+      for (const choice of extractChoices(scene.content, resolve)) {
         if (!choice.targetSceneId) continue;
         const source = visibleStandIn(project, scene.id) ?? scene.id;
         const target = visibleStandIn(project, choice.targetSceneId) ?? choice.targetSceneId;

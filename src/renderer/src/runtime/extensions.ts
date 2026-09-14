@@ -11,6 +11,7 @@ import { ConditionalBlock } from "../extensions/ConditionalBlock";
 import { ChoiceBlock } from "../extensions/ChoiceBlock";
 import { ChoiceOption } from "../extensions/ChoiceOption";
 import { Mention } from "../extensions/Mention";
+import { SpeakerLabel } from "../extensions/SpeakerLabel";
 
 /**
  * The runtime's own extension set, deliberately independent of the editor's
@@ -42,6 +43,17 @@ export const RUNTIME_EXTENSIONS = [
   // entity's current name first (utils/mentions.ts's resolveMentions), so
   // renaming a character updates what a player reads too.
   Mention,
+  // v0.37.0 — the mark on a printed speaker's name. Registered in THIS
+  // schema only: nothing a writer types can produce it, and a mark the
+  // editor cannot parse is a mark the editor can never accidentally save.
+  //
+  // The `speaker` attribute itself is deliberately absent. By the time a
+  // document reaches this schema, `applySpeakerPrefixes` has already
+  // turned every attribution into real text (see utils/speakerLines.ts) —
+  // the attribute has done its work and the runtime has no use for it.
+  // Registering the extension here "for completeness" was tried and
+  // removed when the negative control showed nothing depended on it.
+  SpeakerLabel,
   // Registered so a conditional section nested inside other content
   // still parses; the runtime renders top-level ones through its own
   // block renderer rather than this static pass.

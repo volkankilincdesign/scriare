@@ -1,6 +1,5 @@
 import type { JSONContent } from "@tiptap/react";
-import { MENTION_TYPE } from "../extensions/Mention";
-import { mentionLabel } from "../types/entities";
+import { MENTION_TYPE, mentionLabel } from "../types/entities";
 import type { Entity } from "../types/entities";
 import type { Project, Scene } from "../types/project";
 
@@ -93,4 +92,19 @@ export function resolveMentions(
   }
 
   return walk(content);
+}
+
+/**
+ * A resolver for the flattening helpers that can't reach the entity list
+ * themselves (utils/choiceBlocks.ts's `optionPlainText` and everything
+ * built on it).
+ *
+ * Same rule `mentionLabel` applies: what the writer typed wins while it's
+ * still one of the entity's names, otherwise the current name — so an
+ * alias stays the alias, and a renamed character is renamed everywhere
+ * that shows her, the Story Graph included.
+ */
+export function mentionResolver(entities: Entity[]): (id: string | null, stored: string) => string {
+  const byId = new Map(entities.map((e) => [e.id, e]));
+  return (id, stored) => mentionLabel(id ? byId.get(id) : undefined, stored || null);
 }

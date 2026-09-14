@@ -7,6 +7,8 @@ import { useUIStore } from "../../state/uiStore";
 import { useEditorRefStore } from "../../state/editorStore";
 import { extractChoices, findChoiceBlockOptions } from "../../utils/choiceBlocks";
 import type { ChoiceOption } from "../../utils/choiceBlocks";
+import { PLAYER_SPEAKER, PLAYER_SPEAKER_LABEL } from "../../types/speaker";
+import type { Entity } from "../../types/entities";
 import {
   DEFAULT_CHOICE_STYLE_ID,
   choiceBoxCss,
@@ -1025,6 +1027,9 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
     // default" — so this passes it through rather than falling back to
     // something, unlike every line above it.
     if ("style" in patch) attrs.style = patch.style ?? null;
+    // v0.37.0 — same rule as `style`: null is the answer "nobody", not a
+    // missing value, so it goes through untouched.
+    if ("speaker" in patch) attrs.speaker = patch.speaker ?? null;
     if (Object.keys(attrs).length === 0) return;
     applyChoiceOptionAttrs(editor, optionId, attrs);
   }
@@ -1252,6 +1257,56 @@ interface ChoiceAccordionProps {
  * controls here as well would mean two places to set one thing, which is
  * the disagreement this app keeps deleting wherever it finds it.
  */
+/**
+ * Who says this choice (v0.37.0).
+ *
+ * A choice usually isn't spoken by anyone — it's an option on a menu, and
+ * "Nobody" is both the default and the honest description of most of them.
+ * But some stories make the choices themselves into voices: Disco Elysium's
+ * competing inner faculties, a party game where each option is a different
+ * companion pressing their case. That's a property of the choice rather
+ * than something typed into it, which is why it's in the Inspector and not
+ * in the editor — the writer sets it once and then writes the line.
+ *
+ * The player sits in the list beside the characters because it's the most
+ * common answer of all after "nobody": the protagonist says most of what a
+ * player picks, and demanding a Character page for someone the writer is
+ * deliberately leaving unnamed would be the app arguing with the story.
+ */
+/** A stable empty list, so the selector above doesn't rerender on every store tick. */
+const EMPTY_ENTITIES: Entity[] = [];
+
+function ChoiceSpeaker({
+  option,
+  onPatch,
+}: {
+  option: ChoiceOption;
+  onPatch: (patch: Partial<ChoiceOption>) => void;
+}) {
+  const entities = useProjectStore((s) => s.project?.entities ?? EMPTY_ENTITIES);
+  return (
+    <div>
+      <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+        Who Says It
+      </label>
+      <select
+        data-choice-speaker
+        value={option.speaker ?? ""}
+        onChange={(e) => onPatch({ speaker: e.target.value || null })}
+        className="w-full rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+      >
+        <option value="">— Nobody —</option>
+        <option value={PLAYER_SPEAKER}>{PLAYER_SPEAKER_LABEL} (the player)</option>
+        {entities.map((entity) => (
+          <option key={entity.id} value={entity.id}>
+            {entity.name || "Unnamed"}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 function ChoiceAppearance({
   option,
   onPatch,
@@ -1477,6 +1532,8 @@ function ChoiceAccordion({
               </span>
             </div>
           </div>
+
+          <ChoiceSpeaker option={option} onPatch={onPatch} />
 
           <ChoiceAppearance option={option} onPatch={onPatch} />
 

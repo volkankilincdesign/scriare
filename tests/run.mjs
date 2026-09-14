@@ -112,7 +112,16 @@ function seedProject() {
   });
 }
 
-const specs = (await readdir(here)).filter((f) => f.endsWith(".spec.mjs")).sort();
+// SPEC=speaker runs one file. The whole suite is the only thing that ever
+// proves anything, and CI has no business running a subset — but a
+// negative control (sabotage the code, watch the right test go red) is run
+// over and over while building one feature, and waiting for every spec
+// each time is how people stop bothering to do them.
+const only = process.env.SPEC;
+const specs = (await readdir(here))
+  .filter((f) => f.endsWith(".spec.mjs"))
+  .filter((f) => !only || f.startsWith(only))
+  .sort();
 for (const file of specs) {
   console.log(`\n${file}`);
   const mod = await import(pathToFileURL(join(here, file)).href);

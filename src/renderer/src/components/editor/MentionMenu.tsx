@@ -8,9 +8,22 @@ import type { Entity, EntityKind } from "../../types/entities";
  * One row in the @ menu: either an entity that already exists, or an offer
  * to create one with the name being typed.
  */
-export type MentionMenuItem =
+export type MentionMenuItem = (
   | { kind: "entity"; entity: Entity; label: string }
-  | { kind: "create"; entityKind: EntityKind; label: string };
+  | { kind: "create"; entityKind: EntityKind; label: string }
+  // v0.37.0 — "The player", offered only where a speaker can go.
+  | { kind: "player"; label: string }
+) & {
+  /**
+   * True when this @ is at the head of an empty line, where choosing a
+   * name says who is SPEAKING the line rather than writing the name into
+   * it. Decided in the extension (which can see the document) and carried
+   * on the item so the menu can say what it's about to do.
+   */
+  attributing?: boolean;
+  /** Set when the writer held Shift: insert a plain mention after all. */
+  asMention?: boolean;
+};
 
 export interface MentionMenuProps {
   items: MentionMenuItem[];
@@ -41,9 +54,9 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(
       setSelectedIndex(0);
     }, [props.items]);
 
-    function selectItem(index: number): void {
+    function selectItem(index: number, asMention = false): void {
       const item = props.items[index];
-      if (item) props.command(item);
+      if (item) props.command(asMention ? { ...item, asMention: true } : item);
     }
 
     useImperativeHandle(ref, () => ({
@@ -58,7 +71,9 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(
           return true;
         }
         if (event.key === "Enter" || event.key === "Tab") {
-          selectItem(selectedIndex);
+          // Shift is the escape hatch out of attribution, for the line
+          // that really does begin with a name — "Mara had been waiting."
+          selectItem(selectedIndex, event.shiftKey);
           return true;
         }
         return false;
@@ -66,19 +81,31 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(
     }));
 
     if (props.items.length === 0) return null;
+    const attributing = props.items.some((item) => item.attributing);
 
     return (
       <div className="w-64 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] py-1 shadow-xl">
         {props.items.map((item, index) => {
           const active = index === selectedIndex;
-          const kind = item.kind === "entity" ? item.entity.kind : item.entityKind;
+          const kind =
+            item.kind === "entity"
+              ? item.entity.kind
+              : item.kind === "player"
+                ? "character"
+                : item.entityKind;
           return (
             <button
-              key={item.kind === "entity" ? item.entity.id : `create-${item.entityKind}`}
+              key={
+                item.kind === "entity"
+                  ? item.entity.id
+                  : item.kind === "player"
+                    ? "player"
+                    : `create-${item.entityKind}`
+              }
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onMouseEnter={() => setSelectedIndex(index)}
-              onClick={() => selectItem(index)}
+              onClick={(e) => selectItem(index, e.shiftKey)}
               className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors ${
                 active ? "bg-[var(--surface-3)] text-[var(--text)]" : "text-[var(--text-2)]"
               }`}
@@ -87,7 +114,12 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(
                 name={kind === "character" ? "character" : "location"}
                 className="h-3.5 w-3.5 shrink-0"
               />
-              {item.kind === "entity" ? (
+              {item.kind === "player" ? (
+                <span className="min-w-0 flex-1 truncate">
+                  The player{" "}
+                  <span className="text-[var(--text-3)]">— no name needed</span>
+                </span>
+              ) : item.kind === "entity" ? (
                 <>
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
                   {/* Only shown when the writer reached this entity by one
@@ -108,6 +140,14 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(
             </button>
           );
         })}
+        {/* Only where it changes what a keystroke does. A hint that is
+            always on screen is a hint nobody reads. */}
+        {attributing && (
+          <div className="mt-1 border-t border-[var(--border-soft)] px-3 pb-0.5 pt-1.5 text-[11px] text-[var(--text-3)]">
+            Sets who speaks this line · <span className="text-[var(--text-2)]">Shift</span> to write
+            the name instead
+          </div>
+        )}
       </div>
     );
   },

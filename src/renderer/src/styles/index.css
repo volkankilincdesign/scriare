@@ -542,3 +542,61 @@ input[type="number"],
   font-style: italic;
   pointer-events: none;
 }
+
+/* ── Speaker attribution (v0.37.0) ─────────────────────────────────────
+   Two different things wear a speaker's name, and they are deliberately
+   not the same thing.
+
+   In the EDITOR the name is a chip: a small, clearly-not-text object at
+   the head of the line, because it isn't text — it's a decoration over an
+   attribute (see extensions/Speaker.ts), and it would be a lie to make it
+   look like a word the writer typed. It's clickable, so it gets a hover
+   state and a pointer.
+
+   In PLAY MODE the name is prose. "Mara:" in front of a line of dialogue
+   is how the story reads, so it is styled as typography — a little weight,
+   a little colour — and nothing about it suggests a control. Same
+   instinct as a mention, which stops looking like a mention the moment a
+   player is reading it. */
+.scriare-speaker-chip {
+  display: inline-block;
+  margin-right: .4em;
+  padding: .05em .4em;
+  border: 1px solid var(--border-faint);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-family: var(--font-ui, inherit);
+  font-size: .72em;
+  font-weight: 600;
+  letter-spacing: .02em;
+  line-height: 1.5;
+  vertical-align: baseline;
+  cursor: pointer;
+  user-select: none;
+  transition: color .12s, border-color .12s, background-color .12s;
+}
+.scriare-speaker-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/* A line that continues the same speech. Play Mode won't print the name
+   here at all — but the writer still needs to see who is talking, so it
+   stays, quietly, the way a margin note does. */
+.scriare-speaker-chip.is-continuation {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-3);
+  padding-left: 0;
+  padding-right: 0;
+  margin-right: .45em;
+}
+.scriare-speaker-chip.is-continuation:hover {
+  color: var(--accent);
+}
+
+/* The name as a reader sees it. */
+.scriare-speaker {
+  color: var(--accent);
+  font-weight: 600;
+}

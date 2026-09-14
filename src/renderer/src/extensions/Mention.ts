@@ -7,9 +7,12 @@ import { MentionView } from "../components/editor/MentionView";
 import { MentionMenu } from "../components/editor/MentionMenu";
 import type { MentionMenuHandle, MentionMenuItem } from "../components/editor/MentionMenu";
 import { useProjectStore } from "../state/projectStore";
-import { bestNameFor, matchEntities } from "../types/entities";
+import { MENTION_TYPE, bestNameFor, matchEntities } from "../types/entities";
+import { PLAYER_SPEAKER, PLAYER_SPEAKER_LABEL, SPEAKER_HOSTS } from "../types/speaker";
+import type { EditorState } from "@tiptap/pm/state";
 
-export const MENTION_TYPE = "mention";
+/** Re-exported so existing importers keep working; defined in types/entities. */
+export { MENTION_TYPE };
 
 /**
  * Tiptap's Suggestion plugin keys itself as plain `suggestion` unless told
@@ -98,39 +101,80 @@ export const Mention = Node.create({
       // unlimited spaces means an unmatched "@" swallows the rest of the
       // paragraph into a menu query that will never match anything.
       allowSpaces: true,
-      items: ({ query }) => {
+      items: ({ query, editor }) => {
         const project = useProjectStore.getState().project;
         const entities = project?.entities ?? [];
         const trimmed = query.trim();
         // One space is a name; two is prose that happens to follow an @.
         if (trimmed.split(/\s+/).length > 2) return [];
 
+        const attributing = atLineStart(editor.state, query);
         const matches = matchEntities(entities, trimmed)
           .slice(0, 8)
           .map<MentionMenuItem>((entity) => ({
             kind: "entity",
             entity,
             label: bestNameFor(entity, trimmed),
+            attributing,
           }));
+
+        // v0.37.0 — the player, offered only where a speaker can go. An
+        // unnamed protagonist is a deliberate choice in a lot of branching
+        // fiction, and Scriare shouldn't make a writer invent a Character
+        // page for someone they're leaving blank on purpose.
+        if (attributing && (!trimmed || fitsPlayer(trimmed))) {
+          matches.unshift({ kind: "player", label: PLAYER_SPEAKER_LABEL, attributing });
+        }
 
         // Create-on-the-spot. The writer is mid-sentence: the point is that
         // they never have to stop, file paperwork, and come back.
         if (trimmed.length > 0 && !matches.some((m) => m.label.toLowerCase() === trimmed.toLowerCase())) {
-          matches.push({ kind: "create", entityKind: "character", label: trimmed });
-          matches.push({ kind: "create", entityKind: "location", label: trimmed });
+          matches.push({ kind: "create", entityKind: "character", label: trimmed, attributing });
+          matches.push({ kind: "create", entityKind: "location", label: trimmed, attributing });
         }
         return matches;
       },
 
       command: ({ editor, range, props }) => {
         const store = useProjectStore.getState();
+
+        // ── The speaker branch (v0.37.0) ────────────────────────────────
+        // An @ at the very start of an otherwise empty line doesn't put a
+        // name INTO the line — it says who is saying it. Same key, same
+        // menu, same create-on-the-spot: the writer already learned that @
+        // means "a character", and this is the one place where naming one
+        // can only mean attributing the line.
+        //
+        // Holding Shift while confirming is the way back out, for the rare
+        // line that genuinely starts with a mention ("Mara had been
+        // waiting."): see MentionMenu's footer, which says so when it
+        // matters.
+        const asSpeaker = props.attributing === true && props.asMention !== true;
+
+        if (asSpeaker && props.kind === "player") {
+          editor
+            .chain()
+            .focus()
+            .deleteRange(range)
+            .setSpeaker(PLAYER_SPEAKER)
+            .run();
+          return;
+        }
+
         const entityId =
-          props.kind === "entity"
-            ? props.entity.id
-            : // `select: false` — creating a character from inside a
-              // sentence must not navigate away from the sentence.
-              store.createEntity(props.entityKind, props.label, { select: false });
+          props.kind === "player"
+            ? null
+            : props.kind === "entity"
+              ? props.entity.id
+              : // `select: false` — creating a character from inside a
+                // sentence must not navigate away from the sentence.
+                store.createEntity(props.entityKind, props.label, { select: false });
         if (!entityId) return;
+
+        if (asSpeaker) {
+          editor.chain().focus().deleteRange(range).setSpeaker(entityId).run();
+          return;
+        }
 
         editor
           .chain()
@@ -194,3 +238,38 @@ export const Mention = Node.create({
     ];
   },
 });
+
+/**
+ * Is the caret's "@" the first thing on an empty line (or in an empty
+ * choice)? That — and only that — is where @ attributes the line instead
+ * of writing a name into it.
+ *
+ * "Empty" is strict on purpose: the paragraph must contain nothing but the
+ * "@query" being typed. An @ halfway through a sentence is a mention, an @
+ * after three words is a mention, and an @ at the head of a line that
+ * already has prose after it is a mention too — because in every one of
+ * those cases the writer is demonstrably writing a sentence, not labelling
+ * one.
+ */
+function atLineStart(state: EditorState, query: string): boolean {
+  const $from = state.selection.$from;
+  const parent = $from.parent;
+  if (!SPEAKER_HOSTS.includes(parent.type.name)) return false;
+  // And this editor must actually HAVE speakers. A Character's own page is
+  // written in the same component with a smaller extension set — no Choice
+  // Blocks, no speakers — and there an @ at the head of a line is an
+  // ordinary mention, not a command that would silently do nothing. Asking
+  // the live schema rather than assuming keeps that true for whatever the
+  // next cut-down editor turns out to be.
+  if (!parent.type.spec.attrs || !("speaker" in parent.type.spec.attrs)) return false;
+  // Already attributed: a second @ on the line is the writer mentioning
+  // someone inside a line whose speaker is already settled.
+  if (parent.attrs.speaker) return false;
+  return parent.textContent === `@${query}`;
+}
+
+/** Does what's typed look like it's reaching for the player row? */
+function fitsPlayer(query: string): boolean {
+  const q = query.toLowerCase();
+  return ["you", "player", "me", "self"].some((word) => word.startsWith(q));
+}

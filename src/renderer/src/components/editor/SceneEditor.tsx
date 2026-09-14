@@ -19,10 +19,12 @@ import { Callout } from "../../extensions/Callout";
 import { ConditionalBlock } from "../../extensions/ConditionalBlock";
 import { ChoiceOption } from "../../extensions/ChoiceOption";
 import { Mention } from "../../extensions/Mention";
+import { Speaker } from "../../extensions/Speaker";
 import { SlashCommand } from "../../extensions/SlashCommand";
 import { MarkerStyleSync } from "../../extensions/MarkerStyleSync";
 import { TextStyleCleanup } from "../../extensions/TextStyleCleanup";
 import { EditorToolbar } from "./EditorToolbar";
+import { SpeakerMenu } from "./SpeakerMenu";
 import { READING_COLUMN_CLASS, READING_PROSE_CLASS } from "../../utils/readingColumn";
 
 export function SceneEditor() {
@@ -48,6 +50,7 @@ export function SceneEditor() {
       ChoiceBlock,
       ChoiceOption,
       Mention,
+      Speaker,
       Callout,
       ConditionalBlock,
       SlashCommand,
@@ -202,6 +205,19 @@ export function SceneEditor() {
     return () => useEditorRefStore.getState().setEditor(null);
   }, [editor]);
 
+  // v0.37.0 — the speaker names in front of spoken lines are decorations
+  // built from the entity list, not from the document (see
+  // extensions/Speaker.ts). Renaming a character therefore changes nothing
+  // ProseMirror can see, and the editor would happily keep drawing the old
+  // name until the next keystroke. An empty transaction is the cheapest
+  // honest way to say "redraw": it changes no content, so it makes no undo
+  // step and no save, and it lands in the decoration pass as an ordinary
+  // update.
+  useEffect(() => {
+    if (!editor) return;
+    editor.view.dispatch(editor.state.tr.setMeta("addToHistory", false));
+  }, [editor, project?.entities]);
+
   if (!project) return null;
 
   if (!scene) {
@@ -224,6 +240,7 @@ export function SceneEditor() {
             placeholder="Scene title"
           />
           <EditorContent editor={editor} />
+          <SpeakerMenu editor={editor} />
         </div>
       </div>
     </div>
