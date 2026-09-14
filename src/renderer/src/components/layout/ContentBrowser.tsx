@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { DragEvent, MouseEvent } from "react";
 import { useProjectStore } from "../../state/projectStore";
+import { useUIStore } from "../../state/uiStore";
 import { useToastStore } from "../../state/toastStore";
 import { useSelectionStore } from "../../state/selectionStore";
 import type { ContentNode, Scene } from "../../types/project";
@@ -8,12 +9,14 @@ import { ancestorsOf, childrenOf, computeDropPosition, flattenVisible } from "..
 import { ContentBrowserContext } from "./contentBrowserContext";
 import type { ContentBrowserContextValue, DropTarget } from "./contentBrowserContext";
 import { ContentTreeRow } from "./ContentTreeRow";
+import { FindResults } from "./FindResults";
 import { ContentContextMenu } from "./ContentContextMenu";
 import type { ContentMenuItem } from "./ContentContextMenu";
 import { MoveToDialog } from "./MoveToDialog";
 import { Icon } from "../common/Icon";
 import type { IconName } from "../common/Icon";
 import { ENTITY_LABEL } from "../../types/entities";
+import { fold } from "../../utils/textFold";
 import type { EntityKind } from "../../types/entities";
 
 /**
@@ -135,6 +138,18 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
 
   const [expanded, setExpanded] = useState<Set<string>>(loadExpanded);
   const [search, setSearch] = useState("");
+  const searchInput = useRef<HTMLInputElement>(null);
+  const findToken = useUIStore((s) => s.findToken);
+
+  // Ctrl+F puts the caret in the box and selects what's there, so the
+  // second press of it replaces the last search rather than appending to
+  // it. A counter rather than a flag, because pressing it twice has to
+  // happen twice — see uiStore.
+  useEffect(() => {
+    if (findToken === 0) return;
+    searchInput.current?.focus();
+    searchInput.current?.select();
+  }, [findToken]);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
@@ -211,7 +226,9 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
     if (node.kind === "leaf") selectScene(node.id);
     setSelectedIds(new Set([node.id]));
     setSelectionAnchor(node.id);
-    setSearch("");
+    // The query STAYS (v0.38.0). Fixing a name in twelve scenes is twelve
+    // clicks down one list; clearing the box after the first would make it
+    // twelve searches.
   }
 
   function openFavorite(sceneId: string): void {
@@ -417,13 +434,18 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
     return items;
   }
 
-  const searchQuery = search.trim().toLowerCase();
-  const searchResults = searchQuery
+  // Folded rather than lowercased (v0.38.0): this box is now the same box
+  // that searches the writing, and a scene called "İstanbul'da Gece" that
+  // the prose search finds but the title filter doesn't would look like a
+  // bug in whichever half the writer noticed second.
+  const searchQuery = search.trim();
+  const foldedQuery = fold(searchQuery);
+  const searchResults = foldedQuery
     ? project.content
         .filter((n) => n.category === "story")
         .filter((n) => {
           const name = n.kind === "folder" ? n.name : scenesById.get(n.id)?.title ?? "";
-          return name.toLowerCase().includes(searchQuery);
+          return fold(name).includes(foldedQuery);
         })
     : [];
 
@@ -512,9 +534,21 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
 
         <div className="border-b border-[var(--border-soft)] px-2 py-2">
           <input
+            ref={searchInput}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search Story..."
+            onKeyDown={(e) => {
+              // Escape empties the box and returns the tree, rather than
+              // leaving the panel showing results for a search the writer
+              // has finished with.
+              if (e.key === "Escape") {
+                e.stopPropagation();
+                if (search) setSearch("");
+                else (e.target as HTMLInputElement).blur();
+              }
+            }}
+            data-find-input
+            placeholder="Search story and writing..."
             className="w-full rounded-md border border-[var(--border-soft)] bg-[var(--bg)] px-2 py-1 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-3)] focus:border-[var(--accent)]"
           />
         </div>
@@ -547,7 +581,7 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
                 Search results
               </div>
               {searchResults.length === 0 ? (
-                <div className="px-2 py-2 text-sm text-[var(--text-3)]">No matches in Story.</div>
+                <div className="px-2 py-2 text-sm text-[var(--text-3)]">No scene by that name.</div>
               ) : (
                 searchResults.map((node) => {
                   const name = node.kind === "folder" ? node.name : scenesById.get(node.id)?.title ?? "Untitled scene";
@@ -564,6 +598,10 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
                   );
                 })
               )}
+              {/* Which scenes are CALLED this, above; where the words
+                  actually appear, below. One box, two questions — see
+                  FindResults.tsx. */}
+              <FindResults query={searchQuery} />
             </div>
           ) : (
             <div className="mb-1">

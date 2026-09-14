@@ -13,6 +13,7 @@ import { useEffect, useRef } from "react";
 import { useProjectStore } from "../../state/projectStore";
 import { useInspectorStore } from "../../state/inspectorStore";
 import { useEditorRefStore } from "../../state/editorStore";
+import { useRevealMatch } from "../../hooks/useRevealMatch";
 import { FontSize } from "../../extensions/FontSize";
 import { ChoiceBlock } from "../../extensions/ChoiceBlock";
 import { Callout } from "../../extensions/Callout";
@@ -194,6 +195,9 @@ export function SceneEditor() {
     );
     lastLoadedSceneId.current = scene.id;
   }, [editor, scene]);
+
+  // Find sends writers here — see hooks/useRevealMatch.ts.
+  useRevealMatch(editor, { sceneId: scene?.id ?? null });
 
   // Sprint 9B — publishes the live editor instance so the Inspector (a
   // sibling panel, not a child of this component) can dispatch real

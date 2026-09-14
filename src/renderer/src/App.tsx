@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TopBar } from "./components/layout/TopBar";
 import { ContentBrowser } from "./components/layout/ContentBrowser";
 import { InspectorPanel } from "./components/layout/InspectorPanel";
@@ -15,6 +15,7 @@ import { useUIStore } from "./state/uiStore";
 import { useKeyboardSave } from "./hooks/useKeyboardSave";
 import { useKeyboardHistory } from "./hooks/useKeyboardHistory";
 import { useKeyboardClipboard } from "./hooks/useKeyboardClipboard";
+import { useKeyboardFind } from "./hooks/useKeyboardFind";
 
 // Dockable-panel state (Content, Scene Details, and the Flow graph) is a
 // personal layout preference, not story data — same reasoning as the
@@ -85,6 +86,22 @@ export default function App() {
   useKeyboardSave();
   useKeyboardHistory();
   useKeyboardClipboard();
+  useKeyboardFind();
+
+  // Ctrl+F reaches for a box that lives in the Content panel, so it has to
+  // be able to open that panel — otherwise the one shortcut everybody
+  // tries first would silently do nothing for a writer who had collapsed
+  // the sidebar to write.
+  const findToken = useUIStore((s) => s.findToken);
+  useEffect(() => {
+    if (findToken === 0) return;
+    setPanels((current) => {
+      if (!current.content) return current;
+      const next = { ...current, content: false };
+      savePanelState(next);
+      return next;
+    });
+  }, [findToken]);
 
   if (!project) {
     return (

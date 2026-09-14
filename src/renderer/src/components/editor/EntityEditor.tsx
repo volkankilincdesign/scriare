@@ -11,6 +11,7 @@ import FontFamily from "@tiptap/extension-font-family";
 import { useEffect, useRef, useState } from "react";
 import { useProjectStore } from "../../state/projectStore";
 import { useEditorRefStore } from "../../state/editorStore";
+import { useRevealMatch } from "../../hooks/useRevealMatch";
 import { FontSize } from "../../extensions/FontSize";
 import { Callout } from "../../extensions/Callout";
 import { Mention } from "../../extensions/Mention";
@@ -94,6 +95,9 @@ export function EntityEditor() {
     lastLoadedId.current = entity.id;
     setAliasDraft("");
   }, [editor, entity]);
+
+  // Find sends writers here — see hooks/useRevealMatch.ts.
+  useRevealMatch(editor, { entityId: entity?.id ?? null });
 
   // The toolbar and anything else that needs the live editor find it here,
   // exactly as they do while a scene is open.

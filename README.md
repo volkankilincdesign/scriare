@@ -1,6 +1,20 @@
-# Scriare — v0.37.2 — Fixed: Attributing a Line You've Already Written
+# Scriare — v0.38.0 — Find
 
-## What's new (v0.37.2 — Fixed: Attributing a Line You've Already Written)
+## What's new (v0.38.0 — Find)
+
+**Ctrl+F, and the words are somewhere you can get to.** Type in the Content panel's search box and it now searches the writing as well as the names: every line of prose, every choice label, and every character and location page. Click a result and that scene opens with the matched words **selected**, so the next thing you type replaces them.
+
+**It's the box that was already there.** Scriare had a box labelled "Search Story" that filtered the tree by scene name. A second search — different box, different shortcut, different panel — would have made "search" mean two things you'd have to choose between before you started typing. One box answers both questions instead: the list above says which scenes are *called* this, the sections below say where the words actually *appear*, under **In the story** and **On pages**. A line Harun speaks and a note on Harun's own page are different kinds of answer, and the second shouldn't be able to pass for the first.
+
+**The panel stays open.** Fixing a name in twelve scenes is twelve clicks down one list, not twelve searches. Escape clears it and gives you the tree back.
+
+**It reads Turkish properly**, and from the same function the `@` menu uses — so the two can never disagree about what counts as the same word. `ist` reaches İstanbul, `aydin` reaches Aydın, and a match in text that arrived decomposed from somewhere else still highlights the letters you actually typed rather than sliding a character off.
+
+**Characters in lines are part of those lines.** Searching a name finds the sentences she's mentioned in, not just the ones that spell her out — and finds her page by her name or by any alias you gave her.
+
+Eighteen new tests. The one worth keeping is the position check: a hit's location is computed from the stored JSON of a scene that isn't open, then handed to ProseMirror to select. A mention reads as eight characters and occupies one, so the arithmetic is checked against the live editor rather than against itself. Two negative controls came back green first time and were gaps in the *tests* — a shortcut tested by poking the store behind it, and an index map nothing decomposed was exercising. Both are now tested by the key and by the text. 227 tests.
+
+## v0.37.2 — Fixed: Attributing a Line You've Already Written
 
 **`@` at the head of a line now sets the speaker even when the line already has words in it.**
 

@@ -25,6 +25,37 @@ interface UIState {
   storyCheckOpen: boolean;
   openStoryCheck: () => void;
   closeStoryCheck: () => void;
+
+  /**
+   * v0.38.0 — Find. A counter rather than a boolean: Ctrl+F pressed while
+   * the box is already focused should still select what's in it, and a
+   * flag that is already true is an event that doesn't happen.
+   */
+  findToken: number;
+  requestFind: () => void;
+
+  /**
+   * The match a writer clicked, on its way to the editor.
+   *
+   * Find searches the STORED documents; only one of them is open in
+   * ProseMirror at a time. So a click on a result in another scene has to
+   * open that scene and then — a beat later, once its content has actually
+   * been loaded into the editor — put the caret on the words. This is the
+   * note left between those two moments; SceneEditor and EntityEditor pick
+   * it up when the document they just loaded is the one it names, and
+   * clear it.
+   */
+  reveal: RevealRequest | null;
+  requestReveal: (reveal: RevealRequest) => void;
+  clearReveal: () => void;
+}
+
+export interface RevealRequest {
+  sceneId: string | null;
+  entityId: string | null;
+  /** ProseMirror positions of the match, as computed by findInStory. */
+  from: number;
+  to: number;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -37,4 +68,9 @@ export const useUIStore = create<UIState>((set) => ({
   storyCheckOpen: false,
   openStoryCheck: () => set({ storyCheckOpen: true }),
   closeStoryCheck: () => set({ storyCheckOpen: false }),
+  findToken: 0,
+  requestFind: () => set((state) => ({ findToken: state.findToken + 1 })),
+  reveal: null,
+  requestReveal: (reveal) => set({ reveal }),
+  clearReveal: () => set({ reveal: null }),
 }));

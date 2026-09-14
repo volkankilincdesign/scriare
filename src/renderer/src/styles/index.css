@@ -600,3 +600,16 @@ input[type="number"],
   color: var(--accent);
   font-weight: 600;
 }
+
+/* ── Find (v0.38.0) ────────────────────────────────────────────────────
+   The matched words inside a result's snippet. A <mark> rather than a
+   coloured span, because that is what the element is for and it means a
+   screen reader announces the match as a match. Toned well down from the
+   browser default yellow, which on a dark surface reads as a highlighter
+   accident rather than as an answer. */
+.scriare-find-mark {
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+  color: var(--text);
+  padding: 0 .1em;
+}

@@ -1,6 +1,10 @@
 import { nanoid } from "nanoid";
 import type { JSONContent } from "@tiptap/react";
 import type { ContentCategory } from "./project";
+// One definition of "is this the same word", shared with Find — see the
+// note in utils/textFold.ts for why Turkish makes this more than a
+// toLowerCase().
+import { fold } from "../utils/textFold";
 
 /**
  * The document node type a mention is written as.
@@ -99,30 +103,6 @@ export function bestNameFor(entity: Entity, query: string): string {
   if (!needle) return entity.name;
   const names = entityNames(entity);
   return names.find((name) => fold(name).startsWith(needle)) ?? entity.name;
-}
-
-/**
- * Case- and accent-insensitive comparison, for @ matching.
- *
- * Turkish is why this isn't a one-liner. Scriare is written in Turkish as
- * often as in English, and Turkish has two letter i's: dotted (i/İ) and
- * dotless (ı/I). That breaks the obvious implementations in both
- * directions — `toLocaleLowerCase("tr")` turns the I of "İstanbul" into a
- * dotless ı, so typing `@ist` finds nothing; and a plain `toLowerCase()`
- * leaves "Aydın" with a dotless ı that `aydin` will never match.
- *
- * So: decompose, drop the combining marks (which handles ş ğ ü ö ç, é, ñ
- * and the rest for free), fold the dotless i onto the dotted one
- * explicitly, and only then lowercase — with the invariant locale, because
- * the Turkish one is the thing being worked around.
- */
-function fold(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[\u0131\u0130]/g, "i")
-    .toLowerCase()
-    .trim();
 }
 
 /**

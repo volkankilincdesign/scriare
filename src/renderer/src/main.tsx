@@ -41,6 +41,9 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./utils/storyCheck"),
     import("./types/speaker"),
     import("./utils/speakerLines"),
+    import("./utils/findInStory"),
+    import("./utils/textFold"),
+    import("./state/uiStore"),
   ]).then(
     ([
       projectStore,
@@ -60,6 +63,9 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       storyCheck,
       speakerTypes,
       speakerLines,
+      findInStory,
+      textFold,
+      uiStore,
     ]) => {
       Object.assign(window, {
         __scriareProjectStore: projectStore.useProjectStore,
@@ -82,6 +88,9 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         __scriareStoryCheck: storyCheck,
         __scriareSpeaker: speakerTypes,
         __scriareSpeakerLines: speakerLines,
+        __scriareFind: findInStory,
+        __scriareTextFold: textFold,
+        __scriareUIStore: uiStore.useUIStore,
       });
     },
   );
