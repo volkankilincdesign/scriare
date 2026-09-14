@@ -7,7 +7,7 @@ import { useUIStore } from "../../state/uiStore";
 import { useEditorRefStore } from "../../state/editorStore";
 import { extractChoices, findChoiceBlockOptions } from "../../utils/choiceBlocks";
 import type { ChoiceOption } from "../../utils/choiceBlocks";
-import { PLAYER_SPEAKER, PLAYER_SPEAKER_LABEL } from "../../types/speaker";
+import { PLAYER_SPEAKER, PLAYER_SPEAKER_LABEL, canSpeak } from "../../types/speaker";
 import type { Entity } from "../../types/entities";
 import {
   DEFAULT_CHOICE_STYLE_ID,
@@ -1297,7 +1297,9 @@ function ChoiceSpeaker({
       >
         <option value="">— Nobody —</option>
         <option value={PLAYER_SPEAKER}>{PLAYER_SPEAKER_LABEL} (the player)</option>
-        {entities.map((entity) => (
+        {/* Characters only — a Location can be named in a choice but can't
+            speak one. See canSpeak in types/speaker.ts. */}
+        {entities.filter(canSpeak).map((entity) => (
           <option key={entity.id} value={entity.id}>
             {entity.name || "Unnamed"}
           </option>

@@ -334,6 +334,218 @@ export default async function ({ api, check }) {
   check("...and a choice's speaker is readable where the Inspector reads it",
     r.read.join() === "e1,", JSON.stringify(r.read));
 
+  // ── Attributing a line that is already written ───────────────────────
+  // The commonest gesture of all, and the one the first cut of v0.37.0 got
+  // wrong: write the line, then say who said it. Volkan hit it in a choice
+  // — `@Harun` at the head of a written choice wrote the name INTO the
+  // label, so it played as "Harun I don't understand" with no colon while
+  // the paragraph above it (attributed while empty) played properly.
+  //
+  // Tested in a CHOICE because that's where he hit it and because a choice
+  // option is the other node that can carry a speaker; the paragraph case
+  // runs the same code.
+  await api(() => {
+    const store = window.__scriareProjectStore.getState();
+    const editor = window.__scriareEditorStore.getState().editor;
+    const block = window.__scriareChoiceUtils.buildChoiceBlockNode(
+      [{ id: "o1", targetSceneId: "s1" }],
+      "b1",
+    );
+    block.content[0].content = [{ type: "text", text: "I don't understand" }];
+    editor.commands.setContent({ type: "doc", content: [{ type: "paragraph" }, block] }, true);
+    let at = null;
+    editor.state.doc.descendants((n, pos) => {
+      if (n.type.name === "choiceOption" && at === null) at = pos + 1;
+    });
+    editor.chain().focus().setTextSelection(at).run();
+    return store !== null;
+  });
+  await wait(250);
+  for (const char of "@Ercü") {
+    await api((c) => {
+      const el = document.querySelector(".ProseMirror");
+      el.dispatchEvent(new KeyboardEvent("keydown", { key: c, bubbles: true }));
+      document.execCommand("insertText", false, c);
+    }, char);
+    await wait(60);
+  }
+  await wait(250);
+  await api(() => {
+    const row = [...document.querySelectorAll("button")].find(
+      (b) => b.textContent.trim() === "Ercüment",
+    );
+    row?.click();
+  });
+  await wait(300);
+  r = await api(() => {
+    const editor = window.__scriareEditorStore.getState().editor;
+    let option = null;
+    let mention = false;
+    editor.state.doc.descendants((n) => {
+      if (n.type.name === "choiceOption" && option === null) {
+        option = { speaker: n.attrs.speaker, text: n.textContent };
+      }
+      if (n.type.name === "mention") mention = true;
+    });
+    return { option, mention };
+  });
+  check("@ at the head of a line that is ALREADY written attributes it, rather than writing a name into it",
+    r.option?.speaker === "e2" && r.option?.text === "I don't understand" && r.mention === false,
+    JSON.stringify(r));
+
+  // The way out, for the line that really does begin with a name.
+  await api(() => {
+    const editor = window.__scriareEditorStore.getState().editor;
+    editor.commands.setContent(
+      { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: " had been waiting." }] }] },
+      true,
+    );
+    editor.chain().focus().setTextSelection(1).run();
+  });
+  await wait(200);
+  for (const char of "@Mar") {
+    await api((c) => {
+      const el = document.querySelector(".ProseMirror");
+      el.dispatchEvent(new KeyboardEvent("keydown", { key: c, bubbles: true }));
+      document.execCommand("insertText", false, c);
+    }, char);
+    await wait(60);
+  }
+  await wait(250);
+  await api(() => {
+    const row = [...document.querySelectorAll("button")].find((b) =>
+      b.textContent.trim().startsWith("Mara"),
+    );
+    // Shift held: write the name after all.
+    row?.dispatchEvent(new MouseEvent("click", { bubbles: true, shiftKey: true }));
+  });
+  await wait(300);
+  r = await api(() => {
+    const editor = window.__scriareEditorStore.getState().editor;
+    let mention = false;
+    editor.state.doc.descendants((n) => {
+      if (n.type.name === "mention") mention = true;
+    });
+    return { speaker: editor.state.doc.child(0).attrs.speaker, mention };
+  });
+  check("...and holding Shift still writes the name, for the line that really starts with one",
+    r.speaker === null && r.mention === true, JSON.stringify(r));
+
+  // ── A place cannot speak ─────────────────────────────────────────────
+  // Locations were offered as speakers in the first cut of this version,
+  // purely because they were in the same list, and İstanbul turned up in a
+  // story announcing a line. There are four doors a place could get in
+  // through, so there are four checks: the @ menu, the click-to-change
+  // menu, the Inspector's choice control, and — for a story already
+  // written against the broken build — what a player actually reads.
+  r = await api(() => {
+    const { canSpeak, speakerName } = window.__scriareSpeaker;
+    const mara = { id: "e1", kind: "character", name: "Mara", aliases: [], content: { type: "doc", content: [] } };
+    const city = { id: "e3", kind: "location", name: "İstanbul", aliases: [], content: { type: "doc", content: [] } };
+    return {
+      character: canSpeak(mara),
+      location: canSpeak(city),
+      gone: canSpeak(undefined),
+      // The last line of defence: a line already attributed to a place
+      // reads as narration rather than printing the city's name.
+      namedPlace: speakerName("e3", [mara, city]),
+      namedPerson: speakerName("e1", [mara, city]),
+    };
+  });
+  check("a Character can speak and a Location cannot",
+    r.character === true && r.location === false && r.gone === false, JSON.stringify(r));
+  check("...so a line already attributed to a place quietly reads as narration",
+    r.namedPlace === null && r.namedPerson === "Mara", JSON.stringify(r));
+
+  // The @ menu still OFFERS the city — "@İstanbul was burning" is a good
+  // opening line — but as a mention, and it says so.
+  await api(() => {
+    const store = window.__scriareProjectStore.getState();
+    store.createEntity("location", "İstanbul", { select: false });
+  });
+  await wait(200);
+  await api(() => {
+    const editor = window.__scriareEditorStore.getState().editor;
+    editor.commands.setContent({ type: "doc", content: [{ type: "paragraph" }] }, true);
+    editor.chain().focus().setTextSelection(1).run();
+  });
+  await wait(120);
+  for (const char of "@İst") {
+    await api((c) => {
+      const el = document.querySelector(".ProseMirror");
+      el.dispatchEvent(new KeyboardEvent("keydown", { key: c, bubbles: true }));
+      document.execCommand("insertText", false, c);
+    }, char);
+    await wait(60);
+  }
+  await wait(250);
+  r = await api(() => {
+    const rows = [...document.querySelectorAll("button")].filter((b) =>
+      b.textContent.includes("İstanbul"),
+    );
+    return {
+      offered: rows.length > 0,
+      taggedAsMention: rows.some((b) => b.textContent.toLowerCase().includes("mention")),
+      hint: [...document.querySelectorAll("div")]
+        .map((d) => d.textContent.trim())
+        .some((t) => t.startsWith("A place can be named in a line")),
+    };
+  });
+  check("the @ menu still offers a place at the head of a line, marked as a mention",
+    r.offered && r.taggedAsMention && r.hint, JSON.stringify(r));
+
+  await api(() => {
+    const row = [...document.querySelectorAll("button")].find((b) =>
+      b.textContent.includes("İstanbul"),
+    );
+    row?.click();
+  });
+  await wait(250);
+  r = await api(() => {
+    const editor = window.__scriareEditorStore.getState().editor;
+    let mention = false;
+    editor.state.doc.descendants((n) => {
+      if (n.type.name === "mention") mention = true;
+    });
+    return { speaker: editor.state.doc.child(0).attrs.speaker, mention };
+  });
+  check("...and picking it writes the name into the line rather than attributing it",
+    r.speaker === null && r.mention === true, JSON.stringify(r));
+
+  // The click-to-change menu lists only who can talk.
+  await api(() => {
+    const editor = window.__scriareEditorStore.getState().editor;
+    editor.commands.setContent(
+      {
+        type: "doc",
+        content: [{ type: "paragraph", attrs: { speaker: "e1" }, content: [{ type: "text", text: "I found it." }] }],
+      },
+      true,
+    );
+  });
+  await wait(250);
+  await api(() => {
+    document.querySelector(".scriare-speaker-chip")?.dispatchEvent(
+      new MouseEvent("mousedown", { bubbles: true }),
+    );
+  });
+  await wait(250);
+  r = await api(() => {
+    const menu = document.querySelector("[data-speaker-menu]");
+    return {
+      open: Boolean(menu),
+      rows: [...(menu?.querySelectorAll("button") ?? [])].map((b) => b.textContent.trim()),
+    };
+  });
+  check("clicking the name opens a list of who can talk, and no places are in it",
+    r.open &&
+      r.rows.some((t) => t.startsWith("Mara")) &&
+      r.rows.some((t) => t.startsWith("Ercüment")) &&
+      !r.rows.some((t) => t.includes("İstanbul")),
+    JSON.stringify(r.rows));
+  await api(() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })));
+  await wait(150);
+
   // A Character's own page is written in the same editor component with a
   // smaller extension set — no Choice Blocks, no speakers. An @ at the head
   // of a line there must still be an ordinary mention, not a command that
@@ -407,6 +619,13 @@ export default async function ({ api, check }) {
   });
   check("the Inspector is where a choice is given a voice, and it reaches the document",
     r === "e2", JSON.stringify(r));
+
+  r = await api(() =>
+    [...(document.querySelector("[data-choice-speaker]")?.options ?? [])].map((o) => o.textContent),
+  );
+  check("...and it offers only people, never places",
+    r.some((t) => t === "Ercüment") && !r.some((t) => t.includes("İstanbul")),
+    JSON.stringify(r));
 
   // ── 8. End to end, in Play Mode ──────────────────────────────────────
   // The transform above is tested on JSON, which proves the rule and

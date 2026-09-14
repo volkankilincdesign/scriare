@@ -21,6 +21,13 @@ export type MentionMenuItem = (
    * on the item so the menu can say what it's about to do.
    */
   attributing?: boolean;
+  /**
+   * True when confirming this row will set the line's speaker. Decided in
+   * the extension, because it depends on what the row IS: at the head of a
+   * line a Character speaks and a Location is still only a mention — a
+   * place can be named in a sentence but cannot say one.
+   */
+  speaks?: boolean;
   /** Set when the writer held Shift: insert a plain mention after all. */
   asMention?: boolean;
 };
@@ -130,6 +137,14 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(
                       {item.entity.name}
                     </span>
                   )}
+                  {/* Only at the head of a line, and only on the rows that
+                      will do the other thing — so the difference is visible
+                      exactly where it exists. */}
+                  {item.attributing && !item.speaks && (
+                    <span className="shrink-0 text-[10px] uppercase tracking-wide text-[var(--text-3)]">
+                      mention
+                    </span>
+                  )}
                 </>
               ) : (
                 <span className="min-w-0 flex-1 truncate">
@@ -144,8 +159,16 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(
             always on screen is a hint nobody reads. */}
         {attributing && (
           <div className="mt-1 border-t border-[var(--border-soft)] px-3 pb-0.5 pt-1.5 text-[11px] text-[var(--text-3)]">
-            Sets who speaks this line · <span className="text-[var(--text-2)]">Shift</span> to write
-            the name instead
+            {props.items[selectedIndex]?.speaks ? (
+              <>
+                Sets who speaks this line ·{" "}
+                <span className="text-[var(--text-2)]">Shift</span> to write the name instead
+              </>
+            ) : (
+              // The honest version of "why didn't that set the speaker?",
+              // said before it happens rather than after.
+              <>A place can be named in a line, not say one — this writes the name</>
+            )}
           </div>
         )}
       </div>

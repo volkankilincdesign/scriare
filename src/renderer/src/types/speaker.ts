@@ -74,6 +74,26 @@ export function isPlayerSpeaker(speaker: Speaker): boolean {
 }
 
 /**
+ * Can this entity say something? Only a Character can.
+ *
+ * Locations were offered as speakers in the first cut of v0.37.0 purely
+ * because they happened to be in the same list, and İstanbul turned up in
+ * a story announcing a line. That is a category error, not a missing
+ * filter: "the people in a story" and "the places in a story" are one
+ * OBJECT with two kinds (see the note at the top of entities.ts), and that
+ * economy is worth keeping — but they are not one KIND of thing, and the
+ * places don't talk. A city can be mentioned in a sentence, gate a
+ * condition, and own a page. It cannot open its mouth.
+ *
+ * Asked as a function rather than compared inline anywhere, so that when
+ * Notes and Assets arrive as further kinds they are silent by default
+ * rather than silent only in the three places someone remembered.
+ */
+export function canSpeak(entity: Entity | undefined | null): boolean {
+  return entity?.kind === "character";
+}
+
+/**
  * The name to show for a speaker, or `null` when the line is narration.
  *
  * A speaker pointing at an entity that has since been DELETED also returns
@@ -81,13 +101,21 @@ export function isPlayerSpeaker(speaker: Speaker): boolean {
  * name or a raw id in front of it. That's the same instinct as a mention
  * falling back to its stored label — a story must never render evidence of
  * its own bookkeeping.
+ *
+ * So does one pointing at something that cannot speak. This is the last
+ * line of defence rather than the only one — the menus don't offer a
+ * Location and the Inspector doesn't list one — but it is the one that
+ * covers a story written against the first build of v0.37.0, where they
+ * were offered. Such a line quietly becomes narration, which is what the
+ * writer will have meant, and the name disappearing from in front of it is
+ * how they find out.
  */
 export function speakerName(speaker: Speaker, entities: Entity[]): string | null {
   if (!speaker) return null;
   if (isPlayerSpeaker(speaker)) return PLAYER_SPEAKER_LABEL;
   const entity = entities.find((e) => e.id === speaker);
-  if (!entity) return null;
-  return entity.name.trim() || null;
+  if (!canSpeak(entity)) return null;
+  return entity!.name.trim() || null;
 }
 
 /** Reads the speaker off a document node's attributes, normalised. */

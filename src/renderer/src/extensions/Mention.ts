@@ -8,7 +8,7 @@ import { MentionMenu } from "../components/editor/MentionMenu";
 import type { MentionMenuHandle, MentionMenuItem } from "../components/editor/MentionMenu";
 import { useProjectStore } from "../state/projectStore";
 import { MENTION_TYPE, bestNameFor, matchEntities } from "../types/entities";
-import { PLAYER_SPEAKER, PLAYER_SPEAKER_LABEL, SPEAKER_HOSTS } from "../types/speaker";
+import { PLAYER_SPEAKER, PLAYER_SPEAKER_LABEL, SPEAKER_HOSTS, canSpeak } from "../types/speaker";
 import type { EditorState } from "@tiptap/pm/state";
 
 /** Re-exported so existing importers keep working; defined in types/entities. */
@@ -109,6 +109,12 @@ export const Mention = Node.create({
         if (trimmed.split(/\s+/).length > 2) return [];
 
         const attributing = atLineStart(editor.state, query);
+        // At the head of a line, a CHARACTER sets the speaker and a
+        // LOCATION is still just a mention — a place can be named in a
+        // sentence but cannot say one (see canSpeak). Both stay in the
+        // list: "@İstanbul was burning" is a perfectly good opening line,
+        // and a menu that hid the city to protect a rule would be worse
+        // than the rule. The row says which of the two it will do.
         const matches = matchEntities(entities, trimmed)
           .slice(0, 8)
           .map<MentionMenuItem>((entity) => ({
@@ -116,6 +122,7 @@ export const Mention = Node.create({
             entity,
             label: bestNameFor(entity, trimmed),
             attributing,
+            speaks: attributing && canSpeak(entity),
           }));
 
         // v0.37.0 — the player, offered only where a speaker can go. An
@@ -123,14 +130,20 @@ export const Mention = Node.create({
         // fiction, and Scriare shouldn't make a writer invent a Character
         // page for someone they're leaving blank on purpose.
         if (attributing && (!trimmed || fitsPlayer(trimmed))) {
-          matches.unshift({ kind: "player", label: PLAYER_SPEAKER_LABEL, attributing });
+          matches.unshift({ kind: "player", label: PLAYER_SPEAKER_LABEL, attributing, speaks: true });
         }
 
         // Create-on-the-spot. The writer is mid-sentence: the point is that
         // they never have to stop, file paperwork, and come back.
         if (trimmed.length > 0 && !matches.some((m) => m.label.toLowerCase() === trimmed.toLowerCase())) {
-          matches.push({ kind: "create", entityKind: "character", label: trimmed, attributing });
-          matches.push({ kind: "create", entityKind: "location", label: trimmed, attributing });
+          matches.push({
+            kind: "create", entityKind: "character", label: trimmed,
+            attributing, speaks: attributing,
+          });
+          matches.push({
+            kind: "create", entityKind: "location", label: trimmed,
+            attributing, speaks: false,
+          });
         }
         return matches;
       },
@@ -148,8 +161,9 @@ export const Mention = Node.create({
         // Holding Shift while confirming is the way back out, for the rare
         // line that genuinely starts with a mention ("Mara had been
         // waiting."): see MentionMenu's footer, which says so when it
-        // matters.
-        const asSpeaker = props.attributing === true && props.asMention !== true;
+        // matters. A Location never takes this branch at all — `speaks` is
+        // decided in `items` above, by canSpeak.
+        const asSpeaker = props.speaks === true && props.asMention !== true;
 
         if (asSpeaker && props.kind === "player") {
           editor
@@ -240,16 +254,24 @@ export const Mention = Node.create({
 });
 
 /**
- * Is the caret's "@" the first thing on an empty line (or in an empty
- * choice)? That — and only that — is where @ attributes the line instead
- * of writing a name into it.
+ * Is the caret's "@" the FIRST CHARACTER of the line (or of the choice)?
+ * That — and only that — is where @ attributes instead of writing a name.
  *
- * "Empty" is strict on purpose: the paragraph must contain nothing but the
- * "@query" being typed. An @ halfway through a sentence is a mention, an @
- * after three words is a mention, and an @ at the head of a line that
- * already has prose after it is a mention too — because in every one of
- * those cases the writer is demonstrably writing a sentence, not labelling
- * one.
+ * v0.37.2 loosened this, and the loosening is the fix Volkan reported.
+ * The first version also required the line to be otherwise EMPTY, on the
+ * theory that a line with prose after it meant the writer was mid-sentence.
+ * That theory was wrong about the commonest gesture there is: you write the
+ * line first and say who said it afterwards. He wrote a choice, put the
+ * caret at its head, typed `@Harun`, and got the name written INTO the
+ * choice — so the choice read "Harun I don't understand" with no
+ * attribution, no colon and no styling, while the paragraph above it (which
+ * he had attributed while it was still empty) read "Harun:" properly.
+ *
+ * So position 0 is the whole test now. What it costs is the line that
+ * genuinely begins with a mention — "Mara had been waiting." — and that
+ * has the Shift escape hatch, which the menu's own footer advertises
+ * exactly when it applies. An @ anywhere else in the line is a mention as
+ * it always was, which is the overwhelming majority of them.
  */
 function atLineStart(state: EditorState, query: string): boolean {
   const $from = state.selection.$from;
@@ -265,7 +287,11 @@ function atLineStart(state: EditorState, query: string): boolean {
   // Already attributed: a second @ on the line is the writer mentioning
   // someone inside a line whose speaker is already settled.
   if (parent.attrs.speaker) return false;
-  return parent.textContent === `@${query}`;
+  // The caret sits just after "@" + what has been typed since, so this is
+  // "the @ is at offset 0". Counted in ProseMirror positions rather than
+  // string indexes, so a mention sitting before it (an atom, width 1) is
+  // correctly not position 0.
+  return $from.parentOffset - (query.length + 1) === 0;
 }
 
 /** Does what's typed look like it's reaching for the player row? */

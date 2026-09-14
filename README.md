@@ -1,6 +1,32 @@
-# Scriare — v0.37.0 — Who's Speaking
+# Scriare — v0.37.2 — Fixed: Attributing a Line You've Already Written
 
-## What's new (v0.37.0 — Who's Speaking)
+## What's new (v0.37.2 — Fixed: Attributing a Line You've Already Written)
+
+**`@` at the head of a line now sets the speaker even when the line already has words in it.**
+
+The reported symptom was a choice reading `Harun I don't understand…` in Play Mode — no colon, no styling — while the paragraph above it read **Harun:** properly. The choice never had a speaker at all. It had a *mention*: the first version required the line to be otherwise **empty** before `@` would attribute it, on the theory that a line with prose after it meant you were mid-sentence.
+
+That theory was wrong about the commonest gesture there is. **You write the line, then say who said it.** Typing a choice and then putting the caret at its head to name the speaker is not being mid-sentence — it's the normal order of work, and it was the one order the feature didn't support.
+
+So position 0 is the whole test now: the `@` is the first character of the line or the choice. What it costs is the line that genuinely *begins* with a name — "Mara had been waiting." — and that already has its escape hatch: hold **Shift** when you confirm and the name is written into the line instead. The menu's footer says so, and only when it applies. An `@` anywhere else in a line is a mention exactly as before.
+
+Two new tests — the reported gesture in a choice, and the Shift way out — plus a control confirming the old rule reproduces his bug exactly: a mention, and no speaker. 209 tests.
+
+## v0.37.1 — Fixed: Places Were Being Offered as Speakers
+
+**A Location could be set as a line's speaker, and İstanbul ended up announcing dialogue.** That was a category error rather than a missing filter. A Character and a Location are one OBJECT with two kinds — that economy is deliberate and worth keeping — but they are not one kind of THING, and places don't talk. A city can be named in a sentence, gate a condition, and own a page. It cannot open its mouth.
+
+The rule now lives in one function, `canSpeak`, asked at every door rather than compared inline in the three places someone happened to remember. So when Notes and Assets arrive as further kinds they will be silent by default rather than silent by luck.
+
+**The `@` menu still offers a place at the head of a line** — "@İstanbul was burning" is a perfectly good opening — but it writes the name into the line instead of attributing it, the row is marked `mention`, and the hint under the menu says which of the two is about to happen *before* it happens. Hiding the city to protect the rule would have been worse than the rule.
+
+**The click-the-name menu and the Inspector's *Who Says It* list people only.**
+
+**And a story already written against the first build keeps reading properly**: a line attributed to a place renders as narration, the same way a line attributed to a deleted character does. The name disappearing from in front of it is how you find out.
+
+Six new tests, one per door a place could have got in through, all four confirmed to fail on a deliberately broken build. 207 tests.
+
+## v0.37.0 — Who's Speaking
 
 **A line can know who is saying it.** Type `@` at the start of an empty line, pick a character, and the line is theirs — the same `@` menu you already use mid-sentence, including creating someone on the spot who doesn't exist yet. Their name appears in front of the line, and the line itself stays exactly the text you typed.
 

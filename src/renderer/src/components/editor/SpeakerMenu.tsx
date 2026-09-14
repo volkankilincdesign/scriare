@@ -4,7 +4,7 @@ import { Icon } from "../common/Icon";
 import { useProjectStore } from "../../state/projectStore";
 import { SPEAKER_CLICK_EVENT } from "../../extensions/Speaker";
 import type { SpeakerClickDetail } from "../../extensions/Speaker";
-import { PLAYER_SPEAKER, PLAYER_SPEAKER_LABEL } from "../../types/speaker";
+import { PLAYER_SPEAKER, PLAYER_SPEAKER_LABEL, canSpeak } from "../../types/speaker";
 import type { Speaker } from "../../types/speaker";
 
 interface SpeakerMenuProps {
@@ -67,8 +67,10 @@ export function SpeakerMenu({ editor }: SpeakerMenuProps) {
     setOpen(null);
   }
 
-  const characters = (project?.entities ?? []).filter((e) => e.kind === "character");
-  const others = (project?.entities ?? []).filter((e) => e.kind !== "character");
+  // Characters only. A Location can be mentioned in a line; it cannot say
+  // one — see canSpeak. Filtering here rather than listing everything and
+  // dimming the places keeps the menu about the choice being made.
+  const speakers = (project?.entities ?? []).filter(canSpeak);
 
   return (
     <div
@@ -91,11 +93,11 @@ export function SpeakerMenu({ editor }: SpeakerMenuProps) {
         onSelect={() => choose(PLAYER_SPEAKER)}
         data-speaker-option={PLAYER_SPEAKER}
       />
-      {[...characters, ...others].map((entity) => (
+      {speakers.map((entity) => (
         <Row
           key={entity.id}
           label={entity.name || "Unnamed"}
-          icon={entity.kind === "character" ? "character" : "location"}
+          icon="character"
           active={open.speaker === entity.id}
           onSelect={() => choose(entity.id)}
           data-speaker-option={entity.id}
