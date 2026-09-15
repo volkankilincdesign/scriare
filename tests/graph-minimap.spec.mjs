@@ -38,11 +38,17 @@ export default async function ({ api, check, seedProject }) {
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 700));
   const minimap = () => api(() => Boolean(document.querySelector(".react-flow__minimap")));
+  // The graph itself has to be on screen, or "there is no minimap" is true
+  // for the uninteresting reason and this whole file proves nothing.
+  const graphIsShowing = () => api(() => Boolean(document.querySelector(".react-flow__viewport")));
 
   // 1 — a story that fits on screen doesn't get a minimap over it.
   await seed([{ x: 0, y: 0 }, { x: 260, y: 0 }]);
   await settle();
   let r = await minimap();
+  const showing = await graphIsShowing();
+  check("the Story Graph is on screen at all — the precondition for everything below",
+    showing === true);
   check("a story that fits on screen has no minimap in the way", r === false);
 
   // 2 — and one that doesn't fit does. This is the half that could rot

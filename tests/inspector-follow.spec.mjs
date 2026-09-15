@@ -90,6 +90,11 @@ export default async function ({ api, check, seedProject }) {
       return {
         rows: rows.map((el) => `${el.dataset.optionId}:${el.dataset.expanded}`),
         // "Destination" only exists inside an expanded accordion.
+        // `.every()` on an empty list is TRUE, so the count is asserted
+        // separately below — otherwise an Inspector that isn't on screen
+        // at all satisfies this, which is how seven of these tests once
+        // passed for everyone but the writer who had collapsed the panel.
+        openRows: rows.filter((el) => el.dataset.expanded === "true").length,
         expandedHasControls: rows
           .filter((el) => el.dataset.expanded === "true")
           .every((el) => el.innerText.toUpperCase().includes("DESTINATION")),
@@ -101,7 +106,8 @@ export default async function ({ api, check, seedProject }) {
   check("the caret's own option is the one opened",
     panel.rows.join(" ") === "o1:true o2:false", panel.rows.join(" "));
   check("...and opened means its controls are there, not just a summary",
-    panel.expandedHasControls);
+    panel.openRows === 1 && panel.expandedHasControls,
+    `${panel.openRows} open`);
   check("the Inspector stops telling the writer to select what they're already in",
     panel.stillAsking === false);
 
@@ -286,13 +292,18 @@ export default async function ({ api, check, seedProject }) {
   });
   await settle();
 
+  // Four rows, every one of them still. `every()` over nothing is true, so
+  // the count is half the assertion: without it, an Inspector that isn't
+  // rendered at all reports a clean pass.
   let peaks = await peakTransforms("c1", "c2");
   check("opening the NEXT choice down doesn't make it fly up the panel",
-    Object.values(peaks).every((px) => px === 0), JSON.stringify(peaks));
+    Object.keys(peaks).length === 4 && Object.values(peaks).every((px) => px === 0),
+    JSON.stringify(peaks));
 
   peaks = await peakTransforms("c4", "c3");
   check("...and the same going the other way, which always happened to look fine",
-    Object.values(peaks).every((px) => px === 0), JSON.stringify(peaks));
+    Object.keys(peaks).length === 4 && Object.values(peaks).every((px) => px === 0),
+    JSON.stringify(peaks));
 
   // 8 — but the list still animates what genuinely moves. Expanding a
   // choice by hand shifts everything below it, and that motion explains

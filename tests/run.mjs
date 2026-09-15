@@ -44,6 +44,34 @@ const page = await app.firstWindow();
 // instant the first frame paints.
 await page.waitForFunction(() => Boolean(window.__scriareProjectStore), null, { timeout: 15000 });
 
+/**
+ * Put the workspace into a known shape before anything is measured.
+ *
+ * Electron gives an app one userData directory per app NAME, so the test
+ * build and the writer's own copy of Scriare share it — including the
+ * localStorage key that remembers which panels they collapsed. A writer
+ * who had folded away the Inspector and the graph to write distraction-free
+ * therefore ran a suite in which seven assertions measured panels that
+ * weren't on screen. They failed on their machine and passed on everyone
+ * else's, which is the worst way for a test to be wrong: it looks like a
+ * bug in the app.
+ *
+ * So the runner states the layout rather than inheriting it. The panels are
+ * part of what's under test, and a test that doesn't control its own
+ * preconditions isn't measuring what it claims to.
+ *
+ * Written before a reload rather than after, because App reads this key
+ * once when it mounts.
+ */
+await page.evaluate(() => {
+  window.localStorage.setItem(
+    "scriare:panelCollapsed",
+    JSON.stringify({ content: false, inspector: false, flow: false }),
+  );
+});
+await page.reload();
+await page.waitForFunction(() => Boolean(window.__scriareProjectStore), null, { timeout: 15000 });
+
 const api = (fn, arg) => page.evaluate(fn, arg);
 
 /**
