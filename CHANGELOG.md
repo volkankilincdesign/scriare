@@ -12,6 +12,24 @@ omitting them.
 
 ---
 
+## v0.39.2 — The third group on the canvas stopped eating clicks
+
+Reported: the scenes inside the **Endings** group couldn't be opened — a
+click selected the group instead — while the other two groups and
+everything in them behaved.
+
+Nothing about that group was special. A group's stacking order was its
+place in the parents-first group list, so that a box nested inside another
+paints above the one that owns it; a scene's was the literal 1. The first
+box (0) sat behind its scenes, the second (1) tied and lost to them, and
+the **third (2) and everything after it** was drawn over its own contents
+and swallowed every click. A box is a container, so it now always sits
+behind what it contains, whatever order it was made in.
+
+Four tests, two of them measuring the reported sentence directly: what is
+under the pointer at a scene's centre, and which object a real click
+selects. Both come back naming the group on a build with the fix removed.
+
 ## v0.39.1 — The Story Graph's connections are visible again
 
 Every connection printed its choice's full sentence across the curve. On a

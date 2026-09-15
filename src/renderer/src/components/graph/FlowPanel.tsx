@@ -557,6 +557,14 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     // array order for equal z-index). Everything below is unchanged from
     // the Frame era apart from where the data comes from.
     const groups = graphGroups(project.content, project.scenes).filter((g) => !g.hidden);
+    // Every scene paints above every box (v0.39.2, reported). A group's own
+    // z-index is its place in that parents-first list, which is what makes a
+    // nested box paint above the one that owns it — but scenes used to be
+    // pinned at a flat z of 1, so the THIRD box on a canvas (index 2) and
+    // everything after it was drawn over its own contents and swallowed
+    // every click, while the first two behaved. A box is a container: it is
+    // always behind what it contains, whatever order it was made in.
+    const sceneZ = groups.length + 1;
     const sceneCounts = new Map<string, number>();
     for (const group of groups) {
       const subtree = folderSubtree(project.content, group.id);
@@ -659,7 +667,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
         // the graph, but not open in the editor" state at all, nor could it
         // ever visibly participate in Ctrl+click or box-select.
         selected: selectedGraphIds.has(scene.id),
-        zIndex: 1,
+        zIndex: sceneZ,
         measured: measuredSizeRef.current.get(scene.id),
       };
     });
