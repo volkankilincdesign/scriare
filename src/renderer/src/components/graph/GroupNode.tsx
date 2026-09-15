@@ -74,9 +74,8 @@ export function GroupNode({ id, data, selected }: NodeProps) {
         <div className="flex items-center gap-1.5">
           <button
             type="button"
-            onMouseDown={(e) => e.stopPropagation()}
             onClick={() => toggleFolderCollapsed(id)}
-            className="shrink-0 cursor-pointer rounded px-0.5 text-[10px] text-[var(--text-3)] hover:text-[var(--text)]"
+            className="nodrag nopan shrink-0 cursor-pointer rounded px-0.5 text-[10px] text-[var(--text-3)] hover:text-[var(--text)]"
             title="Unfold group"
           >
             ▸
@@ -129,25 +128,39 @@ export function GroupNode({ id, data, selected }: NodeProps) {
       <div className="flex items-center gap-1 rounded-t-md bg-[var(--surface-translucent)] px-2 py-1">
         <button
           type="button"
-          onMouseDown={(e) => e.stopPropagation()}
           onClick={() => toggleFolderCollapsed(id)}
-          className="shrink-0 cursor-pointer rounded px-0.5 text-[10px] text-[var(--text-3)] hover:text-[var(--text)]"
+          className="nodrag nopan shrink-0 cursor-pointer rounded px-0.5 text-[10px] text-[var(--text-3)] hover:text-[var(--text)]"
           title="Fold group"
         >
           ▾
         </button>
+        {/* `nodrag nopan` rather than a stopPropagation on mousedown, which
+            is what this had and why dragging across the name moved the
+            whole group instead of selecting a word of it.
+
+            React Flow drags a node from POINTERDOWN, not mousedown, so a
+            handler on the older event never saw the gesture that mattered.
+            A plain click still worked — the caret landed, the group moved
+            zero pixels — which is what made this look like a text-selection
+            quirk rather than a drag. `nodrag` is React Flow's own opt-out
+            and it checks the whole target chain, so it can't miss an event
+            the way a hand-wired listener can.
+
+            A `onPointerDownCapture` guard was added here too and then
+            removed: the negative control showed `nodrag` alone passes, and
+            the guard alone does nothing. It was written while chasing a
+            failure that turned out to be the test clicking a scene node
+            sitting over the group. */}
         <input
           value={name}
           onChange={(e) => renameFolder(id, e.target.value)}
-          onMouseDown={(e) => e.stopPropagation()}
           placeholder="Group name"
-          className="min-w-0 flex-1 cursor-text bg-transparent text-xs font-semibold uppercase tracking-wide text-[var(--text-2)] outline-none placeholder:text-[var(--text-3)]"
+          className="nodrag nopan min-w-0 flex-1 cursor-text bg-transparent text-xs font-semibold uppercase tracking-wide text-[var(--text-2)] outline-none placeholder:text-[var(--text-3)]"
         />
         <button
           type="button"
-          onMouseDown={(e) => e.stopPropagation()}
           onClick={handleDelete}
-          className="shrink-0 cursor-pointer rounded px-1 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
+          className="nodrag nopan shrink-0 cursor-pointer rounded px-1 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
           title="Delete group (its contents move up one level)"
         >
           ✕

@@ -4,9 +4,10 @@ import { useProjectStore } from "../../state/projectStore";
 import { useUIStore } from "../../state/uiStore";
 import { useToastStore } from "../../state/toastStore";
 import { useSelectionStore } from "../../state/selectionStore";
+import { ownsEditingKeys } from "../../utils/keyboardFocus";
 import type { ContentNode, Scene } from "../../types/project";
 import { ancestorsOf, childrenOf, computeDropPosition, flattenVisible } from "../../utils/contentTree";
-import { ContentBrowserContext } from "./contentBrowserContext";
+import { ContentBrowserContext, useContentBrowser } from "./contentBrowserContext";
 import type { ContentBrowserContextValue, DropTarget } from "./contentBrowserContext";
 import { ContentTreeRow } from "./ContentTreeRow";
 import { FindResults } from "./FindResults";
@@ -27,9 +28,17 @@ import type { EntityKind } from "../../types/entities";
  */
 function EntityList({ kind }: { kind: EntityKind }) {
   const entities = useProjectStore((s) => s.project?.entities) ?? [];
+  const nodes = useProjectStore((s) => s.project?.content) ?? [];
   const selectedEntityId = useProjectStore((s) => s.selectedEntityId);
   const selectEntity = useProjectStore((s) => s.selectEntity);
   const createEntity = useProjectStore((s) => s.createEntity);
+  // v0.39.0 — the browser's own rename and context-menu machinery, which
+  // an entity row never reached before. Characters and Locations were
+  // built on the same ContentNode leaf every scene uses, and then given a
+  // row that only knew how to be clicked: no menu, so no Delete, and no
+  // rename except by opening the page. The store had `deleteEntity` the
+  // whole time; nothing in the interface called it.
+  const browser = useContentBrowser();
   const mine = entities.filter((e) => e.kind === kind);
 
   if (mine.length === 0) {
@@ -54,23 +63,52 @@ function EntityList({ kind }: { kind: EntityKind }) {
 
   return (
     <div>
-      {mine.map((entity) => (
-        <div
-          key={entity.id}
-          data-entity-row={entity.id}
-          onClick={() => selectEntity(entity.id)}
-          className={`ml-3 flex cursor-default items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
-            entity.id === selectedEntityId
-              ? "bg-[var(--surface-2)] text-[var(--text)]"
-              : "text-[var(--text-2)] hover:bg-[var(--bg)] hover:text-[var(--text)]"
-          }`}
-        >
-          <Icon name={kind === "character" ? "character" : "location"} />
-          <span className="min-w-0 flex-1 truncate">
-            {entity.name || `Untitled ${ENTITY_LABEL[kind].toLowerCase()}`}
-          </span>
-        </div>
-      ))}
+      {mine.map((entity) => {
+        const leaf = nodes.find((node) => node.id === entity.id) ?? null;
+        const renaming = browser.renamingId === entity.id;
+        return (
+          <div
+            key={entity.id}
+            data-entity-row={entity.id}
+            onClick={() => {
+              browser.clearSelection();
+              selectEntity(entity.id);
+            }}
+            onDoubleClick={() => browser.startRename(entity.id, entity.name)}
+            onContextMenu={(e) => {
+              browser.clearSelection();
+              selectEntity(entity.id);
+              browser.openContextMenu(e, leaf);
+            }}
+            className={`ml-3 flex cursor-default items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
+              entity.id === selectedEntityId
+                ? "bg-[var(--surface-2)] text-[var(--text)]"
+                : "text-[var(--text-2)] hover:bg-[var(--bg)] hover:text-[var(--text)]"
+            }`}
+          >
+            <Icon name={kind === "character" ? "character" : "location"} />
+            {renaming ? (
+              <input
+                autoFocus
+                data-entity-rename={entity.id}
+                value={browser.renameDraft}
+                onChange={(e) => browser.changeRenameDraft(e.target.value)}
+                onBlur={browser.commitRename}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") browser.commitRename();
+                  if (e.key === "Escape") browser.cancelRename();
+                  e.stopPropagation();
+                }}
+                className="min-w-0 flex-1 rounded border border-[var(--accent)] bg-[var(--bg)] px-1 text-sm text-[var(--text)] outline-none"
+              />
+            ) : (
+              <span className="min-w-0 flex-1 truncate">
+                {entity.name || `Untitled ${ENTITY_LABEL[kind].toLowerCase()}`}
+              </span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -120,6 +158,8 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
   const selectScene = useProjectStore((s) => s.selectScene);
   const createScene = useProjectStore((s) => s.createScene);
   const createEntity = useProjectStore((s) => s.createEntity);
+  const renameEntity = useProjectStore((s) => s.renameEntity);
+  const deleteEntity = useProjectStore((s) => s.deleteEntity);
   const renameScene = useProjectStore((s) => s.renameScene);
   const deleteScene = useProjectStore((s) => s.deleteScene);
   const duplicateScene = useProjectStore((s) => s.duplicateScene);
@@ -280,8 +320,17 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
   function commitRename(): void {
     if (renamingId && renameDraft.trim()) {
       const node = project!.content.find((n) => n.id === renamingId);
-      if (node?.kind === "folder") renameFolder(renamingId, renameDraft.trim());
-      else renameScene(renamingId, renameDraft.trim());
+      // Three kinds of thing share one rename box. An entity is checked by
+      // its own list rather than by the leaf's refType, because the entity
+      // is what actually holds the name — and renaming one reaches every
+      // sentence she appears in, since no sentence ever stored it.
+      if (project!.entities.some((e) => e.id === renamingId)) {
+        renameEntity(renamingId, renameDraft.trim());
+      } else if (node?.kind === "folder") {
+        renameFolder(renamingId, renameDraft.trim());
+      } else {
+        renameScene(renamingId, renameDraft.trim());
+      }
     }
     setRenamingId(null);
   }
@@ -340,11 +389,70 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
     setDropTarget(null);
   }
 
+  /**
+   * F2 renames what the Content Browser has selected (v0.39.0).
+   *
+   * The keyboard rule is the one Ctrl+Z established and Ctrl+C/V follow:
+   * if focus is in a text field or the editor, the key belongs to that
+   * field; anywhere else it's about the project. `ownsEditingKeys` is the
+   * same check all three use, so F2 while writing a sentence does nothing,
+   * which is what a writer expects of it.
+   *
+   * WHICH thing gets renamed follows from how the panel already works: one
+   * selected scene or group, or the entity whose row is highlighted.
+   * Anything else — nothing selected, or several — has no single answer, so
+   * it does nothing rather than guessing.
+   */
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent): void {
+      if (ownsEditingKeys(event.target)) return;
+      if (useSelectionStore.getState().surface !== "content") return;
+      const current = useProjectStore.getState();
+      if (!current.project || current.isPlaying) return;
+
+      if (event.key === "F2") {
+        // The tree's selection first, then the entity row — the two are
+        // kept mutually exclusive (see clearSelection), so at most one of
+        // them answers.
+        const id = selectedIds.size === 1 ? [...selectedIds][0] : current.selectedEntityId;
+        if (!id) return;
+        const entity = current.project.entities.find((e) => e.id === id);
+        const node = current.project.content.find((n) => n.id === id);
+        if (!entity && !node) return;
+        event.preventDefault();
+        if (entity) startRename(entity.id, entity.name);
+        else if (node!.kind === "folder") startRename(id, node!.name);
+        else startRename(id, current.project.scenes.find((sc) => sc.id === id)?.title ?? "");
+        return;
+      }
+
+      // Delete on a selected Character or Location. The app-wide clipboard
+      // handler deletes the tree's selection and an entity is never in it,
+      // so this is the one path that reaches them — and it raises the same
+      // undo toast, because no way of deleting something should be quieter
+      // than another.
+      if (event.key === "Delete" && selectedIds.size === 0) {
+        const entity = current.project.entities.find((e) => e.id === current.selectedEntityId);
+        if (!entity) return;
+        event.preventDefault();
+        const shown = entity.name || `Untitled ${ENTITY_LABEL[entity.kind].toLowerCase()}`;
+        deleteEntity(entity.id);
+        showUndo(`Deleted "${shown}"`);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedIds, startRename, deleteEntity, showUndo]);
+
   // --- context menu ---
   function openContextMenu(e: MouseEvent, node: ContentNode | null): void {
     e.preventDefault();
     e.stopPropagation();
-    if (node && !selectedIds.has(node.id)) {
+    // An entity leaf is deliberately not pulled into the tree's selection:
+    // it can't be dragged, foldered or bulk-anything, and putting it there
+    // makes the panel hold two selections at once.
+    const isEntity = node ? project!.entities.some((e) => e.id === node.id) : false;
+    if (node && !isEntity && !selectedIds.has(node.id)) {
       setSelectedIds(new Set([node.id]));
       setSelectionAnchor(node.id);
     } else if (!node) {
@@ -358,6 +466,31 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
       return [
         { label: "New Scene", onSelect: () => createScene(null) },
         { label: "New Group", onSelect: () => createFolder(null) },
+      ];
+    }
+
+    // v0.39.0 — a Character or Location leaf. Checked BEFORE the bulk
+    // branch: an entity is never part of the tree's multi-selection (it
+    // isn't in the Story category and can't be dragged or foldered), so
+    // falling through would offer it Move and Duplicate, neither of which
+    // it has.
+    const entity = project!.entities.find((e) => e.id === node.id);
+    if (entity) {
+      const shown = entity.name || `Untitled ${ENTITY_LABEL[entity.kind].toLowerCase()}`;
+      return [
+        { label: "Rename", onSelect: () => startRename(entity.id, entity.name) },
+        {
+          label: `Delete ${ENTITY_LABEL[entity.kind]}`,
+          danger: true,
+          onSelect: () => {
+            deleteEntity(entity.id);
+            // The same toast a deleted scene raises. Mentions of her are
+            // deliberately left in the prose — they render as the words
+            // that were written — so the undo here restores the page and
+            // the link, not the sentences.
+            showUndo(`Deleted "${shown}"`);
+          },
+        },
       ];
     }
 
@@ -462,6 +595,10 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
     toggleExpand,
     selectedIds,
     onItemClick: handleItemClick,
+    clearSelection: () => {
+      setSelectedIds(new Set());
+      setSelectionAnchor(null);
+    },
     renamingId,
     renameDraft,
     startRename,
@@ -651,6 +788,7 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
             ENTITY_CATEGORIES.map((cat) => (
               <div key={cat.key} className="mb-1">
                 <div
+                  data-category={cat.key}
                   onClick={() => toggleExpand(cat.key)}
                   className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2-faint)]"
                 >

@@ -25,6 +25,13 @@ export interface ContentBrowserContextValue {
    * the visible range between the anchor and the clicked node. */
   selectedIds: Set<string>;
   onItemClick: (e: MouseEvent, node: ContentNode) => void;
+  /**
+   * Empties the tree's selection. Clicking a Character or Location has to
+   * do this: the panel holds one selection, and leaving a scene highlighted
+   * while a character row is the one lit up means two things look selected
+   * and F2 has to guess which one you meant.
+   */
+  clearSelection: () => void;
 
   renamingId: string | null;
   renameDraft: string;

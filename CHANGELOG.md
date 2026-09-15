@@ -12,6 +12,47 @@ omitting them.
 
 ---
 
+## v0.39.0 — Deleting, renaming, and a Group name you can select
+
+Three things found by using the app. All the same shape: something built
+and then not connected to the way a person actually reaches it.
+
+**Characters and Locations can be deleted.** Right-click a row for Rename
+and Delete, with the same undo toast a deleted scene raises. `deleteEntity`
+had been in the store since v0.35.0, correct and undoable — its row simply
+had no menu, so nothing in the interface ever called it. Deleting someone
+still leaves every mention of her in the prose: the words stay as written,
+the app just stops claiming they point anywhere.
+
+**F2 renames.** A scene, a group, a character or a location — whichever the
+Content Browser has selected. Focus decides whether the key is yours or the
+text field's, the same rule Ctrl+Z and Ctrl+C already follow, so F2 with
+the caret in a sentence does nothing. Delete now removes a selected
+character too, and the panel holds one selection at a time rather than
+leaving a scene lit up while a character row is the one you're acting on.
+
+Renaming a character renames her *everywhere*, and there is no second
+option, because there is nothing for one to mean: no sentence ever stored
+her name. If she should be called something else in one place, that is an
+alias, which the app has had since v0.35.0.
+
+**A Group's name on the Story Graph can be selected with the mouse.**
+Dragging across it moved the whole group. The field guarded `mousedown`;
+React Flow drags from `pointerdown`, so the guard never saw the gesture —
+and a plain click worked fine, which is what made it look like a
+text-selection quirk rather than a drag. It uses React Flow's own `nodrag`
+opt-out now, which checks the whole target chain.
+
+Sixteen new tests. Two of them are the interesting ones. The first version
+of the drag test dispatched its own PointerEvents, and both the assertion
+and its control reported "nothing moved" — the drag had never started, so
+the test passed for the wrong reason; it now uses a real mouse. The second
+version then landed on a scene node sitting over the group, which looked
+exactly like the bug, so the test now asserts what is under the pointer
+before it presses. A hand-written `pointerdown` guard added along the way
+was deleted when the control showed `nodrag` alone was doing the work.
+244 tests.
+
 ## v0.38.1 — Fixed: the test suite measured the writer's own workspace
 
 Seven tests failed on one machine and passed on every other. The cause

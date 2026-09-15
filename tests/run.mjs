@@ -60,7 +60,7 @@ await page.waitForFunction(() => Boolean(window.__scriareProjectStore), null, { 
  * part of what's under test, and a test that doesn't control its own
  * preconditions isn't measuring what it claims to.
  *
- * Written before a reload rather than after, because App reads this key
+ * Written before a reload rather than after, because App reads these keys
  * once when it mounts.
  */
 await page.evaluate(() => {
@@ -68,6 +68,11 @@ await page.evaluate(() => {
     "scriare:panelCollapsed",
     JSON.stringify({ content: false, inspector: false, flow: false }),
   );
+  // Which tree sections are open is remembered the same way, and leaks the
+  // same way — a spec that clicks "Characters" to open it CLOSES it if the
+  // writer left it open. Cleared rather than set, so the app's own
+  // documented default (Story open, everything else closed) is what runs.
+  window.localStorage.removeItem("scriare:contentExpanded");
 });
 await page.reload();
 await page.waitForFunction(() => Boolean(window.__scriareProjectStore), null, { timeout: 15000 });

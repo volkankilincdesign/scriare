@@ -57,6 +57,7 @@ export function ContentTreeRow({ node, depth }: ContentTreeRowProps) {
   return (
     <div>
       <div
+        data-content-row={node.id}
         draggable
         onDragStart={(e) => onDragStartNode(e, node.id)}
         onDragOver={(e) => {
@@ -137,6 +138,7 @@ export function ContentTreeRow({ node, depth }: ContentTreeRowProps) {
           <div
             role="button"
             tabIndex={0}
+            data-content-label={node.id}
             onClick={(e) => onItemClick(e, node)}
             onDoubleClick={() => startRename(node.id, displayName)}
             onKeyDown={(e) => {
