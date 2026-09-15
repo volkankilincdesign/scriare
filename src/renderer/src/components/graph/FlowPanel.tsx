@@ -53,6 +53,37 @@ const nodeTypes: NodeTypes = {
 // remembering to update both numbers together.
 const CAMERA_FIT_DURATION_MS = 350;
 
+// An edge label lives inside the graph's transformed viewport, so its text
+// shrinks with the camera: at the zoom that fits a thirteen-scene story into
+// the panel, an 11px sentence renders about five pixels tall — not a
+// sentence any more, just a white smear laid across the wires, which is the
+// reported failure returning at a different scale. So a sentence is drawn
+// at a fixed SCREEN size instead (font and padding divided by the zoom) —
+// which is what makes "point at a wire to read its choice" work at any
+// camera distance. No clamp on the divisor: the camera is already bounded
+// by this graph's own minZoom/maxZoom, and a clamp inside those bounds
+// would mean the correction quietly stops working at exactly the distance
+// it exists for.
+//
+// This is done for the ONE label under the pointer and nothing else. Held
+// at screen size, three labels on a selected scene's wires are three
+// banners laid across a zoomed-out map, each several times the width of the
+// scene it belongs to — the reported bug with better typography. One is a
+// tooltip; three is a mess.
+const LABEL_SCREEN_PX = 11;
+
+// So a selected scene's wires show their text at the ordinary scale, and
+// only once the camera is close enough for that to be legible — below this
+// an 11px label renders under nine pixels tall, which is the smear again.
+// Until then the wires are already drawn in the accent colour, which
+// answers "where do these go"; the pointer answers "which choice is this".
+const LABEL_TEXT_MIN_ZOOM = 0.8;
+
+// And the sentence itself is capped, because a fixed screen size means a
+// long option label becomes a long banner regardless of how far out you
+// are. Enough to recognise which choice this is — which is the question
+// being asked — without laying a full line of prose across the map.
+const LABEL_MAX_CHARS = 34;
 
 /** Live drag offset for a single node — its position at drag-start plus the
  * current cursor-driven delta. Originally this was one object per drag
@@ -128,6 +159,19 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   // `handleNodeDoubleClick` below for why single-click and double-click
   // needed to stop meaning the same thing.
   const [selectedGraphIds, setSelectedGraphIds] = useState<Set<string>>(() => new Set());
+
+  // v0.39.1 — which single wire the pointer is on, so it can show its
+  // choice's full sentence while every other wire stays a bare ordinal.
+  // Deliberately one id and not a set: the whole point is that at most a
+  // few sentences are on screen at a time.
+  const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null);
+
+  // The camera's current zoom, used only to keep a label's text the same
+  // size on screen however far out the graph is (see LABEL_SCREEN_PX).
+  // Rounded on the way in, because `onMove` fires continuously while
+  // panning and an unrounded value would rerender the edges on every frame
+  // of a gesture that didn't change how anything looks.
+  const [zoom, setZoom] = useState(1);
 
   // Mirror the graph's selection out for the app-wide Delete/copy/paste
   // shortcuts — see state/selectionStore.ts. This set can hold frame ids
@@ -299,8 +343,14 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     const resolve = mentionResolver(project.entities ?? []);
 
     for (const scene of project.scenes) {
-      for (const choice of extractChoices(scene.content, resolve)) {
+      // Numbered in document order across the whole scene, counting options
+      // that go nowhere too — so the badge on a wire is the same ordinal the
+      // writer sees counting down the page, not a renumbering that only
+      // agrees with the page when every option happens to be linked.
+      const sceneChoices = extractChoices(scene.content, resolve);
+      for (const [index, choice] of sceneChoices.entries()) {
         if (!choice.targetSceneId) continue;
+        const ordinal = index + 1;
         const source = visibleStandIn(project, scene.id) ?? scene.id;
         const target = visibleStandIn(project, choice.targetSceneId) ?? choice.targetSceneId;
         // Both ends folded into the same box: the connection is now
@@ -337,9 +387,16 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
           // grouping is deliberately going for. Auto-layout's ordinary
           // forward connections look effectively identical either way.
           type: "default",
-          label: choice.text || undefined,
-          labelStyle: { fill: "var(--text-2)", fontSize: 11 },
-          labelBgStyle: { fill: "var(--surface)" },
+          // v0.39.1 — the label is NOT set here. Printing every choice's
+          // full sentence over the curves made the curves unreadable: on a
+          // real 13-scene story the labels overlapped each other and sat
+          // squarely on top of the wires they belonged to, so the one thing
+          // the graph exists to show — which scene leads where — was the one
+          // thing you couldn't trace. The text moved into `data` and the
+          // styling memo below decides what's actually drawn: a short
+          // ordinal bead at rest, the full sentence only for the handful of
+          // wires you're pointing at.
+          data: { short: String(ordinal), full: choice.text || `Choice ${ordinal}` },
         });
       }
     }
@@ -349,10 +406,11 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       source,
       target,
       type: "default",
-      label: `${count} link${count === 1 ? "" : "s"}`,
-      labelStyle: { fill: "var(--text-3)", fontSize: 10 },
-      labelBgStyle: { fill: "var(--surface)" },
-      data: { bundled: true },
+      data: {
+        bundled: true,
+        short: `×${count}`,
+        full: `${count} link${count === 1 ? "" : "s"}`,
+      },
     }));
 
     return [...direct, ...bundles];
@@ -386,16 +444,53 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       // heavier — the weight is the only thing distinguishing "these two
       // chapters are loosely related" from "everything flows through here".
       const isBundle = Boolean((edge.data as { bundled?: boolean } | undefined)?.bundled);
+      // v0.39.1 — two labels per edge, and which one is drawn is a function
+      // of attention. At rest every wire carries only its ordinal, small
+      // enough to read as a bead threaded on the cable rather than a sign
+      // hung over it; the sentence appears on the wires of whatever you've
+      // selected, and on the single wire under the pointer. That keeps the
+      // "which choice is this?" answer one hover away without ever letting
+      // more than a few sentences be on screen at once — which was the
+      // actual failure, not the labels themselves.
+      const labels = edge.data as { short?: string; full?: string } | undefined;
+      const isHovered = edge.id === hoveredEdgeId;
+      const showFull = isHovered || (isConnectedToSelected && zoom >= LABEL_TEXT_MIN_ZOOM);
+      const full = labels?.full ?? "";
+      const label = showFull
+        ? full.length > LABEL_MAX_CHARS
+          ? `${full.slice(0, LABEL_MAX_CHARS - 1).trimEnd()}…`
+          : full
+        : labels?.short;
+      // Only the sentence is size-corrected. The bead is left to shrink with
+      // everything else on purpose: pulled right out, two characters per
+      // wire fading to a dot is a map you can read, and the same two
+      // characters held at full size on every connection would be the
+      // clutter this release is removing.
+      const scale = isHovered ? 1 / (zoom || 1) : 1;
       return {
         ...edge,
+        label: label || undefined,
+        labelStyle: {
+          fill: showFull ? "var(--text)" : "var(--text-3)",
+          fontSize: (showFull ? LABEL_SCREEN_PX : 10) * scale,
+        },
+        labelBgStyle: {
+          fill: "var(--surface)",
+          stroke: showFull ? "var(--border)" : "var(--border-faint)",
+          strokeWidth: scale,
+          fillOpacity: 0.96,
+        },
+        labelBgPadding: (showFull ? [6 * scale, 3 * scale] : [5, 2]) as [number, number],
+        labelBgBorderRadius: showFull ? 4 * scale : 8,
+        labelShowBg: true,
         style: {
           stroke: isConnectedToSelected ? "var(--accent)" : "var(--border-faint)",
           strokeWidth: isConnectedToSelected ? 2.2 : isBundle ? 2.6 : 1.6,
         },
-        zIndex: isConnectedToSelected ? 1 : 0,
+        zIndex: showFull ? 1 : 0,
       };
     });
-  }, [edgesBase, selectedSceneId, selectedGraphIds]);
+  }, [edgesBase, selectedSceneId, selectedGraphIds, hoveredEdgeId, zoom]);
 
   // Which group (if any) currently encloses a scene, mapped once per
   // render — a scene inside a group that is being dragged has to ride along
@@ -815,6 +910,12 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
               onInit={(instance) => {
                 flowInstanceRef.current = instance;
               }}
+              onMove={(_, viewport) => {
+                const next = Math.round(viewport.zoom * 100) / 100;
+                setZoom((prev) => (prev === next ? prev : next));
+              }}
+              onEdgeMouseEnter={(_, edge) => setHoveredEdgeId(edge.id)}
+              onEdgeMouseLeave={() => setHoveredEdgeId(null)}
               onNodeDoubleClick={handleNodeDoubleClick}
               onNodesChange={handleNodesChange}
               onNodeDragStart={handleNodeDragStart}

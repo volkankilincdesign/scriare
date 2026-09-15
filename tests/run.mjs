@@ -73,6 +73,15 @@ await page.evaluate(() => {
   // writer left it open. Cleared rather than set, so the app's own
   // documented default (Story open, everything else closed) is what runs.
   window.localStorage.removeItem("scriare:contentExpanded");
+  // And the editor/graph splitter, for a sharper reason than tidiness: the
+  // graph fits its camera to the panel it's given, so the panel's height
+  // sets the zoom, and the zoom sets how many screen pixels a node occupies.
+  // Any spec that measures or drives something in screen coordinates — the
+  // Group-name drag in entities-and-renaming.spec.mjs does both — is then
+  // working on a different-sized node than it was written against, and
+  // passes or fails on a splitter position someone dragged days ago. Same
+  // class of leak as the collapsed panels above, found the same way.
+  window.localStorage.removeItem("scriare:flowHeight");
 });
 await page.reload();
 await page.waitForFunction(() => Boolean(window.__scriareProjectStore), null, { timeout: 15000 });

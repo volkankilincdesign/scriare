@@ -12,6 +12,32 @@ omitting them.
 
 ---
 
+## v0.39.1 — The Story Graph's connections are visible again
+
+Every connection printed its choice's full sentence across the curve. On a
+thirteen-scene story that made the map unreadable: the sentences overlapped
+each other and sat on top of the wires they belonged to, so the one thing
+the graph exists to answer — which scene leads where — was the one thing
+you couldn't trace.
+
+A wire now carries its choice's **number** instead, a small bead on the
+cable, numbered by the option's place on the page — so an unlinked option
+keeps its number rather than silently renumbering the rest. The text
+appears where you are already looking: **point at a wire** and that one
+choice is named, at any zoom, drawn at a fixed size on screen so it is
+readable even when the whole story is on the canvas; **select a scene** and
+its own wires carry their text, once the camera is close enough for an
+11px label to be legible. Nothing was removed; it just stopped all being
+shown at once. Bundled connections between folded groups read `×3` at rest
+and `3 links` when pointed at.
+
+Also: the test runner now resets the editor/graph splitter along with the
+panel layout. The graph fits its camera to the panel it is given, so a
+splitter position left over from writing decided the zoom, and the zoom
+decided how many screen pixels a node occupied — which quietly changed what
+the Group-rename drag test was measuring. Same leak as the seven
+one-machine failures in v0.38.1, one key further along.
+
 ## v0.39.0 — Deleting, renaming, and a Group name you can select
 
 Three things found by using the app. All the same shape: something built
