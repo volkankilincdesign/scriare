@@ -1,5 +1,5 @@
 import dagre from "@dagrejs/dagre";
-import { SCENE_NODE_HEIGHT, SCENE_NODE_WIDTH } from "./graphConstants";
+import { SCENE_NODE_HEIGHT, SCENE_NODE_WIDTH, snapPoint } from "./graphConstants";
 
 interface LayoutEdge {
   source: string;
@@ -53,10 +53,14 @@ export function computeAutoLayout(
     const size = sizeById.get(id)!;
     // dagre positions by center — convert to the top-left corner our
     // project data model expects.
-    positions[id] = {
+    // v0.42.0 — snapped, so Auto Layout's output sits on the same grid a
+    // hand-dragged card does. Without this, one tidy pass puts every scene
+    // half a cell off and the first manual nudge afterwards looks like it
+    // moved something that was already aligned.
+    positions[id] = snapPoint({
       x: node.x - size.width / 2,
       y: node.y - size.height / 2,
-    };
+    });
   });
 
   return positions;

@@ -12,6 +12,32 @@ omitting them.
 
 ---
 
+## v0.42.0 — The canvas has lines
+
+**The Story Graph is grid-based.** Movement, landing and resizing all obey
+an 18px lattice — the same spacing as the canvas's fine dot field, so a
+card comes to rest on a dot rather than on an invisible rule. A story laid
+out by hand now lines up the way one laid out by Auto Layout does, without
+anyone nudging anything by a pixel.
+
+Four routes reach the canvas and all four had to agree, or the grid would
+read as a rendering bug rather than a rule: a dragged card (which steps
+from cell to cell while the mouse is still down, not on release), a resized
+box, Auto Layout's output, and any position written straight to the store —
+which is how a pasted scene or a project file from before the grid arrives.
+A box is snapped by its corners rather than by its origin and size, so the
+edge you dragged lands on the line nearest where you left it.
+
+**Holding Alt suspends it**, for the one thing a grid cannot do: put a card
+exactly where the grid has no line.
+
+**Also fixed:** a scene that left the canvas — deleted from the Content
+Browser, or carried off with a project that was closed — stayed selected,
+with nothing on screen saying so and Delete still pointed at it. Found while
+testing the grid; what is selected is now always a subset of what exists.
+
+---
+
 ## v0.41.0 — A bar at the bottom, a floor under the graph
 
 Five things, all reported while using v0.40.0, and none of them changes how

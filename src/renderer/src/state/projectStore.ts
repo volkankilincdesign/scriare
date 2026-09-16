@@ -15,6 +15,7 @@ import { ENTITY_CATEGORY, ENTITY_LABEL, buildEntity } from "../types/entities";
 import type { EntityKind } from "../types/entities";
 import { computeGraphLayout } from "../utils/autoLayoutGraph";
 import { regenerateChoiceIds } from "../utils/choiceBlocks";
+import { snapPoint, snapRect } from "../utils/graphConstants";
 import {
   DEFAULT_CHOICE_STYLE_ID,
   buildChoiceStyle,
@@ -159,7 +160,13 @@ interface ProjectState {
   toggleFavorite: (refType: Favorite["refType"], refId: string) => void;
   setFavorites: (refType: Favorite["refType"], refIds: string[], value: boolean) => void;
 
-  updateScenePosition: (sceneId: string, position: { x: number; y: number }) => void;
+  updateScenePosition: (
+    sceneId: string,
+    position: { x: number; y: number },
+    /** v0.42.0 — false places the scene exactly where it was dropped
+     *  (Alt held on the graph). Everything else snaps to the grid. */
+    snap?: boolean,
+  ) => void;
   autoLayoutScenes: () => void;
 
   /** Pass a scene id to make it the Start Scene, or null to clear it (Play
@@ -180,7 +187,13 @@ interface ProjectState {
    * another group. `reparent` is false during a resize, where the box
    * changes shape without the writer meaning to move it anywhere.
    */
-  updateFolderRect: (folderId: string, rect: FolderRect, reparent?: boolean) => void;
+  updateFolderRect: (
+    folderId: string,
+    rect: FolderRect,
+    reparent?: boolean,
+    /** As updateScenePosition's `snap`. */
+    snap?: boolean,
+  ) => void;
   /** Folds a group down to a single block on the graph, or unfolds it. */
   toggleFolderCollapsed: (folderId: string) => void;
 
@@ -1035,11 +1048,20 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     scheduleAutosave(get);
   },
 
-  updateScenePosition: (sceneId, position) => {
+  updateScenePosition: (sceneId, rawPosition, snap = true) => {
     const { project } = get();
     if (!project) return;
 
     pushHistory(set, get, "Move Scene");
+
+    // v0.42.0 — the grid is enforced here, at the one door every move goes
+    // through, not only in the drag that usually opens it. React Flow
+    // already snaps the live drag, but a position can also arrive from a
+    // paste, from Auto Layout, or from a project file written before the
+    // grid existed; snapping at the commit means the stored story is always
+    // on the lattice, and "everything lines up" is a property of the data
+    // rather than a habit of one interaction.
+    const position = snap ? snapPoint(rawPosition) : rawPosition;
 
     // Figma-style auto-grouping, except the group is now a real folder: a
     // scene dropped inside a group's box moves INTO that folder, and one
@@ -1091,11 +1113,23 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
     pushHistory(set, get, "Auto Layout");
 
+    // v0.42.0 — the tidy pass lands on the same lattice a hand-drag does.
+    // Snapped here rather than inside the layout algorithm because dagre
+    // positions by CENTRE and the boxes are resized to fit afterwards: doing
+    // it at the end is the only place where what gets stored is what gets
+    // drawn. Without it, one Auto Layout leaves every card a few pixels off
+    // the grid and the next manual nudge appears to move something that was
+    // already aligned.
+    const scenes = result.scenes.map((scene) => ({ ...scene, position: snapPoint(scene.position) }));
+    const content = result.content.map((node) =>
+      node.kind === "folder" && node.rect ? { ...node, rect: snapRect(node.rect) } : node,
+    );
+
     set({
       project: {
         ...project,
-        scenes: result.scenes,
-        content: result.content,
+        scenes,
+        content,
         updatedAt: new Date().toISOString(),
       },
       saveStatus: "unsaved",
@@ -1153,9 +1187,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     scheduleAutosave(get);
   },
 
-  updateFolderRect: (folderId, rect, reparent = true) => {
+  updateFolderRect: (folderId, rawRect, reparent = true, snap = true) => {
     const { project } = get();
     if (!project) return;
+
+    // Boxes obey the same lattice as the cards inside them — see
+    // updateScenePosition. Snapped by corners rather than by origin plus
+    // size, so both edges land on a line (snapRect).
+    const rect = snap ? snapRect(rawRect) : rawRect;
 
     const folder = project.content.find(
       (n): n is ContentFolder => n.id === folderId && n.kind === "folder",

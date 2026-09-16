@@ -44,6 +44,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./utils/findInStory"),
     import("./utils/textFold"),
     import("./state/uiStore"),
+    import("./utils/graphConstants"),
   ]).then(
     ([
       projectStore,
@@ -66,6 +67,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       findInStory,
       textFold,
       uiStore,
+      graphConstants,
     ]) => {
       Object.assign(window, {
         __scriareProjectStore: projectStore.useProjectStore,
@@ -73,6 +75,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         __scriareSelectionStore: selectionStore.useSelectionStore,
         __scriareClipboardUtils: clipboardUtils,
         __scriareGroupUtils: groupUtils,
+        __scriareGraphConstants: graphConstants,
         __scriareProjectTypes: projectTypes,
         __scriareVariables: variables,
         // The live editor and the Choice Block helpers that act on it. A

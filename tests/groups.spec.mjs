@@ -96,35 +96,70 @@ export default async function ({ api, check, seedProject }) {
   });
   check("a scene inside nested boxes joins the innermost one", r === "sub", `parent is ${r}`);
 
-  // 3 — dragging a group carries everything inside it, at every depth
+  // 3 — dragging a group carries everything inside it, at every depth.
+  //
+  // Asserted as a RELATIONSHIP rather than as fixed coordinates: since
+  // v0.42.0 the store snaps every rect it is handed to the 18px grid, so the
+  // box does not necessarily land on the exact x/y it was asked for — and
+  // the literal 150/200 this check used to compare against only held while
+  // nothing rounded. What must be true either way, and is the actual point
+  // of the feature, is that everything inside moves by the SAME delta the
+  // box itself moved by. Literals would now be testing the rounding.
   r = await api(() => {
     const store = window.__scriareProjectStore;
+    const before = store.getState().project;
+    const boxBefore = before.content.find((n) => n.id === "chapter").rect;
+    const subBefore = before.content.find((n) => n.id === "sub").rect;
+    const inBefore = before.scenes.find((s) => s.id === "in").position;
+    const outBefore = before.scenes.find((s) => s.id === "out").position;
+
     store.getState().updateFolderRect("chapter", { x: 100, y: 100, width: 600, height: 400 }, true);
+
     const p = store.getState().project;
+    const boxAfter = p.content.find((n) => n.id === "chapter").rect;
+    const dx = boxAfter.x - boxBefore.x;
+    const dy = boxAfter.y - boxBefore.y;
+    const sub = p.content.find((n) => n.id === "sub").rect;
+    const inScene = p.scenes.find((s) => s.id === "in").position;
+    const nested = p.scenes.find((s) => s.id === "out").position;
     return {
-      sub: p.content.find((n) => n.id === "sub").rect,
-      inScene: p.scenes.find((s) => s.id === "in").position,
-      nested: p.scenes.find((s) => s.id === "out").position,
+      dx, dy,
+      subOk: sub.x === subBefore.x + dx && sub.y === subBefore.y + dy,
+      inOk: inScene.x === inBefore.x + dx && inScene.y === inBefore.y + dy,
+      outOk: nested.x === outBefore.x + dx && nested.y === outBefore.y + dy,
+      onGrid: boxAfter.x % 18 === 0 && boxAfter.y % 18 === 0,
     };
   });
   check("moving a group carries its scenes and its sub-groups by the same delta",
-    r.sub.x === 150 && r.sub.y === 150 && r.inScene.x === 200 && r.inScene.y === 200 &&
-      r.nested.x === 200 && r.nested.y === 200,
-    `sub at ${r.sub.x},${r.sub.y}; scenes at ${r.inScene.x},${r.inScene.y} and ${r.nested.x},${r.nested.y}`);
+    r.dx !== 0 && r.dy !== 0 && r.subOk && r.inOk && r.outOk,
+    `moved by ${r.dx},${r.dy} — sub ${r.subOk}, scenes ${r.inOk}/${r.outOk}`);
+  check("...and the box itself lands on the grid (v0.42.0)", r.onGrid === true);
 
   // 4 — dragging a sub-group clear of its parent re-files it at the root
   r = await api(() => {
     const store = window.__scriareProjectStore;
+    const before = store.getState().project;
+    const subBefore = before.content.find((n) => n.id === "sub").rect;
+    const outBefore = before.scenes.find((s) => s.id === "out").position;
+
     store.getState().updateFolderRect("sub", { x: 2000, y: 2000, width: 300, height: 200 }, true);
+
     const p = store.getState().project;
+    const subAfter = p.content.find((n) => n.id === "sub").rect;
+    const carried = p.scenes.find((s) => s.id === "out").position;
     return {
       parent: p.content.find((n) => n.id === "sub").parentId,
-      carried: p.scenes.find((s) => s.id === "out").position,
+      carried,
+      // Same reasoning as the check above: the grid decides the landing, the
+      // contents' job is to arrive with it.
+      carriedOk:
+        carried.x === outBefore.x + (subAfter.x - subBefore.x) &&
+        carried.y === outBefore.y + (subAfter.y - subBefore.y),
     };
   });
   check("dragging a sub-group out of its parent re-files it in the tree",
     r.parent === null, `parent is ${r.parent}`);
-  check("...and its scenes travel with it", r.carried.x === 2050 && r.carried.y === 2050,
+  check("...and its scenes travel with it", r.carriedOk === true,
     `scene at ${r.carried.x},${r.carried.y}`);
 
   // 5 — dropping a group wholly inside another files it under that one
@@ -430,17 +465,27 @@ export default async function ({ api, check, seedProject }) {
   });
   check("a scene dragged clear of a derived box leaves the group", r === null, `parent is ${r}`);
 
-  // 15 — touching the box is what makes its geometry real
+  // 15 — touching the box is what makes its geometry real. The landing is
+  // the grid's, not the caller's (v0.42.0): the store snaps every rect it is
+  // handed, so what is asserted is that the box moved from where it was
+  // DRAWN — not from 0,0 or from some default — and came to rest on the
+  // nearest line to the requested x.
   r = await api(() => {
     const store = window.__scriareProjectStore;
     const p = store.getState().project;
     const g = window.__scriareGroupUtils.graphGroups(p.content, p.scenes)[0];
     store.getState().updateFolderRect("ch", { ...g.rect, x: g.rect.x + 100 }, true);
     const after = store.getState().project.content.find((n) => n.id === "ch");
-    return { stored: Boolean(after.rect), x: after.rect?.x, wasAt: g.rect.x };
+    return {
+      stored: Boolean(after.rect),
+      x: after.rect?.x,
+      wasAt: g.rect.x,
+      want: window.__scriareGraphConstants.snapValue(g.rect.x + 100),
+    };
   });
   check("moving a derived box stores its geometry from where it appeared",
-    r.stored && r.x === r.wasAt + 100, `stored: ${r.stored}, x ${r.wasAt} → ${r.x}`);
+    r.stored && r.x === r.want && Math.abs(r.x - r.wasAt - 100) < 18,
+    `stored: ${r.stored}, x ${r.wasAt} → ${r.x} (wanted ${r.want})`);
 
   // 16 — emptying a group takes its box away again rather than leaving a
   // stored rectangle around nothing... unless the writer gave it one.

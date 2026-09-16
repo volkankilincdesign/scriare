@@ -15,6 +15,7 @@ import { useProjectStore } from "../../state/projectStore";
 import { useSelectionStore } from "../../state/selectionStore";
 import { extractChoices } from "../../utils/choiceBlocks";
 import { mentionResolver } from "../../utils/mentions";
+import { GRAPH_GRID, snapRect } from "../../utils/graphConstants";
 import {
   COLLAPSED_GROUP_SIZE,
   folderSubtree,
@@ -172,6 +173,58 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   // panning and an unrounded value would rerender the edges on every frame
   // of a gesture that didn't change how anything looks.
   const [zoom, setZoom] = useState(1);
+
+  // v0.42.0 — the canvas is grid-based: scenes and boxes move, land and
+  // resize on the same 18px lattice the dot field draws, so a story laid out
+  // by hand lines up the way one laid out by Auto Layout does. Holding Alt
+  // suspends it for the one case a grid can't serve — squeezing a card into
+  // a gap the grid doesn't offer. Released on blur as well as keyup, because
+  // a window that loses focus mid-drag would otherwise stay in free mode
+  // with nothing holding the key down.
+  const [freeMove, setFreeMove] = useState(false);
+
+  useEffect(() => {
+    function down(e: KeyboardEvent): void {
+      if (e.key === "Alt") setFreeMove(true);
+    }
+    function up(e: KeyboardEvent): void {
+      if (e.key === "Alt") setFreeMove(false);
+    }
+    function clear(): void {
+      setFreeMove(false);
+    }
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    window.addEventListener("blur", clear);
+    return () => {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+      window.removeEventListener("blur", clear);
+    };
+  }, []);
+
+  // Selection is only ever *un*-set by a change React Flow reports about a
+  // node it still has (see `handleNodesChange`), so an id whose node leaves
+  // the canvas — a scene deleted from the Content Browser, one project
+  // closed and another opened — would otherwise stay selected forever, with
+  // nothing on screen showing it and Delete still pointed at it. Found as
+  // one project's selection surviving into the next; pruning here rather
+  // than at every place that can remove a node keeps the rule in one place:
+  // what is selected is a subset of what exists.
+  useEffect(() => {
+    if (selectedGraphIds.size === 0) return;
+    const live = new Set<string>();
+    for (const scene of project?.scenes ?? []) live.add(scene.id);
+    for (const node of project?.content ?? []) live.add(node.id);
+    let stale = false;
+    for (const id of selectedGraphIds) {
+      if (!live.has(id)) {
+        stale = true;
+        break;
+      }
+    }
+    if (stale) setSelectedGraphIds(new Set([...selectedGraphIds].filter((id) => live.has(id))));
+  }, [project, selectedGraphIds]);
 
   // Mirror the graph's selection out for the app-wide Delete/copy/paste
   // shortcuts — see state/selectionStore.ts. This set can hold frame ids
@@ -610,9 +663,12 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
           // alongside `frameDrag`/`sceneDrag`: GroupNode has no way to feed
           // a value back into the `nodes` array its own node comes from.
           onResize: (rect: { x: number; y: number; width: number; height: number }) => {
-            setFrameResize({ frameId: group.id, ...rect });
+            // Snapped on the way in, so the box being dragged shows the size
+            // it is going to keep rather than a number that jumps on release.
+            setFrameResize({ frameId: group.id, ...(freeMove ? rect : snapRect(rect)) });
           },
-          onResizeEnd: (rect: { x: number; y: number; width: number; height: number }) => {
+          onResizeEnd: (rawRect: { x: number; y: number; width: number; height: number }) => {
+            const rect = freeMove ? rawRect : snapRect(rawRect);
             // `false` — a resize changes the box's shape, not where the
             // writer means it to live, so it must never re-file the folder
             // just because a corner happened to cross another box's edge.
@@ -805,6 +861,11 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
             height: (n.style?.height as number) ?? 0,
           },
           true,
+          // Alt held: keep exactly where it was dropped. Without threading
+          // this through, the escape hatch would only affect the live drag
+          // and the store would snap the box back on release — a bypass that
+          // lies about what it does is worse than no bypass.
+          !freeMove,
         );
       }
     }
@@ -816,7 +877,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       // the group's motion. Mirrors the same precedence the `nodes` memo
       // applies while the drag is still in flight.
       if (isInsideDraggedGroup(n.id, draggedGroupIds)) continue;
-      updateScenePosition(n.id, n.position);
+      updateScenePosition(n.id, n.position, !freeMove);
     }
 
     setFrameDrag(null);
@@ -930,6 +991,15 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
               onNodeDrag={handleNodeDrag}
               onNodeDragStop={handleNodeDragStop}
               nodesDraggable
+              // The live half of the grid: React Flow reports snapped
+              // positions to onNodeDrag, so the card visibly steps from cell
+              // to cell AND the value this app commits on release is already
+              // on the lattice. The store snaps again on write (see
+              // updateScenePosition) — belt and braces, because a position
+              // can also arrive from paste, from Auto Layout, or from a
+              // project file written by an older version.
+              snapToGrid={!freeMove}
+              snapGrid={[GRAPH_GRID, GRAPH_GRID]}
               nodesConnectable={false}
               edgesFocusable={false}
               edgesReconnectable={false}
