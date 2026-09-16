@@ -12,6 +12,43 @@ omitting them.
 
 ---
 
+## v0.41.0 — A bar at the bottom, a floor under the graph
+
+Five things, all reported while using v0.40.0, and none of them changes how
+anything behaves.
+
+**The window closes the way it opens.** The top of the three columns is a
+single unbroken line; the bottom was three different edges at three
+different heights, because each column ran out of content wherever it
+happened to. There is now one bar across all three. It carries what a
+writer glances down for: how big the story is, which scene is open and how
+long it is, and whether the map is showing. The word count is the open
+scene only — a project-wide count would mean walking every document on
+every keystroke.
+
+**The Story Graph has a floor.** Two dot fields instead of one flat grid: a
+fine one that gives the canvas a surface, and a coarser, brighter one that
+gives it a scale. Reported as "the graph feels infinite and hard to read",
+which is exactly what a canvas with no measurable spacing feels like —
+without the second field, panning reads as texture sliding past rather than
+as movement over something.
+
+**The Story Graph can take the whole column.** The splitter's ceiling was a
+hard-coded 640px, so the map stopped at roughly two thirds of the window.
+It is now the column's own height, measured at drag time: drag all the way
+up and the editor retracts completely.
+
+**More lift.** Every elevation token is heavier and two-layer, controls went
+up a step — they were the half still reading as flat — and a selected row
+or the active scene card now catches a faint ring of the accent as well as
+casting a shadow. The page gained a third shadow layer and a lit top edge,
+so the sheet has a rim rather than sitting on a dark rectangle.
+
+**The side panels separate by light, not by shadow.** They now carry a
+single lit pixel down their inner edge instead of casting into the editor —
+the same reason the inward cast was removed in v0.40.0, applied as a
+replacement rather than an absence.
+
 ## v0.40.0 — Lifted
 
 A finish pass, chosen from four mockups. Nothing moves, nothing is added,

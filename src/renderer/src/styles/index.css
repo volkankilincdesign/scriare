@@ -632,7 +632,15 @@ input[type="number"],
 .scriare-topbar {
   position: relative;
   z-index: 3;
-  box-shadow: var(--lift-bar);
+  box-shadow: var(--lift-bar), var(--lift-edge);
+}
+
+/* The bar that closes the window, cast upward the way the top bar casts
+   down, so the frame is symmetrical in light as well as in line. */
+.scriare-statusbar {
+  position: relative;
+  z-index: 3;
+  box-shadow: 0 -8px 22px -8px var(--lift-cast), var(--lift-edge);
 }
 
 /* The side panels do NOT cast inward, and that is the reported corner.
@@ -654,17 +662,28 @@ input[type="number"],
   z-index: 2;
 }
 
+/* With no cast, the panels are separated from the editor by light instead:
+   a single lit pixel down their inner edge, the vertical version of the
+   top edge every raised surface in this interface has. */
+.scriare-panel-l {
+  box-shadow: inset -1px 0 0 oklch(100% 0 0 / 0.04);
+}
+
+.scriare-panel-r {
+  box-shadow: inset 1px 0 0 oklch(100% 0 0 / 0.04);
+}
+
 .scriare-toolbar {
   position: relative;
   z-index: 2;
-  box-shadow: 0 4px 14px -8px var(--lift-cast);
+  box-shadow: 0 6px 18px -8px var(--lift-cast), var(--lift-edge);
 }
 
 /* The graph is a band under the editor, so its shadow is cast upward. */
 .scriare-graph-band {
   position: relative;
   z-index: 2;
-  box-shadow: 0 -8px 20px -10px var(--lift-cast);
+  box-shadow: 0 -10px 26px -10px var(--lift-cast), var(--lift-edge);
 }
 
 /* The page. The one piece of furniture in the room: a sheet on a desk
@@ -675,7 +694,7 @@ input[type="number"],
   background: var(--surface);
   border: 1px solid var(--border-soft);
   border-radius: 8px;
-  box-shadow: var(--lift-page);
+  box-shadow: var(--lift-page), var(--lift-edge);
   padding: 30px 40px 36px;
   /* The column is widened by exactly the padding the page adds, so the line
      length a writer sees is the same as it was before the page existed.
@@ -708,20 +727,22 @@ input[type="number"],
 .scriare-panel-r select,
 .scriare-panel-r input[type="text"],
 .scriare-panel-r textarea {
-  box-shadow: var(--lift-control), var(--lift-edge);
+  box-shadow: var(--lift-raised), var(--lift-edge);
 }
 
 /* The primary action is the one object lifted clear of the rest. */
 .scriare-topbar [class*="bg-[var(--accent-fill-strong)"],
 .scriare-toolbar [class*="bg-[var(--accent-fill-strong)"] {
-  box-shadow: 0 2px 6px oklch(0% 0 0 / 0.35), var(--lift-edge-strong);
+  box-shadow: 0 3px 10px -2px oklch(0% 0 0 / 0.55), var(--lift-edge-strong);
 }
 
 /* A selected row in the Content Browser rises instead of only brightening,
-   which is what lets the fill stay as quiet as it is. */
+   which is what lets the fill stay as quiet as it is — and catches a little
+   of the accent along its edge, so "this is the one" is legible at a glance
+   rather than on inspection. */
 .scriare-panel-l [class*="bg-[var(--surface-2)"],
 .scriare-panel-l [class*="bg-[var(--accent-soft-2)"] {
-  box-shadow: var(--lift-raised), var(--lift-edge);
+  box-shadow: var(--lift-raised), var(--lift-glow), var(--lift-edge);
 }
 
 /* Scenes and groups on the canvas are cards on a table. The selected one
@@ -732,7 +753,12 @@ input[type="number"],
 
 .react-flow__node.selected .scriare-scene-card,
 .scriare-scene-card[data-active="true"] {
-  box-shadow: var(--lift-node-on);
+  box-shadow: var(--lift-node-on), var(--lift-glow-strong);
+}
+
+/* The status bar's one control behaves like the rest of the chrome. */
+.scriare-status-btn:hover {
+  box-shadow: var(--lift-control), var(--lift-edge);
 }
 
 /* A frame is a container, so it stays flat — a box that casts a shadow

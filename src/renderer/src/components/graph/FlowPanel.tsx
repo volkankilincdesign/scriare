@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ReactFlow, Background, Controls, SelectionMode } from "@xyflow/react";
+import { ReactFlow, Background, BackgroundVariant, Controls, SelectionMode } from "@xyflow/react";
 import type {
   Node,
   Edge,
@@ -973,7 +973,26 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
               autoPanSpeed={15}
               proOptions={{ hideAttribution: true }}
             >
-              <Background color="var(--border-soft)" gap={18} />
+              {/* v0.41.0 — two dot fields rather than one flat grid. The
+                  fine one gives the canvas a surface; the coarse one gives it
+                  a scale, so panning reads as movement over something instead
+                  of a texture sliding past. Reported as "the graph feels
+                  infinite and hard to read", which is exactly what a canvas
+                  with no measurable spacing feels like. */}
+              <Background
+                id="scriare-fine"
+                variant={BackgroundVariant.Dots}
+                color="var(--graph-dot)"
+                gap={18}
+                size={1.3}
+              />
+              <Background
+                id="scriare-coarse"
+                variant={BackgroundVariant.Dots}
+                color="var(--graph-dot-strong)"
+                gap={90}
+                size={2.6}
+              />
               {/* Shown only when part of the graph is off screen — see
                   GraphMiniMap for why that is the whole of its logic. */}
               <GraphMiniMap />

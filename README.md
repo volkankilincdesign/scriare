@@ -57,8 +57,10 @@ lives in.
 
 - A **Story Graph** built from the writing, with pan, box-select, nesting
   groups that fold, and Auto Layout that arranges the inside of every
-  chapter in a single undoable step. A connection carries its choice's
-  number; point at one — or select the scene — to read the choice itself.
+  chapter in a single undoable step, on a dotted canvas that shows its own
+  scale. A connection carries its choice's number; point at one — or select
+  the scene — to read the choice itself. The splitter hands the graph as
+  much of the window as you want, up to all of it.
 - **One hierarchy.** The folder in the sidebar and the box on the canvas
   are the same object: rearrange the picture and the tree follows.
 - **Characters and Locations** with pages, aliases and backlinks. `@` them
@@ -96,12 +98,14 @@ lives in.
   things that mean something. Depth does the rest: the page is a sheet on a
   desk, controls carry a lit edge, and a selected scene rises rather than
   only brightening.
+- A status bar across the foot of the window: story size, the open scene and
+  its word count, and whether the Story Graph is showing.
 - Matching handles Turkish properly throughout: `ist` finds İstanbul,
   `aydin` finds Aydın.
 
 ## Status
 
-**v0.40.0 — in active development, and usable.** The editor, graph,
+**v0.41.0 — in active development, and usable.** The editor, graph,
 runtime, entities, variables, validation and search are all real. Not yet
 built: **Export** (the button is visible and disabled on purpose) and a
 packaged installer. See [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for

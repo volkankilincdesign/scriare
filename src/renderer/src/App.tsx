@@ -3,6 +3,7 @@ import { TopBar } from "./components/layout/TopBar";
 import { ContentBrowser } from "./components/layout/ContentBrowser";
 import { InspectorPanel } from "./components/layout/InspectorPanel";
 import { EditorGraphSplit } from "./components/layout/EditorGraphSplit";
+import { StatusBar } from "./components/layout/StatusBar";
 import { WelcomeScreen } from "./components/welcome/WelcomeScreen";
 import { PlayRuntime } from "./runtime/PlayRuntime";
 import { ConfirmDialogHost } from "./components/common/ConfirmDialogHost";
@@ -149,6 +150,13 @@ export default function App() {
           />
         )}
       </div>
+
+      {/* v0.41.0 — the window closes the way it opens: one line across all
+          three columns. Hidden in Play Mode, where the chrome gets out of
+          the way entirely. */}
+      {!isPlaying && (
+        <StatusBar flowCollapsed={panels.flow} onToggleFlow={() => togglePanel("flow")} />
+      )}
 
       {variableManagerOpen && <VariableManagerDialog onClose={closeVariableManager} />}
       {choiceStylesOpen && <ChoiceStylesDialog onClose={closeChoiceStyles} />}

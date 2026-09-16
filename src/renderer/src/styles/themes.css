@@ -108,15 +108,23 @@
      cast that places. One soft shadow alone is invisible on a dark ground;
      one hard shadow alone looks stuck on. --lift-edge is the light catching
      the top of the object and is the half people notice without seeing. */
-  --lift-edge: inset 0 1px 0 oklch(100% 0 0 / 0.045);
-  --lift-edge-strong: inset 0 1px 0 oklch(100% 0 0 / 0.28);
-  --lift-control: 0 1px 2px oklch(0% 0 0 / 0.4);
-  --lift-raised: 0 1px 3px oklch(0% 0 0 / 0.5);
-  --lift-page: 0 2px 4px -1px oklch(0% 0 0 / 0.5), 0 26px 50px -18px oklch(0% 0 0 / 0.65);
-  --lift-node: 0 2px 6px oklch(0% 0 0 / 0.5);
-  --lift-node-on: 0 4px 12px oklch(0% 0 0 / 0.55);
-  --lift-bar: 0 6px 18px oklch(0% 0 0 / 0.4);
-  --lift-cast: oklch(0% 0 0 / 0.36);
+  --lift-edge: inset 0 1px 0 oklch(100% 0 0 / 0.075);
+  --lift-edge-strong: inset 0 1px 0 oklch(100% 0 0 / 0.35);
+  --lift-control: 0 1px 2px oklch(0% 0 0 / 0.55), 0 3px 8px -2px oklch(0% 0 0 / 0.45);
+  --lift-raised: 0 2px 5px -1px oklch(0% 0 0 / 0.6), 0 6px 14px -4px oklch(0% 0 0 / 0.5);
+  --lift-page: 0 2px 5px -1px oklch(0% 0 0 / 0.6), 0 10px 20px -6px oklch(0% 0 0 / 0.55),
+    0 34px 64px -22px oklch(0% 0 0 / 0.8);
+  --lift-node: 0 2px 5px -1px oklch(0% 0 0 / 0.6), 0 8px 16px -6px oklch(0% 0 0 / 0.5);
+  --lift-node-on: 0 4px 10px -2px oklch(0% 0 0 / 0.65), 0 16px 30px -10px oklch(0% 0 0 / 0.6);
+  --lift-bar: 0 8px 22px -6px oklch(0% 0 0 / 0.65);
+  --lift-cast: oklch(0% 0 0 / 0.5);
+  /* A selected object catches a little light as well as casting a shadow —
+     the accent at low alpha, ringing the edge rather than filling it. */
+  --lift-glow: 0 0 0 1px oklch(93% 0.004 75 / 0.16), 0 0 18px -4px oklch(93% 0.004 75 / 0.12);
+  --lift-glow-strong: 0 0 0 1px oklch(93% 0.004 75 / 0.3), 0 0 26px -4px oklch(93% 0.004 75 / 0.18);
+  /* The graph's dot field. Two weights: a fine surface and a coarser scale. */
+  --graph-dot: oklch(39% 0.005 75);
+  --graph-dot-strong: oklch(54% 0.006 75);
 }
 
 [data-theme="light"] {
@@ -164,15 +172,20 @@
   /* The same elevation, inverted for daylight: on a light ground the lit
      edge is nearly white and the cast is a soft warm grey, because a black
      shadow at dark-theme strength reads as dirt on paper. */
-  --lift-edge: inset 0 1px 0 oklch(100% 0 0 / 0.75);
-  --lift-edge-strong: inset 0 1px 0 oklch(100% 0 0 / 0.35);
-  --lift-control: 0 1px 2px oklch(20% 0.006 75 / 0.1);
-  --lift-raised: 0 1px 3px oklch(20% 0.006 75 / 0.14);
-  --lift-page: 0 1px 2px -1px oklch(20% 0.006 75 / 0.1), 0 20px 38px -16px oklch(20% 0.006 75 / 0.18);
-  --lift-node: 0 1px 3px oklch(20% 0.006 75 / 0.12);
-  --lift-node-on: 0 3px 10px oklch(20% 0.006 75 / 0.16);
-  --lift-bar: 0 4px 14px oklch(20% 0.006 75 / 0.1);
-  --lift-cast: oklch(20% 0.006 75 / 0.09);
+  --lift-edge: inset 0 1px 0 oklch(100% 0 0 / 0.85);
+  --lift-edge-strong: inset 0 1px 0 oklch(100% 0 0 / 0.4);
+  --lift-control: 0 1px 2px oklch(20% 0.006 75 / 0.16), 0 3px 8px -3px oklch(20% 0.006 75 / 0.14);
+  --lift-raised: 0 2px 5px -2px oklch(20% 0.006 75 / 0.2), 0 6px 14px -6px oklch(20% 0.006 75 / 0.16);
+  --lift-page: 0 2px 4px -2px oklch(20% 0.006 75 / 0.16), 0 10px 20px -8px oklch(20% 0.006 75 / 0.14),
+    0 30px 56px -24px oklch(20% 0.006 75 / 0.24);
+  --lift-node: 0 2px 4px -2px oklch(20% 0.006 75 / 0.18), 0 8px 16px -8px oklch(20% 0.006 75 / 0.14);
+  --lift-node-on: 0 4px 10px -3px oklch(20% 0.006 75 / 0.22), 0 14px 26px -12px oklch(20% 0.006 75 / 0.18);
+  --lift-bar: 0 6px 18px -8px oklch(20% 0.006 75 / 0.18);
+  --lift-cast: oklch(20% 0.006 75 / 0.14);
+  --lift-glow: 0 0 0 1px oklch(19% 0.006 75 / 0.16), 0 0 16px -6px oklch(19% 0.006 75 / 0.14);
+  --lift-glow-strong: 0 0 0 1px oklch(19% 0.006 75 / 0.28), 0 0 22px -6px oklch(19% 0.006 75 / 0.2);
+  --graph-dot: oklch(80% 0.005 75);
+  --graph-dot-strong: oklch(66% 0.006 75);
 }
 
 /* Newsreader — the brand wordmark and dialog titles. Deliberately the only

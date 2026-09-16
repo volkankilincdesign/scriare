@@ -5,7 +5,12 @@ import { useProjectStore } from "../../state/projectStore";
 import { FlowPanel } from "../graph/FlowPanel";
 
 const MIN_FLOW_HEIGHT = 120;
-const MAX_FLOW_HEIGHT = 640;
+/** Only a fallback for the first paint and for a stored value read before
+ *  the column has been measured — the real ceiling is the column's own
+ *  height, resolved at drag time. v0.41.0, reported: the graph stopped at
+ *  about two thirds of the window, and a writer who wants to look at nothing
+ *  but the map should be able to. */
+const MAX_FLOW_HEIGHT = 4000;
 const DEFAULT_FLOW_HEIGHT = 224;
 const STORAGE_KEY = "scriare:flowHeight";
 
@@ -44,6 +49,9 @@ export function EditorGraphSplit({ flowCollapsed, onToggleFlow }: EditorGraphSpl
   const [flowHeight, setFlowHeight] = useState(loadStoredHeight);
   const [dragging, setDragging] = useState(false);
   const dragStart = useRef<{ y: number; height: number } | null>(null);
+  // The column the editor and the graph share. Its height is the ceiling:
+  // drag all the way up and the graph takes the lot.
+  const columnRef = useRef<HTMLDivElement | null>(null);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -62,10 +70,8 @@ export function EditorGraphSplit({ flowCollapsed, onToggleFlow }: EditorGraphSpl
       // Dragging down shrinks the graph (dy > 0 -> less height), since the
       // handle sits above the graph panel.
       const dy = e.clientY - dragStart.current.y;
-      const next = Math.min(
-        MAX_FLOW_HEIGHT,
-        Math.max(MIN_FLOW_HEIGHT, dragStart.current.height - dy),
-      );
+      const ceiling = columnRef.current?.clientHeight ?? MAX_FLOW_HEIGHT;
+      const next = Math.min(ceiling, Math.max(MIN_FLOW_HEIGHT, dragStart.current.height - dy));
       setFlowHeight(next);
     }
 
@@ -99,7 +105,7 @@ export function EditorGraphSplit({ flowCollapsed, onToggleFlow }: EditorGraphSpl
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div ref={columnRef} className="flex flex-1 flex-col overflow-hidden">
       <div className="min-h-0 flex-1 overflow-hidden">
         <SceneEditor />
       </div>
