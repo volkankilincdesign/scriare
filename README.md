@@ -93,13 +93,15 @@ lives in.
   prose you typed after the thing being undone.
 - Copy, cut, paste and delete on scenes and folders, routed by focus.
 - Dark and light themes, monochrome by design — colour is reserved for
-  things that mean something.
+  things that mean something. Depth does the rest: the page is a sheet on a
+  desk, controls carry a lit edge, and a selected scene rises rather than
+  only brightening.
 - Matching handles Turkish properly throughout: `ist` finds İstanbul,
   `aydin` finds Aydın.
 
 ## Status
 
-**v0.39.2 — in active development, and usable.** The editor, graph,
+**v0.40.0 — in active development, and usable.** The editor, graph,
 runtime, entities, variables, validation and search are all real. Not yet
 built: **Export** (the button is visible and disabled on purpose) and a
 packaged installer. See [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for

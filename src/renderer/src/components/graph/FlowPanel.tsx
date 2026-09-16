@@ -834,7 +834,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   return (
     <div
       style={{ height: collapsed ? 36 : height }}
-      className="flex shrink-0 flex-col overflow-hidden border-t border-[var(--border-soft)] bg-[var(--surface)]"
+      className="scriare-graph-band flex shrink-0 flex-col overflow-hidden border-t border-[var(--border-soft)] bg-[var(--surface)]"
     >
       {collapsed ? (
         // The whole collapsed bar is the click target to re-expand — matching

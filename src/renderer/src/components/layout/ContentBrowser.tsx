@@ -637,7 +637,7 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
         // see state/selectionStore.ts. Capture phase, so it still fires when
         // a child stops propagation for its own drag handling.
         onPointerDownCapture={() => claimSurface("content")}
-        className="flex w-64 shrink-0 flex-col border-r border-[var(--border-soft)] bg-[var(--surface)]"
+        className="scriare-panel-l flex w-64 shrink-0 flex-col border-r border-[var(--border-soft)] bg-[var(--surface)]"
       >
         <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-3 py-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">Content</span>

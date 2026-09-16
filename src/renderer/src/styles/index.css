@@ -613,3 +613,130 @@ input[type="number"],
   color: var(--text);
   padding: 0 .1em;
 }
+
+/* ── Lifted (v0.40.0) ──────────────────────────────────────────────────
+   One rule, applied consistently: a surface you can act on sits above the
+   surface behind it. Shadow places it, a lit top edge finishes it.
+
+   Nothing here changes layout, spacing, colour or behaviour — every
+   declaration is a box-shadow, a border radius, or the padding of the new
+   page card. The tokens live in themes.css so the light theme gets its own
+   values rather than a black shadow on paper.
+
+   Why hook classes rather than blanket element selectors: an icon-only
+   ghost button and a bordered control are the same <button> to CSS, and
+   lifting both makes the toolbar look like a bank of keys. The six hooks
+   below name the surfaces; the one substring selector names the controls,
+   by the border token they already draw. */
+
+.scriare-topbar {
+  position: relative;
+  z-index: 3;
+  box-shadow: var(--lift-bar);
+}
+
+/* The side panels do NOT cast inward, and that is the reported corner.
+   A cast from the panel onto the centre column darkens the first ~30px of
+   whatever is beside it — including the toolbar's bottom border, which then
+   fades out before it reaches the panel's own edge. The two lines stop
+   meeting, and the corner reads as unfinished at exactly the place a person
+   checks first. Measured on the real build: the border read 3/255 in the
+   first 30px and 5/255 across the rest.
+   
+   The cast was worth about two levels of grey and cost the one junction in
+   the window where three surfaces meet, so it is gone. Depth in this
+   interface is carried by the page, the controls and the cards on the
+   canvas, all of which are objects with their own edges; the panels are
+   walls, and a wall is defined by its line, not by its shadow. */
+.scriare-panel-l,
+.scriare-panel-r {
+  position: relative;
+  z-index: 2;
+}
+
+.scriare-toolbar {
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 4px 14px -8px var(--lift-cast);
+}
+
+/* The graph is a band under the editor, so its shadow is cast upward. */
+.scriare-graph-band {
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 -8px 20px -10px var(--lift-cast);
+}
+
+/* The page. The one piece of furniture in the room: a sheet on a desk
+   rather than a panel that happens to hold text. Padding rather than the
+   editor's own, so the prose column keeps its measure and simply gains a
+   margin of paper around it. */
+.scriare-page {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  box-shadow: var(--lift-page);
+  padding: 30px 40px 36px;
+  /* The column is widened by exactly the padding the page adds, so the line
+     length a writer sees is the same as it was before the page existed.
+     Without this the sheet quietly narrows the measure by 80px, which is a
+     typographic change wearing a decoration's clothes — and Play Mode, which
+     shares READING_COLUMN_CLASS, would no longer match the editor. */
+  max-width: calc(42rem + 80px);
+}
+
+/* On a narrow window the editor pane is already below the reading column's
+   own cap, so the sheet's side margins come straight out of the line length.
+   Below this width the paper keeps its look on a thinner margin rather than
+   quietly shortening the lines. */
+@media (max-width: 1400px) {
+  .scriare-page {
+    padding-inline: 24px;
+  }
+}
+
+/* Controls: anything that already draws the border token is a made object
+   and gets the treatment. Ghost buttons, which draw no border, stay flat —
+   that contrast is the point. The attribute match is on Tailwind's own
+   arbitrary-value class name, which is stable because it IS the value. */
+.scriare-topbar [class*="border-[var(--border)"],
+.scriare-toolbar [class*="border-[var(--border)"],
+.scriare-panel-l [class*="border-[var(--border)"],
+.scriare-panel-r [class*="border-[var(--border)"],
+.scriare-topbar select,
+.scriare-toolbar select,
+.scriare-panel-r select,
+.scriare-panel-r input[type="text"],
+.scriare-panel-r textarea {
+  box-shadow: var(--lift-control), var(--lift-edge);
+}
+
+/* The primary action is the one object lifted clear of the rest. */
+.scriare-topbar [class*="bg-[var(--accent-fill-strong)"],
+.scriare-toolbar [class*="bg-[var(--accent-fill-strong)"] {
+  box-shadow: 0 2px 6px oklch(0% 0 0 / 0.35), var(--lift-edge-strong);
+}
+
+/* A selected row in the Content Browser rises instead of only brightening,
+   which is what lets the fill stay as quiet as it is. */
+.scriare-panel-l [class*="bg-[var(--surface-2)"],
+.scriare-panel-l [class*="bg-[var(--accent-soft-2)"] {
+  box-shadow: var(--lift-raised), var(--lift-edge);
+}
+
+/* Scenes and groups on the canvas are cards on a table. The selected one
+   lifts further rather than only changing its border colour. */
+.scriare-scene-card {
+  box-shadow: var(--lift-node);
+}
+
+.react-flow__node.selected .scriare-scene-card,
+.scriare-scene-card[data-active="true"] {
+  box-shadow: var(--lift-node-on);
+}
+
+/* A frame is a container, so it stays flat — a box that casts a shadow
+   reads as sitting ON the scenes it is supposed to hold. */
+.scriare-frame-box {
+  box-shadow: none;
+}

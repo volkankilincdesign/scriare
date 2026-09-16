@@ -12,6 +12,39 @@ omitting them.
 
 ---
 
+## v0.40.0 — Lifted
+
+A finish pass, chosen from four mockups. Nothing moves, nothing is added,
+nothing behaves differently: every change is a shadow, a lit edge, or the
+padding of the new page.
+
+**The writing surface is a page.** A sheet with its own edge and shadow,
+sitting on the desk, rather than text lying directly on the background. Its
+width is the reading column plus exactly the margin it adds, so the line
+length a writer sees is unchanged — and on a narrow window the margin
+narrows rather than shortening the lines.
+
+**Controls read as made objects.** Anything that already drew a border —
+the font and size pickers, the Choice group, the top bar's buttons, the
+Inspector's fields — gets a single lit pixel along its top edge and a
+shadow beneath. Ghost icon buttons stay flat on purpose: that contrast is
+what makes the difference legible.
+
+**Selected things rise.** A selected row in the Content Browser lifts
+instead of only brightening, and a scene on the graph is a card on a table.
+Group boxes stay flat — a container that casts a shadow looks like it is
+sitting *on* what it is supposed to hold.
+
+Elevation is a token set with separate values per theme, because a
+dark-theme black shadow on a light-theme page reads as dirt.
+
+One thing was tried and removed: the side panels casting inward onto the
+editor. It was worth about two levels of grey, and it dimmed the first
+thirty pixels of the toolbar's bottom border, so the border stopped
+visibly short of the Content Browser's edge and that corner read as
+unfinished. Reported, measured (3/255 against 5/255 across the rest of the
+line), and deleted. A wall is defined by its line, not by its shadow.
+
 ## v0.39.2 — The third group on the canvas stopped eating clicks
 
 Reported: the scenes inside the **Endings** group couldn't be opened — a

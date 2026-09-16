@@ -30,7 +30,7 @@ export function TopBar() {
   const modifier = navigator.platform.toLowerCase().includes("mac") ? "⌘" : "Ctrl+";
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--border-soft)] bg-[var(--surface)] px-5">
+    <header className="scriare-topbar flex h-14 shrink-0 items-center justify-between border-b border-[var(--border-soft)] bg-[var(--surface)] px-5">
       <div className="flex items-center gap-3">
         <button
           type="button"

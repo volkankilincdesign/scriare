@@ -236,7 +236,7 @@ export function SceneEditor() {
     <div className="flex h-full flex-1 flex-col overflow-hidden bg-[var(--bg)]">
       <EditorToolbar editor={editor} />
       <div className="flex-1 overflow-y-auto px-8 py-8">
-        <div className={READING_COLUMN_CLASS}>
+        <div className={`scriare-page ${READING_COLUMN_CLASS}`}>
           <input
             value={scene.title}
             onChange={(e) => renameScene(scene.id, e.target.value)}

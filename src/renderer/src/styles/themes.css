@@ -98,6 +98,25 @@
      soft black shadow is invisible. */
   --shadow-raised: 0 1px 2px oklch(0% 0 0 / 0.4), 0 4px 12px oklch(0% 0 0 / 0.35);
   --shadow-floating: 0 2px 6px oklch(0% 0 0 / 0.45), 0 14px 30px oklch(0% 0 0 / 0.55);
+
+  /* Elevation, v0.40.0 ("Lifted"). Every surface a writer can act on sits a
+     little above the one behind it, and says so with a shadow beneath plus a
+     single lit pixel along its top edge — the cheapest honest way to make a
+     control read as a made object rather than a coloured rectangle.
+
+     Two layers everywhere: a tight edge shadow that separates, and a wide
+     cast that places. One soft shadow alone is invisible on a dark ground;
+     one hard shadow alone looks stuck on. --lift-edge is the light catching
+     the top of the object and is the half people notice without seeing. */
+  --lift-edge: inset 0 1px 0 oklch(100% 0 0 / 0.045);
+  --lift-edge-strong: inset 0 1px 0 oklch(100% 0 0 / 0.28);
+  --lift-control: 0 1px 2px oklch(0% 0 0 / 0.4);
+  --lift-raised: 0 1px 3px oklch(0% 0 0 / 0.5);
+  --lift-page: 0 2px 4px -1px oklch(0% 0 0 / 0.5), 0 26px 50px -18px oklch(0% 0 0 / 0.65);
+  --lift-node: 0 2px 6px oklch(0% 0 0 / 0.5);
+  --lift-node-on: 0 4px 12px oklch(0% 0 0 / 0.55);
+  --lift-bar: 0 6px 18px oklch(0% 0 0 / 0.4);
+  --lift-cast: oklch(0% 0 0 / 0.36);
 }
 
 [data-theme="light"] {
@@ -141,6 +160,19 @@
 
   --shadow-raised: 0 1px 2px oklch(20% 0.006 75 / 0.08), 0 4px 12px oklch(20% 0.006 75 / 0.08);
   --shadow-floating: 0 2px 6px oklch(20% 0.006 75 / 0.12), 0 14px 30px oklch(20% 0.006 75 / 0.14);
+
+  /* The same elevation, inverted for daylight: on a light ground the lit
+     edge is nearly white and the cast is a soft warm grey, because a black
+     shadow at dark-theme strength reads as dirt on paper. */
+  --lift-edge: inset 0 1px 0 oklch(100% 0 0 / 0.75);
+  --lift-edge-strong: inset 0 1px 0 oklch(100% 0 0 / 0.35);
+  --lift-control: 0 1px 2px oklch(20% 0.006 75 / 0.1);
+  --lift-raised: 0 1px 3px oklch(20% 0.006 75 / 0.14);
+  --lift-page: 0 1px 2px -1px oklch(20% 0.006 75 / 0.1), 0 20px 38px -16px oklch(20% 0.006 75 / 0.18);
+  --lift-node: 0 1px 3px oklch(20% 0.006 75 / 0.12);
+  --lift-node-on: 0 3px 10px oklch(20% 0.006 75 / 0.16);
+  --lift-bar: 0 4px 14px oklch(20% 0.006 75 / 0.1);
+  --lift-cast: oklch(20% 0.006 75 / 0.09);
 }
 
 /* Newsreader — the brand wordmark and dialog titles. Deliberately the only

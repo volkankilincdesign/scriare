@@ -367,7 +367,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     <div
       role="toolbar"
       aria-label="Formatting"
-      className="flex flex-wrap items-center gap-1 border-b border-[var(--border-soft)] bg-[var(--surface)] px-5 py-2.5"
+      className="scriare-toolbar flex flex-wrap items-center gap-1 border-b border-[var(--border-soft)] bg-[var(--surface)] px-5 py-2.5"
     >
       {/* B / I / U as specimens rather than characters: each one is set in
           the style it applies, which is the clearest possible label. */}
