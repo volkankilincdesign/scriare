@@ -12,6 +12,47 @@ omitting them.
 
 ---
 
+## v0.46.0 — A theme audit, and the four things it found
+
+No new features. The app was walked in all eight themes, on every surface it
+can open, looking for colours it paints that do not come from the palette —
+because a hardcoded colour is theme-blind by definition: it looks deliberate
+in whichever theme it was written against and wrong in the other seven.
+
+**Check Story's warnings were Tailwind's amber**, a literal colour with no
+relation to the palette. On a dark ground it reads; on the four light and mid
+grounds it is nearly invisible — so on half the themes the app's own "look at
+this" mark was the hardest thing on screen to see. There is now a `--warning`
+token, the third of the meaning colours beside `--danger` and `--success`,
+tuned per ground the way those are.
+
+**The ending card in Play Mode was painted with `--overlay`** — the scrim
+drawn *behind* a dialog, used as a surface. On the dark themes that passes for
+a slightly darker panel; on the light ones it is a heavy grey slab across the
+page. An ending is a panel on the page, and panels are surfaces.
+
+**Two controls outlined themselves in black** regardless of theme — the
+toolbar's colour chip and the theme swatches in Settings — and **a drag
+preview in the Inspector carried the dark theme's shadow written out by
+hand**, which on a light ground reads as dirt on paper. All three now use the
+tokens that exist for exactly this.
+
+Also removed: opacity modifiers on `var()` colours (`border-[var(--danger)]/50`
+and friends), which Tailwind cannot compute and silently discarded — a fade
+that was never on screen in the first place.
+
+**The audit is now a test**, run on every surface in every theme, with the
+two things that are legitimately off-palette marked as such: the toolbar's
+colour and highlight bars, which *are* the colour they show. Confirmed by
+putting the amber back — all eight themes report it.
+
+One thing deliberately not fixed: the Story Graph's connection handles are
+drawn by React Flow in its own navy-and-white, but they are `opacity: 0` in
+this app — nobody drags a wire here, connections come from the writing — so
+theming something invisible would have been a fix for nothing.
+
+---
+
 ## v0.45.0 — One control for folding a panel away
 
 **The dock toggles are the same control now, in all eight themes.** Reported,

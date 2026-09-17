@@ -31,8 +31,9 @@
  * carry a trace of chroma, because a screen of mathematically pure grey has
  * no temperature and the eye reads it as absence rather than as a choice.
  *
- * --danger and --success are the only hues a theme does not own: they mean
- * destructive and constructive everywhere, in all eight.
+ * --danger, --success and --warning are the only hues a theme does not own:
+ * they mean destructive, constructive and "look at this" everywhere, in all
+ * eight, and each is tuned per ground so it says so legibly.
  */
 
 :root, [data-theme="dark"] {
@@ -79,6 +80,13 @@
   --success: oklch(66% 0.13 155);
   --success-hover: oklch(60% 0.14 155);
   --success-text-on: oklch(98% 0.01 155);
+  /* The third of the meaning colours (v0.46.0). Check Story's warnings were
+     drawn in a literal amber from Tailwind's palette, which is legible on a
+     dark ground and all but invisible on a light one — so on four of the
+     eight themes the app's own "look at this" mark was the hardest thing on
+     screen to see. Like danger and success, it means the same thing in every
+     theme and is tuned per ground to say it. */
+  --warning: oklch(80% 0.145 80);
 
   --surface-translucent: oklch(12.5% 0.008 75 / 0.85);
   --surface-2-translucent: oklch(16.5% 0.009 75 / 0.5);
@@ -146,6 +154,13 @@
   --success: oklch(56% 0.14 155);
   --success-hover: oklch(50% 0.15 155);
   --success-text-on: oklch(98% 0.01 155);
+  /* The third of the meaning colours (v0.46.0). Check Story's warnings were
+     drawn in a literal amber from Tailwind's palette, which is legible on a
+     dark ground and all but invisible on a light one — so on four of the
+     eight themes the app's own "look at this" mark was the hardest thing on
+     screen to see. Like danger and success, it means the same thing in every
+     theme and is tuned per ground to say it. */
+  --warning: oklch(52% 0.13 70);
 
   --surface-translucent: oklch(93% 0.007 85 / 0.85);
   --surface-2-translucent: oklch(90% 0.008 85 / 0.5);
@@ -211,6 +226,13 @@
   --success: oklch(56% 0.14 155);
   --success-hover: oklch(50% 0.15 155);
   --success-text-on: oklch(98% 0.01 155);
+  /* The third of the meaning colours (v0.46.0). Check Story's warnings were
+     drawn in a literal amber from Tailwind's palette, which is legible on a
+     dark ground and all but invisible on a light one — so on four of the
+     eight themes the app's own "look at this" mark was the hardest thing on
+     screen to see. Like danger and success, it means the same thing in every
+     theme and is tuned per ground to say it. */
+  --warning: oklch(52% 0.13 70);
 
   --surface-translucent: oklch(95.5% 0.006 85 / 0.85);
   --surface-2-translucent: oklch(92.5% 0.008 85 / 0.5);
@@ -279,6 +301,13 @@
   --success: oklch(45% 0.12 155);
   --success-hover: oklch(39% 0.13 155);
   --success-text-on: oklch(98% 0.01 155);
+  /* The third of the meaning colours (v0.46.0). Check Story's warnings were
+     drawn in a literal amber from Tailwind's palette, which is legible on a
+     dark ground and all but invisible on a light one — so on four of the
+     eight themes the app's own "look at this" mark was the hardest thing on
+     screen to see. Like danger and success, it means the same thing in every
+     theme and is tuned per ground to say it. */
+  --warning: oklch(36% 0.12 70);
 
   --surface-translucent: oklch(74% 0.013 245 / 0.85);
   --surface-2-translucent: oklch(78% 0.013 245 / 0.5);
@@ -343,6 +372,13 @@
   --success: oklch(66% 0.13 155);
   --success-hover: oklch(60% 0.14 155);
   --success-text-on: oklch(98% 0.01 155);
+  /* The third of the meaning colours (v0.46.0). Check Story's warnings were
+     drawn in a literal amber from Tailwind's palette, which is legible on a
+     dark ground and all but invisible on a light one — so on four of the
+     eight themes the app's own "look at this" mark was the hardest thing on
+     screen to see. Like danger and success, it means the same thing in every
+     theme and is tuned per ground to say it. */
+  --warning: oklch(80% 0.145 80);
 
   --surface-translucent: oklch(14.5% 0.013 60 / 0.85);
   --surface-2-translucent: oklch(18% 0.015 60 / 0.5);
@@ -408,6 +444,13 @@
   --success: oklch(70% 0.13 170);
   --success-hover: oklch(64% 0.14 170);
   --success-text-on: oklch(98% 0.01 155);
+  /* The third of the meaning colours (v0.46.0). Check Story's warnings were
+     drawn in a literal amber from Tailwind's palette, which is legible on a
+     dark ground and all but invisible on a light one — so on four of the
+     eight themes the app's own "look at this" mark was the hardest thing on
+     screen to see. Like danger and success, it means the same thing in every
+     theme and is tuned per ground to say it. */
+  --warning: oklch(80% 0.145 80);
 
   --surface-translucent: oklch(15.5% 0.024 235 / 0.85);
   --surface-2-translucent: oklch(19% 0.028 233 / 0.5);
@@ -473,6 +516,13 @@
   --success: oklch(70% 0.13 160);
   --success-hover: oklch(64% 0.14 160);
   --success-text-on: oklch(98% 0.01 155);
+  /* The third of the meaning colours (v0.46.0). Check Story's warnings were
+     drawn in a literal amber from Tailwind's palette, which is legible on a
+     dark ground and all but invisible on a light one — so on four of the
+     eight themes the app's own "look at this" mark was the hardest thing on
+     screen to see. Like danger and success, it means the same thing in every
+     theme and is tuned per ground to say it. */
+  --warning: oklch(80% 0.145 80);
 
   --surface-translucent: oklch(15% 0.028 305 / 0.85);
   --surface-2-translucent: oklch(18.5% 0.032 303 / 0.5);
@@ -539,6 +589,13 @@
   --success: oklch(80% 0.15 185);
   --success-hover: oklch(74% 0.16 185);
   --success-text-on: oklch(98% 0.01 155);
+  /* The third of the meaning colours (v0.46.0). Check Story's warnings were
+     drawn in a literal amber from Tailwind's palette, which is legible on a
+     dark ground and all but invisible on a light one — so on four of the
+     eight themes the app's own "look at this" mark was the hardest thing on
+     screen to see. Like danger and success, it means the same thing in every
+     theme and is tuned per ground to say it. */
+  --warning: oklch(80% 0.145 80);
 
   --surface-translucent: oklch(13.5% 0.016 150 / 0.85);
   --surface-2-translucent: oklch(17% 0.018 150 / 0.5);

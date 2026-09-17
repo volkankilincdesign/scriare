@@ -1190,8 +1190,11 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
                 // the ring and shadow on the card's actual silhouette rather
                 // than boxing a rounded card in a rectangle.
                 borderRadius: 6,
-                boxShadow:
-                  "0 0 0 1px var(--border-faint), 0 2px 6px rgba(0, 0, 0, 0.45), 0 14px 30px rgba(0, 0, 0, 0.55)",
+                // The token, not the dark theme's two layers written out by
+                // hand: on a light ground a black shadow at that strength
+                // reads as dirt on paper, which is the exact thing
+                // --shadow-floating exists to get right per theme (v0.46.0).
+                boxShadow: "0 0 0 1px var(--border-faint), var(--shadow-floating)",
                 marginTop: 0,
               }}
             >

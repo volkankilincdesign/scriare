@@ -156,19 +156,19 @@ function ThemeSwatch({ id, label, description, active, onSelect }: ThemeSwatchPr
           stands for. */}
       <span className="mb-1.5 flex gap-1">
         <span
-          className="h-3.5 w-3.5 rounded-full border border-black/10"
+          className="h-3.5 w-3.5 rounded-full border border-[var(--border)]"
           style={{ background: "var(--bg)" }}
         />
         <span
-          className="h-3.5 w-3.5 rounded-full border border-black/10"
+          className="h-3.5 w-3.5 rounded-full border border-[var(--border)]"
           style={{ background: "var(--page)" }}
         />
         <span
-          className="h-3.5 w-3.5 rounded-full border border-black/10"
+          className="h-3.5 w-3.5 rounded-full border border-[var(--border)]"
           style={{ background: "var(--text)" }}
         />
         <span
-          className="h-3.5 w-3.5 rounded-full border border-black/10"
+          className="h-3.5 w-3.5 rounded-full border border-[var(--border)]"
           style={{ background: "var(--accent)" }}
         />
       </span>

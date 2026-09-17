@@ -19,6 +19,19 @@
  * sheet of paper on a desk, so --page must be a step from --bg TOWARD the
  * light in every theme. It was not, in the light theme, for four versions.
  */
+/** Every token that legitimately paints something on screen. */
+const PALETTE_TOKENS = [
+  "--bg", "--surface", "--surface-2", "--surface-3", "--page",
+  "--border-soft", "--border", "--border-faint",
+  "--text", "--text-2", "--text-3", "--text-reading",
+  "--accent", "--accent-hover", "--accent-text-on", "--accent-soft", "--accent-soft-2",
+  "--accent-ring", "--accent-fill-soft", "--accent-fill-mid", "--accent-fill-strong",
+  "--danger", "--danger-hover", "--danger-text-on",
+  "--success", "--success-hover", "--success-text-on", "--warning",
+  "--overlay", "--surface-translucent", "--surface-2-translucent", "--surface-2-faint",
+  "--graph-dot", "--graph-dot-strong",
+];
+
 export default async function ({ page, api, check, seedProject }) {
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -167,6 +180,7 @@ export default async function ({ page, api, check, seedProject }) {
     { fg: "--text-3", bg: "--surface", min: 4.5, what: "captions on a panel" },
     { fg: "--text-reading", bg: "--page", min: 7, what: "prose on the page" },
     { fg: "--accent-text-on", bg: "--accent", min: 4.5, what: "the label on the primary button" },
+    { fg: "--warning", bg: "--surface", min: 4.5, what: "a warning mark on a panel" },
   ];
   const failures = [];
   for (const id of list ?? []) {
@@ -214,6 +228,105 @@ export default async function ({ page, api, check, seedProject }) {
   }
   check("every theme's borders are far enough from what they divide",
     flat.length === 0, JSON.stringify(flat));
+
+
+  // 6 — and the standing version of the audit that found most of this: walk
+  // the rendered app in every theme and report any colour actually PAINTED
+  // that is not in the palette. A hardcoded colour is theme-blind by
+  // definition — it looks deliberate in whichever theme it was written
+  // against and wrong in the other seven — and it cannot be caught by
+  // reading the stylesheet, because it arrives from a component's class
+  // list, an inline style, or a library's own CSS (React Flow's connection
+  // handles were a dark navy dot with a white ring in all eight).
+  //
+  // Two things are legitimately off-palette and skipped: anything the writer
+  // chose the colour of (marked data-content-colour — the toolbar's colour
+  // and highlight bars ARE the colour they show), and anything not actually
+  // visible.
+  // The walk itself, factored out so it can be pointed at more than the
+  // screen the app happens to open on. It has to be: the bug that started
+  // this lived in Check Story, which is a dialog, and an audit that only ever
+  // sees the editor would have missed it — as the first version of this check
+  // did, confirmed by putting the amber back and watching it pass.
+  const walk = () =>
+    api((tokens) => {
+      const p = window.__themeProbe;
+      // Both sides are composited over the same opaque backdrop before they
+      // are compared, so a translucent token and the same token painted on
+      // screen go through identical rounding. Read back straight, a 0.9-alpha
+      // fill drifts a few points per channel and reports itself as a stray.
+      const flat = (colour) => {
+        const c = document.createElement("canvas");
+        c.width = c.height = 1;
+        const x = c.getContext("2d", { willReadFrequently: true });
+        x.fillStyle = "#808080";
+        x.fillRect(0, 0, 1, 1);
+        x.fillStyle = "#808080";
+        x.fillStyle = colour;
+        x.fillRect(0, 0, 1, 1);
+        const d = x.getImageData(0, 0, 1, 1).data;
+        return [d[0], d[1], d[2]];
+      };
+      const palette = tokens.map((t) => flat(p.token(t)));
+      const NEAR = 8;
+      const fromPalette = (rgb) =>
+        palette.some(
+          (q) =>
+            Math.abs(q[0] - rgb[0]) + Math.abs(q[1] - rgb[1]) + Math.abs(q[2] - rgb[2]) <= NEAR,
+        );
+
+      const out = new Map();
+      for (const el of document.querySelectorAll("body *")) {
+        if (el.closest("[data-content-colour]")) continue;
+        const box = el.getBoundingClientRect();
+        if (box.width < 1 || box.height < 1) continue;
+        const cs = getComputedStyle(el);
+        if (cs.visibility === "hidden" || Number(cs.opacity) === 0) continue;
+        for (const prop of ["color", "backgroundColor", "borderTopColor"]) {
+          const v = cs[prop];
+          if (!v || v === "transparent" || v.endsWith(", 0)")) continue;
+          if (prop === "borderTopColor" && Number.parseFloat(cs.borderTopWidth) === 0) continue;
+          if (fromPalette(flat(v))) continue;
+          const where = `${el.tagName.toLowerCase()}.${String(el.className?.baseVal ?? el.className ?? "").split(" ")[0]}`;
+          out.set(`${prop} ${v} ${where}`, `${prop} ${v} on ${where}`);
+        }
+      }
+      return [...out.values()];
+    }, PALETTE_TOKENS);
+
+  // Every surface that can be opened without leaving the app.
+  const SURFACES = [
+    { name: "editor", open: null, close: null },
+    { name: "Check Story", open: "openStoryCheck", close: "closeStoryCheck" },
+    { name: "Variables", open: "openVariableManager", close: "closeVariableManager" },
+    { name: "Choice Styles", open: "openChoiceStyles", close: "closeChoiceStyles" },
+  ];
+
+  const strays = {};
+  for (const id of list ?? []) {
+    await api((themeId) => window.__scriareThemes.useThemeStore.getState().setTheme(themeId), id);
+    // Long enough for the colour transitions to finish. At 120ms half the
+    // app is still mid-fade between two themes, and a colour caught in
+    // flight belongs to neither palette — which the first version of this
+    // check duly reported, several hundred times.
+    await wait(500);
+    for (const surface of SURFACES) {
+      if (surface.open) {
+        await api((fn) => window.__scriareUIStore.getState()[fn](), surface.open);
+        await wait(320);
+      }
+      const rows = await walk();
+      if (rows.length) strays[`${id} — ${surface.name}`] = rows;
+      if (surface.close) {
+        await api((fn) => window.__scriareUIStore.getState()[fn](), surface.close);
+        await wait(200);
+      }
+    }
+  }
+
+  const offenders = Object.entries(strays).filter(([, rows]) => rows.length > 0);
+  check("nothing in the chrome paints a colour from outside the palette",
+    offenders.length === 0, JSON.stringify(Object.fromEntries(offenders)));
 
   await api(() => window.__scriareThemes.useThemeStore.getState().setTheme("dark"));
   await seedProject();

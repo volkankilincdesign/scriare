@@ -241,9 +241,14 @@ function ColorControl({
     >
       <Icon name={icon} className="h-3.5 w-3.5" />
       <span className="sr-only">{label}</span>
+      {/* The one place in the chrome that deliberately paints a colour from
+          outside the palette: this bar IS the colour the writer picked, so it
+          is marked as content and skipped by the palette audit in
+          tests/themes.spec.mjs (v0.46.0). */}
       <span
         aria-hidden
-        className="h-[3px] w-4 rounded-[1px] ring-1 ring-inset ring-black/20"
+        data-content-colour
+        className="h-[3px] w-4 rounded-[1px] ring-1 ring-inset ring-[var(--border-faint)]"
         style={{ background: swatch }}
       />
       <input

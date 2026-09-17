@@ -129,7 +129,11 @@ export function PlayRuntime() {
               )}
 
               {!hasAnyLinkedChoice && (
-                <div className="mt-10 flex flex-col items-center gap-4 rounded-lg border border-[var(--border-soft)] bg-[var(--overlay)] px-8 py-10 text-center">
+                // --surface-2, not --overlay: --overlay is the scrim drawn BEHIND a
+              // dialog, so on a light theme this card came out as a heavy grey
+              // slab across the page (v0.46.0). An ending is a panel on the
+              // page, and panels are surfaces.
+              <div className="mt-10 flex flex-col items-center gap-4 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-2)] px-8 py-10 text-center">
                   <div className="text-lg font-semibold tracking-wide text-[var(--text-2)]">The End</div>
                   <div className="flex items-center gap-2">
                     <button

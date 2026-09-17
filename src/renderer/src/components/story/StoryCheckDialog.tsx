@@ -256,7 +256,7 @@ function Dot({ severity }: { severity: StorySeverity }) {
         severity === "problem"
           ? "bg-[var(--danger)]"
           : severity === "warning"
-            ? "bg-amber-400"
+            ? "bg-[var(--warning)]"
             : "bg-[var(--text-3)]"
       }`}
     />
@@ -265,11 +265,16 @@ function Dot({ severity }: { severity: StorySeverity }) {
 
 /** Colour does the work the words were spending width on. */
 function Chip({ severity, text }: { severity: StorySeverity; text: string }) {
+  // Plain tokens, no opacity modifiers: Tailwind cannot compute an alpha for
+  // an arbitrary var() colour, so `border-[var(--danger)]/50` compiled to the
+  // full-strength colour anyway — a fade that was never on screen. And the
+  // warning tone was Tailwind's own amber, which is legible on a dark ground
+  // and nearly invisible on a light one (v0.46.0).
   const tone =
     severity === "problem"
-      ? "border-[var(--danger)]/50 text-[var(--danger)]"
+      ? "border-[var(--danger)] text-[var(--danger)]"
       : severity === "warning"
-        ? "border-amber-400/40 text-amber-300/90"
+        ? "border-[var(--warning)] text-[var(--warning)]"
         : "border-[var(--border)] text-[var(--text-3)]";
   return (
     <span
