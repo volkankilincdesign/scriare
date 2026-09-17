@@ -12,6 +12,45 @@ omitting them.
 
 ---
 
+## v0.45.0 — One control for folding a panel away
+
+**The dock toggles are the same control now, in all eight themes.** Reported,
+and it was two faults wearing one symptom. The three dockable panels —
+Content, Inspector, Story Graph — had each grown their own version of the
+same button: three different glyphs at three different sizes, one of them
+baked into a header label that was itself the button. On top of that, the
+Content panel's ghost buttons were being drawn as raised boxes while the
+identical control one panel over stayed flat text, so the two did not even
+look like the same KIND of thing.
+
+That second half was a CSS bug from v0.40.0's elevation pass. The rule that
+lifts a selected row matched the Tailwind class that paints it — and a
+Tailwind variant's class name contains the base name, so
+`hover:bg-[var(--surface-2)]` matched too, and every ghost button in that
+panel that merely lit up on hover was permanently drawn as a raised object.
+The rule now keys on a class the row sets for the purpose.
+
+The toggle itself is one component: a real bordered button, 22px square, same
+radius, border and fill everywhere, with the chevron DRAWN rather than typed
+— a glyph like ◂ is a font's opinion, and its weight and baseline differ
+between the faces the app falls back to, which was half of why the three
+never matched. A collapsed strip shows the same box, because the control you
+click to fold a panel away and the one you click to bring it back should be
+recognisably the same control.
+
+**And it has room.** The Content toggle was the third item in a row of three,
+hard against "+ Group"; it now sits apart from them, because folding a panel
+is a different kind of act from making a scene. The Story Graph's sat
+directly under the splitter, all but touching the editor above it, and now
+has a proper margin.
+
+The tests measure the three against EACH OTHER, in every one of the eight
+themes, rather than against numbers written into the test — so this cannot be
+satisfied by three controls that happen to match on the day they were
+written.
+
+---
+
 ## v0.44.0 — Eight themes, and a page that behaves like paper
 
 **Six new themes.** Daylight (paper and sepia ink, the lightest), Overcast

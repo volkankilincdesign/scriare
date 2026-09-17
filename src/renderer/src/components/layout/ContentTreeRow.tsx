@@ -50,9 +50,17 @@ export function ContentTreeRow({ node, depth }: ContentTreeRowProps) {
   const displayName = isFolder ? node.name : scene?.title || "Untitled scene";
   const children = isFolder ? childrenOf(nodes, node.category, node.id) : [];
 
+  // `scriare-row-on` is what the elevation rule in index.css looks for. It
+  // used to look for the Tailwind class names themselves, which also matched
+  // the HOVER variant of the same colour — so every ghost button in this
+  // panel carrying `hover:bg-[var(--surface-2)]` was permanently drawn as a
+  // raised object, and the identical button in the Inspector was not
+  // (v0.45.0, reported as the panel toggles not matching).
   let rowStyle = "hover:bg-[var(--bg)]";
-  if (isActiveScene) rowStyle = "bg-[var(--surface-2)]";
-  else if (isSelected) rowStyle = "bg-[var(--accent-soft-2)] ring-1 ring-inset ring-[var(--accent-ring)]";
+  if (isActiveScene) rowStyle = "scriare-row-on bg-[var(--surface-2)]";
+  else if (isSelected) {
+    rowStyle = "scriare-row-on bg-[var(--accent-soft-2)] ring-1 ring-inset ring-[var(--accent-ring)]";
+  }
 
   return (
     <div>

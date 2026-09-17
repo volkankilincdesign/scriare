@@ -743,10 +743,57 @@ input[type="number"],
 /* A selected row in the Content Browser rises instead of only brightening,
    which is what lets the fill stay as quiet as it is — and catches a little
    of the accent along its edge, so "this is the one" is legible at a glance
-   rather than on inspection. */
-.scriare-panel-l [class*="bg-[var(--surface-2)"],
-.scriare-panel-l [class*="bg-[var(--accent-soft-2)"] {
+   rather than on inspection.
+
+   Keyed on a class the row sets for this purpose, NOT on the Tailwind class
+   that paints it. The substring match this started as ("bg-[var(--surface-2)")
+   also matched `hover:bg-[var(--surface-2)]`, since a Tailwind variant's
+   class name contains the base name — so every ghost button in this panel
+   that merely lit up on hover was permanently drawn as a raised object,
+   while the identical button one panel over stayed flat. That is what made
+   the three panel toggles look like three different controls (v0.45.0,
+   reported). */
+.scriare-panel-l .scriare-row-on {
   box-shadow: var(--lift-raised), var(--lift-glow), var(--lift-edge);
+}
+
+/* The control that folds a panel away — Content, Inspector, Story Graph.
+   One object, one size, drawn the same in all eight themes, because the
+   three of them do exactly the same job. Deliberately bordered rather than a
+   bare glyph: a chevron floating in a header is a decoration until you
+   discover it is clickable. */
+.scriare-dock-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-2);
+  box-shadow: var(--lift-edge), var(--lift-control);
+  transition: color 0.12s ease, background-color 0.12s ease, border-color 0.12s ease;
+}
+
+button.scriare-dock-btn:hover,
+button:hover > .scriare-dock-btn {
+  color: var(--text);
+  border-color: var(--border-faint);
+  background: var(--surface-3);
+}
+
+button.scriare-dock-btn:active {
+  /* Pressed: the object goes down to meet the finger, and loses the cast it
+     was floating on. */
+  transform: translateY(1px);
+  box-shadow: var(--lift-edge);
+}
+
+button.scriare-dock-btn:focus-visible {
+  outline: 2px solid var(--accent-ring);
+  outline-offset: 1px;
 }
 
 /* Scenes and groups on the canvas are cards on a table. The selected one

@@ -19,6 +19,7 @@ import type { IconName } from "../common/Icon";
 import { ENTITY_LABEL } from "../../types/entities";
 import { fold } from "../../utils/textFold";
 import type { EntityKind } from "../../types/entities";
+import { DockGlyph, DockToggle } from "../common/DockToggle";
 
 /**
  * One category's entities, flat. Entities can't be foldered yet — a story
@@ -82,7 +83,7 @@ function EntityList({ kind }: { kind: EntityKind }) {
             }}
             className={`ml-3 flex cursor-default items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
               entity.id === selectedEntityId
-                ? "bg-[var(--surface-2)] text-[var(--text)]"
+                ? "scriare-row-on bg-[var(--surface-2)] text-[var(--text)]"
                 : "text-[var(--text-2)] hover:bg-[var(--bg)] hover:text-[var(--text)]"
             }`}
           >
@@ -619,10 +620,10 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-8 shrink-0 flex-col items-center gap-1.5 border-r border-[var(--border-soft)] bg-[var(--surface)] pt-2 text-[var(--text-3)] hover:text-[var(--text)]"
+        className="flex w-8 shrink-0 flex-col items-center gap-2 border-r border-[var(--border-soft)] bg-[var(--surface)] pt-2.5 text-[var(--text-3)] hover:text-[var(--text)]"
         title="Expand Content"
       >
-        <span aria-hidden className="text-[10px]">▸</span>
+        <DockGlyph direction="right" />
         <span className="[writing-mode:vertical-rl] text-xs font-semibold uppercase tracking-wide">
           Content
         </span>
@@ -641,7 +642,11 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
       >
         <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-3 py-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">Content</span>
-          <div className="flex items-center gap-0.5">
+          {/* The two "new thing" buttons sit together; the dock toggle is a
+              different kind of act, so it gets its own air rather than being
+              the third item in a row of three (v0.45.0, reported). */}
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => createScene(null)}
@@ -658,14 +663,8 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
             >
               + Group
             </button>
-            <button
-              type="button"
-              onClick={onToggle}
-              className="rounded px-1.5 text-sm text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-              title="Collapse"
-            >
-              <span aria-hidden>◂</span>
-            </button>
+            </div>
+            <DockToggle direction="left" onClick={onToggle} title="Collapse Content" />
           </div>
         </div>
 
@@ -702,7 +701,9 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
                   type="button"
                   onClick={() => openFavorite(scene.id)}
                   className={`flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-sm ${
-                    scene.id === selectedSceneId ? "bg-[var(--surface-2)] text-[var(--text)]" : "text-[var(--text-2)] hover:bg-[var(--bg)] hover:text-[var(--text)]"
+                    scene.id === selectedSceneId
+                      ? "scriare-row-on bg-[var(--surface-2)] text-[var(--text)]"
+                      : "text-[var(--text-2)] hover:bg-[var(--bg)] hover:text-[var(--text)]"
                   }`}
                 >
                   <span className="text-xs text-[var(--accent)]">★</span>

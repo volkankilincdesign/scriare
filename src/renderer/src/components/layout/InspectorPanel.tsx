@@ -17,6 +17,7 @@ import {
 } from "../../types/choiceStyles";
 import type { ChoiceBox } from "../../types/choiceStyles";
 import { BoxControls } from "../choices/ChoiceStylesDialog";
+import { DockGlyph, DockToggle } from "../common/DockToggle";
 import {
   appendChoiceOption,
   applyChoiceOptionAttrs,
@@ -74,10 +75,10 @@ export function InspectorPanel({ collapsed, onToggle }: InspectorPanelProps) {
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-8 shrink-0 flex-col items-center gap-1.5 border-l border-[var(--border-soft)] bg-[var(--surface)] pt-2 text-[var(--text-3)] hover:text-[var(--text)]"
+        className="flex w-8 shrink-0 flex-col items-center gap-2 border-l border-[var(--border-soft)] bg-[var(--surface)] pt-2.5 text-[var(--text-3)] hover:text-[var(--text)]"
         title="Expand Inspector"
       >
-        <span aria-hidden className="text-[10px]">◂</span>
+        <DockGlyph direction="left" />
         <span className="[writing-mode:vertical-rl] text-xs font-semibold uppercase tracking-wide">
           Inspector
         </span>
@@ -87,15 +88,8 @@ export function InspectorPanel({ collapsed, onToggle }: InspectorPanelProps) {
 
   return (
     <aside className="scriare-panel-r flex w-80 shrink-0 flex-col border-l border-[var(--border-soft)] bg-[var(--surface)]">
-      <div className="flex items-center gap-2 border-b border-[var(--border-soft)] px-4 py-3">
-        <button
-          type="button"
-          onClick={onToggle}
-          className="rounded px-1.5 text-sm text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-          title="Collapse"
-        >
-          <span aria-hidden>▸</span>
-        </button>
+      <div className="flex items-center gap-2.5 border-b border-[var(--border-soft)] px-4 py-3">
+        <DockToggle direction="right" onClick={onToggle} title="Collapse Inspector" />
         <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
           Inspector
         </span>
