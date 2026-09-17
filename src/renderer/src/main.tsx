@@ -46,6 +46,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./state/uiStore"),
     import("./utils/graphConstants"),
     import("./utils/autoLayout"),
+    import("./state/themeStore"),
   ]).then(
     ([
       projectStore,
@@ -70,6 +71,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       uiStore,
       graphConstants,
       autoLayout,
+      themeStore,
     ]) => {
       Object.assign(window, {
         __scriareProjectStore: projectStore.useProjectStore,
@@ -100,6 +102,10 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         // cover them build graphs and read the geometry back rather than
         // measuring a picture of one.
         __scriareAutoLayout: autoLayout,
+        // v0.44.0 — the theme list and the store that applies one, so the
+        // themes spec can walk every theme rather than trusting a copy of
+        // the list kept in the test.
+        __scriareThemes: themeStore,
       });
     },
   );

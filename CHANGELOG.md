@@ -12,6 +12,46 @@ omitting them.
 
 ---
 
+## v0.44.0 — Eight themes, and a page that behaves like paper
+
+**Six new themes.** Daylight (paper and sepia ink, the lightest), Overcast
+(a mid slate, where the page is the only bright thing in the window),
+Lamplight (dark and warm, amber), Deep Water (dark and cold, cyan), Nocturne
+(violet and rose) and Phosphor (terminal green). Colour lives in the ground,
+not in the content: a theme tints the room, and the accent — which only ever
+marks selection, focus and the primary action — is the one piece of chrome
+that carries a hue of its own. The picker in Settings shows all eight at
+once, each swatch drawn in its own theme's tokens, because a theme is chosen
+by looking and a list you scroll turns that into a memory test.
+
+**Dark and Light are polished rather than replaced.** Dark gets a deeper
+floor (9.5%, from 11%) so panels and the page have something to sit above;
+its --border-soft now sits above --surface-2 instead of below it, so a soft
+border actually divides rather than disappearing into what it divides; and
+the warmth the theme has always claimed in its own comments is finally
+perceptible rather than a rounding error away from pure grey. Light's desk
+steps back so the page can be the brightest thing on screen.
+
+**The page is a sheet on a desk again.** It was drawn in --surface, which on
+a light theme is DARKER than the ground it lies on — so the paper was dimmer
+than the desk, backwards for the one metaphor the whole elevation pass is
+built on. Every theme now sets --page, a step from --bg toward the light.
+
+**Captions got legible.** Measuring the palettes rather than looking at them
+turned up that --text-3 — the status bar, every hint and caption, at eleven
+pixels — was under 4.5:1 in the shipping Light theme and in five of the six
+new ones. All eight now clear it where they are read, and the suite measures
+the real ratios from what the browser paints rather than trusting the
+numbers in the stylesheet.
+
+The eight themes and their contrast floors are covered by tests: every theme
+must define every token the default one does (a missing one silently
+inherits and nothing says so), must paint a different ground, must keep its
+page lighter than its desk, and must keep its borders far enough from what
+they divide to be visible at all.
+
+---
+
 ## v0.43.0 — A map that reads left to right
 
 **Auto Layout arranges the story, not the diagram.** Reported as "it tidies

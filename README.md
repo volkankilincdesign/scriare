@@ -95,10 +95,12 @@ lives in.
 - Project-wide **undo** for every structural action, which never rolls back
   prose you typed after the thing being undone.
 - Copy, cut, paste and delete on scenes and folders, routed by focus.
-- Dark and light themes, monochrome by design — colour is reserved for
-  things that mean something. Depth does the rest: the page is a sheet on a
-  desk, controls carry a lit edge, and a selected scene rises rather than
-  only brightening.
+- **Eight themes** — two monochromes and six that tint the room rather than
+  the content: Daylight, Overcast, Lamplight, Deep Water, Nocturne and
+  Phosphor. Colour is still reserved for things that mean something, so a
+  theme colours the ground and leaves the writing alone. Depth does the
+  rest: the page is a sheet on a desk, controls carry a lit edge, and a
+  selected scene rises rather than only brightening.
 - A status bar across the foot of the window: story size, the open scene and
   its word count, and whether the Story Graph is showing.
 - Matching handles Turkish properly throughout: `ist` finds İstanbul,
@@ -106,13 +108,13 @@ lives in.
 
 ## Status
 
-**v0.43.0 — in active development, and usable.** The editor, graph,
+**v0.44.0 — in active development, and usable.** The editor, graph,
 runtime, entities, variables, validation and search are all real. Not yet
 built: **Export** (the button is visible and disabled on purpose) and a
 packaged installer. See [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for
 the honest list.
 
-292 automated tests run against the real packaged application. Every
+300 automated tests run against the real packaged application. Every
 load-bearing one has been confirmed to fail on a deliberately broken build
 — a test that has never been seen to fail proves nothing.
 
@@ -135,7 +137,7 @@ Other commands:
 | `npx tsc --noEmit -p tsconfig.web.json` | Type-check without writing files |
 
 To run a single spec file — which is what you want while negative-controlling
-a fix, rather than waiting for all 292 — set `SPEC` to the start of its
+a fix, rather than waiting for all 300 — set `SPEC` to the start of its
 filename:
 
 ```bash

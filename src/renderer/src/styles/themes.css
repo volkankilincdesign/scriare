@@ -1,113 +1,91 @@
-/* Theme system — "Quiet" revision (v0.24.0).
+/* Theme system — eight themes (v0.44.0).
  *
  * Fonts are no longer fetched from Google at runtime. They're bundled into
  * the app as variable fonts (see the @fontsource-variable imports in
  * main.tsx), which fixes a real bug as much as a cosmetic one: the app
  * previously fell back to whatever system fonts existed whenever it was
  * offline, so its typography quietly changed depending on the network.
- * Variable files also carry every weight in one face, so the whole family
- * costs less than the handful of static weights it replaces, and Inter and
- * Newsreader are loaded with their optical-size axis — the letterforms
- * adjust to the size they're set at, which is most of why small UI text
- * reads cleanly rather than cramped.
  *
- * The palette stays black and white by design: colour is reserved for
- * content the writer assigns meaning to (choice blocks, errors, states),
- * so the chrome must never compete with it. What changed is how the greys
- * are built.
+ * WHAT A THEME IS. Every block below sets the same token list, and nothing
+ * outside this file names a colour. A theme is therefore nine decisions —
+ * a ground and three surfaces, three border weights, three text weights and
+ * a reading tone, one accent, and the two dot weights the Story Graph's
+ * canvas is drawn with — with the rest derived from those by fixed rules:
+ * hover is a step along the same hue, the soft/ring/fill variants are the
+ * accent at fixed alphas, and elevation is one of two sets depending on
+ * whether the ground is dark or light. Adding a ninth theme means adding a
+ * block, not touching a component.
  *
- * The previous revision set every neutral to chroma 0 — pure, mathematical
- * grey. That is the main reason the app read as flat: a screen of pure
- * greys has no temperature, and the eye reads it as absence rather than as
- * a choice. Every neutral here instead carries a trace of warmth (chroma
- * 0.003–0.006 around hue 75). It is far too little to perceive as a colour
- * — nobody will call this beige — but it is enough that the greys feel
- * mixed rather than generated, and it sits with Newsreader and the
- * narrative content the app exists to hold.
+ * WHY THERE ARE EIGHT. Through v0.43.0 there were two, both monochrome, on
+ * the principle that colour belongs to what the WRITER assigns meaning to —
+ * choice styles, errors, states — and the chrome must never compete with it.
+ * That principle stands, and it is why colour here lives almost entirely in
+ * the ground: a theme tints the room, not the content. The accent is the one
+ * exception, and it only ever marks selection, focus and the primary action.
  *
- * The tonal ramp was also rebuilt. It used to step almost evenly (12 → 15
- * → 19 → 23 → 27), which gives every surface the same weight and so no
- * hierarchy at all, and it put --border-soft at 22% against a --surface-2
- * of 19% — a three-percent difference, meaning a large share of the app's
- * borders were invisible. Now the surfaces sit closer together and the
- * borders sit further apart from what they divide, so structure comes from
- * a few deliberate edges and from spacing, rather than from boxing every
- * element in a line that can't be seen anyway.
+ * The three tonal rules the v0.24.0 revision found, which every block keeps:
+ * surfaces sit CLOSE together (panels are one material with slight changes in
+ * depth, not stacked boxes); borders sit FAR from what they divide (the old
+ * revision had --border-soft three percent from its own backdrop, which meant
+ * a large share of the app's borders were invisible); and neutrals always
+ * carry a trace of chroma, because a screen of mathematically pure grey has
+ * no temperature and the eye reads it as absence rather than as a choice.
  *
- * --danger and --success remain the only real hues, reserved for
- * destructive and constructive actions.
+ * --danger and --success are the only hues a theme does not own: they mean
+ * destructive and constructive everywhere, in all eight.
  */
 
 :root, [data-theme="dark"] {
+  /* The default, corrected. The floor is deeper than it was (9.5%, from 11%) so
+     panels and the page have something to sit above; --border-soft now sits
+     ABOVE --surface-2 instead of below it, so a soft border actually divides
+     rather than disappearing into what it divides; --text-3 is five points
+     brighter, because it carries the status bar at eleven pixels; and the
+     warmth the v0.24.0 note describes is finally perceptible — chroma 0.008
+     rather than 0.004, which was a rounding error away from pure grey. */
   --theme-name: "Dark";
 
-  /* Ground, then surfaces stepping toward the light. The gaps are
-     deliberately small: panels should read as one continuous material
-     with slight changes in depth, not as stacked boxes. */
-  --bg: oklch(11% 0.004 75);
-  --surface: oklch(13.5% 0.004 75);
-  --surface-2: oklch(17% 0.005 75);
-  --surface-3: oklch(21% 0.005 75);
+  --bg: oklch(9.5% 0.007 75);
+  --surface: oklch(12.5% 0.008 75);
+  --surface-2: oklch(16.5% 0.009 75);
+  --surface-3: oklch(20.5% 0.01 75);
+  /* The sheet the writing sits on — always a step away from --bg in the
+     direction of light, so the page reads as paper on a desk rather than as
+     one more panel. */
+  --page: oklch(14.5% 0.008 75);
 
-  /* Three border weights, faintest first. Each is far enough from the
-     surface it usually sits on to actually register — the previous
-     revision's soft border differed from its own backdrop by three
-     percent and simply didn't. --border-faint is the strongest of the
-     three despite the name (it's the most *visible*); the drag overlay's
-     lift ring depends on that, so the ordering matters. */
-  --border-soft: oklch(16.5% 0.004 75);
-  --border: oklch(20% 0.005 75);
-  --border-faint: oklch(27% 0.006 75);
+  --border-soft: oklch(18% 0.009 75);
+  --border: oklch(23% 0.01 75);
+  --border-faint: oklch(31% 0.012 75);
 
-  /* Text does most of the hierarchy now that the surfaces are quiet.
-     Three clearly separated steps rather than a gradient. */
-  --text: oklch(95% 0.003 75);
-  --text-2: oklch(72% 0.004 75);
-  --text-3: oklch(56% 0.004 75);
-  /* Long-form prose sits a step below the UI's brightest text — full
-     white over paragraphs of story is harsh to read for any length. */
-  --text-reading: oklch(88% 0.003 75);
+  --text: oklch(95% 0.005 75);
+  --text-2: oklch(73% 0.007 75);
+  --text-3: oklch(61% 0.008 75);
+  --text-reading: oklch(89% 0.006 75);
 
-  /* The accent is the inverse of the ground — a near-white fill on dark,
-     near-black on light — so "accent" reads as emphasis and weight rather
-     than as a colour, leaving hue free for content. */
-  --accent: oklch(93% 0.004 75);
-  --accent-hover: oklch(84% 0.004 75);
-  --accent-text-on: oklch(11% 0.004 75);
-  --accent-soft: oklch(93% 0.004 75 / 0.1);
-  --accent-soft-2: oklch(93% 0.004 75 / 0.18);
-  --accent-ring: oklch(93% 0.004 75 / 0.36);
-  --accent-fill-strong: oklch(84% 0.004 75 / 0.9);
-  --accent-fill-soft: oklch(93% 0.004 75 / 0.12);
-  --accent-fill-mid: oklch(84% 0.004 75 / 0.55);
+  --accent: oklch(93% 0.008 75);
+  --accent-hover: oklch(84% 0.008 75);
+  --accent-text-on: oklch(10% 0.007 75);
+  --accent-soft: oklch(93% 0.008 75 / 0.12);
+  --accent-soft-2: oklch(93% 0.008 75 / 0.192);
+  --accent-ring: oklch(93% 0.008 75 / 0.34);
+  --accent-fill-strong: oklch(84% 0.008 75 / 0.9);
+  --accent-fill-soft: oklch(93% 0.008 75 / 0.12);
+  --accent-fill-mid: oklch(84% 0.008 75 / 0.55);
 
-  --danger: oklch(58% 0.19 27);
-  --danger-hover: oklch(52% 0.2 27);
+  --danger: oklch(60% 0.19 27);
+  --danger-hover: oklch(54% 0.2 27);
   --danger-text-on: oklch(98% 0.01 27);
-  --success: oklch(64% 0.13 155);
-  --success-hover: oklch(58% 0.14 155);
+  --success: oklch(66% 0.13 155);
+  --success-hover: oklch(60% 0.14 155);
   --success-text-on: oklch(98% 0.01 155);
 
-  --overlay: oklch(0% 0 0 / 0.62);
-  --surface-translucent: oklch(13.5% 0.004 75 / 0.85);
-  --surface-2-translucent: oklch(17% 0.005 75 / 0.5);
-  --surface-2-faint: oklch(17% 0.005 75 / 0.2);
+  --surface-translucent: oklch(12.5% 0.008 75 / 0.85);
+  --surface-2-translucent: oklch(16.5% 0.009 75 / 0.5);
+  --surface-2-faint: oklch(16.5% 0.009 75 / 0.2);
 
-  /* Elevation. Two layers — a tight edge and a wide cast — so a lifted
-     element separates from the ground on a dark theme, where a single
-     soft black shadow is invisible. */
   --shadow-raised: 0 1px 2px oklch(0% 0 0 / 0.4), 0 4px 12px oklch(0% 0 0 / 0.35);
   --shadow-floating: 0 2px 6px oklch(0% 0 0 / 0.45), 0 14px 30px oklch(0% 0 0 / 0.55);
-
-  /* Elevation, v0.40.0 ("Lifted"). Every surface a writer can act on sits a
-     little above the one behind it, and says so with a shadow beneath plus a
-     single lit pixel along its top edge — the cheapest honest way to make a
-     control read as a made object rather than a coloured rectangle.
-
-     Two layers everywhere: a tight edge shadow that separates, and a wide
-     cast that places. One soft shadow alone is invisible on a dark ground;
-     one hard shadow alone looks stuck on. --lift-edge is the light catching
-     the top of the object and is the half people notice without seeing. */
   --lift-edge: inset 0 1px 0 oklch(100% 0 0 / 0.075);
   --lift-edge-strong: inset 0 1px 0 oklch(100% 0 0 / 0.35);
   --lift-control: 0 1px 2px oklch(0% 0 0 / 0.55), 0 3px 8px -2px oklch(0% 0 0 / 0.45);
@@ -118,60 +96,63 @@
   --lift-node-on: 0 4px 10px -2px oklch(0% 0 0 / 0.65), 0 16px 30px -10px oklch(0% 0 0 / 0.6);
   --lift-bar: 0 8px 22px -6px oklch(0% 0 0 / 0.65);
   --lift-cast: oklch(0% 0 0 / 0.5);
-  /* A selected object catches a little light as well as casting a shadow —
-     the accent at low alpha, ringing the edge rather than filling it. */
-  --lift-glow: 0 0 0 1px oklch(93% 0.004 75 / 0.16), 0 0 18px -4px oklch(93% 0.004 75 / 0.12);
-  --lift-glow-strong: 0 0 0 1px oklch(93% 0.004 75 / 0.3), 0 0 26px -4px oklch(93% 0.004 75 / 0.18);
-  /* The graph's dot field. Two weights: a fine surface and a coarser scale. */
-  --graph-dot: oklch(39% 0.005 75);
-  --graph-dot-strong: oklch(54% 0.006 75);
+  --overlay: oklch(0% 0 0 / 0.62);
+  --lift-glow: 0 0 0 1px oklch(93% 0.008 75 / 0.16), 0 0 18px -4px oklch(93% 0.008 75 / 0.12);
+  --lift-glow-strong: 0 0 0 1px oklch(93% 0.008 75 / 0.304), 0 0 26px -4px oklch(93% 0.008 75 / 0.18);
+
+  --graph-dot: oklch(40% 0.01 75);
+  --graph-dot-strong: oklch(55% 0.012 75);
 }
 
 [data-theme="light"] {
+  /* Daylight on the same neutral. The desk steps back a little (95%, from 96.5%)
+     so that --page can be the brightest thing on screen: before this the sheet
+     was drawn in --surface, which is DARKER than the ground it lies on, so the
+     paper was dimmer than the desk — backwards for the one metaphor the whole
+     elevation pass is built on. The greys also carry real warmth now. */
   --theme-name: "Light";
 
-  --bg: oklch(96.5% 0.003 75);
-  --surface: oklch(94% 0.003 75);
-  --surface-2: oklch(91% 0.004 75);
-  --surface-3: oklch(87.5% 0.004 75);
+  --bg: oklch(95% 0.007 85);
+  --surface: oklch(93% 0.007 85);
+  --surface-2: oklch(90% 0.008 85);
+  --surface-3: oklch(86.5% 0.009 85);
+  /* The sheet the writing sits on — always a step away from --bg in the
+     direction of light, so the page reads as paper on a desk rather than as
+     one more panel. */
+  --page: oklch(98.5% 0.004 90);
 
-  --border-soft: oklch(90% 0.004 75);
-  --border: oklch(85% 0.005 75);
-  --border-faint: oklch(77% 0.006 75);
+  --border-soft: oklch(89% 0.008 85);
+  --border: oklch(84% 0.01 85);
+  --border-faint: oklch(76% 0.012 85);
 
-  --text: oklch(18% 0.006 75);
-  --text-2: oklch(40% 0.005 75);
-  --text-3: oklch(56% 0.004 75);
-  --text-reading: oklch(24% 0.006 75);
+  --text: oklch(20% 0.01 70);
+  --text-2: oklch(41% 0.009 70);
+  --text-3: oklch(50% 0.008 70);
+  --text-reading: oklch(25% 0.01 70);
 
-  --accent: oklch(19% 0.006 75);
-  --accent-hover: oklch(30% 0.006 75);
-  --accent-text-on: oklch(97% 0.003 75);
-  --accent-soft: oklch(19% 0.006 75 / 0.07);
-  --accent-soft-2: oklch(19% 0.006 75 / 0.13);
-  --accent-ring: oklch(19% 0.006 75 / 0.3);
-  --accent-fill-strong: oklch(30% 0.006 75 / 0.9);
-  --accent-fill-soft: oklch(19% 0.006 75 / 0.09);
-  --accent-fill-mid: oklch(30% 0.006 75 / 0.5);
+  --accent: oklch(21% 0.012 70);
+  --accent-hover: oklch(32% 0.012 70);
+  --accent-text-on: oklch(97% 0.005 85);
+  --accent-soft: oklch(21% 0.012 70 / 0.08);
+  --accent-soft-2: oklch(21% 0.012 70 / 0.128);
+  --accent-ring: oklch(21% 0.012 70 / 0.34);
+  --accent-fill-strong: oklch(32% 0.012 70 / 0.9);
+  --accent-fill-soft: oklch(21% 0.012 70 / 0.08);
+  --accent-fill-mid: oklch(32% 0.012 70 / 0.55);
 
-  --danger: oklch(54% 0.2 27);
-  --danger-hover: oklch(48% 0.21 27);
+  --danger: oklch(52% 0.2 27);
+  --danger-hover: oklch(46% 0.21 27);
   --danger-text-on: oklch(98% 0.01 27);
-  --success: oklch(58% 0.14 155);
-  --success-hover: oklch(52% 0.15 155);
+  --success: oklch(56% 0.14 155);
+  --success-hover: oklch(50% 0.15 155);
   --success-text-on: oklch(98% 0.01 155);
 
-  --overlay: oklch(20% 0.006 75 / 0.28);
-  --surface-translucent: oklch(94% 0.003 75 / 0.85);
-  --surface-2-translucent: oklch(91% 0.004 75 / 0.5);
-  --surface-2-faint: oklch(91% 0.004 75 / 0.2);
+  --surface-translucent: oklch(93% 0.007 85 / 0.85);
+  --surface-2-translucent: oklch(90% 0.008 85 / 0.5);
+  --surface-2-faint: oklch(90% 0.008 85 / 0.2);
 
   --shadow-raised: 0 1px 2px oklch(20% 0.006 75 / 0.08), 0 4px 12px oklch(20% 0.006 75 / 0.08);
   --shadow-floating: 0 2px 6px oklch(20% 0.006 75 / 0.12), 0 14px 30px oklch(20% 0.006 75 / 0.14);
-
-  /* The same elevation, inverted for daylight: on a light ground the lit
-     edge is nearly white and the cast is a soft warm grey, because a black
-     shadow at dark-theme strength reads as dirt on paper. */
   --lift-edge: inset 0 1px 0 oklch(100% 0 0 / 0.85);
   --lift-edge-strong: inset 0 1px 0 oklch(100% 0 0 / 0.4);
   --lift-control: 0 1px 2px oklch(20% 0.006 75 / 0.16), 0 3px 8px -3px oklch(20% 0.006 75 / 0.14);
@@ -182,10 +163,405 @@
   --lift-node-on: 0 4px 10px -3px oklch(20% 0.006 75 / 0.22), 0 14px 26px -12px oklch(20% 0.006 75 / 0.18);
   --lift-bar: 0 6px 18px -8px oklch(20% 0.006 75 / 0.18);
   --lift-cast: oklch(20% 0.006 75 / 0.14);
-  --lift-glow: 0 0 0 1px oklch(19% 0.006 75 / 0.16), 0 0 16px -6px oklch(19% 0.006 75 / 0.14);
-  --lift-glow-strong: 0 0 0 1px oklch(19% 0.006 75 / 0.28), 0 0 22px -6px oklch(19% 0.006 75 / 0.2);
-  --graph-dot: oklch(80% 0.005 75);
-  --graph-dot-strong: oklch(66% 0.006 75);
+  --overlay: oklch(20% 0.006 75 / 0.28);
+  --lift-glow: 0 0 0 1px oklch(21% 0.012 70 / 0.16), 0 0 18px -4px oklch(21% 0.012 70 / 0.14);
+  --lift-glow-strong: 0 0 0 1px oklch(21% 0.012 70 / 0.304), 0 0 26px -4px oklch(21% 0.012 70 / 0.21);
+
+  --graph-dot: oklch(80% 0.008 85);
+  --graph-dot-strong: oklch(66% 0.01 85);
+}
+
+[data-theme="daylight"] {
+  /* Paper and ink — the lightest of the eight. Warm stock rather than white,
+     and the accent is a sepia ink instead of the near-black the Light theme
+     uses, so emphasis reads as a pen mark rather than as more weight. */
+  --theme-name: "Daylight";
+
+  --bg: oklch(97.5% 0.006 85);
+  --surface: oklch(95.5% 0.006 85);
+  --surface-2: oklch(92.5% 0.008 85);
+  --surface-3: oklch(89% 0.009 85);
+  /* The sheet the writing sits on — always a step away from --bg in the
+     direction of light, so the page reads as paper on a desk rather than as
+     one more panel. */
+  --page: oklch(99% 0.004 90);
+
+  --border-soft: oklch(91% 0.008 85);
+  --border: oklch(86% 0.01 85);
+  --border-faint: oklch(78% 0.012 85);
+
+  --text: oklch(22% 0.014 60);
+  --text-2: oklch(43% 0.012 60);
+  --text-3: oklch(52% 0.01 60);
+  --text-reading: oklch(27% 0.014 60);
+
+  --accent: oklch(44% 0.09 55);
+  --accent-hover: oklch(55% 0.09 55);
+  --accent-text-on: oklch(98% 0.005 85);
+  --accent-soft: oklch(44% 0.09 55 / 0.08);
+  --accent-soft-2: oklch(44% 0.09 55 / 0.128);
+  --accent-ring: oklch(44% 0.09 55 / 0.34);
+  --accent-fill-strong: oklch(55% 0.09 55 / 0.9);
+  --accent-fill-soft: oklch(44% 0.09 55 / 0.08);
+  --accent-fill-mid: oklch(55% 0.09 55 / 0.55);
+
+  --danger: oklch(52% 0.2 27);
+  --danger-hover: oklch(46% 0.21 27);
+  --danger-text-on: oklch(98% 0.01 27);
+  --success: oklch(56% 0.14 155);
+  --success-hover: oklch(50% 0.15 155);
+  --success-text-on: oklch(98% 0.01 155);
+
+  --surface-translucent: oklch(95.5% 0.006 85 / 0.85);
+  --surface-2-translucent: oklch(92.5% 0.008 85 / 0.5);
+  --surface-2-faint: oklch(92.5% 0.008 85 / 0.2);
+
+  --shadow-raised: 0 1px 2px oklch(20% 0.006 75 / 0.08), 0 4px 12px oklch(20% 0.006 75 / 0.08);
+  --shadow-floating: 0 2px 6px oklch(20% 0.006 75 / 0.12), 0 14px 30px oklch(20% 0.006 75 / 0.14);
+  --lift-edge: inset 0 1px 0 oklch(100% 0 0 / 0.85);
+  --lift-edge-strong: inset 0 1px 0 oklch(100% 0 0 / 0.4);
+  --lift-control: 0 1px 2px oklch(20% 0.006 75 / 0.16), 0 3px 8px -3px oklch(20% 0.006 75 / 0.14);
+  --lift-raised: 0 2px 5px -2px oklch(20% 0.006 75 / 0.2), 0 6px 14px -6px oklch(20% 0.006 75 / 0.16);
+  --lift-page: 0 2px 4px -2px oklch(20% 0.006 75 / 0.16), 0 10px 20px -8px oklch(20% 0.006 75 / 0.14),
+    0 30px 56px -24px oklch(20% 0.006 75 / 0.24);
+  --lift-node: 0 2px 4px -2px oklch(20% 0.006 75 / 0.18), 0 8px 16px -8px oklch(20% 0.006 75 / 0.14);
+  --lift-node-on: 0 4px 10px -3px oklch(20% 0.006 75 / 0.22), 0 14px 26px -12px oklch(20% 0.006 75 / 0.18);
+  --lift-bar: 0 6px 18px -8px oklch(20% 0.006 75 / 0.18);
+  --lift-cast: oklch(20% 0.006 75 / 0.14);
+  --overlay: oklch(20% 0.006 75 / 0.28);
+  --lift-glow: 0 0 0 1px oklch(44% 0.09 55 / 0.16), 0 0 18px -4px oklch(44% 0.09 55 / 0.14);
+  --lift-glow-strong: 0 0 0 1px oklch(44% 0.09 55 / 0.304), 0 0 26px -4px oklch(44% 0.09 55 / 0.21);
+
+  --graph-dot: oklch(83% 0.008 85);
+  --graph-dot-strong: oklch(69% 0.01 85);
+}
+
+[data-theme="overcast"] {
+  /* Neither day nor night: the chrome sits in a mid blue slate with near-black
+     text on it, and the page is the only bright surface in the window — which
+     is the theme's whole point: everything that isn't the writing recedes a
+     step. The ramp sits higher than it first did because a mid ground has to
+     carry a THREE-step text hierarchy, and at 67% lightness the third step had
+     nowhere left to go: captions came out at 3.1:1. */
+  --theme-name: "Overcast";
+
+  --bg: oklch(70% 0.012 245);
+  --surface: oklch(74% 0.013 245);
+  --surface-2: oklch(78% 0.013 245);
+  --surface-3: oklch(82% 0.014 245);
+  /* The sheet the writing sits on — always a step away from --bg in the
+     direction of light, so the page reads as paper on a desk rather than as
+     one more panel. */
+  --page: oklch(92% 0.008 245);
+
+  --border-soft: oklch(69% 0.013 245);
+  --border: oklch(63% 0.016 245);
+  --border-faint: oklch(54% 0.02 245);
+
+  --text: oklch(17% 0.02 250);
+  --text-2: oklch(28% 0.018 250);
+  --text-3: oklch(36% 0.016 250);
+  --text-reading: oklch(22% 0.02 250);
+
+  --accent: oklch(30% 0.055 250);
+  --accent-hover: oklch(41% 0.055 250);
+  --accent-text-on: oklch(95% 0.008 245);
+  --accent-soft: oklch(30% 0.055 250 / 0.08);
+  --accent-soft-2: oklch(30% 0.055 250 / 0.128);
+  --accent-ring: oklch(30% 0.055 250 / 0.34);
+  --accent-fill-strong: oklch(41% 0.055 250 / 0.9);
+  --accent-fill-soft: oklch(30% 0.055 250 / 0.08);
+  --accent-fill-mid: oklch(41% 0.055 250 / 0.55);
+
+  --danger: oklch(45% 0.18 27);
+  --danger-hover: oklch(39% 0.19 27);
+  --danger-text-on: oklch(98% 0.01 27);
+  --success: oklch(45% 0.12 155);
+  --success-hover: oklch(39% 0.13 155);
+  --success-text-on: oklch(98% 0.01 155);
+
+  --surface-translucent: oklch(74% 0.013 245 / 0.85);
+  --surface-2-translucent: oklch(78% 0.013 245 / 0.5);
+  --surface-2-faint: oklch(78% 0.013 245 / 0.2);
+
+  --shadow-raised: 0 1px 2px oklch(20% 0.006 75 / 0.08), 0 4px 12px oklch(20% 0.006 75 / 0.08);
+  --shadow-floating: 0 2px 6px oklch(20% 0.006 75 / 0.12), 0 14px 30px oklch(20% 0.006 75 / 0.14);
+  --lift-edge: inset 0 1px 0 oklch(100% 0 0 / 0.85);
+  --lift-edge-strong: inset 0 1px 0 oklch(100% 0 0 / 0.4);
+  --lift-control: 0 1px 2px oklch(20% 0.006 75 / 0.16), 0 3px 8px -3px oklch(20% 0.006 75 / 0.14);
+  --lift-raised: 0 2px 5px -2px oklch(20% 0.006 75 / 0.2), 0 6px 14px -6px oklch(20% 0.006 75 / 0.16);
+  --lift-page: 0 2px 4px -2px oklch(20% 0.006 75 / 0.16), 0 10px 20px -8px oklch(20% 0.006 75 / 0.14),
+    0 30px 56px -24px oklch(20% 0.006 75 / 0.24);
+  --lift-node: 0 2px 4px -2px oklch(20% 0.006 75 / 0.18), 0 8px 16px -8px oklch(20% 0.006 75 / 0.14);
+  --lift-node-on: 0 4px 10px -3px oklch(20% 0.006 75 / 0.22), 0 14px 26px -12px oklch(20% 0.006 75 / 0.18);
+  --lift-bar: 0 6px 18px -8px oklch(20% 0.006 75 / 0.18);
+  --lift-cast: oklch(20% 0.006 75 / 0.14);
+  --overlay: oklch(20% 0.006 75 / 0.28);
+  --lift-glow: 0 0 0 1px oklch(30% 0.055 250 / 0.16), 0 0 18px -4px oklch(30% 0.055 250 / 0.14);
+  --lift-glow-strong: 0 0 0 1px oklch(30% 0.055 250 / 0.304), 0 0 26px -4px oklch(30% 0.055 250 / 0.21);
+
+  --graph-dot: oklch(60% 0.014 245);
+  --graph-dot-strong: oklch(47% 0.018 245);
+}
+
+[data-theme="lamplight"] {
+  /* Dark and warm, amber accent — a desk lamp at two in the morning. The hue
+     the neutrals already leaned toward, taken far enough to see. */
+  --theme-name: "Lamplight";
+
+  --bg: oklch(12% 0.012 60);
+  --surface: oklch(14.5% 0.013 60);
+  --surface-2: oklch(18% 0.015 60);
+  --surface-3: oklch(22% 0.016 60);
+  /* The sheet the writing sits on — always a step away from --bg in the
+     direction of light, so the page reads as paper on a desk rather than as
+     one more panel. */
+  --page: oklch(16.5% 0.013 60);
+
+  --border-soft: oklch(19% 0.014 60);
+  --border: oklch(24% 0.016 60);
+  --border-faint: oklch(31% 0.02 60);
+
+  --text: oklch(94% 0.012 80);
+  --text-2: oklch(72% 0.014 70);
+  --text-3: oklch(59% 0.014 65);
+  --text-reading: oklch(88% 0.014 80);
+
+  --accent: oklch(79% 0.13 68);
+  --accent-hover: oklch(70% 0.13 68);
+  --accent-text-on: oklch(16% 0.02 60);
+  --accent-soft: oklch(79% 0.13 68 / 0.12);
+  --accent-soft-2: oklch(79% 0.13 68 / 0.192);
+  --accent-ring: oklch(79% 0.13 68 / 0.34);
+  --accent-fill-strong: oklch(70% 0.13 68 / 0.9);
+  --accent-fill-soft: oklch(79% 0.13 68 / 0.12);
+  --accent-fill-mid: oklch(70% 0.13 68 / 0.55);
+
+  --danger: oklch(60% 0.19 27);
+  --danger-hover: oklch(54% 0.2 27);
+  --danger-text-on: oklch(98% 0.01 27);
+  --success: oklch(66% 0.13 155);
+  --success-hover: oklch(60% 0.14 155);
+  --success-text-on: oklch(98% 0.01 155);
+
+  --surface-translucent: oklch(14.5% 0.013 60 / 0.85);
+  --surface-2-translucent: oklch(18% 0.015 60 / 0.5);
+  --surface-2-faint: oklch(18% 0.015 60 / 0.2);
+
+  --shadow-raised: 0 1px 2px oklch(0% 0 0 / 0.4), 0 4px 12px oklch(0% 0 0 / 0.35);
+  --shadow-floating: 0 2px 6px oklch(0% 0 0 / 0.45), 0 14px 30px oklch(0% 0 0 / 0.55);
+  --lift-edge: inset 0 1px 0 oklch(100% 0 0 / 0.075);
+  --lift-edge-strong: inset 0 1px 0 oklch(100% 0 0 / 0.35);
+  --lift-control: 0 1px 2px oklch(0% 0 0 / 0.55), 0 3px 8px -2px oklch(0% 0 0 / 0.45);
+  --lift-raised: 0 2px 5px -1px oklch(0% 0 0 / 0.6), 0 6px 14px -4px oklch(0% 0 0 / 0.5);
+  --lift-page: 0 2px 5px -1px oklch(0% 0 0 / 0.6), 0 10px 20px -6px oklch(0% 0 0 / 0.55),
+    0 34px 64px -22px oklch(0% 0 0 / 0.8);
+  --lift-node: 0 2px 5px -1px oklch(0% 0 0 / 0.6), 0 8px 16px -6px oklch(0% 0 0 / 0.5);
+  --lift-node-on: 0 4px 10px -2px oklch(0% 0 0 / 0.65), 0 16px 30px -10px oklch(0% 0 0 / 0.6);
+  --lift-bar: 0 8px 22px -6px oklch(0% 0 0 / 0.65);
+  --lift-cast: oklch(0% 0 0 / 0.5);
+  --overlay: oklch(0% 0 0 / 0.62);
+  --lift-glow: 0 0 0 1px oklch(79% 0.13 68 / 0.16), 0 0 18px -4px oklch(79% 0.13 68 / 0.12);
+  --lift-glow-strong: 0 0 0 1px oklch(79% 0.13 68 / 0.304), 0 0 26px -4px oklch(79% 0.13 68 / 0.18);
+
+  --graph-dot: oklch(38% 0.014 60);
+  --graph-dot-strong: oklch(52% 0.02 62);
+}
+
+[data-theme="deep-water"] {
+  /* Dark and cold — blue-teal ground, cyan accent. The most neutral of the
+     coloured darks, and so the safest one to colour-code choice styles on top
+     of: its accent sits at a hue nothing narrative usually wants. */
+  --theme-name: "Deep Water";
+
+  --bg: oklch(13% 0.022 235);
+  --surface: oklch(15.5% 0.024 235);
+  --surface-2: oklch(19% 0.028 233);
+  --surface-3: oklch(23% 0.03 232);
+  /* The sheet the writing sits on — always a step away from --bg in the
+     direction of light, so the page reads as paper on a desk rather than as
+     one more panel. */
+  --page: oklch(17.5% 0.024 235);
+
+  --border-soft: oklch(20% 0.026 235);
+  --border: oklch(25% 0.03 233);
+  --border-faint: oklch(32% 0.038 230);
+
+  --text: oklch(94% 0.012 220);
+  --text-2: oklch(72% 0.02 220);
+  --text-3: oklch(59% 0.022 222);
+  --text-reading: oklch(88% 0.014 220);
+
+  --accent: oklch(78% 0.11 205);
+  --accent-hover: oklch(69% 0.11 205);
+  --accent-text-on: oklch(14% 0.03 235);
+  --accent-soft: oklch(78% 0.11 205 / 0.12);
+  --accent-soft-2: oklch(78% 0.11 205 / 0.192);
+  --accent-ring: oklch(78% 0.11 205 / 0.34);
+  --accent-fill-strong: oklch(69% 0.11 205 / 0.9);
+  --accent-fill-soft: oklch(78% 0.11 205 / 0.12);
+  --accent-fill-mid: oklch(69% 0.11 205 / 0.55);
+
+  --danger: oklch(60% 0.19 27);
+  --danger-hover: oklch(54% 0.2 27);
+  --danger-text-on: oklch(98% 0.01 27);
+  --success: oklch(70% 0.13 170);
+  --success-hover: oklch(64% 0.14 170);
+  --success-text-on: oklch(98% 0.01 155);
+
+  --surface-translucent: oklch(15.5% 0.024 235 / 0.85);
+  --surface-2-translucent: oklch(19% 0.028 233 / 0.5);
+  --surface-2-faint: oklch(19% 0.028 233 / 0.2);
+
+  --shadow-raised: 0 1px 2px oklch(0% 0 0 / 0.4), 0 4px 12px oklch(0% 0 0 / 0.35);
+  --shadow-floating: 0 2px 6px oklch(0% 0 0 / 0.45), 0 14px 30px oklch(0% 0 0 / 0.55);
+  --lift-edge: inset 0 1px 0 oklch(100% 0 0 / 0.075);
+  --lift-edge-strong: inset 0 1px 0 oklch(100% 0 0 / 0.35);
+  --lift-control: 0 1px 2px oklch(0% 0 0 / 0.55), 0 3px 8px -2px oklch(0% 0 0 / 0.45);
+  --lift-raised: 0 2px 5px -1px oklch(0% 0 0 / 0.6), 0 6px 14px -4px oklch(0% 0 0 / 0.5);
+  --lift-page: 0 2px 5px -1px oklch(0% 0 0 / 0.6), 0 10px 20px -6px oklch(0% 0 0 / 0.55),
+    0 34px 64px -22px oklch(0% 0 0 / 0.8);
+  --lift-node: 0 2px 5px -1px oklch(0% 0 0 / 0.6), 0 8px 16px -6px oklch(0% 0 0 / 0.5);
+  --lift-node-on: 0 4px 10px -2px oklch(0% 0 0 / 0.65), 0 16px 30px -10px oklch(0% 0 0 / 0.6);
+  --lift-bar: 0 8px 22px -6px oklch(0% 0 0 / 0.65);
+  --lift-cast: oklch(0% 0 0 / 0.5);
+  --overlay: oklch(0% 0 0 / 0.62);
+  --lift-glow: 0 0 0 1px oklch(78% 0.11 205 / 0.16), 0 0 18px -4px oklch(78% 0.11 205 / 0.12);
+  --lift-glow-strong: 0 0 0 1px oklch(78% 0.11 205 / 0.304), 0 0 26px -4px oklch(78% 0.11 205 / 0.18);
+
+  --graph-dot: oklch(38% 0.025 233);
+  --graph-dot-strong: oklch(52% 0.035 220);
+}
+
+[data-theme="nocturne"] {
+  /* Violet ground, rose accent — velvet and gaslight. The strongest
+     personality of the eight, and the one most likely to fight content that
+     carries its own colour. */
+  --theme-name: "Nocturne";
+
+  --bg: oklch(12.5% 0.025 305);
+  --surface: oklch(15% 0.028 305);
+  --surface-2: oklch(18.5% 0.032 303);
+  --surface-3: oklch(22.5% 0.035 302);
+  /* The sheet the writing sits on — always a step away from --bg in the
+     direction of light, so the page reads as paper on a desk rather than as
+     one more panel. */
+  --page: oklch(17% 0.028 305);
+
+  --border-soft: oklch(19.5% 0.03 305);
+  --border: oklch(24.5% 0.034 303);
+  --border-faint: oklch(31.5% 0.045 300);
+
+  --text: oklch(94% 0.012 310);
+  --text-2: oklch(72% 0.022 310);
+  --text-3: oklch(59% 0.024 308);
+  --text-reading: oklch(88% 0.016 310);
+
+  --accent: oklch(76% 0.13 340);
+  --accent-hover: oklch(67% 0.13 340);
+  --accent-text-on: oklch(14% 0.03 305);
+  --accent-soft: oklch(76% 0.13 340 / 0.12);
+  --accent-soft-2: oklch(76% 0.13 340 / 0.192);
+  --accent-ring: oklch(76% 0.13 340 / 0.34);
+  --accent-fill-strong: oklch(67% 0.13 340 / 0.9);
+  --accent-fill-soft: oklch(76% 0.13 340 / 0.12);
+  --accent-fill-mid: oklch(67% 0.13 340 / 0.55);
+
+  --danger: oklch(62% 0.19 22);
+  --danger-hover: oklch(56% 0.2 22);
+  --danger-text-on: oklch(98% 0.01 27);
+  --success: oklch(70% 0.13 160);
+  --success-hover: oklch(64% 0.14 160);
+  --success-text-on: oklch(98% 0.01 155);
+
+  --surface-translucent: oklch(15% 0.028 305 / 0.85);
+  --surface-2-translucent: oklch(18.5% 0.032 303 / 0.5);
+  --surface-2-faint: oklch(18.5% 0.032 303 / 0.2);
+
+  --shadow-raised: 0 1px 2px oklch(0% 0 0 / 0.4), 0 4px 12px oklch(0% 0 0 / 0.35);
+  --shadow-floating: 0 2px 6px oklch(0% 0 0 / 0.45), 0 14px 30px oklch(0% 0 0 / 0.55);
+  --lift-edge: inset 0 1px 0 oklch(100% 0 0 / 0.075);
+  --lift-edge-strong: inset 0 1px 0 oklch(100% 0 0 / 0.35);
+  --lift-control: 0 1px 2px oklch(0% 0 0 / 0.55), 0 3px 8px -2px oklch(0% 0 0 / 0.45);
+  --lift-raised: 0 2px 5px -1px oklch(0% 0 0 / 0.6), 0 6px 14px -4px oklch(0% 0 0 / 0.5);
+  --lift-page: 0 2px 5px -1px oklch(0% 0 0 / 0.6), 0 10px 20px -6px oklch(0% 0 0 / 0.55),
+    0 34px 64px -22px oklch(0% 0 0 / 0.8);
+  --lift-node: 0 2px 5px -1px oklch(0% 0 0 / 0.6), 0 8px 16px -6px oklch(0% 0 0 / 0.5);
+  --lift-node-on: 0 4px 10px -2px oklch(0% 0 0 / 0.65), 0 16px 30px -10px oklch(0% 0 0 / 0.6);
+  --lift-bar: 0 8px 22px -6px oklch(0% 0 0 / 0.65);
+  --lift-cast: oklch(0% 0 0 / 0.5);
+  --overlay: oklch(0% 0 0 / 0.62);
+  --lift-glow: 0 0 0 1px oklch(76% 0.13 340 / 0.16), 0 0 18px -4px oklch(76% 0.13 340 / 0.12);
+  --lift-glow-strong: 0 0 0 1px oklch(76% 0.13 340 / 0.304), 0 0 26px -4px oklch(76% 0.13 340 / 0.18);
+
+  --graph-dot: oklch(38% 0.03 303);
+  --graph-dot-strong: oklch(52% 0.04 315);
+}
+
+[data-theme="phosphor"] {
+  /* Near-black green with a phosphor accent — a terminal, which is where this
+     whole form came from. --success is deliberately pulled away from the
+     accent's hue, or 'this is fine' and 'this is selected' would say the same
+     thing. */
+  --theme-name: "Phosphor";
+
+  --bg: oklch(11% 0.014 150);
+  --surface: oklch(13.5% 0.016 150);
+  --surface-2: oklch(17% 0.018 150);
+  --surface-3: oklch(20.5% 0.02 150);
+  /* The sheet the writing sits on — always a step away from --bg in the
+     direction of light, so the page reads as paper on a desk rather than as
+     one more panel. */
+  --page: oklch(15% 0.016 150);
+
+  --border-soft: oklch(18% 0.017 150);
+  --border: oklch(23% 0.02 150);
+  --border-faint: oklch(29.5% 0.028 150);
+
+  --text: oklch(93% 0.02 150);
+  --text-2: oklch(70% 0.03 150);
+  --text-3: oklch(58% 0.032 150);
+  --text-reading: oklch(87% 0.024 150);
+
+  --accent: oklch(82% 0.17 145);
+  --accent-hover: oklch(73% 0.17 145);
+  --accent-text-on: oklch(13% 0.03 150);
+  --accent-soft: oklch(82% 0.17 145 / 0.12);
+  --accent-soft-2: oklch(82% 0.17 145 / 0.192);
+  --accent-ring: oklch(82% 0.17 145 / 0.34);
+  --accent-fill-strong: oklch(73% 0.17 145 / 0.9);
+  --accent-fill-soft: oklch(82% 0.17 145 / 0.12);
+  --accent-fill-mid: oklch(73% 0.17 145 / 0.55);
+
+  --danger: oklch(62% 0.19 27);
+  --danger-hover: oklch(56% 0.2 27);
+  --danger-text-on: oklch(98% 0.01 27);
+  --success: oklch(80% 0.15 185);
+  --success-hover: oklch(74% 0.16 185);
+  --success-text-on: oklch(98% 0.01 155);
+
+  --surface-translucent: oklch(13.5% 0.016 150 / 0.85);
+  --surface-2-translucent: oklch(17% 0.018 150 / 0.5);
+  --surface-2-faint: oklch(17% 0.018 150 / 0.2);
+
+  --shadow-raised: 0 1px 2px oklch(0% 0 0 / 0.4), 0 4px 12px oklch(0% 0 0 / 0.35);
+  --shadow-floating: 0 2px 6px oklch(0% 0 0 / 0.45), 0 14px 30px oklch(0% 0 0 / 0.55);
+  --lift-edge: inset 0 1px 0 oklch(100% 0 0 / 0.075);
+  --lift-edge-strong: inset 0 1px 0 oklch(100% 0 0 / 0.35);
+  --lift-control: 0 1px 2px oklch(0% 0 0 / 0.55), 0 3px 8px -2px oklch(0% 0 0 / 0.45);
+  --lift-raised: 0 2px 5px -1px oklch(0% 0 0 / 0.6), 0 6px 14px -4px oklch(0% 0 0 / 0.5);
+  --lift-page: 0 2px 5px -1px oklch(0% 0 0 / 0.6), 0 10px 20px -6px oklch(0% 0 0 / 0.55),
+    0 34px 64px -22px oklch(0% 0 0 / 0.8);
+  --lift-node: 0 2px 5px -1px oklch(0% 0 0 / 0.6), 0 8px 16px -6px oklch(0% 0 0 / 0.5);
+  --lift-node-on: 0 4px 10px -2px oklch(0% 0 0 / 0.65), 0 16px 30px -10px oklch(0% 0 0 / 0.6);
+  --lift-bar: 0 8px 22px -6px oklch(0% 0 0 / 0.65);
+  --lift-cast: oklch(0% 0 0 / 0.5);
+  --overlay: oklch(0% 0 0 / 0.62);
+  --lift-glow: 0 0 0 1px oklch(82% 0.17 145 / 0.16), 0 0 18px -4px oklch(82% 0.17 145 / 0.12);
+  --lift-glow-strong: 0 0 0 1px oklch(82% 0.17 145 / 0.304), 0 0 26px -4px oklch(82% 0.17 145 / 0.18);
+
+  --graph-dot: oklch(36% 0.025 150);
+  --graph-dot-strong: oklch(50% 0.04 148);
 }
 
 /* Newsreader — the brand wordmark and dialog titles. Deliberately the only

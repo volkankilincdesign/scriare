@@ -43,11 +43,21 @@ export function ProjectSettingsDialog({ onClose }: ProjectSettingsDialogProps) {
         Appearance
       </label>
       <p className="mb-2.5 text-xs text-[var(--text-3)]">
-        Light or dark mode. Your choice is remembered between sessions.
+        Eight themes. Applies instantly, and is remembered between sessions.
       </p>
-      <div className="mb-5 grid grid-cols-2 gap-2.5">
+      {/* Four columns rather than two, now that there are eight (v0.44.0):
+          a theme is chosen by looking, so they have to be on screen at once
+          — a list you scroll turns a comparison into a memory test. */}
+      <div className="mb-5 grid grid-cols-4 gap-2">
         {THEMES.map((t) => (
-          <ThemeSwatch key={t.id} id={t.id} label={t.label} active={theme === t.id} onSelect={setTheme} />
+          <ThemeSwatch
+            key={t.id}
+            id={t.id}
+            label={t.label}
+            description={t.description}
+            active={theme === t.id}
+            onSelect={setTheme}
+          />
         ))}
       </div>
 
@@ -113,6 +123,8 @@ export function ProjectSettingsDialog({ onClose }: ProjectSettingsDialogProps) {
 interface ThemeSwatchProps {
   id: ThemeId;
   label: string;
+  /** Shown as the button's title — what the theme is, in three words. */
+  description: string;
   active: boolean;
   onSelect: (id: ThemeId) => void;
 }
@@ -123,34 +135,44 @@ interface ThemeSwatchProps {
  * sync with themes.css — nothing here is a hardcoded duplicate of the
  * palette values.
  */
-function ThemeSwatch({ id, label, active, onSelect }: ThemeSwatchProps) {
+function ThemeSwatch({ id, label, description, active, onSelect }: ThemeSwatchProps) {
   return (
     <button
       type="button"
       onClick={() => onSelect(id)}
       data-theme={id}
-      className={`rounded-lg border p-2.5 text-left transition-colors ${
+      title={description}
+      aria-pressed={active}
+      className={`rounded-lg border p-2 text-left transition-colors ${
         active
           ? "border-[var(--accent)] shadow-[0_0_0_3px_var(--accent-soft-2)]"
           : "border-[var(--border)] hover:border-[var(--border-faint)]"
       }`}
       style={{ background: "var(--surface-2)" }}
     >
-      <span className="mb-2 flex gap-1">
+      {/* Four dots, not three: --page joined them in v0.44.0 and it is the
+          one a writer looks at longest. Read live from this button's own
+          data-theme, so a swatch can never disagree with the theme it
+          stands for. */}
+      <span className="mb-1.5 flex gap-1">
         <span
-          className="h-4 w-4 rounded-full border border-black/10"
+          className="h-3.5 w-3.5 rounded-full border border-black/10"
           style={{ background: "var(--bg)" }}
         />
         <span
-          className="h-4 w-4 rounded-full border border-black/10"
+          className="h-3.5 w-3.5 rounded-full border border-black/10"
+          style={{ background: "var(--page)" }}
+        />
+        <span
+          className="h-3.5 w-3.5 rounded-full border border-black/10"
           style={{ background: "var(--text)" }}
         />
         <span
-          className="h-4 w-4 rounded-full border border-black/10"
+          className="h-3.5 w-3.5 rounded-full border border-black/10"
           style={{ background: "var(--accent)" }}
         />
       </span>
-      <span className="block text-xs font-semibold text-[var(--text)]">{label}</span>
+      <span className="block truncate text-[11px] font-semibold text-[var(--text)]">{label}</span>
     </button>
   );
 }

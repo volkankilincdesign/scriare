@@ -691,7 +691,11 @@ input[type="number"],
    editor's own, so the prose column keeps its measure and simply gains a
    margin of paper around it. */
 .scriare-page {
-  background: var(--surface);
+  /* --page, not --surface: on a light theme --surface is DARKER than the
+     ground it lies on, so the sheet was dimmer than the desk — backwards for
+     the one metaphor this whole treatment is built on (v0.44.0). Every theme
+     sets --page a step from --bg toward the light. */
+  background: var(--page);
   border: 1px solid var(--border-soft);
   border-radius: 8px;
   box-shadow: var(--lift-page), var(--lift-edge);
