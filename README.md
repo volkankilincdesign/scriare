@@ -106,13 +106,13 @@ lives in.
 
 ## Status
 
-**v0.42.0 — in active development, and usable.** The editor, graph,
+**v0.43.0 — in active development, and usable.** The editor, graph,
 runtime, entities, variables, validation and search are all real. Not yet
 built: **Export** (the button is visible and disabled on purpose) and a
 packaged installer. See [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for
 the honest list.
 
-277 automated tests run against the real packaged application. Every
+292 automated tests run against the real packaged application. Every
 load-bearing one has been confirmed to fail on a deliberately broken build
 — a test that has never been seen to fail proves nothing.
 
@@ -135,7 +135,7 @@ Other commands:
 | `npx tsc --noEmit -p tsconfig.web.json` | Type-check without writing files |
 
 To run a single spec file — which is what you want while negative-controlling
-a fix, rather than waiting for all 277 — set `SPEC` to the start of its
+a fix, rather than waiting for all 292 — set `SPEC` to the start of its
 filename:
 
 ```bash

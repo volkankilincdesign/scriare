@@ -54,37 +54,22 @@ const nodeTypes: NodeTypes = {
 // remembering to update both numbers together.
 const CAMERA_FIT_DURATION_MS = 350;
 
-// An edge label lives inside the graph's transformed viewport, so its text
-// shrinks with the camera: at the zoom that fits a thirteen-scene story into
-// the panel, an 11px sentence renders about five pixels tall — not a
-// sentence any more, just a white smear laid across the wires, which is the
-// reported failure returning at a different scale. So a sentence is drawn
-// at a fixed SCREEN size instead (font and padding divided by the zoom) —
-// which is what makes "point at a wire to read its choice" work at any
-// camera distance. No clamp on the divisor: the camera is already bounded
-// by this graph's own minZoom/maxZoom, and a clamp inside those bounds
-// would mean the correction quietly stops working at exactly the distance
-// it exists for.
-//
-// This is done for the ONE label under the pointer and nothing else. Held
-// at screen size, three labels on a selected scene's wires are three
-// banners laid across a zoomed-out map, each several times the width of the
-// scene it belongs to — the reported bug with better typography. One is a
-// tooltip; three is a mess.
-const LABEL_SCREEN_PX = 11;
+// A wire's label lives inside the graph's transformed viewport, so it
+// shrinks with the camera. At the zoom that fits a thirteen-scene story
+// into the panel, 10px of text renders about four pixels tall — not text
+// any more, just a pale smear laid across the wires, which is the failure
+// this label has been reported for twice. It is therefore drawn at its
+// ordinary size and simply not drawn at all once the camera is too far
+// out for it to be read (LABEL_MIN_ZOOM). Holding it at a constant SCREEN
+// size instead was tried in v0.40.0 and is worse: every wire then carries
+// a full-size sign on a map small enough to see the whole story, which is
+// the same clutter arriving by the opposite route.
+const LABEL_PX = 10;
 
-// So a selected scene's wires show their text at the ordinary scale, and
-// only once the camera is close enough for that to be legible — below this
-// an 11px label renders under nine pixels tall, which is the smear again.
-// Until then the wires are already drawn in the accent colour, which
-// answers "where do these go"; the pointer answers "which choice is this".
-const LABEL_TEXT_MIN_ZOOM = 0.8;
-
-// And the sentence itself is capped, because a fixed screen size means a
-// long option label becomes a long banner regardless of how far out you
-// are. Enough to recognise which choice this is — which is the question
-// being asked — without laying a full line of prose across the map.
-const LABEL_MAX_CHARS = 34;
+// Below this, the label is left off. 0.7 puts the smallest drawn text at
+// seven pixels — the point where "Choice 1" stops being legible and starts
+// being a mark on the cable.
+const LABEL_MIN_ZOOM = 0.7;
 
 /** Live drag offset for a single node — its position at drag-start plus the
  * current cursor-driven delta. Originally this was one object per drag
@@ -161,14 +146,8 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   // needed to stop meaning the same thing.
   const [selectedGraphIds, setSelectedGraphIds] = useState<Set<string>>(() => new Set());
 
-  // v0.39.1 — which single wire the pointer is on, so it can show its
-  // choice's full sentence while every other wire stays a bare ordinal.
-  // Deliberately one id and not a set: the whole point is that at most a
-  // few sentences are on screen at a time.
-  const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null);
-
-  // The camera's current zoom, used only to keep a label's text the same
-  // size on screen however far out the graph is (see LABEL_SCREEN_PX).
+  // The camera's current zoom, used only to decide whether a wire's label
+  // is large enough on screen to be worth drawing (see LABEL_MIN_ZOOM).
   // Rounded on the way in, because `onMove` fires continuously while
   // panning and an unrounded value would rerender the edges on every frame
   // of a gesture that didn't change how anything looks.
@@ -449,7 +428,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
           // styling memo below decides what's actually drawn: a short
           // ordinal bead at rest, the full sentence only for the handful of
           // wires you're pointing at.
-          data: { short: String(ordinal), full: choice.text || `Choice ${ordinal}` },
+          data: { short: `Choice ${ordinal}` },
         });
       }
     }
@@ -459,11 +438,9 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       source,
       target,
       type: "default",
-      data: {
-        bundled: true,
-        short: `×${count}`,
-        full: `${count} link${count === 1 ? "" : "s"}`,
-      },
+      // A bundle is several choices folded into one wire, so it cannot name
+      // a choice; it says how many it stands for instead.
+      data: { bundled: true, short: `×${count}` },
     }));
 
     return [...direct, ...bundles];
@@ -505,45 +482,45 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       // "which choice is this?" answer one hover away without ever letting
       // more than a few sentences be on screen at once — which was the
       // actual failure, not the labels themselves.
-      const labels = edge.data as { short?: string; full?: string } | undefined;
-      const isHovered = edge.id === hoveredEdgeId;
-      const showFull = isHovered || (isConnectedToSelected && zoom >= LABEL_TEXT_MIN_ZOOM);
-      const full = labels?.full ?? "";
-      const label = showFull
-        ? full.length > LABEL_MAX_CHARS
-          ? `${full.slice(0, LABEL_MAX_CHARS - 1).trimEnd()}…`
-          : full
-        : labels?.short;
-      // Only the sentence is size-corrected. The bead is left to shrink with
-      // everything else on purpose: pulled right out, two characters per
-      // wire fading to a dot is a map you can read, and the same two
-      // characters held at full size on every connection would be the
-      // clutter this release is removing.
-      const scale = isHovered ? 1 / (zoom || 1) : 1;
+      // v0.43.0 — one label per wire, and it always says the same thing:
+      // which choice this is. The two-label arrangement v0.39.1 introduced
+      // (a bare ordinal at rest, the choice's own sentence on hover and on
+      // the selected scene's wires) answered a question that turned out not
+      // to be worth the machinery — the sentence is one double-click away
+      // in the scene itself, and a label that changes what it says as the
+      // pointer moves is a label you have to chase. A bare "1" was too
+      // little on its own, though: it reads as a count or a weight, not as
+      // "the first choice on the page". "Choice 1" is the whole idea.
+      const labels = edge.data as { short?: string } | undefined;
+      // Below this the text is under seven pixels tall, which is the white
+      // smear over the wires this label has twice been reported as. The
+      // graph zoomed out is a picture of the shape of the story, and the
+      // shape doesn't need the numbering.
+      const readable = zoom >= LABEL_MIN_ZOOM;
       return {
         ...edge,
-        label: label || undefined,
+        label: readable ? labels?.short : undefined,
         labelStyle: {
-          fill: showFull ? "var(--text)" : "var(--text-3)",
-          fontSize: (showFull ? LABEL_SCREEN_PX : 10) * scale,
+          fill: isConnectedToSelected ? "var(--text-2)" : "var(--text-3)",
+          fontSize: LABEL_PX,
         },
         labelBgStyle: {
           fill: "var(--surface)",
-          stroke: showFull ? "var(--border)" : "var(--border-faint)",
-          strokeWidth: scale,
+          stroke: isConnectedToSelected ? "var(--border)" : "var(--border-faint)",
+          strokeWidth: 1,
           fillOpacity: 0.96,
         },
-        labelBgPadding: (showFull ? [6 * scale, 3 * scale] : [5, 2]) as [number, number],
-        labelBgBorderRadius: showFull ? 4 * scale : 8,
+        labelBgPadding: [5, 2] as [number, number],
+        labelBgBorderRadius: 4,
         labelShowBg: true,
         style: {
           stroke: isConnectedToSelected ? "var(--accent)" : "var(--border-faint)",
           strokeWidth: isConnectedToSelected ? 2.2 : isBundle ? 2.6 : 1.6,
         },
-        zIndex: showFull ? 1 : 0,
+        zIndex: 0,
       };
     });
-  }, [edgesBase, selectedSceneId, selectedGraphIds, hoveredEdgeId, zoom]);
+  }, [edgesBase, selectedSceneId, selectedGraphIds, zoom]);
 
   // Which group (if any) currently encloses a scene, mapped once per
   // render — a scene inside a group that is being dragged has to ride along
@@ -850,15 +827,31 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   const handleNodeDragStop: OnNodeDrag = (_event, node, nodes) => {
     const draggedGroupIds = new Set(nodes.filter((n) => n.type === "frame").map((n) => n.id));
 
+    // The size a box KEEPS, which is not always the size it is drawn at: a
+    // folded group is drawn as a small fixed block (COLLAPSED_GROUP_SIZE)
+    // while still owning the dimensions it will unfold to. Reading the size
+    // off the node meant dragging a folded chapter across the canvas wrote
+    // the little block's dimensions in as the chapter's real ones, so
+    // unfolding gave back a box the size of the folded stand-in with its own
+    // scenes sitting outside it (reported after v0.42.0). A drag moves a box;
+    // only a resize resizes one.
+    const realSize = new Map<string, { width: number; height: number }>();
+    if (project) {
+      for (const group of graphGroups(project.content, project.scenes)) {
+        realSize.set(group.id, { width: group.rect.width, height: group.rect.height });
+      }
+    }
+
     for (const n of nodes) {
       if (n.type === "frame") {
+        const kept = realSize.get(n.id);
         updateFolderRect(
           n.id,
           {
             x: n.position.x,
             y: n.position.y,
-            width: (n.style?.width as number) ?? 0,
-            height: (n.style?.height as number) ?? 0,
+            width: kept?.width ?? (n.style?.width as number) ?? 0,
+            height: kept?.height ?? (n.style?.height as number) ?? 0,
           },
           true,
           // Alt held: keep exactly where it was dropped. Without threading
@@ -983,8 +976,6 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
                 const next = Math.round(viewport.zoom * 100) / 100;
                 setZoom((prev) => (prev === next ? prev : next));
               }}
-              onEdgeMouseEnter={(_, edge) => setHoveredEdgeId(edge.id)}
-              onEdgeMouseLeave={() => setHoveredEdgeId(null)}
               onNodeDoubleClick={handleNodeDoubleClick}
               onNodesChange={handleNodesChange}
               onNodeDragStart={handleNodeDragStart}

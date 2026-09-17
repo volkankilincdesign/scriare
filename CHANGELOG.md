@@ -12,6 +12,49 @@ omitting them.
 
 ---
 
+## v0.43.0 — A map that reads left to right
+
+**Auto Layout arranges the story, not the diagram.** Reported as "it tidies
+up the space but seems like not enough", and the cause was the ranking: dagre
+minimises total connection length, which is right for a flowchart and wrong
+for a story. Given a scene with three choices it was free to put each option
+in a different column so the long branch and the short one met neatly at the
+merge — three options from one moment marching down and to the right, with
+not one of their connections horizontal.
+
+A scene now sits one column past the scene that leads to it, so every choice
+out of a scene lands in the same column: the trunk runs straight across, a
+branch is a vertical fan at the moment it happens, and a column means
+something you can read — how far into the story this is. On top of that, a
+scene whose feeders all sit on one line joins that line, which is what turns
+a spine of four scenes from a gentle zig-zag into one straight row. A merge
+point is deliberately left where it is, between the branches it merges,
+because a merge that snaps onto one branch lies about the others.
+
+Columns and rows are also closer together — 108px and 36px, both whole cells
+of the canvas grid.
+
+**A connection says which choice it is.** Every wire now carries "Choice 1",
+always, instead of a bare ordinal that turned into the choice's full sentence
+under the pointer or on a selected scene. The sentence is one double-click
+away in the scene itself, and a label that rewrites itself as the pointer
+moves is a label you have to chase. Pulled far enough out that the text would
+be a smear along the wires, it is left off entirely.
+
+**Folding a chapter no longer resizes it.** Reported: fold a group, move it,
+unfold it, and the box came back the size of the little folded block with its
+own scenes sitting outside it. A box's drag was writing the size it was DRAWN
+at, and a folded box is drawn as a fixed small block while still owning the
+dimensions it will unfold to. A drag moves a box; only a resize resizes one.
+
+**And a box no longer shrinks by a pixel or two every time it is moved.** The
+grid snapped every rectangle by its corners, which is right for a resize and
+wrong for a move: the origin and the far edge round independently, so sliding
+a 620x300 chapter sideways quietly made it 612x306. Whichever gesture is
+happening decides the rule.
+
+---
+
 ## v0.42.0 — The canvas has lines
 
 **The Story Graph is grid-based.** Movement, landing and resizing all obey

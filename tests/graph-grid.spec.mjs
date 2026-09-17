@@ -193,6 +193,32 @@ export default async function ({ page, api, check, seedProject }) {
       onGrid(rect.x + rect.width) && onGrid(rect.y + rect.height),
     JSON.stringify(rect));
 
+  // 4b — and the other half of that rule (v0.43.0). Corner-snapping is for
+  // a resize only: applied to a MOVE it rounds the origin and the far edge
+  // independently, so sliding a box sideways quietly changes its size by up
+  // to a cell — a box nobody ever resized drifting a cell per drag, which is
+  // how a folded chapter came back the size of the little folded block.
+  //
+  // The box is given a size that is NOT a whole number of cells first, and
+  // that is the whole test rather than setup: when a box's width happens to
+  // be a multiple of the grid, both its edges round the same way and corner
+  // snapping is indistinguishable from moving. 620x300 is the case that
+  // tells them apart.
+  const moved = await api(() => {
+    const store = window.__scriareProjectStore;
+    // snap off, so the odd size survives to be moved.
+    store.getState().updateFolderRect("box", { x: 0, y: 0, width: 620, height: 300 }, false, false);
+    const was = store.getState().project.content.find((n) => n.id === "box").rect;
+    store.getState().updateFolderRect("box", { ...was, x: was.x + 55, y: was.y + 55 }, true);
+    const now = store.getState().project.content.find((n) => n.id === "box").rect;
+    return { was, now };
+  });
+  check("moving a box lands it on the grid without resizing it",
+    moved.now.width === moved.was.width && moved.now.height === moved.was.height &&
+      onGrid(moved.now.x) && onGrid(moved.now.y) &&
+      (moved.now.x !== moved.was.x || moved.now.y !== moved.was.y),
+    `${JSON.stringify(moved.was)} → ${JSON.stringify(moved.now)}`);
+
   // 5 — Auto Layout. The tidy pass has to agree with the grid, or the first
   // manual nudge after it looks like it moved something already aligned.
   await seedGraph();

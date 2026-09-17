@@ -1191,11 +1191,6 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { project } = get();
     if (!project) return;
 
-    // Boxes obey the same lattice as the cards inside them — see
-    // updateScenePosition. Snapped by corners rather than by origin plus
-    // size, so both edges land on a line (snapRect).
-    const rect = snap ? snapRect(rawRect) : rawRect;
-
     const folder = project.content.find(
       (n): n is ContentFolder => n.id === folderId && n.kind === "folder",
     );
@@ -1210,6 +1205,24 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       folder.rect ??
       graphGroups(project.content, project.scenes).find((g) => g.id === folderId)?.rect;
     if (!currentRect) return;
+
+    // Boxes obey the same lattice as the cards inside them — see
+    // updateScenePosition. A RESIZE is snapped by its corners, so both the
+    // edge that moved and the one that didn't land on a line (snapRect).
+    //
+    // A MOVE is snapped by its origin alone, and keeps its size to the
+    // pixel. Corner-snapping a move looks identical on paper and is wrong in
+    // practice: origin and far edge round independently, so sliding a
+    // 620x300 chapter two cells to the right quietly made it 612x306. Doing
+    // that on every drag means a box a writer never resized drifts a cell
+    // per move. What is being dragged decides which rule applies, and a
+    // gesture that doesn't change the size is a move.
+    const isMove = rawRect.width === currentRect.width && rawRect.height === currentRect.height;
+    const rect = !snap
+      ? rawRect
+      : isMove
+        ? { ...snapPoint({ x: rawRect.x, y: rawRect.y }), width: rawRect.width, height: rawRect.height }
+        : snapRect(rawRect);
 
     pushHistory(set, get, reparent ? "Move Group" : "Resize Group");
 

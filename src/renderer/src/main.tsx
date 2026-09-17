@@ -45,6 +45,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./utils/textFold"),
     import("./state/uiStore"),
     import("./utils/graphConstants"),
+    import("./utils/autoLayout"),
   ]).then(
     ([
       projectStore,
@@ -68,6 +69,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       textFold,
       uiStore,
       graphConstants,
+      autoLayout,
     ]) => {
       Object.assign(window, {
         __scriareProjectStore: projectStore.useProjectStore,
@@ -94,6 +96,10 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         __scriareFind: findInStory,
         __scriareTextFold: textFold,
         __scriareUIStore: uiStore.useUIStore,
+        // v0.43.0 — the layout rules are pure arithmetic, so the specs that
+        // cover them build graphs and read the geometry back rather than
+        // measuring a picture of one.
+        __scriareAutoLayout: autoLayout,
       });
     },
   );
