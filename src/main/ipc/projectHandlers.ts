@@ -1,6 +1,8 @@
 import { ipcMain, dialog, app, BrowserWindow } from "electron";
 import { promises as fs } from "fs";
 import path from "path";
+import { readStamp, writeProjectFile } from "../projectFile";
+import type { FileStamp } from "../projectFile";
 
 interface RecentProjectEntry {
   name: string;
@@ -62,14 +64,20 @@ export function registerProjectHandlers(): void {
 
       if (result.canceled || !result.filePath) return null;
 
-      await fs.writeFile(result.filePath, projectJson, "utf-8");
+      // No expectation: the save dialog has just confirmed this path, and if
+      // something is already there the writer said to replace it.
+      const outcome = await writeProjectFile(result.filePath, projectJson, null);
       const recent = await addRecent({
         name: projectName,
         filePath: result.filePath,
         lastOpened: new Date().toISOString(),
       });
 
-      return { filePath: result.filePath, recent };
+      return {
+        filePath: result.filePath,
+        recent,
+        stamp: outcome.status === "saved" ? outcome.stamp : null,
+      };
     },
   );
 
@@ -88,6 +96,9 @@ export function registerProjectHandlers(): void {
 
     const filePath = result.filePaths[0];
     const raw = await fs.readFile(filePath, "utf-8");
+    // Stamped as it is read, so the first save can tell whether anything has
+    // touched the file since — see projectFile.ts.
+    const stamp = await readStamp(filePath);
     const parsed = JSON.parse(raw) as { name?: string };
     const recent = await addRecent({
       name: parsed.name ?? path.basename(filePath),
@@ -95,11 +106,12 @@ export function registerProjectHandlers(): void {
       lastOpened: new Date().toISOString(),
     });
 
-    return { filePath, raw, recent };
+    return { filePath, raw, recent, stamp };
   });
 
   ipcMain.handle("project:openPath", async (_event, filePath: string) => {
     const raw = await fs.readFile(filePath, "utf-8");
+    const stamp = await readStamp(filePath);
     const parsed = JSON.parse(raw) as { name?: string };
     const recent = await addRecent({
       name: parsed.name ?? path.basename(filePath),
@@ -107,14 +119,58 @@ export function registerProjectHandlers(): void {
       lastOpened: new Date().toISOString(),
     });
 
-    return { filePath, raw, recent };
+    return { filePath, raw, recent, stamp };
   });
 
   ipcMain.handle(
     "project:save",
-    async (_event, filePath: string, projectJson: string) => {
-      await fs.writeFile(filePath, projectJson, "utf-8");
-      return true;
+    async (
+      _event,
+      filePath: string,
+      projectJson: string,
+      expected: FileStamp | null,
+      forceBackup?: boolean,
+    ) => {
+      return writeProjectFile(filePath, projectJson, expected ?? null, {
+        forceBackup: forceBackup === true,
+      });
+    },
+  );
+
+  /**
+   * "Save a copy" — the way out of a conflict that keeps both versions.
+   * Deliberately a separate channel from `project:create`: that one is about
+   * starting a story and files the result in Recent as a new project, while
+   * this is the same story going somewhere else because the original path
+   * now holds someone else's newer work.
+   */
+  ipcMain.handle(
+    "project:saveCopy",
+    async (event, suggestedPath: string, projectJson: string) => {
+      const win = BrowserWindow.fromWebContents(event.sender);
+      const dialogOptions = {
+        title: "Save a Copy",
+        defaultPath: suggestedPath,
+        filters: [{ name: "Scriare Project", extensions: ["json"] }],
+      };
+      const result = win
+        ? await dialog.showSaveDialog(win, dialogOptions)
+        : await dialog.showSaveDialog(dialogOptions);
+
+      if (result.canceled || !result.filePath) return null;
+
+      const outcome = await writeProjectFile(result.filePath, projectJson, null);
+      const recent = await addRecent({
+        name: path.basename(result.filePath),
+        filePath: result.filePath,
+        lastOpened: new Date().toISOString(),
+      });
+
+      return {
+        filePath: result.filePath,
+        recent,
+        stamp: outcome.status === "saved" ? outcome.stamp : null,
+      };
     },
   );
 }

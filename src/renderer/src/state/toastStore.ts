@@ -40,6 +40,13 @@ interface ToastState {
   toasts: Toast[];
   /** Raises a toast offering to undo whatever was just done. */
   showUndo: (message: string) => void;
+  /**
+   * A plain notice with no action — for something that happened TO the
+   * writer rather than something they did. Added in v0.47.0 for the save
+   * that couldn't be written: a disk with no room left is the one moment
+   * the app must not fail quietly.
+   */
+  showNotice: (message: string) => void;
   dismiss: (id: number) => void;
   /** Undoes the step this toast was raised for, then dismisses it. */
   undoToast: (id: number) => void;
@@ -54,6 +61,15 @@ const timers = new Map<number, ReturnType<typeof setTimeout>>();
 
 export const useToastStore = create<ToastState>((set, get) => ({
   toasts: [],
+
+  showNotice: (message) => {
+    const id = ++nextId;
+    set({ toasts: [...get().toasts, { id, message, undoToken: null, stale: false }] });
+    timers.set(
+      id,
+      setTimeout(() => get().dismiss(id), TOAST_DURATION_MS),
+    );
+  },
 
   showUndo: (message) => {
     const undoToken = useProjectStore.getState().undoToken;

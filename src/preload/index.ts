@@ -8,8 +8,15 @@ const api = {
     open: () => ipcRenderer.invoke("project:open"),
     openPath: (filePath: string) =>
       ipcRenderer.invoke("project:openPath", filePath),
-    save: (filePath: string, projectJson: string) =>
-      ipcRenderer.invoke("project:save", filePath, projectJson),
+    save: (
+      filePath: string,
+      projectJson: string,
+      expected: { mtimeMs: number; size: number } | null,
+      forceBackup?: boolean,
+    ) =>
+      ipcRenderer.invoke("project:save", filePath, projectJson, expected, forceBackup),
+    saveCopy: (suggestedPath: string, projectJson: string) =>
+      ipcRenderer.invoke("project:saveCopy", suggestedPath, projectJson),
   },
   recent: {
     list: () => ipcRenderer.invoke("recent:list"),

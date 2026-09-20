@@ -7,6 +7,7 @@ import { StatusBar } from "./components/layout/StatusBar";
 import { WelcomeScreen } from "./components/welcome/WelcomeScreen";
 import { PlayRuntime } from "./runtime/PlayRuntime";
 import { ConfirmDialogHost } from "./components/common/ConfirmDialogHost";
+import { SaveConflictDialog } from "./components/common/SaveConflictDialog";
 import { ToastHost } from "./components/common/ToastHost";
 import { ChoiceStylesDialog } from "./components/choices/ChoiceStylesDialog";
 import { StoryCheckDialog } from "./components/story/StoryCheckDialog";
@@ -161,6 +162,9 @@ export default function App() {
       {variableManagerOpen && <VariableManagerDialog onClose={closeVariableManager} />}
       {choiceStylesOpen && <ChoiceStylesDialog onClose={closeChoiceStyles} />}
       {storyCheckOpen && <StoryCheckDialog onClose={closeStoryCheck} />}
+      {/* Always mounted: it decides for itself whether there is a conflict, and
+          it has to be able to appear over any of the above (v0.47.0). */}
+      <SaveConflictDialog />
     </div>
   );
 }

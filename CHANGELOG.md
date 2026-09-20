@@ -12,6 +12,68 @@ omitting them.
 
 ---
 
+## v0.47.0 — Saving a project without destroying it
+
+The save was one line: `fs.writeFile(filePath, json)`. That opens the
+writer's real file, truncates it, and then writes — so from the first byte
+until the last, what is on disk is neither the old version nor the new one.
+Anything that interrupts it costs the file. Reproduced before touching
+anything, on a filesystem with no room left:
+
+```
+before:  16719 bytes, parses: true
+write failed: ENOSPC
+after:  409600 bytes, parses: false
+```
+
+A 16KB story became 400KB of half-written JSON, and the last good version
+was already gone. A full disk, a quota, a synced folder out of room, a
+laptop losing power, a process killed mid-save — the same accident wearing
+different clothes.
+
+**A project file is now replaced, never written into.** The new version goes
+to a temp file beside it, is flushed to the platter, and is renamed over the
+target. A rename inside one directory is atomic: readers see the old file or
+the new one, and a failure at any earlier step leaves the old one exactly as
+it was.
+
+**The version being replaced is kept**, as `<project>.bak` — but on a
+cadence, not on every save. Autosave fires 1.5 seconds after every change,
+and a backup from 1.5 seconds ago is the same mistake you just made; every
+five minutes gives you a version from before the thing you regret. The one
+exception is overwriting a conflict, which always keeps what it destroys.
+
+**A file that changed underneath us is not overwritten.** The app remembers
+which version it opened and asks before replacing anything else: reload,
+save yours as a copy, or overwrite deliberately. Nothing is written while
+the question stands, and no save is even attempted behind the dialog.
+
+Three more defects turned up while reviewing this work, none of them in the
+original plan:
+
+- **Two saves could run at once** — Ctrl+S while autosave was in flight —
+  and they collided. Both generated the same temp filename (same process,
+  same millisecond), so one rename took the file and the other failed with
+  ENOENT; the save the writer asked for was the one that lost. Temp names are
+  now unique per write, and saves are serialised, with a single re-run queued
+  if anything changed while one was in flight. Without that, the older save
+  could also land last and quietly put back a chapter you had just cut.
+- **A failed save said nothing.** The status stopped at "Saving…" and stayed
+  there — the one moment a writer most needs to be told something, told
+  silently. It now names what happened ("there is no room left on the disk")
+  and says plainly that the work is still open and the last saved version is
+  intact. Once, not once per autosave.
+- The fallback file size counted characters rather than bytes, which is
+  wrong the moment a story contains a single Turkish character.
+
+28 tests, every one of them confirmed to fail on a build with the old
+behaviour put back — including three assertions that had to be rewritten
+because they passed against the bug they were written for. The first watched
+a save in flight and asserted it never saw a half-written file; what it was
+actually measuring was how long the JSON takes to cross the IPC bridge.
+
+---
+
 ## v0.46.0 — A theme audit, and the four things it found
 
 No new features. The app was walked in all eight themes, on every surface it

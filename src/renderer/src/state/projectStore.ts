@@ -53,9 +53,35 @@ interface RecentProjectEntry {
   lastOpened: string;
 }
 
+/**
+ * What the app believes is on disk (v0.47.0). Carried from the read or the
+ * last successful save into the next save, so the main process can tell
+ * whether anything else has written to the file in between — see
+ * main/projectFile.ts.
+ */
+export interface FileStamp {
+  mtimeMs: number;
+  size: number;
+}
+
+/**
+ * A save that found the file changed underneath it. Holds everything needed
+ * to decide without asking the disk again, and its presence is what stops
+ * autosave: a conflict raises ONE question, not one every 1.5 seconds.
+ */
+export interface SaveConflict {
+  filePath: string;
+  /** The stamp the file actually has now — what we would be overwriting. */
+  found: FileStamp;
+}
+
 interface ProjectState {
   project: Project | null;
   filePath: string | null;
+  /** The version of the file this session is editing. Null before a save is possible. */
+  fileStamp: FileStamp | null;
+  /** Set when a save refused to overwrite someone else's newer version. */
+  saveConflict: SaveConflict | null;
   selectedSceneId: string | null;
   /**
    * v0.35.0 — the Character or Location page currently open in the editor,
@@ -234,14 +260,48 @@ interface ProjectState {
   applyVariableActions: (actions: VariableAction[]) => void;
 
   saveNow: () => Promise<void>;
+  /** Throws away this session's edits and re-reads the file from disk. */
+  resolveConflictReload: () => Promise<void>;
+  /** Keeps both: writes this session's version somewhere else and continues there. */
+  resolveConflictSaveCopy: () => Promise<void>;
+  /** Writes over the newer version on disk, deliberately. */
+  resolveConflictOverwrite: () => Promise<void>;
   closeProject: () => void;
 }
 
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
+/**
+ * Saves are serialised (v0.47.0). Autosave fires 1.5 seconds after a change
+ * and Ctrl+S fires whenever the writer presses it, so two saves overlapping
+ * is an ordinary Tuesday — and two overlapping saves used to fight: the
+ * second read the file the FIRST had just replaced, found a version it did
+ * not recognise, and raised a "this changed outside Scriare" dialog against
+ * the app's own writing.
+ *
+ * One at a time, then, with a single re-run queued if anything changed while
+ * a save was in flight — so the last keystroke before Ctrl+S still reaches
+ * the disk, and never by racing the save already on its way there.
+ */
+let saveInFlight = false;
+let saveQueued = false;
+/**
+ * Whether the last save failed. Autosave fires after every change, so a
+ * folder that has gone away would otherwise raise the same notice every 1.5
+ * seconds for as long as someone keeps typing — which is how a message that
+ * matters becomes one people learn to dismiss. Said once, and again only
+ * after a save has succeeded in between.
+ */
+let lastSaveFailed = false;
+
 function scheduleAutosave(get: () => ProjectState): void {
   if (autosaveTimer) clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(() => {
+    // A conflict is a question waiting for an answer, and re-asking it every
+    // 1.5 seconds would make the app unusable while the writer reads the
+    // dialog. saveNow() returns early in that state; the timer is dropped
+    // here as well so nothing keeps firing behind the modal (v0.47.0).
+    if (get().saveConflict) return;
     void get().saveNow();
   }, 1500);
 }
@@ -268,6 +328,8 @@ function pushHistory(set: SetState, get: () => ProjectState, label: string, merg
 export const useProjectStore = create<ProjectState>((set, get) => ({
   project: null,
   filePath: null,
+  fileStamp: null,
+  saveConflict: null,
   selectedSceneId: null,
   selectedEntityId: null,
   saveStatus: "saved",
@@ -352,6 +414,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set({
       project,
       filePath: result.filePath,
+      fileStamp: result.stamp,
+      saveConflict: null,
       selectedSceneId: project.startSceneId,
       saveStatus: "saved",
       recentProjects: result.recent,
@@ -368,6 +432,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set({
       project,
       filePath: result.filePath,
+      fileStamp: result.stamp,
+      saveConflict: null,
       selectedSceneId: project.startSceneId ?? project.scenes[0]?.id ?? null,
       saveStatus: "saved",
       recentProjects: result.recent,
@@ -383,6 +449,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({
         project,
         filePath: result.filePath,
+        fileStamp: result.stamp,
+        saveConflict: null,
         selectedSceneId: project.startSceneId ?? project.scenes[0]?.id ?? null,
         saveStatus: "saved",
         recentProjects: result.recent,
@@ -1524,12 +1592,168 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   saveNow: async () => {
-    const { project, filePath } = get();
+    const { project, filePath, fileStamp, saveConflict } = get();
     if (!project || !filePath) return;
+    // One unanswered question at a time — see scheduleAutosave.
+    if (saveConflict) return;
+    // One save at a time — see saveInFlight. A save already on its way will
+    // pick up whatever has changed since, so this returns rather than
+    // starting a second one beside it.
+    if (saveInFlight) {
+      saveQueued = true;
+      return;
+    }
 
+    saveInFlight = true;
     set({ saveStatus: "saving" });
-    await window.api.project.save(filePath, JSON.stringify(project, null, 2));
-    set({ saveStatus: "saved" });
+    try {
+      const outcome = await window.api.project.save(
+        filePath,
+        JSON.stringify(project, null, 2),
+        fileStamp,
+      );
+
+      if (outcome.status === "changed") {
+        // Nothing was written. The work is still here, in memory, and the
+        // file on disk is still whoever else's — which is the whole point:
+        // the choice between them belongs to the writer.
+        // Nothing queued survives a conflict: the question on screen is
+        // what happens next, and a leftover flag would fire one spurious
+        // save the moment it is answered.
+        saveQueued = false;
+        set({
+          saveStatus: "unsaved",
+          saveConflict: { filePath, found: outcome.stamp },
+        });
+        return;
+      }
+
+      lastSaveFailed = false;
+      set({ saveStatus: "saved", fileStamp: outcome.stamp });
+    } catch (error) {
+      // A save can fail for reasons that have nothing to do with this app —
+      // a full disk, a folder that went away with the USB stick it was on, a
+      // permission that changed. Before this, the status simply stopped at
+      // "Saving…" and stayed there: the one moment the writer most needs to
+      // be told something, told silently (v0.47.0).
+      //
+      // Nothing was written — see main/projectFile.ts — so the work is still
+      // here and the file on disk is still the last good version. Saying so
+      // is the whole job.
+      const reason = (error as { message?: string })?.message ?? "";
+      const detail = /ENOSPC/.test(reason)
+        ? "there is no room left on the disk"
+        : /EACCES|EPERM/.test(reason)
+          ? "the file is not writable"
+          : /ENOENT/.test(reason)
+            ? "the folder it lives in is gone"
+            : "the file could not be written";
+      // Retrying straight away would fail the same way and say so twice, so
+      // the queue is dropped; the next edit schedules another autosave.
+      saveQueued = false;
+      set({ saveStatus: "unsaved" });
+      const alreadyKnown = lastSaveFailed;
+      lastSaveFailed = true;
+      if (alreadyKnown) return;
+      // Imported here rather than at the top: toastStore already imports
+      // this module, and a static cycle between two stores is the kind of
+      // thing that works until a bundler decides otherwise.
+      const { useToastStore } = await import("./toastStore");
+      useToastStore
+        .getState()
+        .showNotice(
+          `Couldn't save — ${detail}. Your work is still open, and the last saved version is intact.`,
+        );
+    } finally {
+      saveInFlight = false;
+    }
+
+    // Something changed while that was in flight: save once more, with the
+    // stamp this save just earned, so the newer keystrokes land too.
+    if (saveQueued) {
+      saveQueued = false;
+      await get().saveNow();
+    }
+  },
+
+  resolveConflictReload: async () => {
+    const { saveConflict } = get();
+    if (!saveConflict) return;
+
+    const result = await window.api.project.openPath(saveConflict.filePath);
+    const project: Project = normalizeProject(JSON.parse(result.raw));
+    // The session's edits are gone, so its undo history describes scenes
+    // that no longer exist — the same reason opening any project clears it.
+    clearHistory();
+    set({
+      project,
+      filePath: result.filePath,
+      fileStamp: result.stamp,
+      saveConflict: null,
+      selectedSceneId: project.startSceneId ?? project.scenes[0]?.id ?? null,
+      saveStatus: "saved",
+      recentProjects: result.recent,
+      ...historyFlags(),
+    });
+  },
+
+  resolveConflictSaveCopy: async () => {
+    const { project, saveConflict } = get();
+    if (!project || !saveConflict) return;
+
+    // Suggested beside the original, named for what it is. The writer can
+    // put it anywhere; this only has to be a sensible default.
+    const dot = saveConflict.filePath.lastIndexOf(".");
+    const suggested =
+      dot > 0
+        ? `${saveConflict.filePath.slice(0, dot)} (copy)${saveConflict.filePath.slice(dot)}`
+        : `${saveConflict.filePath} (copy)`;
+
+    const result = await window.api.project.saveCopy(
+      suggested,
+      JSON.stringify(project, null, 2),
+    );
+    // Cancelled: the conflict stands, because nothing has been decided.
+    if (!result) return;
+
+    // The session continues in the copy. Anything else would leave the next
+    // keystroke heading back into the same collision.
+    set({
+      filePath: result.filePath,
+      fileStamp: result.stamp,
+      saveConflict: null,
+      saveStatus: "saved",
+      recentProjects: result.recent,
+    });
+  },
+
+  resolveConflictOverwrite: async () => {
+    const { project, saveConflict } = get();
+    if (!project || !saveConflict) return;
+
+    set({ saveStatus: "saving", saveConflict: null });
+    // The stamp that was found is passed as the expectation, so this still
+    // refuses if the file changed AGAIN between the dialog appearing and the
+    // writer answering it — which is exactly when a sync client is busy.
+    const outcome = await window.api.project.save(
+      saveConflict.filePath,
+      JSON.stringify(project, null, 2),
+      saveConflict.found,
+      // Always keep what is being destroyed here, whatever the backup
+      // cadence says: this is the one save that deliberately replaces
+      // someone else's newer version of the story.
+      true,
+    );
+
+    if (outcome.status === "changed") {
+      set({
+        saveStatus: "unsaved",
+        saveConflict: { filePath: saveConflict.filePath, found: outcome.stamp },
+      });
+      return;
+    }
+
+    set({ saveStatus: "saved", fileStamp: outcome.stamp });
   },
 
   closeProject: () => {
@@ -1538,6 +1762,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set({
       project: null,
       filePath: null,
+      fileStamp: null,
+      saveConflict: null,
       selectedSceneId: null,
       saveStatus: "saved",
       isPlaying: false,
