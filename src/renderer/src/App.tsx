@@ -11,6 +11,7 @@ import { SaveConflictDialog } from "./components/common/SaveConflictDialog";
 import { ToastHost } from "./components/common/ToastHost";
 import { ChoiceStylesDialog } from "./components/choices/ChoiceStylesDialog";
 import { StoryCheckDialog } from "./components/story/StoryCheckDialog";
+import { ExportDialog } from "./components/export/ExportDialog";
 import { VariableManagerDialog } from "./components/variables/VariableManagerDialog";
 import { useProjectStore } from "./state/projectStore";
 import { useUIStore } from "./state/uiStore";
@@ -162,6 +163,9 @@ export default function App() {
       {variableManagerOpen && <VariableManagerDialog onClose={closeVariableManager} />}
       {choiceStylesOpen && <ChoiceStylesDialog onClose={closeChoiceStyles} />}
       {storyCheckOpen && <StoryCheckDialog onClose={closeStoryCheck} />}
+      {/* Reads its own open flag, because it builds the whole export when it
+          opens and that is work worth doing exactly once (v0.48.0). */}
+      <ExportDialog />
       {/* Always mounted: it decides for itself whether there is a conflict, and
           it has to be able to appear over any of the above (v0.47.0). */}
       <SaveConflictDialog />

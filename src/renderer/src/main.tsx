@@ -47,6 +47,10 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./utils/graphConstants"),
     import("./utils/autoLayout"),
     import("./state/themeStore"),
+    import("./export/buildStory"),
+    import("./export/pageTemplate"),
+    import("./export/contrastCheck"),
+    import("./export/readingThemes"),
   ]).then(
     ([
       projectStore,
@@ -72,6 +76,10 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       graphConstants,
       autoLayout,
       themeStore,
+      buildStory,
+      pageTemplate,
+      contrastCheck,
+      readingThemes,
     ]) => {
       Object.assign(window, {
         __scriareProjectStore: projectStore.useProjectStore,
@@ -106,6 +114,11 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         // themes spec can walk every theme rather than trusting a copy of
         // the list kept in the test.
         __scriareThemes: themeStore,
+        // v0.48.0 — export. The whole pipeline is pure functions over a
+        // project, so the specs build a story, run the real exporter and
+        // assert on the page it produced, rather than driving a save
+        // dialog a headless run cannot open.
+        __scriareExport: { ...buildStory, ...pageTemplate, ...contrastCheck, ...readingThemes },
       });
     },
   );

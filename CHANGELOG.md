@@ -12,6 +12,113 @@ omitting them.
 
 ---
 
+## v0.48.0 — The story as a page anyone can read
+
+Export. One HTML file, playable in any browser, carrying everything the
+writer formatted — and, first, a project file that finally says whose it is.
+
+**Projects are `.scriare` now.** `.json` was honest about the format and
+wrong about everything else: it sorts with config files, Explorer draws it
+as a generic text document, and nothing about it says "this is my story".
+The format has not changed and is not hidden — a `.scriare` file is still
+JSON and still opens in any text editor. `.scri` was the shorter candidate
+and lost on the argument that three letters save nothing anyone ever types:
+the name is typed once, in a save dialog, and read a thousand times in a
+file list. Every existing `.json` project still opens, permanently, and a
+new story is offered a folder of its own in Documents — because a story is
+not one file, it is the project, its `.bak`, and now the page exported
+beside it.
+
+**The export inherits the rich text editor's changes**, and that is not a
+feature so much as a consequence of refusing to build a second renderer.
+Prose goes through the same `resolveMentions` → speaker pass → Tiptap
+pipeline Play Mode uses, so bold, italic, underline, headings, lists,
+quotes, alignment, font family and size, hand-picked colour, highlight,
+callouts, mentions resolved to their current names and speaker attributions
+all arrive because it IS the renderer the writer was looking at. Choices
+carry their styles, their conditions, their actions and their locked
+reasons — the last of those written by the app's own `describeCondition`.
+
+**Two reading grounds, not the app's eight themes.** A theme in Scriare is
+chrome: forty-seven tokens tuned for a room with panels, borders and a
+docked graph — "a theme tints the room, not the content". An exported page
+has no room, and most of those tokens have nothing to refer to in it.
+Shipping the writer's editor theme would publish whatever they found restful
+at 2am to a stranger reading on a phone at lunchtime. So the export gets
+**Paper** and **Night**, built for reading rather than for sitting beside
+panels: Paper is a warm off-white rather than the Light theme's near-white
+sheet, which only needs to out-bright a desk; Night is lifted well off black
+because white on near-black at 15:1 halates on an OLED phone, and its body
+text sits at 11.4:1, a long-read number rather than a specification-sheet
+one. The reader switches between them and their choice is remembered; before
+they have an opinion, the story opens on Night.
+
+Every pair was measured before it shipped, and the first pass failed: Night's
+tertiary text came in at 4.37:1 against a choice's fill — which is the text
+carrying a locked choice's *reason*, the one thing a locked choice exists to
+say. The whole ramp was lifted rather than that token nudged over the line,
+because a value chosen to just pass a threshold fails the moment anything
+around it moves.
+
+**Colours the writer picked are content, so they travel unchanged — and the
+export says so rather than fixing it.** A pale blue chosen in the Dark theme
+lands on Paper as pale blue on off-white. The export dialog lists what may
+not read, on which ground, with the measured ratio, and exports anyway: an
+unreadable colour can be the point, and a tool that refuses to export a
+deliberate effect has stopped being a tool. A choice style that was never
+given a colour is written in theme variables, so it follows whichever ground
+the reader chose and is never flagged.
+
+**The reader gets Back, Restart, and their place kept.** Back undoes what a
+choice did to the variables, not only where it went — otherwise you walk
+back through a door keeping the key you picked up on the way out. A returning
+reader is *offered* their place rather than dropped into it, because someone
+reopening the file may have wanted to show a friend the opening.
+
+**One file, no requests.** No font link, no stylesheet, no script, no image
+host. It works offline, from a folder or a USB stick, and nobody learns who
+read it. The cost is a system reading face instead of the app's Manrope —
+the honest trade, since a webfont link would make an exported story's
+typography depend on the network, which is the exact bug the app fixed in
+itself by bundling its fonts.
+
+Two things could not reuse the app's code, because a save dialog cannot ship
+TypeScript to a browser: deciding whether a condition passes, and applying a
+variable action. Those are transliterated by hand, and hand-transliterated
+logic drifts into the worst failure this app has — a door that opens in Play
+Mode and stays shut in the export, with nothing on screen to say so. They are
+held to the originals by enumeration rather than by care: 966 condition cases
+and 93 action cases, every type, every comparator, both polarities of
+`negate`, every operation and a spread of wrong-typed values, run through
+both implementations and required to agree. The exported file is written to
+disk and opened in a real browser window to answer them, because the first
+version ran it in a frame inside the app, where the app's own CSP blocked the
+inline script and every assertion passed against a page whose behaviour did
+not exist.
+
+Three things review caught that the tests did not:
+
+- **Export reused the project save path and brought the backup with it**, so
+  exporting twice would have left a `My Story.html.bak` in the folder — a
+  backup of a file that is itself a derivative.
+- **The injection test was guarding a door that was never open.** It put
+  `</script>` in a paragraph, where Tiptap had already escaped the `<`. The
+  real hole is a scene *title*, which is copied into the embedded story data
+  exactly as typed. Removing the escaping broke nothing until the test looked
+  where it mattered.
+- **A scene title with `</script>` in it, and two spellings of the same
+  colour.** Each ground's page and text colour exists twice — as `oklch` in
+  the stylesheet and as sRGB for the contrast check — so both are now painted
+  onto a canvas and compared pixel to pixel rather than trusted to stay in
+  step.
+
+411 checks, and nineteen deliberate sabotages — a comparator off by one, an
+action that subtracts, a Back that keeps the key, a ground switch that
+changes the attribute and nothing else — each confirmed to turn the right
+check red.
+
+---
+
 ## v0.47.0 — Saving a project without destroying it
 
 The save was one line: `fs.writeFile(filePath, json)`. That opens the

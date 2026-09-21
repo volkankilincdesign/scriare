@@ -22,6 +22,11 @@ const api = {
     list: () => ipcRenderer.invoke("recent:list"),
     remove: (filePath: string) => ipcRenderer.invoke("recent:remove", filePath),
   },
+  exportStory: {
+    html: (suggestedName: string, html: string, nearPath: string | null) =>
+      ipcRenderer.invoke("export:html", suggestedName, html, nearPath),
+    open: (filePath: string) => ipcRenderer.invoke("export:reveal", filePath),
+  },
 };
 
 if (process.contextIsolated) {

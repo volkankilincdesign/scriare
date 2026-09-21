@@ -129,14 +129,16 @@ export function TopBar() {
             ▶ Play
           </button>
         )}
-        <button
-          type="button"
-          disabled
-          title="Coming in a later milestone"
-          className="cursor-not-allowed rounded-md border border-[var(--border-soft)] px-3 py-1.5 text-sm font-medium text-[var(--text-3)]"
-        >
-          Export
-        </button>
+        {!isPlaying && (
+          <button
+            type="button"
+            onClick={() => useUIStore.getState().openExport()}
+            title="Export the story as a web page anyone can read"
+            className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
+          >
+            Export
+          </button>
+        )}
       </div>
 
       {settingsOpen && <ProjectSettingsDialog onClose={() => setSettingsOpen(false)} />}

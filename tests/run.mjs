@@ -19,7 +19,8 @@
  * Every spec shares one app launch, so specs must leave the store in a
  * state the next one can seed over — `seedProject()` does that for you.
  */
-import { readdir } from "node:fs/promises";
+import { readdir, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { _electron } from "playwright-core";
@@ -154,6 +155,51 @@ function seedProject() {
   });
 }
 
+/**
+ * Opens an EXPORTED story the way a reader does — as a file, in a browser
+ * window of its own (v0.48.0).
+ *
+ * The obvious way to test an exported page is to drop it into an iframe
+ * inside the app and drive that. It does not work, and finding out why was
+ * worth the detour: the app ships a Content Security Policy of
+ * `script-src 'self'`, an `srcdoc` frame inherits it, and the exported
+ * page's inline script is therefore never executed. Every assertion still
+ * "ran" — against a page whose markup was present, whose stylesheet
+ * applied, and whose behaviour did not exist. That is the shape of a test
+ * that measures its own harness, and it would have reported an entirely
+ * dead export as working the moment the checks were loosened enough to go
+ * green.
+ *
+ * A real BrowserWindow loading a real `file://` URL has no such policy, so
+ * this runs the artefact under the conditions it will actually meet: on
+ * disk, opened from a filesystem, with nothing of Scriare in scope. It also
+ * quietly proves something the iframe never could — that the file works
+ * when it is opened as a file.
+ *
+ * One window for the whole suite, reloaded per case. Creating a window per
+ * assertion is the difference between a spec that runs in seconds and one
+ * nobody waits for.
+ */
+const exportTempFiles = [];
+let exportWindow = null;
+let exportFileCount = 0;
+
+async function openExported(html) {
+  if (!exportWindow) {
+    const created = app.waitForEvent("window");
+    await app.evaluate(({ BrowserWindow }) => {
+      const win = new BrowserWindow({ show: false, width: 960, height: 900 });
+      void win.loadURL("about:blank");
+    });
+    exportWindow = await created;
+  }
+  const file = join(tmpdir(), `scriare-export-${process.pid}-${exportFileCount++}.html`);
+  await writeFile(file, html, "utf-8");
+  exportTempFiles.push(file);
+  await exportWindow.goto(pathToFileURL(file).href);
+  return exportWindow;
+}
+
 // SPEC=speaker runs one file. The whole suite is the only thing that ever
 // proves anything, and CI has no business running a subset — but a
 // negative control (sabotage the code, watch the right test go red) is run
@@ -168,10 +214,11 @@ for (const file of specs) {
   console.log(`\n${file}`);
   const mod = await import(pathToFileURL(join(here, file)).href);
   await seedProject();
-  await mod.default({ page, api, check, seedProject });
+  await mod.default({ page, api, check, seedProject, openExported, app });
 }
 
 const passed = results.filter((r) => r.pass).length;
 console.log(`\n${passed}/${results.length} passed`);
+await Promise.all(exportTempFiles.map((file) => rm(file, { force: true }).catch(() => {})));
 await app.close();
 process.exit(passed === results.length ? 0 : 1);

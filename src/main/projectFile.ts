@@ -142,6 +142,21 @@ export async function writeProjectFile(
      * precisely what they might want back in ten minutes.
      */
     forceBackup?: boolean;
+    /**
+     * Skip the backup entirely. For a file that is DERIVED rather than
+     * authored — an exported page, which can be regenerated from the
+     * project in one click.
+     *
+     * Added in v0.48.0 after review, not after a test. Export reuses this
+     * function for its atomic write, which is right: a failed export should
+     * leave the previous one intact rather than a half-written page.
+     * Nothing stopped the backup logic coming along with it, so a writer
+     * who exported twice would have found `My Story.html.bak` sitting in
+     * their folder — a backup of a file that is a copy of something else,
+     * cluttering the one folder this version just finished arguing should
+     * hold a story and nothing surprising.
+     */
+    noBackup?: boolean;
   },
 ): Promise<SaveOutcome> {
   const current = await readStamp(filePath);
@@ -185,7 +200,7 @@ export async function writeProjectFile(
   // version already exists at this point; refusing to finish would be the
   // worse failure.
   let backedUp = false;
-  if (current) {
+  if (current && options?.noBackup !== true) {
     const since = Date.now() - (lastBackupAt.get(filePath) ?? 0);
     const due =
       options?.forceBackup === true ||

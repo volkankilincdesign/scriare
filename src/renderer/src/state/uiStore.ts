@@ -25,6 +25,15 @@ interface UIState {
   storyCheckOpen: boolean;
   openStoryCheck: () => void;
   closeStoryCheck: () => void;
+  /**
+   * v0.48.0 — Export. Here rather than as TopBar's own `useState` for the
+   * reason this store exists: Check Story's report is where a writer
+   * realises they are ready to export, so it needs to be able to open this
+   * from a sibling panel.
+   */
+  exportOpen: boolean;
+  openExport: () => void;
+  closeExport: () => void;
 
   /**
    * v0.38.0 — Find. A counter rather than a boolean: Ctrl+F pressed while
@@ -68,6 +77,9 @@ export const useUIStore = create<UIState>((set) => ({
   storyCheckOpen: false,
   openStoryCheck: () => set({ storyCheckOpen: true }),
   closeStoryCheck: () => set({ storyCheckOpen: false }),
+  exportOpen: false,
+  openExport: () => set({ exportOpen: true }),
+  closeExport: () => set({ exportOpen: false }),
   findToken: 0,
   requestFind: () => set((state) => ({ findToken: state.findToken + 1 })),
   reveal: null,

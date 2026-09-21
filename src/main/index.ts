@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, Menu } from "electron";
 import { join } from "path";
 import { is } from "@electron-toolkit/utils";
 import { registerProjectHandlers } from "./ipc/projectHandlers";
+import { registerExportHandlers } from "./ipc/exportHandlers";
 
 // Sprint 8C (v0.18.0): `package.json`'s "name" field ("scriare", all
 // lowercase — the npm-package-name convention) is what Electron otherwise
@@ -121,6 +122,7 @@ app.whenReady().then(() => {
   });
 
   registerProjectHandlers();
+  registerExportHandlers();
   createWindow();
 
   app.on("activate", function () {

@@ -60,6 +60,22 @@ export interface ScriareAPI {
     list: () => Promise<RecentProjectEntry[]>;
     remove: (filePath: string) => Promise<RecentProjectEntry[]>;
   };
+  /** v0.48.0 — the story as a page anyone can read. */
+  exportStory: {
+    /**
+     * Shows a save dialog and writes the page. `nearPath` is the open
+     * project's own path, so the export is offered beside the story it
+     * came from; null falls back to Documents. A null return means the
+     * writer cancelled.
+     */
+    html: (
+      suggestedName: string,
+      html: string,
+      nearPath: string | null,
+    ) => Promise<{ filePath: string; bytes: number } | null>;
+    /** Hands the exported file to the OS — in practice, the browser. */
+    open: (filePath: string) => Promise<void>;
+  };
 }
 
 declare global {
