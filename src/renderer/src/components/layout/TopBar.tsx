@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useProjectStore } from "../../state/projectStore";
+import { confirmDialog } from "../../state/confirmDialogStore";
 import { useUIStore } from "../../state/uiStore";
 import { ProjectSettingsDialog } from "./ProjectSettingsDialog";
 import { BrandMark } from "../common/BrandMark";
@@ -15,6 +16,7 @@ export function TopBar() {
   const projectName = useProjectStore((s) => s.project?.name ?? "Untitled Story");
   const saveStatus = useProjectStore((s) => s.saveStatus);
   const closeProject = useProjectStore((s) => s.closeProject);
+
   const isPlaying = useProjectStore((s) => s.isPlaying);
   const startPlay = useProjectStore((s) => s.startPlay);
   const exitPlay = useProjectStore((s) => s.exitPlay);
@@ -27,14 +29,35 @@ export function TopBar() {
   const undoLabel = useProjectStore((s) => s.undoLabel);
   const redoLabel = useProjectStore((s) => s.redoLabel);
 
+  /**
+   * Back to the Welcome screen — writing anything pending on the way out.
+   * `closeProject` does the flush; the question below covers the one state
+   * it cannot flush, for the reasons in hooks/useCloseGuard.ts.
+   */
+  async function handleClose(): Promise<void> {
+    if (useProjectStore.getState().saveConflict) {
+      const proceed = await confirmDialog({
+        title: "Close without saving?",
+        message:
+          "This story has changes that haven't been saved, and a conflict you haven't answered yet. " +
+          "Closing now loses everything written since you opened it.",
+        confirmLabel: "Close anyway",
+        cancelLabel: "Go back",
+        danger: true,
+      });
+      if (!proceed) return;
+    }
+    await closeProject();
+  }
+
   const modifier = navigator.platform.toLowerCase().includes("mac") ? "⌘" : "Ctrl+";
 
   return (
     <header className="scriare-topbar flex h-14 shrink-0 items-center justify-between border-b border-[var(--border-soft)] bg-[var(--surface)] px-5">
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         <button
           type="button"
-          onClick={closeProject}
+          onClick={() => void handleClose()}
           className="flex items-center gap-2 text-sm font-semibold tracking-wide text-[var(--text)] hover:text-[var(--accent)]"
           title="Back to Welcome screen"
         >
@@ -42,9 +65,19 @@ export function TopBar() {
           <span className="font-serif-narrative italic">Scriare</span>
         </button>
         <span className="text-[var(--text-3)]">/</span>
-        <span className="text-sm text-[var(--text-2)]">{projectName}</span>
+        {/* min-w-0 + truncate, because a flex child will not shrink below
+            its content otherwise: a multi-word story name wrapped to two
+            lines inside this fixed 56px bar and spilled over the border,
+            while a single long token pushed the whole right-hand group of
+            buttons into wrapping. The status bar already truncates both of
+            its names; the two ends of the window disagreed. */}
+        <span className="min-w-0 truncate text-sm text-[var(--text-2)]" title={projectName}>
+          {projectName}
+        </span>
         {!isPlaying && (
-          <span className="ml-2 text-xs text-[var(--text-3)]">{SAVE_STATUS_LABEL[saveStatus]}</span>
+          <span className="ml-2 shrink-0 text-xs text-[var(--text-3)]">
+            {SAVE_STATUS_LABEL[saveStatus]}
+          </span>
         )}
 
         {/* Undo/redo sit with the project's identity rather than with the
@@ -81,7 +114,7 @@ export function TopBar() {
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         {!isPlaying && (
           <button
             type="button"

@@ -134,12 +134,16 @@ export default async function ({ api, check }) {
   check('history is capped at 50 steps', r <= 50 && r >= 45, `unwound ${r} steps`);
 
   // 9 — closing the project wipes history
-  r = await api(() => {
+  // `closeProject` is async as of v0.49.0 — it writes any pending change
+  // before closing, rather than cancelling the autosave timer and dropping
+  // it. `filePath` is left null here so there is nothing to write and the
+  // flush is a no-op; this check is about the history, not the save.
+  r = await api(async () => {
     const s = window.__scriareProjectStore;
-    s.setState({ project: { name:'x', createdAt:'', updatedAt:'', scenes:[{id:'a',title:'a',content:{type:'doc',content:[]},position:{x:0,y:0},frameId:null,order:0}], content:[], favorites:[], variables:[], startSceneId:'a' } });
+    s.setState({ project: { name:'x', createdAt:'', updatedAt:'', scenes:[{id:'a',title:'a',content:{type:'doc',content:[]},position:{x:0,y:0},frameId:null,order:0}], content:[], favorites:[], variables:[], startSceneId:'a' }, filePath: null });
     s.getState().createFolder(null);
     const had = s.getState().canUndo;
-    s.getState().closeProject();
+    await s.getState().closeProject();
     return { had, after: s.getState().canUndo };
   });
   check('closing a project wipes its history', r.had === true && r.after === false);

@@ -4,7 +4,7 @@ import { useProjectStore } from "../../state/projectStore";
 import { useUIStore } from "../../state/uiStore";
 import { useToastStore } from "../../state/toastStore";
 import { useSelectionStore } from "../../state/selectionStore";
-import { ownsEditingKeys } from "../../utils/keyboardFocus";
+import { aDialogIsOpen, ownsEditingKeys } from "../../utils/keyboardFocus";
 import type { ContentNode, Scene } from "../../types/project";
 import { ancestorsOf, childrenOf, computeDropPosition, flattenVisible } from "../../utils/contentTree";
 import { ContentBrowserContext, useContentBrowser } from "./contentBrowserContext";
@@ -406,6 +406,9 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
    */
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent): void {
+      // A dialog owns the keyboard while it is up — see
+      // utils/keyboardFocus.ts's aDialogIsOpen.
+      if (aDialogIsOpen()) return;
       if (ownsEditingKeys(event.target)) return;
       if (useSelectionStore.getState().surface !== "content") return;
       const current = useProjectStore.getState();

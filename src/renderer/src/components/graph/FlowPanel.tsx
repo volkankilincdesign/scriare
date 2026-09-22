@@ -18,6 +18,7 @@ import { mentionResolver } from "../../utils/mentions";
 import { GRAPH_GRID, snapRect } from "../../utils/graphConstants";
 import {
   COLLAPSED_GROUP_SIZE,
+  contentIndex,
   folderSubtree,
   graphGroups,
   groupAtPoint,
@@ -346,19 +347,21 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   // mousemove was enough to visibly stall the graph on any real-sized
   // project — this split is what keeps Sprint 8A's "must not reduce graph
   // performance" requirement true now that scenes drag exactly like frames.
-  const choiceCountByScene = useMemo(() => {
-    if (!project) return new Map<string, number>();
-    return new Map(project.scenes.map((scene) => [scene.id, extractChoices(scene.content).length]));
-  }, [project]);
-
-  // Kept keyed on `project` alone, deliberately not on `selectedSceneId` —
-  // this is the same expensive-per-scene extractChoices() walk the v0.10.3
-  // pitfall exists to warn about, so it must only rerun when a scene's
-  // content actually changes, never on a plain click. The lightweight
-  // selection-highlight styling below is a separate, cheap memo layered on
-  // top instead.
-  const edgesBase = useMemo<Edge[]>(() => {
-    if (!project) return [];
+  //
+  // ONE memo, not two. Until v0.49.0 the choice COUNTS and the EDGES were
+  // separate memos, both keyed on `project`, and each ran its own complete
+  // `extractChoices()` over every scene — so every keystroke walked every
+  // document in the story twice, when the second walk already produced the
+  // list whose length the first one wanted. Measured together at 1.5 ms on
+  // a 40-scene story and 24.8 ms on a 300-scene one; roughly half of that
+  // was the duplicate. They are still keyed on `project` alone, which is
+  // the part that matters: neither runs on a drag frame.
+  const { choiceCountByScene, edgesBase } = useMemo<{
+    choiceCountByScene: Map<string, number>;
+    edgesBase: Edge[];
+  }>(() => {
+    const counts = new Map<string, number>();
+    if (!project) return { choiceCountByScene: counts, edgesBase: [] };
 
     // An endpoint hidden inside a folded group is re-pointed at the box you
     // can actually see, so folding a chapter never makes a connection
@@ -375,17 +378,25 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     // all to an edge label (see optionPlainText).
     const resolve = mentionResolver(project.entities ?? []);
 
+    // Built once for the whole walk rather than inside `visibleStandIn`,
+    // which used to index the entire content tree on every call — twice
+    // per linked choice, on every keystroke. On a 300-scene story that was
+    // 360,000 Map insertions per character typed, nearly all of them to
+    // answer "no, nothing above this is folded".
+    const byId = contentIndex(project.content);
+
     for (const scene of project.scenes) {
       // Numbered in document order across the whole scene, counting options
       // that go nowhere too — so the badge on a wire is the same ordinal the
       // writer sees counting down the page, not a renumbering that only
       // agrees with the page when every option happens to be linked.
       const sceneChoices = extractChoices(scene.content, resolve);
+      counts.set(scene.id, sceneChoices.length);
       for (const [index, choice] of sceneChoices.entries()) {
         if (!choice.targetSceneId) continue;
         const ordinal = index + 1;
-        const source = visibleStandIn(project, scene.id) ?? scene.id;
-        const target = visibleStandIn(project, choice.targetSceneId) ?? choice.targetSceneId;
+        const source = visibleStandIn(project, scene.id, byId) ?? scene.id;
+        const target = visibleStandIn(project, choice.targetSceneId, byId) ?? choice.targetSceneId;
         // Both ends folded into the same box: the connection is now
         // internal to a single block, with nothing to draw between.
         if (source === target) continue;
@@ -444,7 +455,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       data: { bundled: true, short: `×${count}` },
     }));
 
-    return [...direct, ...bundles];
+    return { choiceCountByScene: counts, edgesBase: [...direct, ...bundles] };
   }, [project]);
 
   // Edges connected to the selected scene read as part of what's selected,
@@ -530,18 +541,17 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   const groupOfScene = useMemo(() => {
     const map = new Map<string, string>();
     if (!project) return map;
-    for (const group of graphGroups(project.content, project.scenes)) {
-      const subtree = folderSubtree(project.content, group.id);
-      subtree.delete(group.id);
-      for (const id of subtree) {
-        // Innermost wins: a scene two levels down belongs to the box that
-        // directly holds it, and that box is itself carried by its parent.
-        if (!map.has(id)) map.set(id, group.id);
-      }
-    }
-    // graphGroups returns parents first, so the loop above records the
-    // OUTERMOST box. Re-walk deepest-first to correct that.
-    map.clear();
+    // Deepest-first, because innermost wins: a scene two levels down
+    // belongs to the box that directly holds it, and that box is itself
+    // carried by its parent. `graphGroups` returns parents first, so the
+    // walk is reversed.
+    //
+    // This used to do the whole thing TWICE — fill the map parents-first,
+    // then `map.clear()` and redo it reversed — so the first pass's entire
+    // output was unreachable. `graphGroups` is not cheap (it runs
+    // `deriveMissingRects`, a `folderSubtree` per rect-less folder plus a
+    // spread-based min/max per group) and this memo is keyed on `project`,
+    // so both halves ran on every keystroke; one of them for nothing.
     const groups = graphGroups(project.content, project.scenes).slice().reverse();
     for (const group of groups) {
       const subtree = folderSubtree(project.content, group.id);
@@ -550,6 +560,21 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     }
     return map;
   }, [project]);
+
+  /**
+   * The group boxes as they are right now.
+   *
+   * Memoized because the two drag handlers below read it on every
+   * pointer-move, to decide which box a dragged scene is hovering over —
+   * and each of them used to call `graphGroups(...)` itself, rebuilding
+   * every group's rectangle from scratch per frame while the `nodes` memo
+   * was doing the same thing in the same frame. Group geometry is a pure
+   * function of `project`, which cannot change mid-drag (v0.49.0).
+   */
+  const groupsNow = useMemo(
+    () => (project ? graphGroups(project.content, project.scenes) : []),
+    [project],
+  );
 
   /** The live drag offset a scene inherits from whichever group is carrying it. */
   function groupOffsetFor(sceneId: string): DragOffset | undefined {
@@ -781,7 +806,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     setSceneDrag(sceneMap.size > 0 ? sceneMap : null);
 
     if (node.type === "scene" && project) {
-      setFrameHighlight(groupAtPoint(graphGroups(project.content, project.scenes), node.position)?.id ?? null);
+      setFrameHighlight(groupAtPoint(groupsNow, node.position)?.id ?? null);
     }
   };
 
@@ -821,7 +846,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     });
 
     if (node.type === "scene" && project) {
-      setFrameHighlight(groupAtPoint(graphGroups(project.content, project.scenes), node.position)?.id ?? null);
+      setFrameHighlight(groupAtPoint(groupsNow, node.position)?.id ?? null);
     }
   };
 

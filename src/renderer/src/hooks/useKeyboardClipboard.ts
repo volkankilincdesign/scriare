@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useProjectStore } from "../state/projectStore";
 import { useSelectionStore } from "../state/selectionStore";
 import { useToastStore } from "../state/toastStore";
-import { ownsEditingKeys } from "../utils/keyboardFocus";
+import { aDialogIsOpen, ownsEditingKeys } from "../utils/keyboardFocus";
 import {
   buildClipboard,
   describeClipboard,
@@ -39,6 +39,9 @@ export function useKeyboardClipboard(): void {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent): void {
       if (event.altKey) return;
+      // A dialog owns the keyboard while it is up — see
+      // utils/keyboardFocus.ts's aDialogIsOpen.
+      if (aDialogIsOpen()) return;
       if (ownsEditingKeys(event.target)) return;
 
       const project = useProjectStore.getState().project;

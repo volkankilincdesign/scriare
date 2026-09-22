@@ -232,10 +232,10 @@ export function historyFlags(): {
 export function mergeLiveProse(snapshot: Project, current: Project | null): Project {
   if (!current) return snapshot;
 
-  const liveContent = new Map(current.scenes.map((scene) => [scene.id, scene.content]));
+  const liveScenes = new Map(current.scenes.map((scene) => [scene.id, scene.content]));
   let changed = false;
   const scenes = snapshot.scenes.map((scene) => {
-    const live = liveContent.get(scene.id);
+    const live = liveScenes.get(scene.id);
     if (live && live !== scene.content) {
       changed = true;
       return { ...scene, content: live };
@@ -243,5 +243,24 @@ export function mergeLiveProse(snapshot: Project, current: Project | null): Proj
     return scene;
   });
 
-  return changed ? { ...snapshot, scenes } : snapshot;
+  // ENTITY PAGES TOO (v0.49.0). This used to carry only `scenes` forward,
+  // and a Character or Location page's prose has no protection on either
+  // side — `updateEntityContent`, like `updateSceneContent`, deliberately
+  // takes no snapshot of its own. So a structural undo silently reverted
+  // whatever had been written on a character page since the snapshot was
+  // taken. Measured: create a scene (snapshot), write three paragraphs on
+  // a character's page, undo — the scene goes, and so do the paragraphs,
+  // with nothing on screen to say so, because the undo's label only ever
+  // mentioned the scene.
+  const liveEntities = new Map((current.entities ?? []).map((e) => [e.id, e.content]));
+  const entities = (snapshot.entities ?? []).map((entity) => {
+    const live = liveEntities.get(entity.id);
+    if (live && live !== entity.content) {
+      changed = true;
+      return { ...entity, content: live };
+    }
+    return entity;
+  });
+
+  return changed ? { ...snapshot, scenes, entities } : snapshot;
 }

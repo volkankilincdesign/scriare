@@ -70,12 +70,26 @@ async function defaultProjectDirectory(): Promise<string> {
  * A save dialog can still return a path with no extension: on Windows a
  * writer who types `My Story` does not always get one appended, and on
  * Linux they never do. A project with no extension is a file the OS has no
- * opinion about, so the extension is added here rather than hoped for. One
- * the writer chose deliberately — `.json`, or anything else — is left
- * exactly as typed: this fills a gap, it does not overrule.
+ * opinion about, so the extension is added here rather than hoped for.
+ *
+ * Tested against a KNOWN SET rather than against `extname(p) === ""`, which
+ * was the v0.48.0 version and is wrong for a very ordinary story title:
+ * `path.extname("My Story v1.2")` is `".2"`, so the guard did not fire, and
+ * the project was saved as `My Story v1.2` with no extension at all — not
+ * listed by the open dialog's default filter, and never opened by a
+ * double-click in Explorer. The writer's reasonable conclusion is that the
+ * story was not saved.
+ *
+ * `.json` is in the set because a writer who deliberately types one is
+ * choosing the older extension, which still opens (see OPEN_FILTERS).
+ * Anything else — `.2`, `.txt`, whatever the title happened to end with —
+ * is a filename, not a choice of format, and gets `.scriare` after it.
  */
+const KNOWN_PROJECT_EXTENSIONS = new Set([`.${PROJECT_EXT}`, ".json"]);
+
 function withProjectExtension(filePath: string): string {
-  return path.extname(filePath) === "" ? `${filePath}.${PROJECT_EXT}` : filePath;
+  const extension = path.extname(filePath).toLowerCase();
+  return KNOWN_PROJECT_EXTENSIONS.has(extension) ? filePath : `${filePath}.${PROJECT_EXT}`;
 }
 
 function recentFilePath(): string {

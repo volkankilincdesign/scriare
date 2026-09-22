@@ -19,13 +19,16 @@
  * explicitly, and only then lowercase — with the invariant locale, because
  * the Turkish one is the thing being worked around.
  */
-export function fold(value: string): string {
+function foldRun(value: string): string {
   return value
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[\u0131\u0130]/g, "i")
-    .toLowerCase()
-    .trim();
+    .toLowerCase();
+}
+
+export function fold(value: string): string {
+  return foldRun(value).trim();
 }
 
 /**
@@ -37,23 +40,41 @@ export function fold(value: string): string {
  * snippet has to highlight the characters the WRITER typed, in their
  * original case and with their original accents. Folding is not
  * length-preserving in either direction — "İ" decomposes to two code
- * points and folds back to one, "ß" lowercases to two — so a folded index
- * is not an original index and pretending otherwise puts the highlight a
- * few characters off in exactly the languages this app exists to support.
+ * points and folds back to one, and there are over eleven thousand
+ * characters in the BMP that fold to more than one — so a folded index is
+ * not an original index, and pretending otherwise puts the highlight a few
+ * characters off in exactly the languages this app exists to support.
  *
  * `map[i]` is the index in the ORIGINAL string of the character that
  * produced folded character `i`. A character that folds to nothing (a
  * lone combining mark) contributes no entry; one that folds to several
  * contributes the same original index several times.
  *
- * Deliberately NOT trimmed, unlike `fold` above: an index map has to line
- * up with the string it came from.
+ * FOLDS THROUGH `foldRun`, NOT THROUGH `fold`, and that one word is the
+ * entire bug this function shipped with until v0.49.0.
+ *
+ * `fold` ends in `.trim()` — right for a whole string, catastrophic one
+ * character at a time. `fold(" ")` is `""`, so every space, tab and
+ * newline was deleted from the folded text and given no entry in the map.
+ * The query side trims only its ends, so its inner spaces survived, and
+ * the two strings could never line up. Measured:
+ *
+ *   foldWithMap("the cat")                  {"folded":"thecat","map":[0,1,2,4,5,6]}
+ *   foldedMatches("the cat sat","the cat")  []                  ← no match, ever
+ *   foldedMatches("the cat sat","ecat")     [{start:2,end:7}]   ← matched "e cat"
+ *
+ * So every multi-word search in the app returned nothing, and a query with
+ * the spaces taken out matched across them. The comment that stood here
+ * before this one read "Deliberately NOT trimmed, unlike `fold` above: an
+ * index map has to line up with the string it came from" — it named the
+ * exact invariant the code was breaking, which is most of why nobody
+ * looked again.
  */
 export function foldWithMap(value: string): { folded: string; map: number[] } {
   let folded = "";
   const map: number[] = [];
   for (let i = 0; i < value.length; i += 1) {
-    const piece = fold(value[i]);
+    const piece = foldRun(value[i]);
     for (const char of piece) {
       folded += char;
       map.push(i);

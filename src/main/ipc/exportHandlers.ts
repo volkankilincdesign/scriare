@@ -26,6 +26,40 @@ import { writeProjectFile } from "../projectFile";
  * derivative, in the one folder this version just finished arguing should
  * hold a story and nothing surprising.
  */
+/**
+ * The destination, forced to be a web page (v0.49.0).
+ *
+ * This used to be `extname(p) === "" ? p + ".html" : p` — anything with an
+ * extension was accepted verbatim. Combined with `expected: null` (no
+ * conflict check) and `noBackup: true` (no recovery), and with the dialog
+ * opening in the project's OWN folder, that made one misclick fatal:
+ * `My Story.scriare` is sitting right there in the file list, clicking a
+ * file in a native Save dialog fills the name box with it, and the story
+ * was then replaced by a web page — atomically, completely, with no
+ * backup. The app's next act was to offer "Open it".
+ *
+ * Two changes. An extension that is a PROJECT extension is never honoured,
+ * whatever the dialog returns. And anything that isn't already `.html` or
+ * `.htm` gains `.html` rather than only an empty one doing so — because
+ * `path.extname("My Story v1.2")` is `".2"`, so a perfectly ordinary story
+ * title used to produce a file the OS had no opinion about and no browser
+ * would open.
+ */
+const PROJECT_EXTENSIONS = new Set([".scriare", ".json"]);
+const WEB_PAGE_EXTENSIONS = new Set([".html", ".htm"]);
+
+export function asWebPage(filePath: string): string {
+  const extension = path.extname(filePath).toLowerCase();
+  if (WEB_PAGE_EXTENSIONS.has(extension)) return filePath;
+  // A project extension is stripped, not appended to: `My Story.scriare`
+  // becomes `My Story.html`, not `My Story.scriare.html`, which would sort
+  // next to the story and read like a variant of it.
+  const base = PROJECT_EXTENSIONS.has(extension)
+    ? filePath.slice(0, filePath.length - extension.length)
+    : filePath;
+  return `${base}.html`;
+}
+
 export function registerExportHandlers(): void {
   ipcMain.handle(
     "export:html",
@@ -48,8 +82,7 @@ export function registerExportHandlers(): void {
 
       if (result.canceled || !result.filePath) return null;
 
-      const filePath =
-        path.extname(result.filePath) === "" ? `${result.filePath}.html` : result.filePath;
+      const filePath = asWebPage(result.filePath);
 
       await writeProjectFile(filePath, html, null, { noBackup: true });
 

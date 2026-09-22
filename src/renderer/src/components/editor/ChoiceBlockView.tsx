@@ -77,7 +77,7 @@ export function ChoiceBlockView({ node, deleteNode, selected, editor }: NodeView
       className={`choice-block my-3 rounded-md border px-3 py-2.5 transition-colors ${
         selected
           ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-          : "border-[var(--border)] bg-[var(--overlay)]"
+          : "border-[var(--border)] bg-[var(--surface-2-faint)]"
       }`}
     >
       <div

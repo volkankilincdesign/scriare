@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, Menu } from "electron";
+import { app, shell, BrowserWindow, Menu, ipcMain } from "electron";
 import { join } from "path";
 import { is } from "@electron-toolkit/utils";
 import { registerProjectHandlers } from "./ipc/projectHandlers";
@@ -92,6 +92,46 @@ function createWindow(): void {
 
   mainWindow.on("ready-to-show", () => {
     mainWindow.show();
+  });
+
+  /**
+   * Closing the window gives the renderer a chance to write first
+   * (v0.49.0).
+   *
+   * There was no `close` handler at all, and no `beforeunload` in the
+   * renderer either — so the X button destroyed the window immediately.
+   * Autosave fires 1.5 seconds after the last change, which means the last
+   * 1.5 seconds of typing were discarded every time; and while the
+   * conflict dialog is up the project is entirely unsaved in memory —
+   * `saveNow` returns early and the autosave timer is dropped — so closing
+   * from there could throw away a whole session.
+   *
+   * The handshake rather than a synchronous guard, because the only honest
+   * answer involves asynchronous work (a write, or a question) and
+   * `close`'s own handler cannot wait. The renderer flushes, asks if it
+   * has to, and calls back; `closing` makes the second close go through
+   * rather than looping, and the timeout means a renderer that is wedged
+   * cannot make the window unclosable.
+   */
+  let closing = false;
+  mainWindow.on("close", (event) => {
+    if (closing || mainWindow.webContents.isDestroyed()) return;
+    event.preventDefault();
+    closing = true;
+    mainWindow.webContents.send("app:before-close");
+    const giveUp = setTimeout(() => {
+      if (!mainWindow.isDestroyed()) mainWindow.destroy();
+    }, 4000);
+    ipcMain.once("app:ready-to-close", (_event, proceed: boolean) => {
+      clearTimeout(giveUp);
+      if (proceed) {
+        if (!mainWindow.isDestroyed()) mainWindow.close();
+      } else {
+        // The writer said no. Put the window back to how it was, so the
+        // next X press asks again rather than closing silently.
+        closing = false;
+      }
+    });
   });
 
   mainWindow.webContents.setWindowOpenHandler((details) => {

@@ -250,10 +250,35 @@ function readLines(content: JSONContent | undefined | null, entities: Entity[]):
   return lines;
 }
 
-/** ProseMirror's own arithmetic: text is its length, an atom is 1, a block is 2 + content. */
+/**
+ * ProseMirror's own arithmetic: text is its length, a LEAF is 1, and a node
+ * with content is 2 + what it holds (an opening token and a closing one).
+ *
+ * The leaf case is what this got wrong until v0.49.0. It read "text is its
+ * length, an atom is 1, a block is 2 + content", treated `mention` as the
+ * only atom, and gave everything else `inner + 2` — but a leaf is size 1
+ * whether or not it is a mention, and this schema has two more of them:
+ * `horizontalRule` (the toolbar's Divider and the slash menu's) and
+ * `hardBreak` (Shift+Enter). Each one made every position after it in the
+ * document one too large, cumulatively. Measured, on
+ * `<p>Before the line</p><hr><p>Second target here</p>` searching "target":
+ * reported 27–33; the word is at 26–32.
+ *
+ * `useRevealMatch` feeds these straight into `setTextSelection`, and the
+ * whole point of that hook is that the next thing typed replaces what it
+ * selected — so in any scene containing a divider, clicking a Find result
+ * handed the writer the wrong words to overwrite.
+ *
+ * Listed rather than inferred, because nothing in the JSON says "leaf": a
+ * node with no `content` is an empty paragraph (size 2) just as often as a
+ * divider (size 1), and the difference lives in the schema, not in the
+ * document. Anything added to the schema as a leaf belongs here too.
+ */
+const LEAF_TYPES = new Set([MENTION_TYPE, "horizontalRule", "hardBreak"]);
+
 function nodeSize(node: JSONContent): number {
   if (typeof node.text === "string") return node.text.length;
-  if (node.type === MENTION_TYPE) return 1;
+  if (node.type && LEAF_TYPES.has(node.type)) return 1;
   let inner = 0;
   for (const child of node.content ?? []) inner += nodeSize(child);
   return inner + 2;

@@ -22,6 +22,7 @@ import { Icon } from "../common/Icon";
 import { ENTITY_LABEL } from "../../types/entities";
 import { mentionSites } from "../../utils/mentions";
 import { READING_COLUMN_CLASS, READING_PROSE_CLASS } from "../../utils/readingColumn";
+import { EMPTY_EDITOR_DOC, loadDocumentIntoEditor } from "../../utils/loadDocument";
 
 /**
  * A Character or Location page (v0.35.0).
@@ -45,6 +46,7 @@ import { READING_COLUMN_CLASS, READING_PROSE_CLASS } from "../../utils/readingCo
  */
 export function EntityEditor() {
   const project = useProjectStore((s) => s.project);
+  const documentToken = useProjectStore((s) => s.documentToken);
   const selectedEntityId = useProjectStore((s) => s.selectedEntityId);
   const renameEntity = useProjectStore((s) => s.renameEntity);
   const setEntityAliases = useProjectStore((s) => s.setEntityAliases);
@@ -53,7 +55,7 @@ export function EntityEditor() {
   const selectEntity = useProjectStore((s) => s.selectEntity);
 
   const entity = project?.entities.find((e) => e.id === selectedEntityId) ?? null;
-  const lastLoadedId = useRef<string | null>(null);
+  const lastLoadedKey = useRef<string | null>(null);
   const [aliasDraft, setAliasDraft] = useState("");
 
   const editor = useEditor({
@@ -85,16 +87,19 @@ export function EntityEditor() {
     editorProps: { attributes: { class: `${READING_PROSE_CLASS} focus:outline-none` } },
   });
 
-  // Load the page's content when the open entity changes — same imperative
-  // swap SceneEditor does, and for the same reason: recreating the editor
-  // would throw away undo history and focus.
+  // Load the page's content when the open entity changes — the same
+  // imperative swap SceneEditor does, through the same helper and for the
+  // same two reasons: a swap must not become an undoable step (see
+  // utils/loadDocument.ts), and the guard must notice when the whole
+  // project has been replaced, not only when the entity id changes.
   useEffect(() => {
     if (!editor || !entity) return;
-    if (lastLoadedId.current === entity.id) return;
-    editor.commands.setContent(entity.content ?? { type: "doc", content: [{ type: "paragraph" }] });
-    lastLoadedId.current = entity.id;
+    const key = `${documentToken}:${entity.id}`;
+    if (lastLoadedKey.current === key) return;
+    loadDocumentIntoEditor(editor, entity.content ?? EMPTY_EDITOR_DOC);
+    lastLoadedKey.current = key;
     setAliasDraft("");
-  }, [editor, entity]);
+  }, [editor, entity, documentToken]);
 
   // Find sends writers here — see hooks/useRevealMatch.ts.
   useRevealMatch(editor, { entityId: entity?.id ?? null });

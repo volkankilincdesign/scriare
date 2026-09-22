@@ -27,6 +27,18 @@ const api = {
       ipcRenderer.invoke("export:html", suggestedName, html, nearPath),
     open: (filePath: string) => ipcRenderer.invoke("export:reveal", filePath),
   },
+  /**
+   * v0.49.0 — the window asks before it closes, so a pending autosave is
+   * written rather than discarded. See main/index.ts for the handshake.
+   */
+  lifecycle: {
+    onBeforeClose: (handler: () => void) => {
+      const listener = (): void => handler();
+      ipcRenderer.on("app:before-close", listener);
+      return () => ipcRenderer.off("app:before-close", listener);
+    },
+    readyToClose: (proceed: boolean) => ipcRenderer.send("app:ready-to-close", proceed),
+  },
 };
 
 if (process.contextIsolated) {

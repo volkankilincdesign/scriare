@@ -23,11 +23,17 @@ export function GraphMiniMap() {
   const nodes = useNodes();
   // The viewport, straight from React Flow's own store: the pan/zoom
   // transform and the size of the pane it's drawn in.
-  const { width, height, transform } = useStore((state) => ({
-    width: state.width,
-    height: state.height,
-    transform: state.transform,
-  }));
+  // Three separate selectors, each returning a primitive or a stable
+  // reference — NOT one selector returning `{width, height, transform}`.
+  // React Flow's `useStore` compares with `Object.is` by default, and a
+  // fresh object literal never matches the previous one, so this component
+  // re-rendered on EVERY internal store notification: every drag frame,
+  // every dimension change, every pan. On a large graph that reconciled
+  // one <rect> per node per pointer-move, for values that had not changed
+  // (v0.49.0).
+  const width = useStore((state) => state.width);
+  const height = useStore((state) => state.height);
+  const transform = useStore((state) => state.transform);
 
   const bounds = useMemo(() => {
     if (nodes.length === 0) return null;

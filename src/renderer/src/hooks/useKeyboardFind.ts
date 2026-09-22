@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useUIStore } from "../state/uiStore";
+import { aDialogIsOpen } from "../utils/keyboardFocus";
 
 /**
  * Ctrl+F / Cmd+F — put the caret in the Content Browser's search box.
@@ -17,6 +18,10 @@ export function useKeyboardFind(): void {
     function handleKeyDown(event: KeyboardEvent): void {
       if (!(event.ctrlKey || event.metaKey)) return;
       if (event.key.toLowerCase() !== "f") return;
+      // A dialog owns the keyboard while it is up — see
+      // utils/keyboardFocus.ts's aDialogIsOpen.
+      if (aDialogIsOpen()) return;
+
       event.preventDefault();
       requestFind();
     }

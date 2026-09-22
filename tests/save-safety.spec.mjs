@@ -134,7 +134,11 @@ export default async function ({ api, check, seedProject }) {
 
   // 2 — the version that was replaced is kept.
   await save(file, story("Second draft"), null);
-  const backup = `${file}.bak`;
+  // `.bak.1` — the newest slot of a three-deep rotation as of v0.49.0.
+  // There used to be ONE `.bak`, and that is what let the copy taken by
+  // "overwrite it with my version" be destroyed by the very next routine
+  // backup five minutes later. See main/projectFile.ts.
+  const backup = `${file}.bak.1`;
   const hasBackup = await fs
     .readFile(backup, "utf-8")
     .then((raw) => JSON.parse(raw).name)

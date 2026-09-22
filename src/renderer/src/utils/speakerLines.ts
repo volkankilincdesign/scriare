@@ -92,14 +92,54 @@ export function applySpeakerPrefixes(
     };
   }
 
+  /**
+   * Does this node actually say anything?
+   *
+   * Not `content.length`, which counts children rather than words: a
+   * paragraph holding one empty text node, or nothing but a hard break,
+   * has content and is still blank on the page.
+   */
+  function hasVisibleText(node: JSONContent): boolean {
+    for (const child of node.content ?? []) {
+      if (typeof child.text === "string") {
+        if (child.text.length > 0) return true;
+        continue;
+      }
+      if (child.type === "hardBreak") continue;
+      // Anything else — a mention, an image — is something the reader sees.
+      return true;
+    }
+    return false;
+  }
+
   function walk(node: JSONContent): JSONContent {
     if (node.type === "paragraph") {
+      // An empty spoken line gets no prefix — a name with nothing after it
+      // is the writer's scaffolding showing through — and, just as
+      // importantly, it must not COUNT as the line that opened the run.
+      //
+      // Until v0.49.0 this check sat after `run.line(speaker)`, which
+      // mutates the run's memory of who spoke last. So a blank paragraph
+      // still carrying a speaker consumed the start of that speaker's run
+      // and the name never appeared at all. Measured:
+      //
+      //   "Rain on the glass."  /  (blank, speaker Mara)  /  "I found it."
+      //   → ["Rain on the glass.", "", "I found it."]     ← no "Mara:"
+      //
+      // Reachable by pressing Enter on a spoken line, since `keepOnSplit`
+      // carries the speaker onto the new paragraph — so a writer who left
+      // a blank line between two speeches lost the attribution on the line
+      // after it, in Play Mode and in the export both.
+      //
+      // Emptiness is measured in TEXT, not in the length of the content
+      // array: a paragraph whose only child is an empty text node or a
+      // hard break has content and still says nothing, and that case used
+      // to print a bare "Mara: " with nothing after it.
+      if (!hasVisibleText(node)) return node;
+
       const speaker = nodeSpeaker(node.attrs);
-      const show = run.line(speaker);
-      const name = show ? speakerName(speaker, entities) : null;
-      // An empty spoken line gets no prefix: a name with nothing after it
-      // is the writer's scaffolding showing through.
-      if (!name || !node.content?.length) return node;
+      const name = run.line(speaker) ? speakerName(speaker, entities) : null;
+      if (!name) return node;
       return prefixed(node, name);
     }
 
@@ -109,7 +149,7 @@ export function applySpeakerPrefixes(
       // always names its speaker if it has one. Suppressing it to match a
       // neighbouring line would be answering a question nobody asked.
       const name = speakerName(nodeSpeaker(node.attrs), entities);
-      if (!name || !node.content?.length) return node;
+      if (!name || !hasVisibleText(node)) return node;
       return prefixed(node, name);
     }
 

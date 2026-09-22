@@ -16,7 +16,34 @@ interface ModalProps {
  * replaces window.confirm()/alert() app-wide — see ConfirmDialogHost for the
  * confirmation dialog built on top of it.
  */
+
+/**
+ * How many dialogs are on screen right now (v0.49.0).
+ *
+ * Module state rather than a store, because the only thing that reads it
+ * is a synchronous test inside a keydown handler — `aDialogIsOpen()` in
+ * utils/keyboardFocus.ts — and nothing renders differently because of it.
+ * Putting it in a store would re-render the app every time a dialog opened
+ * for no visible effect.
+ */
+let openModals = 0;
+
+export function aModalIsOpen(): boolean {
+  return openModals > 0;
+}
 export function Modal({ children, onClose, onEnter, widthClassName = "max-w-sm" }: ModalProps) {
+  // Every app-wide shortcut asks whether a dialog is up before acting —
+  // see utils/keyboardFocus.ts's `aDialogIsOpen`. Counted rather than
+  // flagged, because two dialogs can be stacked (a confirm over the
+  // Variable Manager) and the inner one closing must not announce that the
+  // room is clear.
+  useEffect(() => {
+    openModals += 1;
+    return () => {
+      openModals -= 1;
+    };
+  }, []);
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent): void {
       if (e.key === "Escape") {

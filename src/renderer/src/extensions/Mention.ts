@@ -228,6 +228,18 @@ export const Mention = Node.create({
           },
           onKeyDown: (props) => {
             if (props.event.key === "Escape") {
+              // Ends the SUGGESTION, not just its popup. Removing the
+              // popup's DOM hid the menu but left the plugin active, and
+              // @tiptap/suggestion keeps forwarding keys for as long as it
+              // is: Enter then inserted the invisible menu's first item,
+              // arrow keys were still swallowed, and typing more characters
+              // re-ran onUpdate against a detached popup so the menu never
+              // came back. The only way out was to delete the trigger
+              // character. Dispatching the plugin's own exit meta is what
+              // actually closes it (v0.49.0).
+              props.view.dispatch(
+                props.view.state.tr.setMeta(MENTION_SUGGESTION_KEY, { deactivate: true }),
+              );
               popup?.remove();
               return true;
             }

@@ -27,15 +27,19 @@ import { TextStyleCleanup } from "../../extensions/TextStyleCleanup";
 import { EditorToolbar } from "./EditorToolbar";
 import { SpeakerMenu } from "./SpeakerMenu";
 import { READING_COLUMN_CLASS, READING_PROSE_CLASS } from "../../utils/readingColumn";
+import { EMPTY_EDITOR_DOC, loadDocumentIntoEditor } from "../../utils/loadDocument";
 
 export function SceneEditor() {
   const project = useProjectStore((s) => s.project);
   const selectedSceneId = useProjectStore((s) => s.selectedSceneId);
   const renameScene = useProjectStore((s) => s.renameScene);
   const updateSceneContent = useProjectStore((s) => s.updateSceneContent);
+  // Bumped whenever the whole project is replaced underneath the editor —
+  // see the load effect below, and projectStore's own note on the field.
+  const documentToken = useProjectStore((s) => s.documentToken);
 
   const scene = project?.scenes.find((s) => s.id === selectedSceneId) ?? null;
-  const lastLoadedSceneId = useRef<string | null>(null);
+  const lastLoadedKey = useRef<string | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -185,16 +189,37 @@ export function SceneEditor() {
 
   // The editor instance is created once and reused across scenes — when the
   // selected scene changes, load its content in imperatively instead of
-  // recreating the editor (which would reset undo history and lose focus).
+  // recreating the editor (which would lose focus and remount every node
+  // view). See utils/loadDocument.ts for why the load replaces the editor
+  // state rather than calling `setContent`: with `setContent`, a scene
+  // switch was an undoable step, and Ctrl+Z on arrival wrote the previous
+  // scene's text into this one.
+  //
+  // KEYED ON THE LOAD TOKEN AS WELL AS THE SCENE ID. The guard used to be
+  // `lastLoadedSceneId.current === scene.id` alone, which is right while
+  // the writer is moving between scenes and wrong the moment the whole
+  // project is replaced underneath them — opening another project, or
+  // answering "open the version on disk" in the conflict dialog. The scene
+  // id is usually unchanged across a reload, so the guard short-circuited
+  // and ProseMirror kept displaying the text the writer had just chosen to
+  // discard. Measured:
+  //
+  //   store says   : "DISK-VERSION"
+  //   editor shows : "SESSION-TEXT-TO-DISCARD"     ← split brain
+  //   type one character:
+  //   store now    : "SESSION-TEXT-TO-DISCARDx"    ← disk version destroyed
+  //
+  // `fileStamp` is valid by then, so no second conflict stops it — the one
+  // answer that means "keep the other machine's work" was the one that
+  // destroyed it.
   useEffect(() => {
     if (!editor || !scene) return;
-    if (lastLoadedSceneId.current === scene.id) return;
+    const key = `${documentToken}:${scene.id}`;
+    if (lastLoadedKey.current === key) return;
 
-    editor.commands.setContent(
-      scene.content ?? { type: "doc", content: [{ type: "paragraph" }] },
-    );
-    lastLoadedSceneId.current = scene.id;
-  }, [editor, scene]);
+    loadDocumentIntoEditor(editor, scene.content ?? EMPTY_EDITOR_DOC);
+    lastLoadedKey.current = key;
+  }, [editor, scene, documentToken]);
 
   // Find sends writers here — see hooks/useRevealMatch.ts.
   useRevealMatch(editor, { sceneId: scene?.id ?? null });

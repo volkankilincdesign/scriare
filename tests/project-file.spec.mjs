@@ -145,10 +145,10 @@ export default async function run({ page, check, app }) {
     target,
   );
 
-  const backup = `${target}.bak`;
+  const backup = `${target}.bak.1`;
   const backupText = await readFile(backup, "utf-8").catch(() => null);
   check(
-    "the backup sits beside the project under the project's own name",
+    "the newest backup sits beside the project under the project's own name",
     backupText !== null,
     backupText === null ? `${backup} is not there` : backup,
   );
@@ -156,6 +156,105 @@ export default async function run({ page, check, app }) {
     "the backup holds the version that was replaced",
     backupText !== null && JSON.parse(backupText).name === "v0",
     backupText ? JSON.parse(backupText).name : "—",
+  );
+
+  /* ── the rotation, and the version it exists to keep ──────────── */
+
+  // Measured on v0.48.0, against the real writeProjectFile: the backup
+  // that "overwrite it with my version" takes was written to the same
+  // single `.bak` the routine five-minute cadence uses, AND set
+  // `lastBackupAt` — so the next cadence backup, triggered by nothing but
+  // continued typing, copied the writer's own file over the other
+  // machine's work. The one undo of last resort deleted itself on a timer.
+  //
+  //   after overwrite, .bak = {"v":"OTHER-MACHINE-WORK"}
+  //   routine autosave 6 min later: .bak = {"v":"MINE-v1"}   ← GONE
+  const rotated = join(dir, "Rotation.scriare");
+  await writeFile(rotated, JSON.stringify({ v: "v0" }), "utf-8");
+  await page.evaluate(async (filePath) => {
+    const save = (json, expected, force) =>
+      window.api.project.save(filePath, JSON.stringify(json), expected, force);
+    // v0 is on disk. Force a backup, as the conflict overwrite does.
+    const first = await save({ v: "v1" }, null, true);
+    return first;
+  }, rotated);
+
+  check(
+    "a forced backup keeps the version it replaced",
+    JSON.parse(await readFile(`${rotated}.bak.1`, "utf-8")).v === "v0",
+    await readFile(`${rotated}.bak.1`, "utf-8"),
+  );
+
+  // A second forced backup stands in for "five minutes later, an ordinary
+  // autosave" — same code path, same rotation.
+  await page.evaluate(
+    (filePath) => window.api.project.save(filePath, JSON.stringify({ v: "v2" }), null, true),
+    rotated,
+  );
+
+  // Read tolerantly. The first version of this used a bare `readFile`, and
+  // when the negative control switched the rotation off, `.bak.2` was not
+  // there — so the spec THREW instead of failing, and the control run
+  // reported CRASHED rather than a red assertion. A test that cannot tell
+  // "the value is wrong" from "the whole file is missing" reports the
+  // second as a broken harness, which is exactly the case this exists for.
+  const slotValue = async (slot) => {
+    const text = await readFile(`${rotated}.bak.${slot}`, "utf-8").catch(() => null);
+    if (text === null) return "— not there";
+    try {
+      return JSON.parse(text).v;
+    } catch {
+      return "— unreadable";
+    }
+  };
+  const slot1 = await slotValue(1);
+  const slot2 = await slotValue(2);
+  check(
+    "a later backup pushes the older one down instead of destroying it",
+    slot1 === "v1" && slot2 === "v0",
+    `bak.1=${slot1}, bak.2=${slot2}`,
+  );
+
+  /* ── a name that ends in something extension-shaped ───────────── */
+
+  // `path.extname("My Story v1.2")` is ".2" — verified — so the v0.48.0
+  // guard `extname(p) === ""` did not fire and the project was saved with
+  // no extension at all: absent from the open dialog's default filter, and
+  // never opened by a double-click in Explorer.
+  const versioned = join(dir, "My Story v1.2");
+  await stubDialogs(versioned);
+  const versionedResult = await page.evaluate(() =>
+    window.api.project.create(JSON.stringify({ name: "v0" }), "My Story v1.2"),
+  );
+  check(
+    "a title ending in something extension-shaped still gets .scriare",
+    versionedResult.filePath.endsWith("My Story v1.2.scriare"),
+    versionedResult.filePath,
+  );
+
+  /* ── the export cannot land on the project file ───────────────── */
+
+  // The export dialog opens in the project's OWN folder, so the .scriare
+  // is in the file list; clicking it fills the name box with it. On
+  // v0.48.0 any non-empty extension was honoured verbatim, with no
+  // conflict check and no backup — the story was replaced by a web page.
+  const decoy = join(dir, "Precious.scriare");
+  await writeFile(decoy, JSON.stringify({ name: "Precious", scenes: [] }), "utf-8");
+  await stubDialogs(decoy);
+  const misdirected = await page.evaluate(
+    (near) => window.api.exportStory.html("x.html", "<!doctype html><title>page</title>", near),
+    target,
+  );
+
+  check(
+    "an export aimed at a project file is redirected to a web page",
+    misdirected.filePath.endsWith(".html") && !misdirected.filePath.endsWith(".scriare"),
+    misdirected.filePath,
+  );
+  check(
+    "and the project it was aimed at is untouched",
+    JSON.parse(await readFile(decoy, "utf-8")).name === "Precious",
+    (await readFile(decoy, "utf-8")).slice(0, 40),
   );
 
   /* ── the export names itself ──────────────────────────────────── */
@@ -190,10 +289,17 @@ export default async function run({ page, check, app }) {
       window.api.exportStory.html("Anything.html", "<!doctype html><title>again</title>", near),
     target,
   );
+  // `.bak.1`, not `.bak`. The first version of this check looked for the
+  // v0.48.0 single-slot name, which v0.49.0's rotation no longer writes
+  // under ANY circumstances — so the check passed whether the export took
+  // a backup or not, and the negative control that switches `noBackup`
+  // off went uncaught. The rotation rename landed and the test that
+  // guarded the export's one interaction with it was not updated.
+  const strayBackup = `${exported.filePath}.bak.1`;
   check(
-    "exporting twice leaves no .bak beside the page",
-    await stat(`${exported.filePath}.bak`).then(() => false, () => true),
-    `${exported.filePath}.bak`,
+    "exporting twice leaves no backup beside the page",
+    await stat(strayBackup).then(() => false, () => true),
+    strayBackup,
   );
   check(
     "the second export replaced the first",

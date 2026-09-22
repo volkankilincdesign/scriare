@@ -18,7 +18,17 @@ export function ToastHost() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex flex-col items-center gap-2">
+    // ABOVE the modal layer (z-[100]), not below it. Both are fixed
+    // siblings under App's root, which creates no stacking context, so
+    // they competed directly — and at z-50 the toast lost. Three callers
+    // raise one from INSIDE their own dialog: Export's disk-full and
+    // read-only notices, the Variable Manager's delete-with-Undo, and
+    // Choice Styles' delete-with-Undo. In all three the writer saw the row
+    // vanish with no undo offered, or an export button that returned to
+    // "Export…" with no explanation. toastStore.ts says of showNotice
+    // that "a disk with no room left is the one moment the app must not
+    // fail quietly" — this was that moment, failing quietly (v0.49.0).
+    <div className="pointer-events-none fixed inset-x-0 bottom-6 z-[110] flex flex-col items-center gap-2">
       {toasts.map((toast) => (
         <div
           key={toast.id}

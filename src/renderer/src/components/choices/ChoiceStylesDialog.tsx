@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Modal } from "../common/Modal";
 import { useProjectStore } from "../../state/projectStore";
 import { useToastStore } from "../../state/toastStore";
@@ -153,6 +153,38 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 /**
+ * One commit per animation frame, whatever the input's event rate.
+ *
+ * The same shape as EditorToolbar's `useRafThrottledCallback`, carrying a
+ * PATCH rather than a string, and merging patches within a frame so a
+ * writer dragging the thickness slider while the colour picker is still
+ * settling cannot lose either. Refs, not state: nothing renders
+ * differently because a frame is pending.
+ */
+function useRafThrottledPatch(
+  commit: (patch: Partial<ChoiceBox>) => void,
+): (patch: Partial<ChoiceBox>) => void {
+  const frame = useRef<number | null>(null);
+  const pending = useRef<Partial<ChoiceBox>>({});
+  const latest = useRef(commit);
+  latest.current = commit;
+
+  return useMemo(
+    () => (patch: Partial<ChoiceBox>) => {
+      pending.current = { ...pending.current, ...patch };
+      if (frame.current !== null) return;
+      frame.current = requestAnimationFrame(() => {
+        frame.current = null;
+        const merged = pending.current;
+        pending.current = {};
+        latest.current(merged);
+      });
+    },
+    [],
+  );
+}
+
+/**
  * The four box controls, shared by this dialog and the Inspector's
  * per-choice overrides — so a style and a one-off tweak are edited with the
  * same controls in the same order, and neither can grow a property the
@@ -165,20 +197,29 @@ export function BoxControls({
   box: ChoiceBox;
   onChange: (patch: Partial<ChoiceBox>) => void;
 }) {
+  // Coalesced to one commit per frame, for the reason EditorToolbar.tsx
+  // documents at length: a native colour input fires on every pixel of
+  // pointer movement inside the picker — 60-120 events a second — and each
+  // one here runs a full-document ProseMirror walk, a transaction,
+  // `getJSON()` of the whole scene, and a brand-new project object, which
+  // then re-runs every scene's choice extraction for the graph. The
+  // toolbar got this throttle; these two controls did not, and they reach
+  // the same pipeline by a longer route (v0.49.0).
+  const onChangeFrame = useRafThrottledPatch(onChange);
   return (
     <div className="grid grid-cols-2 gap-2.5">
       <Field label="Fill">
         <ColorField
           value={box.fill}
           fallback="#2a2a28"
-          onChange={(fill) => onChange({ fill })}
+          onChange={(fill) => onChangeFrame({ fill })}
         />
       </Field>
       <Field label="Border">
         <ColorField
           value={box.border}
           fallback="#3a3a37"
-          onChange={(border) => onChange({ border })}
+          onChange={(border) => onChangeFrame({ border })}
         />
       </Field>
       <Field label={`Thickness — ${box.borderWidth}px`}>
@@ -188,7 +229,7 @@ export function BoxControls({
           max={5}
           step={1}
           value={box.borderWidth}
-          onChange={(e) => onChange({ borderWidth: Number(e.target.value) })}
+          onChange={(e) => onChangeFrame({ borderWidth: Number(e.target.value) })}
           className="w-full accent-[var(--accent)]"
         />
       </Field>
@@ -199,7 +240,7 @@ export function BoxControls({
           max={20}
           step={1}
           value={box.radius}
-          onChange={(e) => onChange({ radius: Number(e.target.value) })}
+          onChange={(e) => onChangeFrame({ radius: Number(e.target.value) })}
           className="w-full accent-[var(--accent)]"
         />
       </Field>

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useProjectStore } from "../state/projectStore";
+import { aDialogIsOpen } from "../utils/keyboardFocus";
 
 /**
  * Returns true for anything that owns its own undo: the Tiptap editor
@@ -32,6 +33,9 @@ export function useKeyboardHistory(): void {
     function handleKeyDown(event: KeyboardEvent): void {
       if (!event.ctrlKey && !event.metaKey) return;
       if (event.altKey) return;
+      // A dialog owns the keyboard while it is up — see
+      // utils/keyboardFocus.ts's aDialogIsOpen.
+      if (aDialogIsOpen()) return;
       if (ownsItsOwnUndo(event.target)) return;
 
       const key = event.key.toLowerCase();

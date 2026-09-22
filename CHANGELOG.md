@@ -12,6 +12,101 @@ omitting them.
 
 ---
 
+## v0.49.0 — A pass with the lights on
+
+No new features. Five agents read the whole app looking for things that
+were wrong, every extraordinary claim was checked by measurement before it
+was believed, and the confirmed ones were fixed. The findings are in
+`claude/audit-v0.48.md` in full; what follows is the part a writer would
+notice.
+
+**Six ways the app could lose work.** They share a shape, which is why
+they survived seventeen versions: each one is a correct-looking line whose
+failure needs two ordinary things to happen in the wrong order.
+
+Switching scenes used Tiptap's `setContent`, which is a *transaction* on
+the editor — so the swap went into ProseMirror's undo stack, and Ctrl+Z
+after clicking a scene rebased the previous document's steps through the
+new one. The fix replaces the whole `EditorState` rather than editing the
+one that is there (`utils/loadDocument.ts`), which is the only operation
+that has no history to rebase. The same effect reached the load itself:
+the effect was keyed on `scene.id`, so a conflict reload that replaced
+every scene in place left the open editor showing the old prose and the
+next keystroke wrote it back over the file that had just been recovered.
+It is now keyed on `${documentToken}:${scene.id}`, and the token moves on
+every open, new, close and reload.
+
+Structural undo restored `scenes` but not `entities`, so undoing a scene
+delete also discarded everything typed on a Character page since. A late
+save stamped whichever project was open when it *finished* rather than
+the one it was written for, so switching projects during a save left the
+new project holding the old one's file stamp — and the next save's
+conflict check compared against a stranger. Closing a project cancelled
+its pending write outright: 1.5 seconds of typing, gone, silently, at the
+one moment a writer has most reason to assume everything is on disk.
+`closeProject` now flushes first.
+
+**The backup is a rotation, not a single file.** The one that mattered
+most: "overwrite it with my version" wrote its backup to the same single
+`.bak` that the routine five-minute cadence uses, *and* reset the cadence
+clock — so the next autosave, triggered by nothing but continued typing,
+copied the writer's own file over the other machine's work. The one undo
+of last resort deleted itself on a timer. Three slots now (`.bak.1` newest),
+so a version has to be pushed out by three later ones rather than replaced
+by the next.
+
+**Export can no longer land on the project file.** The export dialog opens
+in the project's own folder, so the `.scriare` is right there in the list,
+and clicking a file in a native Save dialog fills the name box with it.
+Any extension was honoured verbatim, with no conflict check and no backup;
+the story was replaced by a web page, atomically and completely, and the
+app's next act was to offer "Open it". A project extension is never
+honoured now, and anything that is not already a web page gains `.html` —
+which also fixes `My Story v1.2`, whose `path.extname` is `".2"`, saving
+with no extension at all under the old guard.
+
+**Ten things that did not work.** Closing the window discarded unsaved
+work with no prompt at all — there was a handler, but `beforeunload` in
+the renderer is not what Electron asks; it is a main-process `close` event,
+and the main process was not listening. Delete and Ctrl+Z reached the
+story behind an open dialog. Creating, duplicating, pasting or deleting a
+scene while a Character page was open left both selections set, and the
+tree switched to the new scene while everything typed still went into the
+character. Find could not match a query containing a space, because the
+folding that makes search accent- and case-insensitive trimmed each
+character individually and deleted the space between words. A folded
+chapter only hid the scenes inside it if its box had been dragged by hand.
+Escape did not close the slash-command or mention menus. Toasts rendered
+*behind* modals. Opening Export twice showed the previous export's success
+screen, one click away from opening a stale file.
+
+**Eight measured performance findings, four taken.** The graph rebuilt
+every edge on every selection change and did a linear scan per scene to
+find its group — both now derive from one memo over the project. The
+minimap re-rendered on every React Flow store tick because its selector
+returned a fresh object literal. Dragging a choice's padding slider
+re-serialised the document on every pointer event; it is throttled to a
+frame now. The rest are in the audit doc with their measurements, deferred
+rather than forgotten.
+
+**What this version deliberately did not do** is change any behaviour a
+writer chose. Every fix above restores something the app already claimed
+to do. Tiers 3 to 5 of the audit — the remaining performance work, the
+keyboard and screen-reader gaps, and the dead code — are recorded and
+untouched.
+
+**And a finding about the tests.** Three of the new negative controls did
+not turn anything red. One sabotage was a no-op, one assertion was still
+looking for the old single `.bak` name that the rotation no longer writes
+under any circumstances, and one spec threw instead of failing when the
+file it read was missing. All three were the test's fault, not the app's,
+and all three were rewritten. The negative-control runner also now checks,
+before it sabotages anything, that no earlier interrupted run left the
+source broken — which had happened, and which nothing would otherwise have
+noticed.
+
+---
+
 ## v0.48.0 — The story as a page anyone can read
 
 Export. One HTML file, playable in any browser, carrying everything the

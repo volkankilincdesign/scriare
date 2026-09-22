@@ -304,11 +304,32 @@ export function unionRect(a: FolderRect, b: FolderRect): FolderRect {
 /**
  * Scene ids hidden by a folded group — everything inside any collapsed
  * folder, including things nested several levels down.
+ *
+ * THE `rect` TEST THAT USED TO BE HERE WAS A v0.28-ERA ASSUMPTION. Both
+ * this and `visibleStandIn` required `Boolean(n.rect)`, on the reasoning
+ * that a folder without a stored rectangle isn't drawn on the canvas and
+ * so has nothing to hide. That stopped being true in v0.31.0, when
+ * `graphGroups` started DERIVING a rect for any folder holding scenes —
+ * and the fold control is rendered on every expanded group, derived or
+ * not. Measured, on a Content Browser folder holding two scenes, folded:
+ *
+ *   group  : {derived: true, collapsed: true, hasRect: true}
+ *   hidden : []      ← its scenes were not hidden
+ *   standIn: null    ← its edges were not re-pointed at the folded box
+ *
+ * So folding a chapter that had never been drawn by hand shrank the box to
+ * 236×78 and left every scene in it sitting on top of and around the
+ * result, wires still attached. The comment above the filter in FlowPanel
+ * says "nothing about the story silently disappears" — nothing disappeared
+ * because nothing was hidden.
+ *
+ * Folded is folded. Where the rectangle came from is the renderer's
+ * business, not this function's.
  */
 export function hiddenSceneIds(project: Project): Set<string> {
   const hidden = new Set<string>();
   const collapsed = project.content.filter(
-    (n): n is ContentFolder => n.kind === "folder" && Boolean(n.collapsed) && Boolean(n.rect),
+    (n): n is ContentFolder => n.kind === "folder" && Boolean(n.collapsed),
   );
   for (const folder of collapsed) {
     const subtree = folderSubtree(project.content, folder.id);
@@ -323,15 +344,34 @@ export function hiddenSceneIds(project: Project): Set<string> {
  * folder containing it. "Outermost" matters: fold a chapter that has a
  * folded sub-chapter inside it and an edge into that sub-chapter has to
  * land on the chapter you can actually see.
+ *
+ * `rect` is deliberately not tested — see `hiddenSceneIds` above for the
+ * bug that removing it fixes. The two must agree: a scene hidden by one
+ * and given no stand-in by the other is a wire drawn to nowhere.
+ *
+ * Takes a prebuilt index because it is called TWICE PER LINKED CHOICE from
+ * a memo that runs on every keystroke. It used to build the map itself, on
+ * every call: 1,200 calls on a 300-scene story meant 360,000 Map
+ * insertions per character typed, and most of them were thrown away
+ * without being read — with no folded folders at all the loop exits
+ * immediately, having just indexed the entire content tree to do so.
  */
-export function visibleStandIn(project: Project, sceneId: string): string | null {
-  const byId = new Map(project.content.map((n) => [n.id, n]));
+export function contentIndex(content: ContentNode[]): Map<string, ContentNode> {
+  return new Map(content.map((n) => [n.id, n]));
+}
+
+export function visibleStandIn(
+  project: Project,
+  sceneId: string,
+  index?: Map<string, ContentNode>,
+): string | null {
+  const byId = index ?? contentIndex(project.content);
   let current = byId.get(sceneId)?.parentId ?? null;
   let outermostFolded: string | null = null;
   while (current) {
     const node = byId.get(current);
     if (!node || node.kind !== "folder") break;
-    if (node.collapsed && node.rect) outermostFolded = node.id;
+    if (node.collapsed) outermostFolded = node.id;
     current = node.parentId;
   }
   return outermostFolded;

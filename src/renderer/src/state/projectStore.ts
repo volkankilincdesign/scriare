@@ -91,6 +91,26 @@ interface ProjectState {
    * the folder/frame split v0.28.0 spent a version undoing).
    */
   selectedEntityId: string | null;
+  /**
+   * Bumped every time the whole project is REPLACED rather than edited —
+   * a new project, an open, or answering "open the version on disk" in the
+   * conflict dialog (v0.49.0).
+   *
+   * The editors reuse one Tiptap instance and reload it when the open
+   * document changes, guarded on the document's id so that ordinary
+   * re-renders don't throw away what the writer is typing. That guard is
+   * right for moving between scenes and wrong for a project swap: the
+   * scene id is usually the SAME across a reload, so the guard
+   * short-circuited and ProseMirror kept showing the text the writer had
+   * just chosen to discard — until their next keystroke wrote it back over
+   * the version they had chosen to keep.
+   *
+   * A counter rather than a flag, for the reason v0.10.5 learned the hard
+   * way about `measuredVersion`: a boolean that has to be un-set again is a
+   * boolean somebody forgets to un-set, and a value that only ever goes up
+   * can be compared without any bookkeeping at the other end.
+   */
+  documentToken: number;
   saveStatus: SaveStatus;
   recentProjects: RecentProjectEntry[];
 
@@ -266,7 +286,7 @@ interface ProjectState {
   resolveConflictSaveCopy: () => Promise<void>;
   /** Writes over the newer version on disk, deliberately. */
   resolveConflictOverwrite: () => Promise<void>;
-  closeProject: () => void;
+  closeProject: () => Promise<void>;
 }
 
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -306,6 +326,49 @@ function scheduleAutosave(get: () => ProjectState): void {
   }, 1500);
 }
 
+/**
+ * Whether a failed open means "that file is not there" or something else
+ * entirely (v0.49.0).
+ *
+ * The distinction is the whole point: a missing file should leave Recent
+ * Projects, and a file that is momentarily locked, half-synced, unreadable
+ * or malformed must NOT — it is still the writer's story, and removing it
+ * from the one list they look in is a worse outcome than the failure.
+ */
+function isMissingFile(error: unknown): boolean {
+  const message = (error as { message?: string })?.message ?? String(error ?? "");
+  return /ENOENT|no such file/i.test(message);
+}
+
+/**
+ * Says why an open failed, instead of doing nothing.
+ *
+ * `openProject` had no try/catch and was called as `void openProject()`,
+ * with `JSON.parse` running unguarded in the main process — so a truncated
+ * or half-synced project file produced no toast, no dialog, and no change
+ * on screen. The Welcome screen simply did not react, and the writer's
+ * reasonable conclusion was that the app was broken or the story was gone.
+ * The same rejection inside the conflict dialog made its "Open the version
+ * on disk" button look dead.
+ */
+function reportOpenFailure(filePath: string | null, error: unknown): void {
+  const message = (error as { message?: string })?.message ?? "";
+  const name = filePath ? filePath.split(/[\\/]/).pop() : null;
+  const what = name ? `“${name}”` : "That project";
+
+  const why = isMissingFile(error)
+    ? "isn't where it used to be."
+    : /EACCES|EPERM/.test(message)
+      ? "can't be read — check its permissions."
+      : /EBUSY|EAGAIN/.test(message)
+        ? "is in use by something else. If it's syncing, try again in a moment."
+        : "couldn't be read. It may still be syncing, or it may be damaged.";
+
+  void import("./toastStore").then(({ useToastStore }) => {
+    useToastStore.getState().showNotice(`${what} ${why}`);
+  });
+}
+
 type SetState = (partial: Partial<ProjectState>) => void;
 
 /**
@@ -332,6 +395,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   saveConflict: null,
   selectedSceneId: null,
   selectedEntityId: null,
+  documentToken: 0,
   saveStatus: "saved",
   recentProjects: [],
 
@@ -417,6 +481,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       fileStamp: result.stamp,
       saveConflict: null,
       selectedSceneId: project.startSceneId,
+      selectedEntityId: null,
+      documentToken: get().documentToken + 1,
       saveStatus: "saved",
       recentProjects: result.recent,
       ...historyFlags(),
@@ -424,10 +490,23 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   openProject: async () => {
-    const result = await window.api.project.open();
+    let result: Awaited<ReturnType<typeof window.api.project.open>>;
+    try {
+      result = await window.api.project.open();
+    } catch (error) {
+      reportOpenFailure(null, error);
+      return;
+    }
     if (!result) return;
 
-    const project: Project = normalizeProject(JSON.parse(result.raw));
+    let project: Project;
+    try {
+      project = normalizeProject(JSON.parse(result.raw));
+    } catch (error) {
+      reportOpenFailure(result.filePath, error);
+      return;
+    }
+
     clearHistory();
     set({
       project,
@@ -435,6 +514,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       fileStamp: result.stamp,
       saveConflict: null,
       selectedSceneId: project.startSceneId ?? project.scenes[0]?.id ?? null,
+      selectedEntityId: null,
+      documentToken: get().documentToken + 1,
       saveStatus: "saved",
       recentProjects: result.recent,
       ...historyFlags(),
@@ -452,14 +533,29 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         fileStamp: result.stamp,
         saveConflict: null,
         selectedSceneId: project.startSceneId ?? project.scenes[0]?.id ?? null,
+        selectedEntityId: null,
+        documentToken: get().documentToken + 1,
         saveStatus: "saved",
         recentProjects: result.recent,
         ...historyFlags(),
       });
-    } catch {
-      // The file was probably moved or deleted — drop it from the recent list.
-      const list = await window.api.recent.remove(filePath);
-      set({ recentProjects: list });
+    } catch (error) {
+      reportOpenFailure(filePath, error);
+
+      // ONLY a file that is genuinely not there is dropped from the list.
+      //
+      // This catch used to be blanket, on the reasoning that a failure
+      // means the file "was probably moved or deleted" — but it cannot
+      // tell ENOENT from a JSON parse error, from the EBUSY a sync client
+      // or an antivirus scanner hands back for a few seconds, or from a
+      // permission that changed. A half-synced OneDrive file therefore
+      // vanished from Recent Projects, silently and permanently, while
+      // sitting perfectly intact on disk — and thirty seconds later, when
+      // the sync finished, it was openable and invisible.
+      if (isMissingFile(error)) {
+        const list = await window.api.recent.remove(filePath);
+        set({ recentProjects: list });
+      }
     }
   },
 
@@ -495,6 +591,15 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         updatedAt: new Date().toISOString(),
       },
       selectedSceneId: scene.id,
+      // Whatever opens a scene closes an entity page: the interface
+      // comment on `selectedEntityId` promises "exactly one of this and
+      // `selectedSceneId` is ever set", and `selectScene`/`selectEntity`
+      // were the only two that kept it. Creating, duplicating, pasting or
+      // deleting while a Character page was open left BOTH set — and
+      // EditorGraphSplit resolves that tie as "entity wins", so the tree
+      // and the Inspector switched to the new scene while everything typed
+      // still went into the character (v0.49.0).
+      selectedEntityId: null,
       saveStatus: "unsaved",
     });
     scheduleAutosave(get);
@@ -567,6 +672,15 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         updatedAt: new Date().toISOString(),
       },
       selectedSceneId: selectedSceneId === sceneId ? remaining[0]?.id ?? null : selectedSceneId,
+      // Whatever opens a scene closes an entity page: the interface
+      // comment on `selectedEntityId` promises "exactly one of this and
+      // `selectedSceneId` is ever set", and `selectScene`/`selectEntity`
+      // were the only two that kept it. Creating, duplicating, pasting or
+      // deleting while a Character page was open left BOTH set — and
+      // EditorGraphSplit resolves that tie as "entity wins", so the tree
+      // and the Inspector switched to the new scene while everything typed
+      // still went into the character (v0.49.0).
+      selectedEntityId: null,
       saveStatus: "unsaved",
     });
     scheduleAutosave(get);
@@ -605,6 +719,15 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         updatedAt: new Date().toISOString(),
       },
       selectedSceneId: newId,
+      // Whatever opens a scene closes an entity page: the interface
+      // comment on `selectedEntityId` promises "exactly one of this and
+      // `selectedSceneId` is ever set", and `selectScene`/`selectEntity`
+      // were the only two that kept it. Creating, duplicating, pasting or
+      // deleting while a Character page was open left BOTH set — and
+      // EditorGraphSplit resolves that tie as "entity wins", so the tree
+      // and the Inspector switched to the new scene while everything typed
+      // still went into the character (v0.49.0).
+      selectedEntityId: null,
       saveStatus: "unsaved",
     });
     scheduleAutosave(get);
@@ -666,6 +789,15 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         updatedAt: new Date().toISOString(),
       },
       selectedSceneId: lastNewId ?? get().selectedSceneId,
+      // Whatever opens a scene closes an entity page: the interface
+      // comment on `selectedEntityId` promises "exactly one of this and
+      // `selectedSceneId` is ever set", and `selectScene`/`selectEntity`
+      // were the only two that kept it. Creating, duplicating, pasting or
+      // deleting while a Character page was open left BOTH set — and
+      // EditorGraphSplit resolves that tie as "entity wins", so the tree
+      // and the Inspector switched to the new scene while everything typed
+      // still went into the character (v0.49.0).
+      selectedEntityId: null,
       saveStatus: "unsaved",
     });
     scheduleAutosave(get);
@@ -981,6 +1113,15 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         updatedAt: new Date().toISOString(),
       },
       selectedSceneId: nextSelected,
+      // Whatever opens a scene closes an entity page: the interface
+      // comment on `selectedEntityId` promises "exactly one of this and
+      // `selectedSceneId` is ever set", and `selectScene`/`selectEntity`
+      // were the only two that kept it. Creating, duplicating, pasting or
+      // deleting while a Character page was open left BOTH set — and
+      // EditorGraphSplit resolves that tie as "entity wins", so the tree
+      // and the Inspector switched to the new scene while everything typed
+      // still went into the character (v0.49.0).
+      selectedEntityId: null,
       saveStatus: "unsaved",
     });
     scheduleAutosave(get);
@@ -1629,7 +1770,30 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       }
 
       lastSaveFailed = false;
-      set({ saveStatus: "saved", fileStamp: outcome.stamp });
+
+      // WHICH FILE DID THIS SAVE BELONG TO? `filePath` was captured before
+      // the await; the store may have moved on while the write was in
+      // flight — the writer closed the project, or opened another one.
+      // Writing this stamp back regardless left the store holding project
+      // B's path with project A's stamp, so B's very first autosave
+      // reported a conflict about a file nothing had touched — and one
+      // click of "open the version on disk" on that phantom conflict
+      // discarded the whole session (v0.49.0).
+      if (get().filePath !== filePath) {
+        saveQueued = false;
+        return;
+      }
+
+      // AND IS "saved" STILL TRUE? This used to set `saved`
+      // unconditionally, which is a lie whenever a keystroke arrived while
+      // the write was in flight: the bar read "All changes saved" while
+      // newer text existed only in memory. That was half of why closing
+      // the project lost work — the writer checked the bar first.
+      //
+      // `saveQueued` is precisely the record of "something changed after
+      // this save started", so it is also the answer to "is the file now
+      // current", and the re-run below is what makes it so.
+      set(saveQueued ? { fileStamp: outcome.stamp } : { saveStatus: "saved", fileStamp: outcome.stamp });
     } catch (error) {
       // A save can fail for reasons that have nothing to do with this app —
       // a full disk, a folder that went away with the USB stick it was on, a
@@ -1680,8 +1844,20 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const { saveConflict } = get();
     if (!saveConflict) return;
 
-    const result = await window.api.project.openPath(saveConflict.filePath);
-    const project: Project = normalizeProject(JSON.parse(result.raw));
+    let result: Awaited<ReturnType<typeof window.api.project.openPath>>;
+    let project: Project;
+    try {
+      result = await window.api.project.openPath(saveConflict.filePath);
+      project = normalizeProject(JSON.parse(result.raw));
+    } catch (error) {
+      // The conflict stands — nothing has been decided, and the dialog has
+      // to keep standing with it. Before this, the rejection was swallowed
+      // by `void reload()` at the call site and the button simply looked
+      // dead, in the one dialog the writer cannot dismiss.
+      reportOpenFailure(saveConflict.filePath, error);
+      return;
+    }
+
     // The session's edits are gone, so its undo history describes scenes
     // that no longer exist — the same reason opening any project clears it.
     clearHistory();
@@ -1691,6 +1867,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       fileStamp: result.stamp,
       saveConflict: null,
       selectedSceneId: project.startSceneId ?? project.scenes[0]?.id ?? null,
+      selectedEntityId: null,
+      // The editors must reload even though the scene id has not changed —
+      // this is the reason the token exists. See the field's own note.
+      documentToken: get().documentToken + 1,
       saveStatus: "saved",
       recentProjects: result.recent,
       ...historyFlags(),
@@ -1756,8 +1936,40 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set({ saveStatus: "saved", fileStamp: outcome.stamp });
   },
 
-  closeProject: () => {
-    if (autosaveTimer) clearTimeout(autosaveTimer);
+  /**
+   * Closing the project writes what is pending first (v0.49.0).
+   *
+   * This used to be `if (autosaveTimer) clearTimeout(autosaveTimer)` — it
+   * CANCELLED the pending write rather than performing it. Autosave fires
+   * 1.5 seconds after the last change, so anything typed inside that
+   * window was simply discarded when the writer clicked back to the
+   * Welcome screen. Worse, `saveNow` used to report "All changes saved"
+   * whenever its own write landed, even if newer keystrokes had arrived
+   * meanwhile (fixed above) — so the status bar was often saying the work
+   * was safe at the exact moment clicking would lose it.
+   *
+   * The one state that cannot be flushed is an unresolved conflict: the
+   * path is precisely the one we are not allowed to write to. `App.tsx`
+   * asks before closing in that case, because there is no other answer
+   * that keeps the work.
+   */
+  closeProject: async () => {
+    if (autosaveTimer) {
+      clearTimeout(autosaveTimer);
+      autosaveTimer = null;
+    }
+    if (get().saveStatus !== "saved" && !get().saveConflict) {
+      await get().saveNow();
+    }
+
+    // Module-level, and never reset here before — so a save still in
+    // flight when the project closed left `saveInFlight` true forever, and
+    // the next project's first save queued itself behind a write that had
+    // already finished.
+    saveInFlight = false;
+    saveQueued = false;
+    lastSaveFailed = false;
+
     clearHistory();
     set({
       project: null,
@@ -1765,6 +1977,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       fileStamp: null,
       saveConflict: null,
       selectedSceneId: null,
+      selectedEntityId: null,
+      documentToken: get().documentToken + 1,
       saveStatus: "saved",
       isPlaying: false,
       playSceneId: null,

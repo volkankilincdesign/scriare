@@ -76,6 +76,16 @@ export interface ScriareAPI {
     /** Hands the exported file to the OS — in practice, the browser. */
     open: (filePath: string) => Promise<void>;
   };
+  /** v0.49.0 — closing the window writes what is pending first. */
+  lifecycle: {
+    /**
+     * The window is about to close. Do whatever has to happen first, then
+     * call `readyToClose`. Returns an unsubscribe function.
+     */
+    onBeforeClose: (handler: () => void) => () => void;
+    /** `false` keeps the window open — the writer said no. */
+    readyToClose: (proceed: boolean) => void;
+  };
 }
 
 declare global {

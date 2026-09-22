@@ -1,4 +1,5 @@
 import { Extension } from "@tiptap/core";
+import { PluginKey } from "@tiptap/pm/state";
 import Suggestion from "@tiptap/suggestion";
 import type { SuggestionOptions } from "@tiptap/suggestion";
 import { ReactRenderer } from "@tiptap/react";
@@ -19,6 +20,8 @@ export interface SlashCommandOptions {
 // deletes the "/query" text and runs that block's own command — the same
 // insertChoiceBlock/setHorizontalRule/toggleBlockquote/toggleCallout the
 // toolbar already calls, so the menu is just another way to reach them.
+const SLASH_SUGGESTION_KEY = new PluginKey("slashSuggestion");
+
 export const SlashCommand = Extension.create<SlashCommandOptions>({
   name: "slashCommand",
 
@@ -32,6 +35,10 @@ export const SlashCommand = Extension.create<SlashCommandOptions>({
     const items = this.options.items;
 
     const suggestion: Omit<SuggestionOptions<NarrativeBlockDefinition, NarrativeBlockDefinition>, "editor"> = {
+      // Named so that Escape can dispatch this plugin's own exit meta —
+      // see onKeyDown below. Without a key of its own there is no way to
+      // address the plugin, and Escape could only hide its popup.
+      pluginKey: SLASH_SUGGESTION_KEY,
       char: "/",
       allowSpaces: false,
       startOfLine: false,
@@ -75,6 +82,18 @@ export const SlashCommand = Extension.create<SlashCommandOptions>({
           },
           onKeyDown: (props) => {
             if (props.event.key === "Escape") {
+              // Ends the SUGGESTION, not just its popup. Removing the
+              // popup's DOM hid the menu but left the plugin active, and
+              // @tiptap/suggestion keeps forwarding keys for as long as it
+              // is: Enter then inserted the invisible menu's first item,
+              // arrow keys were still swallowed, and typing more characters
+              // re-ran onUpdate against a detached popup so the menu never
+              // came back. The only way out was to delete the trigger
+              // character. Dispatching the plugin's own exit meta is what
+              // actually closes it (v0.49.0).
+              props.view.dispatch(
+                props.view.state.tr.setMeta(SLASH_SUGGESTION_KEY, { deactivate: true }),
+              );
               popup?.remove();
               return true;
             }

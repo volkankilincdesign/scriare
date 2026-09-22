@@ -67,9 +67,56 @@ function sameFile(a: FileStamp, b: FileStamp): boolean {
   return a.mtimeMs === b.mtimeMs && a.size === b.size;
 }
 
-/** Where the backup of `filePath` lives. */
-function backupPathFor(filePath: string): string {
-  return `${filePath}.bak`;
+/**
+ * Backups rotate, and the reason is a bug that ate one (v0.49.0).
+ *
+ * There was ONE `<project>.bak`, replaced in place. "Overwrite it with my
+ * version" passed `forceBackup: true` so that the other machine's newer
+ * work survived — the note below still says "what they might want back in
+ * ten minutes" — but it wrote to that same single path AND set
+ * `lastBackupAt`. So exactly five minutes later, an ordinary autosave
+ * triggered by nothing but continued typing copied the writer's own file
+ * over it. Measured against this module:
+ *
+ *   after overwrite, .bak = {"v":"OTHER-MACHINE-WORK"}
+ *   routine autosave 6 min later: backedUp = true
+ *   .bak now              = {"v":"MINE-v1"}
+ *   the other machine's work is: GONE
+ *
+ * The one undo of last resort deleted itself on a timer.
+ *
+ * Three slots instead of one, `.bak.1` the newest. That is fifteen minutes
+ * of history rather than five, and — the part that matters — nothing is
+ * ever one write away from gone: a version has to be pushed out by three
+ * later ones, not replaced by the next.
+ */
+const BACKUP_SLOTS = 3;
+
+function backupPathFor(filePath: string, slot = 1): string {
+  return `${filePath}.bak.${slot}`;
+}
+
+/**
+ * Shifts the rotation down and copies the current file into slot 1.
+ *
+ * Renames rather than copies for the shift, so rotating is cheap whatever
+ * the story's size, and the oldest slot is simply overwritten by the
+ * rename rather than needing a delete of its own. Deliberately
+ * best-effort throughout: a project that cannot be backed up (a full disk
+ * — where a second copy is exactly what there is no room for) must still
+ * be SAVED, and the complete new version already exists by the time this
+ * runs.
+ */
+async function rotateBackups(filePath: string): Promise<boolean> {
+  for (let slot = BACKUP_SLOTS; slot > 1; slot -= 1) {
+    await fs.rename(backupPathFor(filePath, slot - 1), backupPathFor(filePath, slot)).catch(() => {});
+  }
+  try {
+    await fs.copyFile(filePath, backupPathFor(filePath, 1));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -207,13 +254,8 @@ export async function writeProjectFile(
       since >= BACKUP_EVERY_MS ||
       !(await readStamp(backupPathFor(filePath)));
     if (due) {
-      try {
-        await fs.copyFile(filePath, backupPathFor(filePath));
-        lastBackupAt.set(filePath, Date.now());
-        backedUp = true;
-      } catch {
-        backedUp = false;
-      }
+      backedUp = await rotateBackups(filePath);
+      if (backedUp) lastBackupAt.set(filePath, Date.now());
     }
   }
 

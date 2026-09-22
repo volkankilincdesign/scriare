@@ -1,5 +1,5 @@
 /**
- * Negative controls for v0.48.0 (Export).
+ * Negative controls for v0.48.0 (Export) and v0.49.0 (the audit fixes).
  *
  *   node tests/negative-controls.mjs
  *
@@ -149,7 +149,12 @@ const CONTROLS = [
   {
     name: "a bare name saved with no extension at all",
     file: main("ipc/projectHandlers.ts"),
-    from: '  return path.extname(filePath) === "" ? `${filePath}.${PROJECT_EXT}` : filePath;',
+    // Rewritten for v0.49.0: the guard this used to sabotage was the
+    // `extname(p) === ""` test, which the audit replaced with a known-set
+    // membership test. The control kept pointing at the old line and
+    // reported COULD NOT APPLY — which is the harness telling the truth,
+    // but only about itself. This sabotages the replacement.
+    from: "  return KNOWN_PROJECT_EXTENSIONS.has(extension) ? filePath : `${filePath}.${PROJECT_EXT}`;",
     to: "  return filePath;",
     spec: "project-file",
     expect: "without an extension is saved as .scriare",
@@ -176,7 +181,7 @@ const CONTROLS = [
     from: "      await writeProjectFile(filePath, html, null, { noBackup: true });",
     to: "      await writeProjectFile(filePath, html, null);",
     spec: "project-file",
-    expect: "leaves no .bak beside the page",
+    expect: "leaves no backup beside the page",
   },
   {
     name: "an export dropped in Documents instead of beside the story",
@@ -185,6 +190,125 @@ const CONTROLS = [
     to: "      const directory = app.getPath(\"documents\");",
     spec: "project-file",
     expect: "offered beside the project",
+  },
+  /* ── v0.49.0, the audit fixes ─────────────────────────────────── */
+  {
+    name: "a scene swap that goes back into the undo stack",
+    file: src("utils/loadDocument.ts"),
+    from: "  editor.view.updateState(\n    EditorState.create({\n      doc,\n      plugins: editor.state.plugins,\n    }),\n  );",
+    to: "  editor.commands.setContent(content);",
+    spec: "audit-fixes",
+    expect: "undo cannot write one scene's text into another",
+  },
+  {
+    name: "a conflict reload the editor does not notice",
+    file: src("components/editor/SceneEditor.tsx"),
+    from: "    const key = `${documentToken}:${scene.id}`;",
+    to: "    const key = `${scene.id}`;",
+    spec: "audit-fixes",
+    expect: "does not write the discarded text back",
+  },
+  {
+    name: "a structural undo that eats character-page prose",
+    file: src("state/history.ts"),
+    from: "  return changed ? { ...snapshot, scenes, entities } : snapshot;",
+    to: "  return changed ? { ...snapshot, scenes } : snapshot;",
+    spec: "audit-fixes",
+    expect: "keeps prose written on a character page",
+  },
+  {
+    name: "Delete reaching the selection behind an open dialog",
+    file: src("utils/keyboardFocus.ts"),
+    from: "export function aDialogIsOpen(): boolean {\n  return aModalIsOpen();\n}",
+    to: "export function aDialogIsOpen(): boolean {\n  return false;\n}",
+    spec: "audit-fixes",
+    expect: "does not reach the selection behind an open dialog",
+  },
+  {
+    name: "a new scene opened while a character page stays open",
+    file: src("state/projectStore.ts"),
+    // The first version of this control inserted a `// DISABLED` comment
+    // ABOVE the fix and left `selectedEntityId: null` in place — a
+    // sabotage that changed nothing, which the suite correctly reported
+    // as unchanged and I read as "the test measures nothing". The control
+    // was wrong, not the test. It now puts the v0.48.0 behaviour back:
+    // the scene is selected and whatever entity was open stays open.
+    from: "      selectedSceneId: scene.id,\n      // Whatever opens a scene closes an entity page: the interface\n      // comment on `selectedEntityId` promises \"exactly one of this and\n      // `selectedSceneId` is ever set\", and `selectScene`/`selectEntity`\n      // were the only two that kept it. Creating, duplicating, pasting or\n      // deleting while a Character page was open left BOTH set \u2014 and\n      // EditorGraphSplit resolves that tie as \"entity wins\", so the tree\n      // and the Inspector switched to the new scene while everything typed\n      // still went into the character (v0.49.0).\n      selectedEntityId: null,",
+    to: "      selectedSceneId: scene.id,",
+    spec: "audit-fixes",
+    expect: "closes the page",
+  },
+  {
+    name: "per-character folding that eats spaces again",
+    file: src("utils/textFold.ts"),
+    from: "    const piece = foldRun(value[i]);",
+    to: "    const piece = fold(value[i]);",
+    spec: "audit-fixes",
+    expect: "a search with a space in it finds the words",
+  },
+  {
+    name: "a leaf node measured as a block",
+    file: src("utils/findInStory.ts"),
+    from: 'const LEAF_TYPES = new Set([MENTION_TYPE, "horizontalRule", "hardBreak"]);',
+    to: "const LEAF_TYPES = new Set([MENTION_TYPE]);",
+    spec: "audit-fixes",
+    expect: "points at the right characters",
+  },
+  {
+    name: "an empty spoken line that consumes the run again",
+    file: src("utils/speakerLines.ts"),
+    from: "      if (!hasVisibleText(node)) return node;\n\n      const speaker = nodeSpeaker(node.attrs);\n      const name = run.line(speaker) ? speakerName(speaker, entities) : null;\n      if (!name) return node;",
+    to: "      const speaker = nodeSpeaker(node.attrs);\n      const name = run.line(speaker) ? speakerName(speaker, entities) : null;\n      if (!name || !hasVisibleText(node)) return node;",
+    spec: "audit-fixes",
+    expect: "does not swallow the speaker's name",
+  },
+  {
+    name: "a folded chapter that only hides scenes when its box was drawn by hand",
+    file: src("utils/graphGroups.ts"),
+    from: '    (n): n is ContentFolder => n.kind === "folder" && Boolean(n.collapsed),',
+    to: '    (n): n is ContentFolder => n.kind === "folder" && Boolean(n.collapsed) && Boolean(n.rect),',
+    spec: "audit-fixes",
+    expect: "hides its scenes even when its box was derived",
+  },
+  {
+    name: "a late save that stamps whichever project is open now",
+    file: src("state/projectStore.ts"),
+    from: "      if (get().filePath !== filePath) {\n        saveQueued = false;\n        return;\n      }",
+    to: "      if (false) {\n        saveQueued = false;\n        return;\n      }",
+    spec: "audit-fixes",
+    expect: "does not stamp whichever project is open now",
+  },
+  {
+    name: "closing the project cancelling its pending write again",
+    file: src("state/projectStore.ts"),
+    from: "    if (get().saveStatus !== \"saved\" && !get().saveConflict) {\n      await get().saveNow();\n    }",
+    to: "    // DISABLED",
+    spec: "audit-fixes",
+    expect: "writes the pending change first",
+  },
+  {
+    name: "a backup rotation that overwrites in place",
+    file: main("projectFile.ts"),
+    from: "  for (let slot = BACKUP_SLOTS; slot > 1; slot -= 1) {\n    await fs.rename(backupPathFor(filePath, slot - 1), backupPathFor(filePath, slot)).catch(() => {});\n  }",
+    to: "  // DISABLED",
+    spec: "project-file",
+    expect: "pushes the older one down instead of destroying it",
+  },
+  {
+    name: "an export that honours whatever extension it is handed",
+    file: main("ipc/exportHandlers.ts"),
+    from: "  if (WEB_PAGE_EXTENSIONS.has(extension)) return filePath;",
+    to: "  if (extension !== \"\") return filePath;",
+    spec: "project-file",
+    expect: "redirected to a web page",
+  },
+  {
+    name: "a project extension guard that tests for emptiness",
+    file: main("ipc/projectHandlers.ts"),
+    from: "  return KNOWN_PROJECT_EXTENSIONS.has(extension) ? filePath : `${filePath}.${PROJECT_EXT}`;",
+    to: "  return extension !== \"\" ? filePath : `${filePath}.${PROJECT_EXT}`;",
+    spec: "project-file",
+    expect: "extension-shaped still gets .scriare",
   },
 ];
 
@@ -206,7 +330,78 @@ async function runSpec(spec) {
 // a quarter of an hour of rebuilds, and while a feature is being written
 // the one that matters is the one just added.
 const only = process.env.ONLY;
-const selected = only ? CONTROLS.filter((c) => c.spec.startsWith(only)) : CONTROLS;
+const matching = only ? CONTROLS.filter((c) => c.spec.startsWith(only)) : CONTROLS;
+
+// SKIP/TAKE cut the selection into runs that finish inside a shell's time
+// limit. Every control is a full production rebuild plus a spec run, so a
+// dozen of them against one spec is beyond any sane command timeout, and a
+// run that gets killed halfway is the thing the pre-flight above exists to
+// clean up after. `ONLY=export.spec SKIP=6 TAKE=6` is the second half.
+const skip = Number(process.env.SKIP ?? 0);
+const take = Number(process.env.TAKE ?? matching.length);
+const selected = matching.slice(skip, skip + take);
+
+/**
+ * The pre-flight, and why it exists.
+ *
+ * The restore below is in a `finally`, which covers a failing spec and a
+ * thrown error and does NOT cover the runner being killed — and this thing
+ * runs for a quarter of an hour, so being killed is the ordinary case, not
+ * the exotic one. It happened during v0.49.0: the process was SIGKILLed
+ * mid-control and `return current + operand` was left in the shipped source
+ * as `return current - operand`. Nothing noticed. The next run reported
+ * that control as COULD NOT APPLY, which is true and reads like a stale
+ * control rather than "your source is currently broken".
+ *
+ * So before anything is sabotaged, every control's `from` is checked. Three
+ * outcomes, and the middle one is the one worth having:
+ *
+ *   from present                  — fine
+ *   from absent, `to` present     — THE SOURCE IS STILL SABOTAGED
+ *   from absent, `to` absent too  — the control is stale, rewrite it
+ *
+ * `--restore` puts the second kind back. It is deliberately not automatic:
+ * a file that differs from what a control expects might be a half-finished
+ * edit, and silently rewriting the writer's source to match a test fixture
+ * is the sort of help nobody asked for.
+ */
+async function preflight({ restore }) {
+  const stale = [];
+  const sabotaged = [];
+  for (const control of CONTROLS) {
+    const text = await readFile(control.file, "utf-8");
+    if (text.includes(control.from)) continue;
+    if (control.to !== "" && text.includes(control.to)) sabotaged.push(control);
+    else stale.push(control);
+  }
+
+  for (const control of sabotaged) {
+    if (restore) {
+      const text = await readFile(control.file, "utf-8");
+      await writeFile(control.file, text.replace(control.to, control.from), "utf-8");
+      console.log(`↺  restored: ${control.file.replace(root, ".")} — ${control.name}`);
+    } else {
+      console.log(`!  STILL SABOTAGED: ${control.file.replace(root, ".")} — ${control.name}`);
+    }
+  }
+  for (const control of stale) {
+    console.log(`?  stale control (neither its before nor its after is there): ${control.name}`);
+  }
+
+  if (sabotaged.length && !restore) {
+    console.log(
+      "\nA previous run was interrupted before it could put the source back." +
+        "\nRun `node tests/negative-controls.mjs --restore` before anything else.",
+    );
+    process.exit(2);
+  }
+  if (restore) {
+    console.log(sabotaged.length ? `\n${sabotaged.length} restored.` : "\nNothing was left sabotaged.");
+    process.exit(0);
+  }
+}
+
+await preflight({ restore: process.argv.includes("--restore") });
 
 const verdicts = [];
 

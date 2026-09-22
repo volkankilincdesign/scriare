@@ -105,7 +105,12 @@ export function StoryCheckDialog({ onClose }: StoryCheckDialogProps) {
         run into. Click a line to go there.
       </p>
 
-      <div className="mb-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-[var(--border-soft)] bg-[var(--border-soft)] sm:grid-cols-4">
+      {/* Three columns, not four. There are six stats, and an empty grid
+          track paints the container's own background — so at four columns
+          the second row held two stats and two solid --border-soft
+          rectangles, every time the dialog opened. Six divides by three and
+          by two, so both the wide and the narrow layout come out full. */}
+      <div className="mb-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-[var(--border-soft)] bg-[var(--border-soft)] sm:grid-cols-3">
         <Stat label="Scenes" value={`${stats.reachable}/${stats.scenes}`} hint="reachable" />
         <Stat label="Words" value={stats.words.toLocaleString()} />
         <Stat label="Choices" value={String(stats.choices)} />

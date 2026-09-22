@@ -10,6 +10,7 @@ import { ConfirmDialogHost } from "./components/common/ConfirmDialogHost";
 import { SaveConflictDialog } from "./components/common/SaveConflictDialog";
 import { ToastHost } from "./components/common/ToastHost";
 import { ChoiceStylesDialog } from "./components/choices/ChoiceStylesDialog";
+import { useCloseGuard } from "./hooks/useCloseGuard";
 import { StoryCheckDialog } from "./components/story/StoryCheckDialog";
 import { ExportDialog } from "./components/export/ExportDialog";
 import { VariableManagerDialog } from "./components/variables/VariableManagerDialog";
@@ -85,6 +86,10 @@ export default function App() {
       return next;
     });
   }
+
+  // The window asks before it closes, so a pending autosave is
+  // written instead of discarded — see hooks/useCloseGuard.ts.
+  useCloseGuard();
 
   useKeyboardSave();
   useKeyboardHistory();

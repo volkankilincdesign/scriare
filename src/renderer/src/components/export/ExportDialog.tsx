@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Modal } from "../common/Modal";
 import { useProjectStore } from "../../state/projectStore";
 import { useUIStore } from "../../state/uiStore";
@@ -40,6 +40,20 @@ export function ExportDialog() {
 
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ filePath: string; bytes: number } | null>(null);
+
+  // This dialog is mounted for the life of the app and hides itself with
+  // `return null`, so nothing unmounts it and nothing resets its state.
+  // Closing the success screen with Escape or a backdrop click left `done`
+  // set, and the next Export opened straight onto the PREVIOUS export's
+  // result — with no way back to the form except clicking Done, and one
+  // "Open it" click away from opening a stale file while believing it
+  // reflected the edits made since (v0.49.0).
+  useEffect(() => {
+    if (!open) {
+      setDone(null);
+      setBusy(false);
+    }
+  }, [open]);
 
   // Built once when the dialog opens, and reused by the export itself —
   // rendering every scene twice, once to check and once to write, would be
