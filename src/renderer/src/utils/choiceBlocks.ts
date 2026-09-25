@@ -16,15 +16,18 @@ export { CHOICE_BLOCK_TYPE, CHOICE_OPTION_TYPE } from "../types/nodeTypes";
  * has — see types/variables.ts's VariableAction — and default to an empty
  * array so every project saved before this sprint still normalizes
  * correctly (readOptions below is the single place that ever needs to know
- * that). `conditions` (Sprint 9B) is intentionally NOT a field yet: nothing
- * reads it this sprint, and adding an empty array no code touches would
- * just be dead data — see the Inspector's Conditions placeholder instead.
+ * that).
  *
- * v0.30.0 filled that gap: `conditions` are the tests that must all hold
- * for this option to be offered, and `whenUnmet` says what the player sees
- * when they don't. Both default so that every choice written before this
- * existed behaves exactly as it always did — no conditions means always
- * available, which is what `evaluateConditions` returns for an empty list.
+ * `conditions` (v0.30.0) are the tests that must all hold for this option
+ * to be offered, and `whenUnmet` says what the player sees when they
+ * don't. Both default, so every choice written before they existed behaves
+ * exactly as it always did — no conditions means always available, which
+ * is what `evaluateConditions` returns for an empty list.
+ *
+ * (This used to open with "`conditions` is intentionally NOT a field yet",
+ * fourteen lines above the field, with the correction underneath it. A
+ * reader meets the stale claim first and the interface second. Reordered
+ * v0.51.0 so the current truth leads.)
  */
 export interface ChoiceOption {
   id: string;
@@ -210,28 +213,6 @@ export function findChoiceBlockOptions(
   return found;
 }
 
-/**
- * A copy of the scene's content with every `choiceBlock` node removed —
- * kept for any place that just wants "the prose, no choices" (the Play
- * runtime itself renders via runtime/documentSegments.ts instead, which
- * preserves document order rather than stripping choices out).
- */
-export function stripChoiceBlocks(content: JSONContent | undefined | null): JSONContent {
-  const EMPTY: JSONContent = { type: "doc", content: [{ type: "paragraph" }] };
-  if (!content) return EMPTY;
-
-  function walk(node: JSONContent): JSONContent {
-    if (!node.content) return node;
-    return {
-      ...node,
-      content: node.content
-        .filter((child) => child.type !== CHOICE_BLOCK_TYPE)
-        .map(walk),
-    };
-  }
-
-  return walk(content);
-}
 
 /**
  * Returns a deep copy of `content` with every choiceBlock's `blockId` and

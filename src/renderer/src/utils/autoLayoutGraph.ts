@@ -1,15 +1,17 @@
 import type { ContentFolder, ContentNode, Project, Scene } from "../types/project";
 import { computeAutoLayout } from "./autoLayout";
-import { FOLDER_MIN_HEIGHT, FOLDER_MIN_WIDTH, FOLDER_PADDING, SCENE_NODE_HEIGHT, SCENE_NODE_WIDTH } from "./graphConstants";
+import {
+  FOLDER_MIN_HEIGHT,
+  FOLDER_MIN_WIDTH,
+  FOLDER_PADDING,
+  GROUP_HEADER_HEIGHT,
+  SCENE_NODE_HEIGHT,
+  SCENE_NODE_WIDTH,
+} from "./graphConstants";
 import { extractChoices } from "./choiceBlocks";
 import { graphGroups } from "./graphGroups";
 
-/**
- * Vertical room reserved for a group's title bar, which is drawn inside the
- * box's own rectangle (see GroupNode). Without this, the first row of a
- * freshly laid-out chapter sits under its own name.
- */
-const GROUP_HEADER_HEIGHT = 26;
+// Was a local `26`. See graphConstants.ts for why it is not any more.
 
 /**
  * Auto Layout, all the way down (v0.29.0).

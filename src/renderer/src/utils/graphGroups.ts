@@ -1,5 +1,10 @@
 import type { ContentFolder, ContentNode, FolderRect, Project, Scene } from "../types/project";
-import { SCENE_NODE_HEIGHT, SCENE_NODE_WIDTH } from "./graphConstants";
+import {
+  FOLDER_PADDING,
+  GROUP_HEADER_HEIGHT,
+  SCENE_NODE_HEIGHT,
+  SCENE_NODE_WIDTH,
+} from "./graphConstants";
 
 /**
  * Story folders as the graph sees them (v0.28.0).
@@ -445,5 +450,9 @@ function deriveMissingRects(content: ContentNode[], scenes: Scene[]): Map<string
   return derived;
 }
 
-const DERIVED_PADDING = 26;
-const DERIVED_HEADER = 26;
+// The same two quantities the rest of the graph uses — see
+// graphConstants.ts. These were local `26`s, which is how "how much air a
+// group keeps" and "how tall its title bar is" came to be four literals
+// that nothing forced to agree (v0.51.0).
+const DERIVED_PADDING = FOLDER_PADDING;
+const DERIVED_HEADER = GROUP_HEADER_HEIGHT;

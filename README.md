@@ -9,7 +9,7 @@ structure but cramps the prose, or a scripting language that frees the
 prose and hides the structure in syntax. Scriare is a writing app that
 happens to know about branches.
 
-[Changelog](CHANGELOG.md) · [Case study](CASE_STUDY.md)
+[Changelog](CHANGELOG.md) · [Case study](CASE_STUDY.md) · [Design documents](docs/)
 
 </div>
 
@@ -173,6 +173,7 @@ src/renderer/src/
   types/        the data model: project, entities, variables, speakers
   utils/        pure logic — choice blocks, story checking, find, folding
 tests/          *.spec.mjs, run against the real packaged Electron app
+docs/           the design documents — the reasoning behind the decisions
 ```
 
 Three boundaries are load-bearing and worth knowing before changing

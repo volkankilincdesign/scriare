@@ -24,9 +24,17 @@ export function nextOrder(
 /** True if `candidateId` is `ancestorId` itself, or nested under it. Used to
  * stop a folder from being dragged into its own descendant (a cycle). */
 export function isDescendant(nodes: ContentNode[], candidateId: string, ancestorId: string): boolean {
+  // A `parentId` loop would spin this forever and take the renderer with
+  // it. Not reachable from the UI today — the drop guard is what this
+  // function IS — but a corrupt or hand-edited project file is an input
+  // this app already treats as untrusted everywhere else, and every other
+  // tree walker in the codebase has a guard (v0.51.0).
+  const seen = new Set<string>();
   let current: ContentNode | undefined = nodes.find((n) => n.id === candidateId);
   while (current) {
     if (current.id === ancestorId) return true;
+    if (seen.has(current.id)) return false;
+    seen.add(current.id);
     current = current.parentId ? nodes.find((n) => n.id === current!.parentId) : undefined;
   }
   return false;
@@ -55,8 +63,13 @@ export function computeDropPosition(
  * node's containing folders so it's visible after a search jump. */
 export function ancestorsOf(nodes: ContentNode[], id: string): string[] {
   const result: string[] = [];
+  // Same guard, same reason — see isDescendant above. This one is worse
+  // unguarded: it also grows the array forever.
+  const seen = new Set<string>([id]);
   let current = nodes.find((n) => n.id === id);
   while (current?.parentId) {
+    if (seen.has(current.parentId)) break;
+    seen.add(current.parentId);
     result.push(current.parentId);
     current = nodes.find((n) => n.id === current!.parentId);
   }

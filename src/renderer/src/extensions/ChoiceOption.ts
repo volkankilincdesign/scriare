@@ -2,7 +2,12 @@ import { Node, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import { ChoiceOptionView } from "../components/editor/ChoiceOptionView";
 
-export const CHOICE_OPTION_TYPE = "choiceOption";
+// Re-exported, not redeclared. types/nodeTypes.ts's own header says names
+// live there and everything else re-exports them — and this file had the
+// literal a second time, so the one module whose job is to stop node names
+// drifting was the one place a name had already drifted to (v0.51.0).
+import { CHOICE_OPTION_TYPE } from "../types/nodeTypes";
+export { CHOICE_OPTION_TYPE };
 
 /**
  * One option inside a Choice Block (v0.32.0) — and, critically, a node whose

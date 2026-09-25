@@ -19,6 +19,21 @@ export const FOLDER_MIN_HEIGHT = 170;
 export const FOLDER_PADDING = 26;
 
 /**
+ * Vertical room reserved for a group's title bar, drawn INSIDE the box's own
+ * rectangle (see GroupNode). Without it, the first row of a freshly
+ * laid-out chapter sits under its own name.
+ *
+ * Here rather than in each file that needs it (v0.51.0). This module's
+ * header says these values all have to agree, and `26` was written four
+ * times across three files for two quantities — `FOLDER_PADDING` here,
+ * `DERIVED_PADDING` and `DERIVED_HEADER` in graphGroups.ts, and
+ * `GROUP_HEADER_HEIGHT` in autoLayoutGraph.ts — so changing the padding in
+ * the one obvious place silently disagreed with the layout engine and with
+ * the derived-rect maths.
+ */
+export const GROUP_HEADER_HEIGHT = 26;
+
+/**
  * The Story Graph's grid (v0.42.0).
  *
  * 18px, which is not an arbitrary round number: it is the spacing of the

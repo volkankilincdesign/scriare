@@ -1,5 +1,5 @@
 import dagre from "@dagrejs/dagre";
-import { SCENE_NODE_HEIGHT, SCENE_NODE_WIDTH, snapPoint } from "./graphConstants";
+import { SCENE_NODE_HEIGHT, SCENE_NODE_WIDTH } from "./graphConstants";
 
 interface LayoutEdge {
   source: string;
@@ -61,20 +61,23 @@ function storyDepth(nodeIds: string[], edges: LayoutEdge[]): Map<string, number>
 
 /**
  * Computes a clean left-to-right layered layout for the given node ids,
- * based on their connections, using dagre. As of v0.16.0 a "node id" here
- * can be either a loose scene's own id or a Frame's id (standing in for
- * every scene grouped into it, collapsed to one node — see
- * `projectStore.autoLayoutScenes` for how that collapsing is built) —
- * callers are expected to have already decided which ids to pass and to
- * filter/collapse edges accordingly; this function itself doesn't know or
- * care what a given id "is."
+ * based on their connections, using dagre.
  *
- * `nodeSize`, when given, returns the real footprint to reserve for a
- * specific id — a Frame's own `size`, most importantly, so dagre gives it
- * as much room as it actually needs instead of scene-card-sized space.
- * Omitted (or returning nothing for a particular id) falls back to the
- * standard scene card footprint, preserving the original behavior for a
- * plain scene-only layout.
+ * A "node id" here is a scene's own id or a GROUP's id standing in for
+ * everything inside it, collapsed to one node. Callers decide which ids to
+ * pass and collapse the edges to match; this function does not know or
+ * care what a given id "is".
+ *
+ * `nodeSize`, when given, returns the real footprint to reserve for an id —
+ * a group's own size, most importantly, so dagre gives it the room it
+ * actually needs rather than scene-card-sized space. Omitted, it falls back
+ * to the standard scene card.
+ *
+ * (This described Frames and pointed at `projectStore.autoLayoutScenes` for
+ * the collapsing. Frames were replaced by content-tree groups in v0.28.0
+ * and the collapsing moved to utils/autoLayoutGraph.ts — so the comment
+ * sent a reader to a concept the app no longer has, in a file whose whole
+ * job is the thing being described. Corrected v0.51.0.)
  */
 export function computeAutoLayout(
   nodeIds: string[],
@@ -129,16 +132,22 @@ export function computeAutoLayout(
   nodeIds.forEach((id) => {
     const node = graph.node(id);
     const size = sizeById.get(id)!;
-    // dagre positions by center — convert to the top-left corner our
+    // dagre positions by centre — convert to the top-left corner our
     // project data model expects.
-    // v0.42.0 — snapped, so Auto Layout's output sits on the same grid a
-    // hand-dragged card does. Without this, one tidy pass puts every scene
-    // half a cell off and the first manual nudge afterwards looks like it
-    // moved something that was already aligned.
-    positions[id] = snapPoint({
+    //
+    // NOT snapped here (v0.51.0). It used to be, and the comment on the
+    // other snap — in projectStore's autoLayoutScenes — said flatly that
+    // snapping happens "here rather than inside the layout algorithm",
+    // which was untrue while both existed. The inner one was also doing
+    // nothing: groups are resized and their contents re-based afterwards
+    // by offsets that are not whole cells, so its output was overwritten
+    // before anything saw it. Removed and measured — graph-auto-layout's
+    // 17 checks and graph-grid's 16 all stay green, which is the claim
+    // that the LAST snap is the one that decides.
+    positions[id] = {
       x: node.x - size.width / 2,
       y: node.y - size.height / 2,
-    });
+    };
   });
 
   return positions;

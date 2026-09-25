@@ -12,6 +12,71 @@ omitting them.
 
 ---
 
+## v0.52.0 — Tidying up
+
+No behaviour changed. The audit's tier 5, plus the repository itself.
+
+**The dead code that was actually dead.** `stripChoiceBlocks` was the only
+fully dead export in the codebase — grepped across source, tests and docs,
+its definition line was the sole occurrence. Gone.
+
+**`26` was written four times, in three files, for two quantities.** How
+much air a group keeps around its contents, and how tall its title bar is,
+existed as `FOLDER_PADDING`, `DERIVED_PADDING`, `DERIVED_HEADER` and
+`GROUP_HEADER_HEIGHT` — in the module whose own header says these values
+all have to agree. Two names now, in that module, imported by the other
+two files. Changing the padding in the obvious place used to silently
+disagree with the layout engine and with the derived-rect maths.
+
+**`CHOICE_OPTION_TYPE` was declared twice.** `types/nodeTypes.ts` exists to
+stop node names drifting, and says so — and the literal was written a
+second time in `ChoiceOption.ts`. The extension re-exports the name now
+instead of minting its own.
+
+**Snapping was implemented twice, and each comment denied the other.** The
+layout algorithm snapped its output to the grid; `projectStore` snapped
+again at the end, under a comment stating flatly that snapping happens
+"here rather than inside the layout algorithm". Both were true and the
+comment was not. The inner one was also doing nothing — groups are resized
+and their contents re-based afterwards by offsets that are not whole cells,
+so its output was overwritten before anything saw it. **Verified rather
+than assumed**: removed, and graph-auto-layout's 17 checks and graph-grid's
+16 all stay green, which is the claim that the last snap is the one that
+decides.
+
+**Two tree walkers could hang the renderer.** `isDescendant` and
+`ancestorsOf` follow `parentId` upward with no cycle guard, and
+`ancestorsOf` grows an array while it does it. Not reachable from the UI —
+`isDescendant` IS the guard that prevents the cycle — but a corrupt or
+hand-edited project file is an input this app treats as untrusted
+everywhere else, and every other tree walker here already had one.
+
+**Two comments that sent readers the wrong way.** `autoLayout.ts` described
+Frames and pointed at `projectStore.autoLayoutScenes` for the collapsing;
+Frames were replaced by content-tree groups in v0.28.0 and the collapsing
+moved to `autoLayoutGraph.ts`, so the file whose whole job is layout
+explained itself in terms of a concept the app no longer has.
+`choiceBlocks.ts` opened with "`conditions` is intentionally NOT a field
+yet" fourteen lines above the field, with the correction underneath —
+a reader met the stale claim first and the truth second. Both reordered so
+the current fact leads.
+
+Two items from the audit's tier 5 turned out not to exist: the claim that
+`textFold.ts` says "ß lowercases to two" is not in the file, and the
+Inspector colour input reported in tier 3 was already corrected in v0.51.0.
+
+**The repository carries its own history now.** The fifteen design
+documents lived only in the project workspace; they are mirrored into
+`docs/` with an index, so a reader who clones this gets the reasoning as
+well as the result. `README.md` and `CHANGELOG.md` stay at the root where
+every convention expects them, and `CHANGELOG.md` is the narrative
+companion to `docs/` rather than a duplicate of it. A prototype page and a
+mockup folder left over from earlier work are gone.
+
+473 tests, 55 negative controls.
+
+---
+
 ## v0.51.0 — Where the time actually goes
 
 The audit's tier 3. Measured first, and the measurement is most of what
