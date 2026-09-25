@@ -12,6 +12,87 @@ omitting them.
 
 ---
 
+## v0.51.0 — Where the time actually goes
+
+The audit's tier 3. Measured first, and the measurement is most of what
+this release is worth: **two of the three items it named do not cost what
+it said, and the thing that does cost was not on the list.**
+
+One edit on a 300-scene story, timed to paint, median of repeated runs:
+
+```
+everything open .................... 80.6 ms
+Content panel collapsed ............ 66.8 ms   panel:      13.8
++ Inspector collapsed .............. 66.5 ms   inspector:  ~0
++ Story Graph collapsed ............ 33.3 ms   graph:      50.2
+```
+
+33 ms is the floor — two animation frames, which the measurement has to
+wait for. So **the Story Graph was about 50 ms of an 80 ms keystroke**,
+more than everything else put together, and nothing in the audit pointed
+at it.
+
+**The graph rebuilt every node and edge on every edit.** FlowPanel's memos
+are keyed on `project`, and React Flow diffs by reference — so renaming one
+scene handed it 300 new node objects and, on a story with choices, several
+hundred new edge objects, every one of them reconciled. Unchanged nodes and
+edges keep their identity now, decided by a signature built from the
+primitives each one draws. On a story with 450 choices in it the graph went
+from 81.9 ms to 58.3, with the node half worth about another 11.
+
+**Item #22 does not exist.** The audit reported an unthrottled
+`<input type="color">` in the Inspector. There is no colour input in the
+Inspector: it uses the shared `BoxControls`, and that component was already
+rAF-throttled in v0.49.0 — so fixing the Choice Styles half fixed this half
+too, and the note in `claude/audit-v0.48-outcome.md` saying otherwise was
+wrong.
+
+**Item #24 costs nothing measurable.** Sixteen choice options on screen
+were reported as 4,800 scan steps per keystroke. Measured as a delta
+against the same scene without them: **−3.0 ms**, which is noise. The
+related claim that walking every scene's choices costs 24.8 ms at 300
+scenes does not reproduce either — it is **0.2 ms** for 300 scenes and 450
+real choices.
+
+**Item #23 is real, and the fix for it was aimed at the wrong half.** The
+Content panel does cost about 16 ms of a keystroke. The audit blamed each
+folder row filtering and sorting the whole node list, so that was replaced
+with a prepared index — and the cost did not move: 16.5 ms with the index,
+16.7 ms without. The filter was never where the time went; 300 rows
+re-rendering is. The index was reverted rather than shipped as a fix for
+something it does not fix. **Memoizing the context and the rows is the real
+fix and it is a bigger refactor — it is not done, and it is the one tier-3
+item still open.**
+
+**Three findings about measuring.**
+
+*The harness lied twice before it told the truth.* The first version
+measured everything-open, then collapsed a panel and measured again. Across
+runs the same build gave −7.9 ms and then +17.2 for the same difference:
+±25 ms of drift on an effect worth 14. Alternating the two and taking the
+median of paired differences cancels drift that is slow compared to one
+pair, and the numbers went from that spread to ±1 ms.
+
+*A toggle that silently misses makes everything after it meaningless.* The
+expand controls are titled "Expand …", not "Show …". The clicks found
+nothing, returned false into a variable nobody checked, and every later
+measurement was taken with the panel still shut — reporting a tidy 0.1 ms
+for a panel that had never been reopened. It throws now.
+
+*Some things cannot be guarded by a clock.* The graph resolves to about
+±10 ms over three paired runs, and the fixes are worth 24 and 11, so no
+threshold separates them: tight enough to catch the regression is tight
+enough to fire on a busy box. The timings stay as documentation and as a
+gross-regression check — and they say so out loud when the machine is too
+loaded to judge, because a red build meaning "CI was busy" teaches people
+to ignore red builds. What the fix actually *does* — hand back the same
+object when nothing changed — is asserted directly instead, and that has
+the same answer on any machine.
+
+473 tests, 55 negative controls.
+
+---
+
 ## v0.50.0 — Getting around without a mouse
 
 The v0.48.0 audit's tier 4. Every claim in it was reproduced against the

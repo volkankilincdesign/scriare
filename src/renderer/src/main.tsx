@@ -43,6 +43,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./utils/speakerLines"),
     import("./utils/findInStory"),
     import("./utils/textFold"),
+    import("./utils/reuseBySignature"),
     import("./state/uiStore"),
     import("./utils/graphConstants"),
     import("./utils/autoLayout"),
@@ -72,6 +73,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       speakerLines,
       findInStory,
       textFold,
+      reuseBySignature,
       uiStore,
       graphConstants,
       autoLayout,
@@ -105,6 +107,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         __scriareSpeakerLines: speakerLines,
         __scriareFind: findInStory,
         __scriareTextFold: textFold,
+        __scriareReuse: reuseBySignature,
         __scriareUIStore: uiStore.useUIStore,
         // v0.43.0 — the layout rules are pure arithmetic, so the specs that
         // cover them build graphs and read the geometry back rather than

@@ -14,6 +14,11 @@ import "@xyflow/react/dist/style.css";
 import { useProjectStore } from "../../state/projectStore";
 import { useSelectionStore } from "../../state/selectionStore";
 import { extractChoices } from "../../utils/choiceBlocks";
+import {
+  newSignatureCache,
+  pruneSignatureCache,
+  reuseBySignature,
+} from "../../utils/reuseBySignature";
 import { mentionResolver } from "../../utils/mentions";
 import { GRAPH_GRID, snapRect } from "../../utils/graphConstants";
 import {
@@ -378,6 +383,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     // all to an edge label (see optionPlainText).
     const resolve = mentionResolver(project.entities ?? []);
 
+
     // Built once for the whole walk rather than inside `visibleStandIn`,
     // which used to index the entire content tree on every call — twice
     // per linked choice, on every keystroke. On a 300-scene story that was
@@ -463,6 +469,21 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   // an accent border. This is purely a style pass over the small edges
   // array (never a re-walk of scene content), so clicking between scenes
   // stays as cheap as it already was.
+  /**
+   * Edges that did not change keep their object identity (v0.51.0).
+   *
+   * Same story as the scene nodes above, and on a story with real choices
+   * in it the edges are the bigger half: `edgesBase` is rebuilt whenever
+   * `project` changes, so every wire became a new object on a title edit
+   * and React Flow reconciled all of them. Measured on 300 scenes with 450
+   * choices, one title edit: the graph cost 81.9 ms of a 115.5 ms
+   * keystroke before this.
+   *
+   * An edge draws from a handful of primitives, so a signature settles
+   * whether anything visible about it changed.
+   */
+  const edgeCache = useRef(newSignatureCache<Edge>());
+
   const edges = useMemo<Edge[]>(() => {
     return edgesBase.map((edge) => {
       // Sprint 8B interaction-consistency fix: this used to check only
@@ -509,7 +530,14 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       // graph zoomed out is a picture of the shape of the story, and the
       // shape doesn't need the numbering.
       const readable = zoom >= LABEL_MIN_ZOOM;
-      return {
+      const sig = [
+        edge.source,
+        edge.target,
+        isConnectedToSelected,
+        isBundle,
+        readable ? labels?.short ?? "" : "",
+      ].join("|");
+      const build = (): Edge => ({
         ...edge,
         label: readable ? labels?.short : undefined,
         labelStyle: {
@@ -530,7 +558,8 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
           strokeWidth: isConnectedToSelected ? 2.2 : isBundle ? 2.6 : 1.6,
         },
         zIndex: 0,
-      };
+      });
+      return reuseBySignature(edgeCache.current, edge.id, sig, build);
     });
   }, [edgesBase, selectedSceneId, selectedGraphIds, zoom]);
 
@@ -605,6 +634,27 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   // update every pointer-move during a drag, so this memo depends on
   // `frameDrag`/`sceneDrag` — but everything inside it is now cheap
   // arithmetic, no document parsing.
+  /**
+   * Scene nodes that did not change keep their object identity (v0.51.0).
+   *
+   * The memo below depends on `project`, so editing ONE scene's title
+   * rebuilt all 300 node objects and React Flow — which diffs by reference
+   * — then reconciled every one of them.
+   *
+   * Measured on a 300-scene story, one title edit, median of 9 after
+   * warm-up: 80.6 ms with everything open, 33.3 ms with the Story Graph
+   * collapsed (and 33 ms is the floor, two animation frames). So the graph
+   * was about 50 ms of an 80 ms keystroke — more than the Content panel,
+   * the Inspector and the editor put together, and not where the v0.48.0
+   * audit's tier 3 was looking.
+   *
+   * A scene node is fully described by primitives, so a signature settles
+   * whether anything it draws has actually changed. Only scene nodes are
+   * cached: group nodes carry a callback in `data`, and handing back a
+   * cached object would hand back the callback captured with it.
+   */
+  const sceneNodeCache = useRef(newSignatureCache<Node>());
+
   const nodes = useMemo<Node[]>(() => {
     if (!project) return [];
 
@@ -707,7 +757,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
           ? { x: scene.position.x + sceneOffset.dx, y: scene.position.y + sceneOffset.dy }
           : scene.position;
 
-      return {
+      const fresh: Node = {
         id: scene.id,
         type: "scene",
         position,
@@ -729,12 +779,30 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
         zIndex: sceneZ,
         measured: measuredSizeRef.current.get(scene.id),
       };
+
+      // Everything the node draws, in one string. Cheap to build and
+      // cheaper than the reconciliation it avoids.
+      const measured = fresh.measured as { width?: number; height?: number } | undefined;
+      const sig = [
+        fresh.position.x,
+        fresh.position.y,
+        fresh.data.label,
+        fresh.data.choiceCount,
+        fresh.data.isActive,
+        fresh.data.isStart,
+        fresh.selected,
+        fresh.zIndex,
+        measured?.width,
+        measured?.height,
+      ].join("|");
+      return reuseBySignature(sceneNodeCache.current, scene.id, sig, () => fresh);
     });
 
     // A scene inside a folded group isn't drawn at all — that's what
     // folding means. Its edges are re-pointed at the folded box instead
     // (see `edges` above), so nothing about the story silently disappears.
     const hidden = hiddenSceneIds(project);
+    pruneSignatureCache(sceneNodeCache.current, new Set(project.scenes.map((s) => s.id)));
     return [...groupNodes, ...sceneNodes.filter((n) => !hidden.has(n.id))];
     // `measuredVersion` isn't read inside this computation — it's listed here
     // purely so a change to it (see its own comment above) forces this memo

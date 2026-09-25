@@ -482,6 +482,34 @@ const CONTROLS = [
     spec: "themes",
     expect: "outside the palette",
   },
+  /* ── v0.51.0, what a keystroke costs ──────────────────────────── */
+  // REMOVED, with the change it guarded. The sabotage put the old
+  // filter-and-sort back and the Content panel's cost did not move:
+  // 16.5 ms with the index, 16.7 ms without. The panel really does cost
+  // ~16 ms of a keystroke, but the filter was never where it went — 300
+  // rows re-rendering is — so the index was a fix aimed at the wrong half
+  // and it was reverted rather than shipped as one.
+  {
+    // Controls the MECHANISM, not the clock. The timing checks in the same
+    // spec cannot guard these fixes — the graph resolves to about ±10 ms
+    // over three paired runs and the fixes are worth 24 and 11 — so a
+    // threshold either misses the regression or fires on a busy machine.
+    // Identity reuse has the same answer everywhere.
+    name: "a graph that rebuilds every node and edge on every edit",
+    file: src("utils/reuseBySignature.ts"),
+    from: "  const hit = cache.get(key);\n  if (hit && hit.sig === sig) return hit.value;",
+    to: "  const hit = cache.get(key);\n  void hit;",
+    spec: "perf",
+    expect: "keeps its identity",
+  },
+  {
+    name: "a signature cache that grows for the life of the project",
+    file: src("utils/reuseBySignature.ts"),
+    from: "  for (const key of cache.keys()) if (!live.has(key)) cache.delete(key);",
+    to: "  void live;",
+    spec: "perf",
+    expect: "drops what the story no longer contains",
+  },
 ];
 
 async function runSpec(spec) {
