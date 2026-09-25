@@ -110,7 +110,9 @@ export function ContentTreeRow({ node, depth }: ContentTreeRowProps) {
                 toggleExpand(node.id);
               }
             }}
-            className="w-4 shrink-0 cursor-pointer text-center text-[10px] text-[var(--text-3)] hover:text-[var(--text-2)] focus:outline-none"
+            aria-expanded={isExpanded}
+            aria-label={`${isExpanded ? "Collapse" : "Expand"} ${displayName}`}
+            className="w-4 shrink-0 cursor-pointer text-center text-[10px] text-[var(--text-3)] hover:text-[var(--text-2)]"
           >
             {isExpanded ? "▾" : "▸"}
           </div>
@@ -141,8 +143,18 @@ export function ContentTreeRow({ node, depth }: ContentTreeRowProps) {
           // preventDefault() in a mousedown handler (which a <button> here
           // used to do, to suppress a stray focus/selection highlight — see
           // the architecture doc's "Known pitfalls"). `select-none` on the
-          // row plus `focus:outline-none` here already suppress that
-          // highlight without touching mousedown, so dragging works again.
+          // row suppresses that highlight without touching mousedown, so
+          // dragging works.
+          //
+          // `focus:outline-none` used to be here too, and it was the reason
+          // a keyboard user could not see where they were (v0.50.0).
+          // Tailwind compiles it to a TRANSPARENT 2px outline at
+          // specificity (0,2,0); the app's global `:focus-visible` ring is
+          // (0,1,0), so on keyboard focus both matched and the transparent
+          // one won. Measured: matches :focus-visible, outline-width 2px,
+          // outline-color rgba(0, 0, 0, 0). Removing it costs nothing,
+          // because `:focus-visible` does not fire for a mouse click —
+          // which is the only thing the class was ever added to suppress.
           <div
             role="button"
             tabIndex={0}
@@ -156,7 +168,7 @@ export function ContentTreeRow({ node, depth }: ContentTreeRowProps) {
               }
             }}
             title="Double-click to rename"
-            className={`min-w-0 flex-1 cursor-default truncate px-1 py-1.5 text-left text-sm focus:outline-none ${
+            className={`min-w-0 flex-1 cursor-default truncate px-1 py-1.5 text-left text-sm ${
               isActiveScene || isSelected ? "text-[var(--text)]" : "text-[var(--text-2)] group-hover:text-[var(--text)]"
             }`}
           >
@@ -170,7 +182,7 @@ export function ContentTreeRow({ node, depth }: ContentTreeRowProps) {
         <button
           type="button"
           onClick={(e) => openContextMenu(e, node)}
-          className="hidden shrink-0 rounded px-1 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] group-hover:block focus:outline-none"
+          className="hidden shrink-0 rounded px-1 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] group-hover:block"
           title="More actions"
         >
           ⋯

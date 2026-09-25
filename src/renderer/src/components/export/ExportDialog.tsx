@@ -126,15 +126,20 @@ export function ExportDialog() {
           </p>
 
           <div className="mb-4 rounded-md border border-[var(--border-soft)] bg-[var(--surface-2-faint)] p-3">
-            <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-3)]">
+            <div className="scriare-section-label mb-2 text-[var(--text-3)]">
               What the reader gets
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--text-2)]">
               {READING_GROUNDS.map((ground) => (
                 <span key={ground.id} className="flex items-center gap-1.5">
+                  {/* Paper and Night are fixed reading grounds, not app
+                      chrome — they must look the same whatever theme the
+                      writer works in, which is the argument in
+                      claude/export.md. So their swatches are content. */}
                   <span
                     className="h-3 w-3 rounded-full border border-[var(--border)]"
                     style={{ background: ground.swatch }}
+                    data-content-colour
                     aria-hidden
                   />
                   {ground.label}

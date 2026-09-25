@@ -192,6 +192,7 @@ export function extractChoices(
 export function findChoiceBlockOptions(
   content: JSONContent | undefined | null,
   blockId: string,
+  resolve?: MentionLabelResolver,
 ): ChoiceOption[] | null {
   if (!content) return null;
   let found: ChoiceOption[] | null = null;
@@ -199,7 +200,7 @@ export function findChoiceBlockOptions(
   function walk(node: JSONContent): void {
     if (found) return;
     if (node.type === CHOICE_BLOCK_TYPE && node.attrs?.blockId === blockId) {
-      found = readOptions(node);
+      found = readOptions(node, resolve);
       return;
     }
     node.content?.forEach(walk);

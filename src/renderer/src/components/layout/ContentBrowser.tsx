@@ -10,6 +10,7 @@ import { ancestorsOf, childrenOf, computeDropPosition, flattenVisible } from "..
 import { ContentBrowserContext, useContentBrowser } from "./contentBrowserContext";
 import type { ContentBrowserContextValue, DropTarget } from "./contentBrowserContext";
 import { ContentTreeRow } from "./ContentTreeRow";
+import { rowActivation } from "../../utils/clickableRow";
 import { FindResults } from "./FindResults";
 import { ContentContextMenu } from "./ContentContextMenu";
 import type { ContentMenuItem } from "./ContentContextMenu";
@@ -71,6 +72,10 @@ function EntityList({ kind }: { kind: EntityKind }) {
           <div
             key={entity.id}
             data-entity-row={entity.id}
+            {...rowActivation(() => {
+              browser.clearSelection();
+              selectEntity(entity.id);
+            })}
             onClick={() => {
               browser.clearSelection();
               selectEntity(entity.id);
@@ -644,7 +649,7 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
         className="scriare-panel-l flex w-64 shrink-0 flex-col border-r border-[var(--border-soft)] bg-[var(--surface)]"
       >
         <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-3 py-2">
-          <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">Content</span>
+          <span className="scriare-section-label text-[var(--text-3)]">Content</span>
           {/* The two "new thing" buttons sit together; the dock toggle is a
               different kind of act, so it gets its own air rather than being
               the third item in a row of three (v0.45.0, reported). */}
@@ -695,7 +700,7 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
         <nav className="flex-1 overflow-y-auto p-1.5">
           {favoriteScenes.length > 0 && (
             <div className="mb-2">
-              <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-3)]">
+              <div className="scriare-section-label px-2 py-1 text-[var(--text-3)]">
                 Favorites
               </div>
               {favoriteScenes.map((scene) => (
@@ -718,7 +723,7 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
 
           {searchQuery ? (
             <div>
-              <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-3)]">
+              <div className="scriare-section-label px-2 py-1 text-[var(--text-3)]">
                 Search results
               </div>
               {searchResults.length === 0 ? (
@@ -747,6 +752,8 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
           ) : (
             <div className="mb-1">
               <div
+                {...rowActivation(() => toggleExpand(STORY_ROOT))}
+                aria-expanded={expanded.has(STORY_ROOT)}
                 onClick={() => toggleExpand(STORY_ROOT)}
                 onContextMenu={(e) => openContextMenu(e, null)}
                 onDragOver={(e) => e.preventDefault()}
@@ -793,6 +800,8 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
               <div key={cat.key} className="mb-1">
                 <div
                   data-category={cat.key}
+                  {...rowActivation(() => toggleExpand(cat.key))}
+                  aria-expanded={expanded.has(cat.key)}
                   onClick={() => toggleExpand(cat.key)}
                   className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2-faint)]"
                 >
@@ -822,6 +831,8 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
             PLACEHOLDER_CATEGORIES.map((cat) => (
               <div key={cat.key} className="mb-1">
                 <div
+                  {...rowActivation(() => toggleExpand(cat.key))}
+                  aria-expanded={expanded.has(cat.key)}
                   onClick={() => toggleExpand(cat.key)}
                   className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-[var(--text-3)] transition-colors hover:bg-[var(--surface-2-faint)]"
                 >

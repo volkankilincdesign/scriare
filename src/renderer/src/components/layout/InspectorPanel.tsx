@@ -6,6 +6,7 @@ import type { InspectorTarget } from "../../state/inspectorStore";
 import { useUIStore } from "../../state/uiStore";
 import { useEditorRefStore } from "../../state/editorStore";
 import { extractChoices, findChoiceBlockOptions } from "../../utils/choiceBlocks";
+import { mentionResolver } from "../../utils/mentions";
 import type { ChoiceOption } from "../../utils/choiceBlocks";
 import { PLAYER_SPEAKER, PLAYER_SPEAKER_LABEL, canSpeak } from "../../types/speaker";
 import type { Entity } from "../../types/entities";
@@ -90,7 +91,7 @@ export function InspectorPanel({ collapsed, onToggle }: InspectorPanelProps) {
     <aside className="scriare-panel-r flex w-80 shrink-0 flex-col border-l border-[var(--border-soft)] bg-[var(--surface)]">
       <div className="flex items-center gap-2.5 border-b border-[var(--border-soft)] px-4 py-3">
         <DockToggle direction="right" onClick={onToggle} title="Collapse Inspector" />
-        <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+        <span className="scriare-section-label text-[var(--text-3)]">
           Inspector
         </span>
       </div>
@@ -115,7 +116,14 @@ function SceneProperties() {
   const setStartScene = useProjectStore((s) => s.setStartScene);
 
   const scene = project?.scenes.find((s) => s.id === selectedSceneId) ?? null;
-  const choices = scene ? extractChoices(scene.content) : [];
+  // Resolved, like every other surface that names a choice. A mention
+  // stores the label that was TYPED, so without this a renamed character
+  // keeps her old name here while the graph, Check Story and the export all
+  // show the new one — the Inspector disagreeing with the canvas about who
+  // is in the scene (v0.50.0).
+  const choices = scene
+    ? extractChoices(scene.content, mentionResolver(project?.entities ?? []))
+    : [];
   const isStartScene = Boolean(scene) && project?.startSceneId === scene?.id;
 
   function destinationLabel(targetSceneId: string | null): string {
@@ -140,7 +148,7 @@ function SceneProperties() {
         This is the Start Scene
       </label>
 
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+      <h3 className="scriare-section-label mb-2 text-[var(--text-3)]">
         Outgoing Choices
       </h3>
 
@@ -404,7 +412,7 @@ function ConditionalProperties({
   return (
     <div className="space-y-4">
       <div>
-        <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+        <div className="scriare-section-label mb-1 text-[var(--text-3)]">
           Conditional Text
         </div>
         <p className="text-xs text-[var(--text-3)]">
@@ -459,7 +467,12 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
   const openVariableManager = useUIStore((s) => s.openVariableManager);
 
   const scene = project?.scenes.find((s) => s.id === target.sceneId) ?? null;
-  const options = scene ? findChoiceBlockOptions(scene.content, target.blockId) : null;
+  // The second unresolved reader, which the audit did not name — found by
+  // measuring the first. Same bug, same fix: the summary in Choice
+  // Properties showed "Ask Mara" while the graph edge read "Ask Kestrel".
+  const options = scene
+    ? findChoiceBlockOptions(scene.content, target.blockId, mentionResolver(project?.entities ?? []))
+    : null;
   const otherScenes = project?.scenes.filter((s) => s.id !== target.sceneId) ?? [];
   const variables = project?.variables ?? [];
 
@@ -1056,7 +1069,7 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+        <h3 className="scriare-section-label text-[var(--text-3)]">
           Choices
         </h3>
         <button
@@ -1283,7 +1296,7 @@ function ChoiceSpeaker({
   const entities = useProjectStore((s) => s.project?.entities ?? EMPTY_ENTITIES);
   return (
     <div>
-      <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+      <label className="scriare-section-label mb-1 block text-[var(--text-3)]">
         Who Says It
       </label>
       <select
@@ -1339,7 +1352,7 @@ function ChoiceAppearance({
 
   return (
     <div data-appearance-for={option.id}>
-      <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+      <label className="scriare-section-label mb-1 block text-[var(--text-3)]">
         Appearance
       </label>
       <div className="flex items-center gap-1.5">
@@ -1519,7 +1532,7 @@ function ChoiceAccordion({
               here read-only keeps the accordion legible without pretending
               there are two places to write it. */}
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+            <label className="scriare-section-label mb-1 block text-[var(--text-3)]">
               Display Text
             </label>
             <div className="rounded border border-dashed border-[var(--border-soft)] px-2 py-1.5 text-xs">
@@ -1537,7 +1550,7 @@ function ChoiceAccordion({
           <ChoiceAppearance option={option} onPatch={onPatch} />
 
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+            <label className="scriare-section-label mb-1 block text-[var(--text-3)]">
               Destination
             </label>
             <select
@@ -1569,7 +1582,7 @@ function ChoiceAccordion({
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+            <label className="scriare-section-label mb-1 block text-[var(--text-3)]">
               Conditions
             </label>
 
@@ -1624,7 +1637,7 @@ function ChoiceAccordion({
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+            <label className="scriare-section-label mb-1 block text-[var(--text-3)]">
               Actions
             </label>
 

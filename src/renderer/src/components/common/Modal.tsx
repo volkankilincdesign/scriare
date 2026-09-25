@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 
 interface ModalProps {
@@ -8,6 +8,12 @@ interface ModalProps {
   onEnter?: () => void;
   /** Tailwind max-width class for the card. Defaults to the compact size most dialogs use. */
   widthClassName?: string;
+  /**
+   * What this dialog is, for anything not looking at the screen. Falls back
+   * to the card's own text, which is usually its heading — but a dialog
+   * whose first line is not its title should say so here.
+   */
+  label?: string;
 }
 
 /**
@@ -31,7 +37,35 @@ let openModals = 0;
 export function aModalIsOpen(): boolean {
   return openModals > 0;
 }
-export function Modal({ children, onClose, onEnter, widthClassName = "max-w-sm" }: ModalProps) {
+
+/**
+ * Everything in the card a keyboard can land on, in the order it will.
+ *
+ * `:not([disabled])` and the negative-tabindex filter matter: a disabled
+ * primary button is exactly what a dialog shows while it is working, and
+ * trapping focus onto something that cannot be focused sends it to the
+ * document body instead — which is outside the dialog, which is the bug
+ * this function exists to prevent.
+ */
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function focusableWithin(root: HTMLElement | null): HTMLElement[] {
+  if (!root) return [];
+  return [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+    (el) => el.offsetParent !== null || el === document.activeElement,
+  );
+}
+
+export function Modal({
+  children,
+  onClose,
+  onEnter,
+  widthClassName = "max-w-sm",
+  label,
+}: ModalProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+
   // Every app-wide shortcut asks whether a dialog is up before acting —
   // see utils/keyboardFocus.ts's `aDialogIsOpen`. Counted rather than
   // flagged, because two dialogs can be stacked (a confirm over the
@@ -44,14 +78,77 @@ export function Modal({ children, onClose, onEnter, widthClassName = "max-w-sm" 
     };
   }, []);
 
+  /**
+   * Focus goes in, stays in, and comes back (v0.50.0).
+   *
+   * Measured on v0.49.0: opening a dialog left focus on the button that
+   * opened it, outside the card and underneath the backdrop. Tab then
+   * walked the application behind the scrim — every control still
+   * reachable, none of them visible — and closing left focus wherever it
+   * had wandered to. A screen reader was never told a dialog had opened at
+   * all, because nothing said one had.
+   *
+   * The restore is the half that is easy to forget and the most annoying
+   * to live without: dismiss a dialog and the next Tab should carry on
+   * from the control you were at, not from the top of the document.
+   */
+  useEffect(() => {
+    const returnTo = document.activeElement as HTMLElement | null;
+
+    // The first control, or the card itself when there is nothing to
+    // focus — a message-only dialog is still a thing focus must be inside,
+    // or the first Tab escapes it.
+    const first = focusableWithin(cardRef.current)[0];
+    (first ?? cardRef.current)?.focus();
+
+    return () => {
+      // Only if focus is still ours to give back. If something else has
+      // taken it since — another dialog opened on top, the writer clicked
+      // into the editor — moving it now would be the rude thing.
+      const active = document.activeElement;
+      const ourFocus =
+        !active || active === document.body || cardRef.current?.contains(active);
+      if (ourFocus && returnTo?.isConnected) returnTo.focus();
+    };
+  }, []);
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent): void {
       if (e.key === "Escape") {
         e.preventDefault();
         onClose();
-      } else if (e.key === "Enter" && onEnter) {
+        return;
+      }
+      if (e.key === "Enter" && onEnter) {
         e.preventDefault();
         onEnter();
+        return;
+      }
+      if (e.key !== "Tab") return;
+
+      // The trap. Only the innermost dialog should act, and since every
+      // Modal adds this listener, the test is "is the focus inside MY
+      // card" rather than a z-index comparison.
+      const card = cardRef.current;
+      if (!card) return;
+      const active = document.activeElement as HTMLElement | null;
+      if (active && !card.contains(active)) return;
+
+      const stops = focusableWithin(card);
+      if (stops.length === 0) {
+        // Nothing to move between, so there is nowhere for Tab to go that
+        // is not out of the dialog.
+        e.preventDefault();
+        return;
+      }
+      const firstStop = stops[0];
+      const lastStop = stops[stops.length - 1];
+      if (!e.shiftKey && active === lastStop) {
+        e.preventDefault();
+        firstStop.focus();
+      } else if (e.shiftKey && (active === firstStop || active === card)) {
+        e.preventDefault();
+        lastStop.focus();
       }
     }
     window.addEventListener("keydown", handleKeyDown);
@@ -66,8 +163,16 @@ export function Modal({ children, onClose, onEnter, widthClassName = "max-w-sm" 
       }}
     >
       <div
+        ref={cardRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={label}
+        // Focusable so that a dialog with no controls of its own still has
+        // somewhere to put focus, but not a tab stop — Tab should move
+        // between the dialog's controls, not park on its frame.
+        tabIndex={-1}
         onMouseDown={(e) => e.stopPropagation()}
-        className={`w-full ${widthClassName} rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 text-[var(--text)] shadow-2xl`}
+        className={`w-full ${widthClassName} rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 text-[var(--text)] shadow-2xl focus:outline-none`}
       >
         {children}
       </div>

@@ -11,6 +11,7 @@ import { SaveConflictDialog } from "./components/common/SaveConflictDialog";
 import { ToastHost } from "./components/common/ToastHost";
 import { ChoiceStylesDialog } from "./components/choices/ChoiceStylesDialog";
 import { useCloseGuard } from "./hooks/useCloseGuard";
+import { installFocusModality } from "./utils/focusModality";
 import { StoryCheckDialog } from "./components/story/StoryCheckDialog";
 import { ExportDialog } from "./components/export/ExportDialog";
 import { VariableManagerDialog } from "./components/variables/VariableManagerDialog";
@@ -90,6 +91,9 @@ export default function App() {
   // The window asks before it closes, so a pending autosave is
   // written instead of discarded — see hooks/useCloseGuard.ts.
   useCloseGuard();
+
+  // Focus rings for keyboards, not for mice — see utils/focusModality.ts.
+  useEffect(() => installFocusModality(), []);
 
   useKeyboardSave();
   useKeyboardHistory();

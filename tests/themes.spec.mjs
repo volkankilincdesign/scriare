@@ -267,6 +267,58 @@ export default async function ({ page, api, check, seedProject }) {
         const d = x.getImageData(0, 0, 1, 1).data;
         return [d[0], d[1], d[2]];
       };
+      /**
+       * The same colour with its transparency taken out.
+       *
+       * Needed because a token used at reduced opacity is still that token.
+       * Find's highlight is `color-mix(in srgb, var(--accent) 26%,
+       * transparent)` — as on-palette as a colour gets — and the walk
+       * reported it as a stray the moment Find results joined the surface
+       * list.
+       *
+       * Solved from two composites rather than by painting the colour over
+       * itself until it converges. The convergence version was written
+       * first and was wrong in a way worth recording: every pass quantises
+       * to 8 bits, the error accumulates, and it settles two to four units
+       * off per channel — 9 units of total distance against a tolerance of
+       * 8. It passed on six themes anyway, because their accent is near
+       * white and sat within tolerance of --text, and failed only on the
+       * two themes whose accent is a distinctive colour. A check that
+       * agrees with you except where it is actually being tested is worse
+       * than no check.
+       *
+       * Over black:  out = c·a.   Over white:  out = c·a + 255·(1−a).
+       * So a = 1 − (white − black)/255, and c = black/a. One composite
+       * each, no accumulated rounding.
+       */
+      const over = (colour, backdrop) => {
+        const c = document.createElement("canvas");
+        c.width = c.height = 1;
+        const x = c.getContext("2d", { willReadFrequently: true });
+        x.fillStyle = backdrop;
+        x.fillRect(0, 0, 1, 1);
+        const sentinel = "#ff00ff";
+        x.fillStyle = sentinel;
+        const before = x.fillStyle;
+        x.fillStyle = colour;
+        // An unparseable colour leaves fillStyle as it was, and painting
+        // the sentinel would report magenta as though the app had drawn it.
+        if (x.fillStyle === before && colour !== sentinel) return null;
+        x.fillRect(0, 0, 1, 1);
+        const d = x.getImageData(0, 0, 1, 1).data;
+        return [d[0], d[1], d[2]];
+      };
+      const solid = (colour) => {
+        const onBlack = over(colour, "#000000");
+        const onWhite = over(colour, "#ffffff");
+        if (!onBlack || !onWhite) return null;
+        const alpha = 1 - (onWhite[0] - onBlack[0]) / 255;
+        // Below this, the two composites are so close that dividing by
+        // alpha amplifies rounding into nonsense — and a colour that faint
+        // is not what anyone means by "off palette" anyway.
+        if (alpha < 0.15) return null;
+        return onBlack.map((v) => Math.min(255, Math.round(v / alpha)));
+      };
       const palette = tokens.map((t) => flat(p.token(t)));
       const NEAR = 8;
       const fromPalette = (rgb) =>
@@ -286,7 +338,8 @@ export default async function ({ page, api, check, seedProject }) {
           const v = cs[prop];
           if (!v || v === "transparent" || v.endsWith(", 0)")) continue;
           if (prop === "borderTopColor" && Number.parseFloat(cs.borderTopWidth) === 0) continue;
-          if (fromPalette(flat(v))) continue;
+          const pure = solid(v);
+          if (fromPalette(flat(v)) || (pure && fromPalette(pure))) continue;
           const where = `${el.tagName.toLowerCase()}.${String(el.className?.baseVal ?? el.className ?? "").split(" ")[0]}`;
           out.set(`${prop} ${v} ${where}`, `${prop} ${v} on ${where}`);
         }
@@ -294,12 +347,125 @@ export default async function ({ page, api, check, seedProject }) {
       return [...out.values()];
     }, PALETTE_TOKENS);
 
-  // Every surface that can be opened without leaving the app.
+  /**
+   * Every surface that can be opened without leaving the app (v0.50.0).
+   *
+   * This walked FOUR — editor, Check Story, Variables, Choice Styles — and
+   * the v0.48.0 audit found an `--overlay` misuse sitting on the writing
+   * surface's own Choice Block, plus empty grid tracks painting a slab in
+   * Check Story, on surfaces nothing had ever looked at. A palette audit
+   * that only ever opens a quarter of the app is an audit of that quarter.
+   *
+   * Opened the way a writer opens them wherever that is possible — a click
+   * on the real control rather than a store poke — because Project
+   * Settings has no store to poke: it is local state in TopBar, and a
+   * surface that can only be reached through its button is a surface the
+   * old list could not have included however long it got.
+   */
+  const click = (label) =>
+    page.evaluate((text) => {
+      const el = [...document.querySelectorAll("button")].find(
+        (b) => (b.textContent ?? "").trim() === text || b.getAttribute("title") === text,
+      );
+      el?.click();
+      return Boolean(el);
+    }, label);
+
+  const ui = (fn) => api((name) => window.__scriareUIStore.getState()[name](), fn);
+  const store = (fn) => api((name) => window.__scriareProjectStore.getState()[name](), fn);
+
   const SURFACES = [
     { name: "editor", open: null, close: null },
-    { name: "Check Story", open: "openStoryCheck", close: "closeStoryCheck" },
-    { name: "Variables", open: "openVariableManager", close: "closeVariableManager" },
-    { name: "Choice Styles", open: "openChoiceStyles", close: "closeChoiceStyles" },
+    { name: "Check Story", open: () => ui("openStoryCheck"), close: () => ui("closeStoryCheck") },
+    { name: "Variables", open: () => ui("openVariableManager"), close: () => ui("closeVariableManager") },
+    { name: "Choice Styles", open: () => ui("openChoiceStyles"), close: () => ui("closeChoiceStyles") },
+    { name: "Export", open: () => ui("openExport"), close: () => ui("closeExport") },
+    {
+      name: "Project Settings",
+      open: () => click("⚙"),
+      close: () => page.keyboard.press("Escape"),
+    },
+    {
+      name: "entity page",
+      open: () =>
+        api(() => {
+          const s = window.__scriareProjectStore;
+          s.setState({
+            project: {
+              ...s.getState().project,
+              entities: [
+                { id: "walk-e1", kind: "character", name: "Kestrel", aliases: ["K"], content: null },
+              ],
+            },
+          });
+          s.getState().selectEntity("walk-e1");
+        }),
+      close: () => api(() => window.__scriareProjectStore.getState().selectScene("s1")),
+    },
+    {
+      name: "Find results",
+      open: () =>
+        api(() => {
+          const input = document.querySelector('input[placeholder*="Search"]');
+          if (!input) return false;
+          const setter = Object.getOwnPropertyDescriptor(
+            window.HTMLInputElement.prototype,
+            "value",
+          ).set;
+          setter.call(input, "one");
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          return true;
+        }),
+      close: () =>
+        api(() => {
+          const input = document.querySelector('input[placeholder*="Search"]');
+          if (!input) return false;
+          const setter = Object.getOwnPropertyDescriptor(
+            window.HTMLInputElement.prototype,
+            "value",
+          ).set;
+          setter.call(input, "");
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          return true;
+        }),
+    },
+    {
+      name: "context menu",
+      open: () =>
+        page.evaluate(() => {
+          const row = document.querySelector("[data-content-label]") ?? document.querySelector("[data-content-row]");
+          row?.dispatchEvent(
+            new MouseEvent("contextmenu", { bubbles: true, clientX: 120, clientY: 160 }),
+          );
+        }),
+      close: () => page.keyboard.press("Escape"),
+    },
+    {
+      name: "a toast",
+      open: () =>
+        api(() =>
+          window.__scriareToastStore
+            .getState()
+            .showNotice("Couldn't save — there is no room left on the disk."),
+        ),
+      close: () => api(() => window.__scriareToastStore.setState({ toasts: [] })),
+    },
+    {
+      name: "the conflict dialog",
+      open: () =>
+        api(() =>
+          window.__scriareProjectStore.setState({
+            saveConflict: { filePath: "/tmp/walk.scriare", found: { mtimeMs: 1, size: 2 } },
+          }),
+        ),
+      close: () => api(() => window.__scriareProjectStore.setState({ saveConflict: null })),
+    },
+    { name: "Play Mode", open: () => store("startPlay"), close: () => store("exitPlay") },
+    {
+      name: "the Welcome screen",
+      open: () => api(() => window.__scriareProjectStore.setState({ project: null, filePath: null })),
+      close: () => seedProject(),
+    },
   ];
 
   const strays = {};
@@ -312,14 +478,14 @@ export default async function ({ page, api, check, seedProject }) {
     await wait(500);
     for (const surface of SURFACES) {
       if (surface.open) {
-        await api((fn) => window.__scriareUIStore.getState()[fn](), surface.open);
-        await wait(320);
+        await surface.open();
+        await wait(340);
       }
       const rows = await walk();
       if (rows.length) strays[`${id} — ${surface.name}`] = rows;
       if (surface.close) {
-        await api((fn) => window.__scriareUIStore.getState()[fn](), surface.close);
-        await wait(200);
+        await surface.close();
+        await wait(240);
       }
     }
   }

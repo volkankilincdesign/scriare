@@ -39,7 +39,7 @@ export function ProjectSettingsDialog({ onClose }: ProjectSettingsDialogProps) {
         Project Settings
       </h2>
 
-      <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[var(--text-3)]">
+      <label className="scriare-section-label mb-1 block text-[var(--text-3)]">
         Appearance
       </label>
       <p className="mb-2.5 text-xs text-[var(--text-3)]">
@@ -61,7 +61,7 @@ export function ProjectSettingsDialog({ onClose }: ProjectSettingsDialogProps) {
         ))}
       </div>
 
-      <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[var(--text-3)]">
+      <label className="scriare-section-label mb-1 block text-[var(--text-3)]">
         Start Scene
       </label>
       <p className="mb-2 text-xs text-[var(--text-3)]">
@@ -80,7 +80,7 @@ export function ProjectSettingsDialog({ onClose }: ProjectSettingsDialogProps) {
         ))}
       </select>
 
-      <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[var(--text-3)]">
+      <label className="scriare-section-label mb-1 block text-[var(--text-3)]">
         Choice Styles
       </label>
       <p className="mb-2 text-xs text-[var(--text-3)]">
@@ -141,6 +141,14 @@ function ThemeSwatch({ id, label, description, active, onSelect }: ThemeSwatchPr
       type="button"
       onClick={() => onSelect(id)}
       data-theme={id}
+      // A theme picker's whole job is to paint colours that are NOT the
+      // current palette — eight grounds, four dots each, every one of them
+      // deliberately foreign. `data-content-colour` is the existing mark
+      // for "this colour IS the content" (see EditorToolbar), and this is
+      // the other place in the app that qualifies. Without it, extending
+      // the palette walk to this dialog in v0.50.0 reported 43 strays per
+      // theme, all of them correct behaviour.
+      data-content-colour
       title={description}
       aria-pressed={active}
       className={`rounded-lg border p-2 text-left transition-colors ${

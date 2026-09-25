@@ -88,7 +88,7 @@ export function PlayRuntime() {
     // apart instead of reading whichever matched first.
     <div data-play-root className="absolute inset-0 z-10 flex flex-col bg-[var(--bg)]">
       <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-4 py-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">
+        <span className="scriare-section-label text-[var(--accent)]">
           ▶ Playing — {project.name}
         </span>
         {/* v0.35.0 — this used to be a second "Exit Play" button, a few

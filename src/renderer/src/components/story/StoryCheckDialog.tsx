@@ -294,7 +294,7 @@ function Chip({ severity, text }: { severity: StorySeverity; text: string }) {
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="bg-[var(--bg)] px-3 py-2">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-3)]">
+      <div className="scriare-section-label text-[var(--text-3)]">
         {label}
       </div>
       <div className="text-sm text-[var(--text)]">{value}</div>

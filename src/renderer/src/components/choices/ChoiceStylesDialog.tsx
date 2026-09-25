@@ -144,7 +144,7 @@ export function ChoiceStylesDialog({ onClose }: ChoiceStylesDialogProps) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[var(--text-3)]">
+      <span className="scriare-section-label mb-1 block text-[var(--text-3)]">
         {label}
       </span>
       {children}

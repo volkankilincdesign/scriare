@@ -83,7 +83,7 @@ export function ChoiceBlockView({ node, deleteNode, selected, editor }: NodeView
       <div
         contentEditable={false}
         onMouseDown={focusInspector}
-        className="mb-1.5 flex select-none items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--accent)]"
+        className="scriare-section-label mb-1.5 flex select-none items-center gap-1.5 text-[var(--accent)]"
       >
         <span aria-hidden>⤷</span>
         <span>Choice</span>

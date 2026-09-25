@@ -12,6 +12,108 @@ omitting them.
 
 ---
 
+## v0.50.0 — Getting around without a mouse
+
+The v0.48.0 audit's tier 4. Every claim in it was reproduced against the
+running app before anything was touched, and two of them turned out to be
+worse than reported.
+
+**The Content panel answers to a keyboard now.** The "Story" header, both
+category headers and every character row were bare `<div onClick>` — no
+role, no tab stop, no key handling. Measured: `{"tag":"DIV","tabIndex":-1,
+"role":null}`. A writer navigating by keyboard could collapse "Story" and
+then **never reopen it**, and could never open a character page at all.
+That is a dead end rather than a rough edge, which is why this went before
+the remaining performance work.
+
+They stay divs, because they are drag handles and a native `<button>`
+inside a draggable ancestor can swallow the mousedown Chromium needs to
+recognise a drag. What was missing was everything else, and it is one
+shared helper now rather than four hand-rolled copies.
+
+**The focus ring was being drawn in transparent.** Tailwind's
+`focus:outline-none` compiles to a 2px outline coloured `transparent` at
+specificity (0,2,0); the app's global `:focus-visible` rule is (0,1,0). So
+both matched and the invisible one won. Measured on a focused tree row:
+matches `:focus-visible`, `outline-width: 2px`, `outline-color: rgba(0, 0,
+0, 0)`. A ring, at full width, in nothing.
+
+Removing the class was not the fix, and the test said so: a real click then
+painted a ring on every row. `:focus-visible` settles this by itself for
+native controls, but Chromium keeps matching it after a pointer click on a
+`div[tabindex="0"]` — so the app had been choosing between a ring on every
+click and no ring at all, and had chosen none. The modality is tracked
+instead, which is what was always meant: pointer in use, no rings; a key
+that moves focus, rings.
+
+**Dialogs are dialogs.** `role="dialog"`, `aria-modal`, an accessible name,
+focus moved in on open, Tab kept inside, and focus returned to whatever
+opened it on close. Before this, opening a dialog left focus on the button
+underneath the backdrop and Tab walked the application behind the scrim —
+every control reachable, none of them visible.
+
+**The Inspector agrees with the canvas about who is in the scene.** A
+mention stores the label that was TYPED, and every reader is supposed to
+resolve it through the entity list. Two in the Inspector did not, so a
+renamed character kept her old name there while the graph, Check Story and
+the export all showed the new one. The audit named one of them; measuring
+that one found the second.
+
+**Section labels settled on one spelling.** There were three type ramps
+doing the same job across 33 headers, with the weight drifting between
+semibold, medium and unset. They are one class now, at 10px with wider
+tracking — chosen on the argument that a section label is not content, and
+at 12px it is the same size as the values underneath it and competes with
+them. Four inline tags that sit BESIDE text rather than above a group were
+deliberately left alone, as were the vertical rail labels and the canvas
+group-name input.
+
+**The palette walk covers thirteen surfaces, up from four.** Export,
+Project Settings, entity pages, Find results, the context menu, toasts, the
+conflict dialog, Play Mode and the Welcome screen had never been looked at
+by the audit that exists to look at them — which is why the `--overlay`
+misuse on the writing surface survived four versions. Two things came out
+of switching it on: the theme picker and the export's ground swatches are
+now marked as content colour, because painting colours that are not the
+current palette is precisely their job; and the walk learned that a palette
+token at reduced opacity is still that token.
+
+**Three findings about the tests, all of them mine.**
+
+The walk's first attempt at "this colour without its transparency" painted
+the colour over itself forty times and let it converge. Every pass
+quantises to 8 bits, the error accumulates, and it settled two to four
+units off per channel — nine units of distance against a tolerance of
+eight. It passed on six themes, because their accent is near-white and sat
+within tolerance of `--text`, and failed only on the two themes whose
+accent is a distinctive colour. **A check that agrees with you except where
+it is actually being tested is worse than no check.** It solves the alpha
+from two composites now, with no accumulated rounding.
+
+The two Inspector checks called the shared utility directly and passed the
+resolver themselves — testing that the resolver works, which was never in
+doubt, and saying nothing about whether the Inspector passes one. Both
+negative controls went uncaught. They read the rendered panel now.
+
+The section-label check queried the class it had just applied, so the
+control that stripped the class from one header simply removed it from the
+sample and the survivors still agreed. **A drift detector that only looks
+at things which have not drifted cannot detect drift.** It measures every
+uppercase micro-label on screen.
+
+And one about how specs share an application: this one collapses sections,
+and the Content Browser remembers which are open. Leaving them open made
+the next spec — which clicks to open its own — close them instead and
+report no cast. It hands the panel back the way it found it.
+
+Two more controls were removed for passing honestly: the starting value of
+the pointer-modality flag is a sensible default rather than a guarantee,
+and both comments were reworded to stop claiming more than the tests show.
+
+464 tests, 53 negative controls.
+
+---
+
 ## v0.49.1 — The fix that didn't
 
 Two data-loss bugs, both of them shipped **inside v0.49.0's fixes for data

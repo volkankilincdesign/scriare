@@ -114,7 +114,7 @@ function Section({
     <div className="mb-2">
       <div
         data-find-section={title}
-        className="flex items-baseline gap-1.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-3)]"
+        className="scriare-section-label flex items-baseline gap-1.5 px-2 py-1 text-[var(--text-3)]"
       >
         <span>{title}</span>
         <span className="font-normal tabular-nums">{hits.length}</span>

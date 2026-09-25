@@ -131,7 +131,7 @@ export function EntityEditor() {
       <EditorToolbar editor={editor} />
       <div className="flex-1 overflow-y-auto px-8 py-8">
         <div className={READING_COLUMN_CLASS}>
-          <div className="mb-1 flex items-center gap-2 text-xs uppercase tracking-wide text-[var(--text-3)]">
+          <div className="scriare-section-label mb-1 flex items-center gap-2 text-[var(--text-3)]">
             <Icon name={entity.kind === "character" ? "character" : "location"} />
             <span>{ENTITY_LABEL[entity.kind]}</span>
           </div>
@@ -187,7 +187,7 @@ export function EntityEditor() {
           <EditorContent editor={editor} />
 
           <div className="mt-10 border-t border-[var(--border-soft)] pt-4">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+            <h3 className="scriare-section-label mb-2 text-[var(--text-3)]">
               Appears in
             </h3>
             {sites.length === 0 ? (

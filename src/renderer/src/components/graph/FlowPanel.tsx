@@ -933,7 +933,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
           type="button"
           onClick={onToggle}
           title="Expand Story Graph"
-          className="flex flex-1 items-center gap-2.5 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-3)] hover:text-[var(--text)]"
+          className="scriare-section-label flex flex-1 items-center gap-2.5 px-3 py-2 text-[var(--text-3)] hover:text-[var(--text)]"
         >
           <DockGlyph direction="up" />
           Story Graph
@@ -945,7 +945,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
         <div className="flex items-center justify-between gap-2 px-3 pb-2 pt-3">
           <div className="flex items-center gap-2.5">
             <DockToggle direction="down" onClick={onToggle} title="Collapse Story Graph" />
-            <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+            <span className="scriare-section-label text-[var(--text-3)]">
               Story Graph
             </span>
           </div>

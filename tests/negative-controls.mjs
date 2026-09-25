@@ -359,6 +359,129 @@ const CONTROLS = [
     spec: "close-heartbeat",
     expect: "asks before discarding",
   },
+  /* ── v0.50.0, getting around without a mouse ──────────────────── */
+  {
+    name: "a tree row that a keyboard cannot reach",
+    file: src("utils/clickableRow.ts"),
+    from: "    role: \"button\",\n    tabIndex: 0,",
+    to: "    role: undefined as never,\n    tabIndex: -1 as never,",
+    spec: "accessibility",
+    expect: "can be focused",
+  },
+  {
+    name: "a disclosure row that ignores Enter",
+    file: src("utils/clickableRow.ts"),
+    from: '      if (event.key !== "Enter" && event.key !== " ") return;',
+    to: '      if (event.key !== "F13") return;',
+    spec: "accessibility",
+    expect: "collapses it",
+  },
+  {
+    name: "a character row that cannot be opened by key",
+    file: src("components/layout/ContentBrowser.tsx"),
+    from: "            {...rowActivation(() => {\n              browser.clearSelection();\n              selectEntity(entity.id);\n            })}",
+    to: "",
+    spec: "accessibility",
+    expect: "focused and opened with Enter",
+  },
+  {
+    name: "the transparent focus ring, put back",
+    file: src("components/layout/ContentTreeRow.tsx"),
+    from: 'className={`min-w-0 flex-1 cursor-default truncate px-1 py-1.5 text-left text-sm ${',
+    to: 'className={`min-w-0 flex-1 cursor-default truncate px-1 py-1.5 text-left text-sm focus:outline-none ${',
+    spec: "accessibility",
+    expect: "paints a ring you can see",
+  },
+  {
+    name: "a ring that follows the mouse around",
+    file: src("utils/focusModality.ts"),
+    from: "  const onPointer = (): void => set(true);",
+    to: "  const onPointer = (): void => set(false);",
+    spec: "accessibility",
+    expect: "mouse click leaves no ring",
+  },
+  // REMOVED. The sabotage flipped the STARTING value of the pointer flag,
+  // and nothing went red — correctly. Every path into the ring checks
+  // presses a real key first, and any key that moves focus resets the flag,
+  // so the initial value only governs focus that arrives with no input at
+  // all. It is a sensible default, not a guarantee, and the comment in
+  // focusModality.ts was reworded to stop claiming otherwise.
+  {
+    name: "a dialog that does not say it is one",
+    file: src("components/common/Modal.tsx"),
+    from: '        role="dialog"\n        aria-modal="true"',
+    to: "",
+    spec: "accessibility",
+    expect: "announces itself as a dialog",
+  },
+  {
+    name: "a dialog that leaves focus outside itself",
+    file: src("components/common/Modal.tsx"),
+    from: "    (first ?? cardRef.current)?.focus();",
+    to: "    void first;",
+    spec: "accessibility",
+    expect: "moves focus into it",
+  },
+  {
+    name: "a dialog that never gives focus back",
+    file: src("components/common/Modal.tsx"),
+    from: "      if (ourFocus && returnTo?.isConnected) returnTo.focus();",
+    to: "      void ourFocus;",
+    spec: "accessibility",
+    expect: "returns focus to whatever opened it",
+  },
+  {
+    name: "Tab walking out of an open dialog",
+    file: src("components/common/Modal.tsx"),
+    from: "      if (e.key !== \"Tab\") return;",
+    to: "      return;",
+    spec: "accessibility",
+    expect: "stays inside the dialog",
+  },
+  {
+    name: "the Inspector reading a mention's stored label again",
+    file: src("components/layout/InspectorPanel.tsx"),
+    from: "    ? findChoiceBlockOptions(scene.content, target.blockId, mentionResolver(project?.entities ?? []))",
+    to: "    ? findChoiceBlockOptions(scene.content, target.blockId)",
+    spec: "accessibility",
+    expect: "and so does Choice Properties",
+  },
+  {
+    name: "the scene summary reading it too",
+    file: src("components/layout/InspectorPanel.tsx"),
+    from: "    ? extractChoices(scene.content, mentionResolver(project?.entities ?? []))",
+    to: "    ? extractChoices(scene.content)",
+    spec: "accessibility",
+    expect: "scene summary shows a renamed character's current name",
+  },
+  {
+    name: "one section label drifting off the ramp",
+    file: src("components/layout/InspectorPanel.tsx"),
+    from: 'className="scriare-section-label',
+    to: 'className="text-xs font-medium uppercase tracking-wide',
+    spec: "accessibility",
+    expect: "same size, weight and tracking",
+  },
+  {
+    name: "the section label ramp set to the old size",
+    file: src("styles/index.css"),
+    from: "  font-size: 10px;\n  line-height: 1.25;\n  font-weight: 600;",
+    to: "  font-size: 12px;\n  line-height: 1.25;\n  font-weight: 600;",
+    spec: "accessibility",
+    expect: "steps down from the values below it",
+  },
+  {
+    // Points at a surface the walk could not see before v0.50.0. If the
+    // extended surface list were cosmetic, an off-palette colour on the
+    // toast would go on passing exactly as the Choice Block's --overlay did
+    // for four versions.
+    name: "an off-palette colour on a newly walked surface",
+    file: src("components/common/ToastHost.tsx"),
+    from: 'className="pointer-events-none fixed',
+    to: 'style={{ backgroundColor: "#c2410c" }} className="pointer-events-none fixed',
+    spec: "themes",
+    expect: "outside the palette",
+  },
 ];
 
 async function runSpec(spec) {

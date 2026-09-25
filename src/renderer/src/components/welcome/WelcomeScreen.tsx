@@ -39,7 +39,7 @@ export function WelcomeScreen() {
         </div>
 
         <div>
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+          <h2 className="scriare-section-label mb-2 text-[var(--text-3)]">
             Recent Projects
           </h2>
           {recentProjects.length === 0 ? (
