@@ -12,6 +12,72 @@ omitting them.
 
 ---
 
+## v0.49.1 — The fix that didn't
+
+Two data-loss bugs, both of them shipped **inside v0.49.0's fixes for data
+loss**. Neither was found by the suite; both were found by reading the code
+back afterwards and then measuring what it actually did.
+
+**Closing the project did not flush what was pending.** v0.49.0 added
+`await saveNow()` to `closeProject`, which reads exactly like a flush. But
+`saveNow` begins with "a save is already on its way — queue and return",
+and that branch returns an already-resolved promise having written nothing.
+So the `await` waited for nothing; `closeProject` then cleared `saveQueued`
+— the flag that call had just set — and nulled `filePath`; and the real
+save landed afterwards, found the path had changed, and dropped the queue
+too. Measured against a real file: save V2 in flight, type V3, close, and
+the file holds **V2** while the store reports **"saved"**.
+
+The window is ordinary, not exotic. Autosave fires 1.5 seconds after a
+change, a write to a synced folder is not instant, and typing during that
+second is what typing is.
+
+The fix is `saveRun`: the promise of the save on its way *including* the
+re-run it queues for anything typed while it was in flight. Returning that
+from the early branch is what makes `await saveNow()` mean "the disk is
+current" — which is what closing, quitting and Ctrl+S all assumed it
+already meant, and what nothing had ever guaranteed.
+
+**The close handshake gave the writer four seconds to answer a question.**
+The main process destroyed the window four seconds after asking the
+renderer to get ready. That clock was racing two things it had no business
+racing. The one question this app asks — *"Close without saving?"*, about
+an hour of work — resolves when the writer clicks it, so **reading it
+carefully was the failure mode**. And a flush on a synced folder can exceed
+four seconds by itself; v0.47.0 added EPERM/EBUSY retries precisely because
+sync clients and scanners hold files open.
+
+The timer is a liveness check now, not a deadline. The renderer sends a
+pulse while it is working and the timer restarts on each one, so what it
+measures is what it was always for: a renderer that has stopped responding
+cannot make the window unclosable. A renderer that is busy, or waiting on a
+person, is not that. The listeners are also removed by name rather than
+left registered when the timer wins a race.
+
+**What this says about v0.49.0**, which is the part worth keeping: that
+release fixed six ways to lose work and added a regression test for each,
+and two new ones went out in the same diff. Tests written alongside a fix
+tend to test the shape the fix has, not the shape the bug had — v0.49.0's
+save tests exercised the *stamp* during a save in flight, and never the
+*close*. Reading the diff back, cold, found both of these in an afternoon.
+
+**And three findings about the tests.** One negative control passed because
+its sabotage was overwritten a line later, which meant the ordering it was
+defending in `closeProject` is not the mechanism — `saveRun` is — so the
+control is gone and the comment that claimed otherwise is corrected. And
+the new close spec's own fixture spread a *closed* project's `null` into a
+new one, leaving a project with no scenes: the checks still passed, because
+saving nonsense is still saving, while the app rendered over something that
+could not exist. That fixture made a whole half of the spec unreachable —
+zero heartbeats, no error — and broke every spec that ran after it, since
+specs share one application. A spec that leaves the app in a bad state
+doesn't fail; the next one does, somewhere else, for reasons that look
+nothing like it.
+
+449 tests, 39 negative controls.
+
+---
+
 ## v0.49.0 — A pass with the lights on
 
 No new features. Five agents read the whole app looking for things that

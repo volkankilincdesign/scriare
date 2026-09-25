@@ -38,6 +38,13 @@ const api = {
       return () => ipcRenderer.off("app:before-close", listener);
     },
     readyToClose: (proceed: boolean) => ipcRenderer.send("app:ready-to-close", proceed),
+    /**
+     * "Still here, still working." v0.49.1 — the main process's give-up
+     * timer used to be a deadline for the whole answer, which meant the
+     * writer had four seconds to read a question about losing an hour of
+     * work. It is a liveness check now, and this is the pulse.
+     */
+    stillWorking: () => ipcRenderer.send("app:closing-heartbeat"),
   },
 };
 

@@ -310,6 +310,55 @@ const CONTROLS = [
     spec: "project-file",
     expect: "extension-shaped still gets .scriare",
   },
+  /* ── v0.49.1, the close path ──────────────────────────────────── */
+  {
+    name: "a flush that returns without waiting for the save in flight",
+    file: src("state/projectStore.ts"),
+    from: "      await saveRun;\n      return;",
+    to: "      return;",
+    spec: "close-safety",
+    expect: "keystrokes typed while a save was in flight",
+  },
+  {
+    name: "a saveRun that resolves before the queued re-run",
+    file: src("state/projectStore.ts"),
+    from: "    if (saveQueued) {\n      saveQueued = false;\n      await get().saveNow();\n    }\n    } finally {",
+    to: "    settle();\n    if (saveQueued) {\n      saveQueued = false;\n      await get().saveNow();\n    }\n    } finally {",
+    spec: "close-safety",
+    expect: "resolves only once the newest text is on disk",
+  },
+  // REMOVED, deliberately. The sabotage was "reset the flags before the
+  // flush instead of after", and it changed nothing: `closeProject` calls
+  // `saveNow`, which sets `saveQueued` itself, so clearing it beforehand is
+  // overwritten a line later. v0.49.0's bug was the reset landing AFTER a
+  // flush that had not waited — and `await saveRun` is what fixes that, so
+  // the ordering in closeProject is belt-and-braces rather than mechanism.
+  // The control passing said so, and the comment in closeProject claiming
+  // the order "has to" be that way was corrected to match.
+  {
+    name: "a renderer that stops saying it is alive",
+    file: src("hooks/useCloseGuard.ts"),
+    from: "      const pulse = setInterval(() => window.api.lifecycle.stillWorking(), 1000);",
+    to: "      const pulse = setInterval(() => {}, 1000);",
+    spec: "close-heartbeat",
+    expect: "keeps reporting it is alive",
+  },
+  {
+    name: "a pulse that keeps running after the answer",
+    file: src("hooks/useCloseGuard.ts"),
+    from: "        } finally {\n          clearInterval(pulse);\n        }",
+    to: "        } finally {\n          void pulse;\n        }",
+    spec: "close-heartbeat",
+    expect: "stops pulsing once the answer is given",
+  },
+  {
+    name: "a close that discards an unanswered conflict without asking",
+    file: src("hooks/useCloseGuard.ts"),
+    from: "        if (store.project && store.saveConflict) {",
+    to: "        if (!store.project && store.saveConflict) {",
+    spec: "close-heartbeat",
+    expect: "asks before discarding",
+  },
 ];
 
 async function runSpec(spec) {

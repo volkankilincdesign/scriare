@@ -32,7 +32,23 @@ import { confirmDialog } from "../state/confirmDialogStore";
 export function useCloseGuard(): void {
   useEffect(() => {
     return window.api.lifecycle.onBeforeClose(() => {
+      // The pulse that tells the main process this window is working
+      // rather than wedged — see main/index.ts. It has to start before the
+      // first `await`, because everything after that point (a write to a
+      // synced folder, a question the writer is reading) is exactly what
+      // used to run out the clock (v0.49.1).
+      window.api.lifecycle.stillWorking();
+      const pulse = setInterval(() => window.api.lifecycle.stillWorking(), 1000);
+
       void (async () => {
+        try {
+          await handleClose();
+        } finally {
+          clearInterval(pulse);
+        }
+      })();
+
+      async function handleClose(): Promise<void> {
         const store = useProjectStore.getState();
 
         if (store.project && store.saveConflict) {
@@ -57,7 +73,7 @@ export function useCloseGuard(): void {
         }
 
         window.api.lifecycle.readyToClose(true);
-      })();
+      }
     });
   }, []);
 }

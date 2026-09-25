@@ -306,6 +306,30 @@ let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 let saveInFlight = false;
 let saveQueued = false;
 /**
+ * The save currently on its way to disk, INCLUDING the re-run it queues for
+ * anything typed while it was in flight (v0.49.1).
+ *
+ * `saveInFlight` answers "is one running"; this answers "when is the disk
+ * actually current", and they are not the same question. v0.49.0's
+ * `closeProject` awaited `saveNow()` to flush before closing — but
+ * `saveNow`'s first branch is "one is already on its way, queue and
+ * return", which hands back an already-resolved promise having written
+ * nothing. So the await waited for nothing, `closeProject` then cleared
+ * `saveQueued` — the flag that call had just set — and nulled `filePath`,
+ * and the real save landed afterwards, saw the path had changed and
+ * dropped the queue as well.
+ *
+ * Measured: save V2 in flight, type V3, close → the file holds V2 and the
+ * store reports "saved". The window is ordinary, not exotic: autosave
+ * fires 1.5s after a change, a write to a synced folder is not instant,
+ * and typing during that second is what typing is.
+ *
+ * Returning this promise from that branch is what makes `await saveNow()`
+ * mean "the disk is current" for every caller, which is what closing,
+ * quitting and Ctrl+S all assumed it already meant.
+ */
+let saveRun: Promise<void> | null = null;
+/**
  * Whether the last save failed. Autosave fires after every change, so a
  * folder that has gone away would otherwise raise the same notice every 1.5
  * seconds for as long as someone keeps typing — which is how a message that
@@ -1742,11 +1766,26 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     // starting a second one beside it.
     if (saveInFlight) {
       saveQueued = true;
+      // AWAIT THE RUN THAT IS ALREADY GOING. Returning here — v0.49.0 —
+      // handed the caller a resolved promise having written nothing, so
+      // `await saveNow()` meant "a save is happening somewhere" rather
+      // than "the disk is current". `closeProject` believed the second
+      // reading, cleared the flag this line had just set, and closed over
+      // the top of the write. See saveRun.
+      await saveRun;
       return;
     }
 
     saveInFlight = true;
+    // Resolved in the outer `finally` below, AFTER the queued re-run — so
+    // anyone awaiting this is waiting for the disk to be current, not
+    // merely for one write to return.
+    let settle: () => void = () => {};
+    saveRun = new Promise<void>((resolve) => {
+      settle = resolve;
+    });
     set({ saveStatus: "saving" });
+    try {
     try {
       const outcome = await window.api.project.save(
         filePath,
@@ -1837,6 +1876,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     if (saveQueued) {
       saveQueued = false;
       await get().saveNow();
+    }
+    } finally {
+      // Every exit runs this, including the two early returns inside the
+      // block above — a `return` that skipped it would leave anyone
+      // awaiting `saveRun` waiting forever, which is a worse failure than
+      // the one this whole change is about.
+      settle();
+      saveRun = null;
     }
   },
 
@@ -1958,6 +2005,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       clearTimeout(autosaveTimer);
       autosaveTimer = null;
     }
+    // The flush. v0.49.0 ran this and then cleared `saveQueued` — the flag
+    // the call had just set — and closed over the top of the write it
+    // believed it had waited for. What fixes that is `saveRun` in saveNow,
+    // NOT the order of the lines here: a negative control that moved the
+    // reset back above this flush changed nothing, because `saveNow` sets
+    // the flag itself a line later. Recorded because the first version of
+    // this comment said the order was the mechanism, and it isn't.
     if (get().saveStatus !== "saved" && !get().saveConflict) {
       await get().saveNow();
     }
@@ -1965,9 +2019,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     // Module-level, and never reset here before — so a save still in
     // flight when the project closed left `saveInFlight` true forever, and
     // the next project's first save queued itself behind a write that had
-    // already finished.
+    // already finished. By this line the chain above has finished, so these
+    // are belt and braces rather than the mechanism.
     saveInFlight = false;
     saveQueued = false;
+    saveRun = null;
     lastSaveFailed = false;
 
     clearHistory();

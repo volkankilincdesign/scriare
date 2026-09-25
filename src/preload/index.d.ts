@@ -85,6 +85,13 @@ export interface ScriareAPI {
     onBeforeClose: (handler: () => void) => () => void;
     /** `false` keeps the window open — the writer said no. */
     readyToClose: (proceed: boolean) => void;
+    /**
+     * Sent repeatedly while the close is being handled, to say the renderer
+     * is alive. The main process gives up only when these STOP — a window
+     * waiting on a slow disk, or on the writer reading a question, is not a
+     * window that has hung (v0.49.1).
+     */
+    stillWorking: () => void;
   };
 }
 

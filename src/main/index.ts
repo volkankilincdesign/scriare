@@ -110,8 +110,23 @@ function createWindow(): void {
    * answer involves asynchronous work (a write, or a question) and
    * `close`'s own handler cannot wait. The renderer flushes, asks if it
    * has to, and calls back; `closing` makes the second close go through
-   * rather than looping, and the timeout means a renderer that is wedged
-   * cannot make the window unclosable.
+   * rather than looping.
+   *
+   * THE GIVE-UP TIMER IS A LIVENESS CHECK, NOT A DEADLINE (v0.49.1). It
+   * was a flat four seconds, after which the window was destroyed — which
+   * put a four-second clock on two things that have no business racing
+   * one. A conflict close asks the writer a question about losing an hour
+   * of work, and `confirmDialog` resolves when they click: reading it
+   * carefully was the failure mode. A flush on a synced folder can also
+   * take longer than that on its own — v0.47.0 added EPERM/EBUSY retries
+   * precisely because sync clients and scanners hold files open.
+   *
+   * So the renderer now sends a pulse while it is working, and the timer
+   * restarts on each one. What it measures is what it was always for: a
+   * renderer that has stopped responding cannot make the window
+   * unclosable. A renderer that is busy, or waiting on a person, is not
+   * that — and the only way to lose work here now is to wedge the script
+   * engine outright.
    */
   let closing = false;
   mainWindow.on("close", (event) => {
@@ -119,11 +134,29 @@ function createWindow(): void {
     event.preventDefault();
     closing = true;
     mainWindow.webContents.send("app:before-close");
-    const giveUp = setTimeout(() => {
-      if (!mainWindow.isDestroyed()) mainWindow.destroy();
-    }, 4000);
-    ipcMain.once("app:ready-to-close", (_event, proceed: boolean) => {
+
+    // Generous against a 1-second pulse: three missed beats, not one late
+    // one, and nowhere near short enough to catch a slow disk.
+    const SILENCE_BEFORE_GIVING_UP = 4000;
+    let giveUp: ReturnType<typeof setTimeout>;
+    const armGiveUp = (): void => {
+      giveUp = setTimeout(() => {
+        ipcMain.off("app:closing-heartbeat", onHeartbeat);
+        ipcMain.off("app:ready-to-close", onReady);
+        if (!mainWindow.isDestroyed()) mainWindow.destroy();
+      }, SILENCE_BEFORE_GIVING_UP);
+    };
+    const onHeartbeat = (): void => {
       clearTimeout(giveUp);
+      armGiveUp();
+    };
+    // Named and removed explicitly rather than `once`: when the timer
+    // fired, the listener it raced was left registered for the life of the
+    // process.
+    const onReady = (_event: Electron.IpcMainEvent, proceed: boolean): void => {
+      clearTimeout(giveUp);
+      ipcMain.off("app:closing-heartbeat", onHeartbeat);
+      ipcMain.off("app:ready-to-close", onReady);
       if (proceed) {
         if (!mainWindow.isDestroyed()) mainWindow.close();
       } else {
@@ -131,7 +164,11 @@ function createWindow(): void {
         // next X press asks again rather than closing silently.
         closing = false;
       }
-    });
+    };
+
+    ipcMain.on("app:closing-heartbeat", onHeartbeat);
+    ipcMain.once("app:ready-to-close", onReady);
+    armGiveUp();
   });
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
