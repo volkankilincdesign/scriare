@@ -2,6 +2,8 @@ import { useProjectStore } from "../../state/projectStore";
 import type { ContentFolder } from "../../types/project";
 import { childrenOf, isDescendant } from "../../utils/contentTree";
 import { Modal } from "../common/Modal";
+import { Button } from "../common/Button";
+import { DialogHeader } from "../common/DialogHeader";
 import { Icon } from "../common/Icon";
 
 interface MoveToDialogProps {
@@ -44,9 +46,13 @@ export function MoveToDialog({ nodeIds, onClose }: MoveToDialogProps) {
 
   return (
     <Modal onClose={onClose}>
-      <h2 className="mb-3 text-base font-semibold text-[var(--text)]">
-        Move {nodeIds.length} item{nodeIds.length === 1 ? "" : "s"}
-      </h2>
+      {/* The move happens the moment a destination is clicked, with no
+          confirm step. That looks like a gap and is the app's own rule —
+          the action happens and the way out is Ctrl+Z; toastStore's header
+          argues the case at length. Checked in v0.56.0 and left alone. */}
+      <DialogHeader title={`Move ${nodeIds.length} item${nodeIds.length === 1 ? "" : "s"}`}>
+        Click where they should go.
+      </DialogHeader>
       <div className="max-h-64 overflow-y-auto rounded-md border border-[var(--border-soft)]">
         <button
           type="button"
@@ -68,13 +74,9 @@ export function MoveToDialog({ nodeIds, onClose }: MoveToDialogProps) {
         ))}
       </div>
       <div className="mt-4 flex justify-end">
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
-        >
+        <Button intent="ghost" onClick={onClose}>
           Cancel
-        </button>
+        </Button>
       </div>
     </Modal>
   );

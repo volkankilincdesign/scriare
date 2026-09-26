@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Modal } from "../common/Modal";
+import { Button } from "../common/Button";
+import { DialogHeader } from "../common/DialogHeader";
 import { useProjectStore } from "../../state/projectStore";
 import { THEMES, useThemeStore } from "../../state/themeStore";
 import { useUIStore } from "../../state/uiStore";
@@ -35,9 +37,7 @@ export function ProjectSettingsDialog({ onClose }: ProjectSettingsDialogProps) {
 
   return (
     <Modal onClose={onClose} onEnter={handleSave} widthClassName="max-w-md">
-      <h2 className="mb-4 font-serif-narrative text-base italic text-[var(--text)]">
-        Project Settings
-      </h2>
+      <DialogHeader title="Project Settings" />
 
       <label className="scriare-section-label mb-1 block text-[var(--text-3)]">
         Appearance
@@ -103,20 +103,12 @@ export function ProjectSettingsDialog({ onClose }: ProjectSettingsDialogProps) {
       </button>
 
       <div className="flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-md px-3 py-1.5 text-sm text-[var(--text-2)] hover:bg-[var(--surface-2)]"
-        >
+        <Button intent="ghost" onClick={onClose}>
           Cancel
-        </button>
-        <button
-          type="button"
-          onClick={handleSave}
-          className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-[var(--accent-text-on)] hover:bg-[var(--accent-hover)]"
-        >
+        </Button>
+        <Button intent="primary" onClick={handleSave}>
           Save
-        </button>
+        </Button>
       </div>
     </Modal>
   );

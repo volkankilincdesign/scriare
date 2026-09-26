@@ -4,6 +4,7 @@ import { NewProjectDialog } from "./NewProjectDialog";
 import { StoryMap } from "./StoryMap";
 import { useShapeBackfill } from "./useShapeBackfill";
 import { BrandMark } from "../common/BrandMark";
+import { Button } from "../common/Button";
 import { RESUME_LABEL, readResume } from "../../utils/recentShape";
 import type { ResumeKind, StoryShape } from "../../utils/recentShape";
 
@@ -140,20 +141,14 @@ export function WelcomeScreen() {
         </div>
 
         <div className="flex-grow" />
-        <button
-          type="button"
-          onClick={() => void openProject()}
-          className="rounded-lg border border-[var(--border)] px-3.5 py-2 text-sm font-medium text-[var(--text)] transition-colors hover:bg-[var(--surface-2)]"
-        >
+        {/* The same two buttons as every dialog footer, at the same size —
+            this header used px-3.5/px-4 and nothing else in the app did. */}
+        <Button intent="secondary" onClick={() => void openProject()}>
           Open Project…
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowNewProjectDialog(true)}
-          className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-text-on)] transition-colors hover:bg-[var(--accent-hover)]"
-        >
+        </Button>
+        <Button intent="primary" onClick={() => setShowNewProjectDialog(true)}>
           New Project
-        </button>
+        </Button>
         </div>
       </header>
 
@@ -381,6 +376,10 @@ function ResumeHero({
           )}
           <span className="mt-2.5 block truncate text-xs text-[var(--text-3)]">{where}</span>
         </span>
+        {/* A <span>, not the kit's Button: it sits INSIDE the hero's own
+            button, and a button inside a button is invalid markup. Its
+            metrics are its own for the same reason the hero is its own
+            thing — see the note on ButtonSize. */}
         <span className="flex flex-shrink-0 items-center gap-2 rounded-lg bg-[var(--accent)] px-5 py-3 text-sm font-medium text-[var(--accent-text-on)]">
           Continue
           <svg

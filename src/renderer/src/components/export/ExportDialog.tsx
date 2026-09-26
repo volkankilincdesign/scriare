@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Button } from "../common/Button";
 import { Modal } from "../common/Modal";
 import { useProjectStore } from "../../state/projectStore";
 import { useUIStore } from "../../state/uiStore";
@@ -102,7 +103,7 @@ export function ExportDialog() {
   return (
     <Modal onClose={close} widthClassName="max-w-lg">
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h2 className="text-base font-semibold">Export Story</h2>
+        <h2 className="font-serif-narrative text-base italic text-[var(--text)]">Export Story</h2>
         <span className="text-xs text-[var(--text-3)]">
           {sceneCount} {sceneCount === 1 ? "scene" : "scenes"} · {choiceCount}{" "}
           {choiceCount === 1 ? "choice" : "choices"}
@@ -158,21 +159,12 @@ export function ExportDialog() {
           <Findings findings={prepared.findings} />
 
           <div className="mt-5 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={close}
-              className="rounded-md px-3 py-1.5 text-sm text-[var(--text-2)] hover:bg-[var(--surface-2)]"
-            >
+            <Button intent="ghost" onClick={close}>
               Cancel
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void handleExport()}
-              className="rounded-md bg-[var(--accent)] px-3.5 py-1.5 text-sm font-medium text-[var(--accent-text-on)] hover:bg-[var(--accent-hover)] disabled:opacity-60"
-            >
+            </Button>
+            <Button intent="primary" disabled={busy} onClick={() => void handleExport()}>
               {busy ? "Exporting…" : "Export…"}
-            </button>
+            </Button>
           </div>
         </>
       )}
@@ -252,20 +244,15 @@ function Exported({
         {result.filePath} · {kb} KB
       </p>
       <div className="flex items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-md px-3 py-1.5 text-sm text-[var(--text-2)] hover:bg-[var(--surface-2)]"
-        >
+        <Button intent="ghost" onClick={onClose}>
           Done
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          intent="primary"
           onClick={() => void window.api.exportStory.open(result.filePath)}
-          className="rounded-md bg-[var(--accent)] px-3.5 py-1.5 text-sm font-medium text-[var(--accent-text-on)] hover:bg-[var(--accent-hover)]"
         >
           Open it
-        </button>
+        </Button>
       </div>
     </>
   );

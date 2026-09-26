@@ -262,7 +262,13 @@ interface ProjectState {
 
   /** Adds a fresh, unnamed Variable (see types/variables.ts's buildVariable) — the
    * Variable Manager's "+ Add Variable" button. */
-  addVariable: () => void;
+  /**
+   * Adds a blank variable and RETURNS ITS ID (v0.56.0), the way
+   * `addChoiceStyle` already did — the Variable Manager opens the new row
+   * for editing, and a row that appears collapsed and empty is a row you
+   * have to work out how to open.
+   */
+  addVariable: () => string | null;
   /** Creates a fully-formed Variable (name + type, defaultValue derived from
    * type) and returns its id — used by the Inspector's inline "+ Create
    * Variable" (Sprint 9C), so a writer can define a new variable without
@@ -1648,17 +1654,20 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   addVariable: () => {
     const { project } = get();
-    if (!project) return;
+    if (!project) return null;
 
-    pushHistory(set, get, "Add Variable");    set({
+    pushHistory(set, get, "Add Variable");
+    const variable = buildVariable();
+    set({
       project: {
         ...project,
-        variables: [...project.variables, buildVariable()],
+        variables: [...project.variables, variable],
         updatedAt: new Date().toISOString(),
       },
       saveStatus: "unsaved",
     });
     scheduleAutosave(get);
+    return variable.id;
   },
 
   createVariable: (name, type) => {

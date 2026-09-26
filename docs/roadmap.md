@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.55.0.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.57.0.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -187,7 +187,32 @@ than gaps.
   with an Undo that restores the variable. One line of dead code found by
   a control that passed.
 
-550 tests, 88 negative controls, all caught.
+- **v0.56.0 The button that was never written** — the oldest visuals,
+  found by measuring: every component's comments record the version its
+  visuals were last revised in, and six mention none. `common/` held a
+  Modal, a toast host and a whole icon set and NO BUTTON, so the primary
+  action existed in nine spellings and the dialog title in four — the
+  odd one out being New Project, the first dialog a new writer sees.
+  `Button`, `Field` and `DialogHeader` now exist and invent nothing: the
+  default is the spelling six places already used. The Variable Manager,
+  the oldest surface anyone will actually see, was rebuilt in its
+  sibling's shape from three mockups. A spec opens five dialogs, finds
+  each primary action BY THE COLOUR IT IS PAINTED and measures it, so the
+  claim is checked on the screen rather than in the imports.
+
+- **v0.57.0 Play Mode reads on the reader's ground** — the export has
+  refused to ship the writer's theme since v0.48.0, on the principle that
+  a theme is chrome and a reading ground is content; Play Mode, written
+  twenty versions earlier, shipped the theme anyway. Measured first: in
+  Phosphor, Play painted the page terminal green. Play now reads on Night
+  or Paper with the same switch the reader gets, remembered the same way,
+  generated from the export's own token table so the two cannot drift.
+  This breaks Play's v0.6.2 promise to read the way you wrote it, on
+  purpose: Play answers what your reader will see. The themes walk was
+  widened to audit that surface against the ground, and immediately found
+  every container inside Play still inheriting the writer's ink.
+
+581 tests, 105 negative controls, all caught.
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and
@@ -345,6 +370,38 @@ No dates. Sizes are sessions; the order is what matters.
   list is writing and filming. See item 2 below; nothing about it is
   blocked, and as of v0.54.0 nothing else is in front of it.
 
+- **Three ideas of his own, mocked up before any code** (the G boards on
+  the design canvas), in this order:
+  1. ~~**Play Mode on a reading ground**~~ — shipped as v0.57.0. His
+     words, choosing it: "Idea 2 is the easiest one but if I wanted it to
+     be easy I wouldn't want to build an app."
+  2. **In-place choice options — the Exchange.** An option that adds a
+     reply to the page instead of turning it, Disco Elysium / Narrat
+     style. The one thing on this list Twine structurally cannot do.
+     SMALLER THAN FIRST ESTIMATED: `ConditionalBlock` already exists and
+     is registered in the runtime, and an option already carries
+     `actions`, `conditions` and `whenUnmet` — so the shape is already
+     buildable by hand at the cost of one invented variable per line. The
+     feature is therefore "remove the bookkeeping", not "build an
+     engine". Two directions were drawn (G5): sugar that writes the
+     hidden variables for the writer (~1 session, and the Variable
+     Manager tells on it), or a block of its own (recommended, 2–3
+     sessions). The two decisions that are not code are settled on G6 —
+     the graph draws ONE BADGE on the node ("4 in-page · 2 exits"), not
+     silence and not a self-loop; and Check Story re-states one rule, *an
+     option is an edge only if it leaves*, which yields two new warnings
+     ("this conversation cannot be left", "this line can never be said")
+     and leaves reachability more accurate than before.
+  3. **Custom CSS on export.** Committed to — his words, "now or later,
+     we are going to implement a custom CSS" — and deliberately last,
+     because it is the only one of the three where the honest sentence is
+     "Twine already does this". Three things it commits us to (G2): the
+     class names become a published contract; the contrast check has to
+     start sampling the finished file instead of checking tokens, or the
+     one safety net is aimed at a page we do not ship; and the resolution
+     order — ground, then the story's Choice Style, then the writer's CSS,
+     which wins — has to be stated rather than discovered.
+
 **Done since this section was last written:** save safety (v0.47.0),
 Export (v0.48.0) — both from the launch list — the audit pass
 (v0.49.0), its own two data-loss bugs (v0.49.1), tier 4 (v0.50.0),
@@ -454,13 +511,15 @@ Nothing here blocks the launch, and nothing here gets started before it.
   following the ground. The dialog has a "Theme" button back, and Export now
   warns when the result doesn't read — but nothing tells a writer at the
   moment the conversion happens. Worth a small mark in the Inspector.
-- **A UI pass on the oldest surfaces** — ~~Welcome screen~~ (done,
-  v0.53.0–v0.54.0), Project Settings, the Inspector's field stack.
-  Deliberately NOT taken before the installer: there is no defect
-  underneath it, it has no natural stopping point, and it is the same
-  shape as the v0.42–v0.46 detour this file already keeps an honest note
-  about. The parts with real bugs behind them — the missing way back, and
-  the colour picker — were taken on their own as v0.55.0.
+- **A UI pass on the oldest surfaces** — ~~Welcome screen~~ (v0.53.0–
+  v0.54.0), ~~the dialog kit, Project Settings, New Project, Move To,
+  the confirm dialog and the Variable Manager~~ (v0.56.0). WHAT IS LEFT:
+  the Inspector's field stack (1999 lines, 19 distinct rounded-class
+  strings — the largest single surface in the app and the one where the
+  kit will pay most), the Content Browser's 10, the content context menu
+  (v0.18.0, the oldest version note in the codebase), the slash-command
+  menu and `GroupNode` (v0.28.0). None of them has a defect underneath
+  it, so none of them is in front of the installer.
 - **Crash-recovery drafts** — the autosave journal deliberately left out of
   the save-safety work. Only worth it if he ever loses something to a power
   cut that the atomic write couldn't catch.
@@ -486,7 +545,7 @@ reading ground is content, and a tool that ships the author's working
 environment as the reader's has confused the two. That is the same argument
 about authoring tools, pointed at typography instead of at graphs.
 
-Worth saying out loud in the case study: 550 tests against the real packaged
+Worth saying out loud in the case study: 567 tests against the real packaged
 app, every load-bearing one confirmed to fail on a deliberately broken
 build. Most solo projects can't claim that; most professional ones can't
 either — and v0.49.0 is the honest footnote to it, because a green suite of

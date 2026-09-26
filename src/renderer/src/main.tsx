@@ -54,6 +54,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./export/readingThemes"),
     import("./utils/recentShape"),
     import("../../shared/recentEntries"),
+    import("./state/playGroundStore"),
   ]).then(
     ([
       projectStore,
@@ -86,6 +87,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       readingThemes,
       recentShape,
       recentEntries,
+      playGroundStore,
     ]) => {
       Object.assign(window, {
         __scriareProjectStore: projectStore.useProjectStore,
@@ -134,6 +136,10 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         // stored in, so the spec can assert on those without writing to
         // the writer’s own recent-projects.json.
         __scriareRecentEntries: recentEntries,
+        // v0.57.0 — which reading ground Play Mode is on. Exposed so the
+        // spec can drive the switch from the store as well as from the
+        // button, and assert that the two agree.
+        __scriarePlayGround: playGroundStore.usePlayGroundStore,
       });
     },
   );

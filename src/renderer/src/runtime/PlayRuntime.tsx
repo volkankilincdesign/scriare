@@ -10,10 +10,15 @@ import { applySpeakerPrefixes } from "../utils/speakerLines";
 import { renderRuntimeBlock } from "./registry";
 import { RUNTIME_EXTENSIONS } from "./extensions";
 import { VariableReadout } from "./VariableReadout";
+import { PLAY_GROUND_CSS } from "./playGroundStyles";
+import { usePlayGroundStore } from "../state/playGroundStore";
+import { READING_GROUNDS } from "../export/readingThemes";
 import type { RuntimeContext } from "./types";
 
 export function PlayRuntime() {
   const project = useProjectStore((s) => s.project);
+  const ground = usePlayGroundStore((s) => s.ground);
+  const toggleGround = usePlayGroundStore((s) => s.toggleGround);
   const playSceneId = useProjectStore((s) => s.playSceneId);
   const goToPlayScene = useProjectStore((s) => s.goToPlayScene);
   const restartPlay = useProjectStore((s) => s.restartPlay);
@@ -86,18 +91,30 @@ export function PlayRuntime() {
     // the runtime's own root means anything asking "what does the player
     // see?" — a test, a screenshot, a future export — can tell the two
     // apart instead of reading whichever matched first.
-    <div data-play-root className="absolute inset-0 z-10 flex flex-col bg-[var(--bg)]">
+    <div
+      data-play-root
+      // v0.57.0 — the surface declares which reading ground it is on, and
+      // the block below paints it. Until now Play inherited the writer's
+      // theme from :root, so the rehearsal and the exported file were two
+      // different-looking things.
+      data-ground={ground}
+      className="absolute inset-0 z-10 flex flex-col bg-[var(--bg)]"
+    >
+      <style>{PLAY_GROUND_CSS}</style>
       <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-4 py-2">
         <span className="scriare-section-label text-[var(--accent)]">
           ▶ Playing — {project.name}
         </span>
-        {/* v0.35.0 — this used to be a second "Exit Play" button, a few
-            pixels below the one in the top bar, which stays on screen
-            during Play. Two identical buttons is one too many: the way out
-            is the button you came in by, in the place you pressed it. What
-            belongs here is the thing the top bar can't say — that Esc
-            works too. */}
-        <span className="select-none text-xs text-[var(--text-3)]">Esc to exit</span>
+        <div className="flex items-center gap-3">
+          <GroundSwitch ground={ground} onToggle={toggleGround} />
+          {/* v0.35.0 — this used to be a second "Exit Play" button, a few
+              pixels below the one in the top bar, which stays on screen
+              during Play. Two identical buttons is one too many: the way out
+              is the button you came in by, in the place you pressed it. What
+              belongs here is the thing the top bar can't say — that Esc
+              works too. */}
+          <span className="select-none text-xs text-[var(--text-3)]">Esc to exit</span>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-8 py-10">
@@ -160,5 +177,35 @@ export function PlayRuntime() {
 
       <VariableReadout variables={project.variables} values={playVariableValues} />
     </div>
+  );
+}
+
+/**
+ * The ground switch (v0.57.0).
+ *
+ * THE SAME CONTROL THE READER GETS. The exported page's bar carries one
+ * button labelled with the ground you would switch TO — "Paper" while you
+ * are on Night — with that same sentence as its accessible name (see
+ * export/pageRuntime.ts). This is that button, in the same corner, doing
+ * the same thing, because the argument for putting grounds in Play at all
+ * is that Play should be a rehearsal of the finished file rather than a
+ * preview of the draft. A second, cleverer control here would undo that.
+ *
+ * The label comes from READING_GROUNDS rather than from two string
+ * literals, so renaming a ground renames it in all three places at once.
+ */
+function GroundSwitch({ ground, onToggle }: { ground: string; onToggle: () => void }) {
+  const other = READING_GROUNDS.find((g) => g.id !== ground) ?? READING_GROUNDS[0];
+  return (
+    <button
+      type="button"
+      data-play-ground-switch
+      onClick={onToggle}
+      aria-label={`Switch to the ${other.label} ground`}
+      title={`Switch to the ${other.label} ground — what your reader sees`}
+      className="rounded border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2-faint)] hover:text-[var(--text)]"
+    >
+      {other.label}
+    </button>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Button } from "../common/Button";
 import type { DragEvent, MouseEvent } from "react";
 import { useProjectStore } from "../../state/projectStore";
 import { useUIStore } from "../../state/uiStore";
@@ -771,20 +772,20 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
                     <div className="px-3 py-4 text-center">
                       <p className="mb-3 text-sm text-[var(--text-3)]">No story yet.</p>
                       <div className="flex flex-col gap-1.5">
-                        <button
-                          type="button"
+                        <Button
+                          intent="primary"
+                          size="sm"
                           onClick={() => createScene(null)}
-                          className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[var(--accent-text-on)] hover:bg-[var(--accent-hover)]"
                         >
                           Create Scene
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          intent="secondary"
+                          size="sm"
                           onClick={() => createFolder(null)}
-                          className="rounded-md border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
                         >
                           Create Group
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ) : (

@@ -827,7 +827,167 @@ const CONTROLS = [
     spec: "welcome",
     expect: "falls back to the start scene when that page is gone",
   },
+  // ── v0.56.0 · one button, one title, one manager ─────────────────────
+  {
+    // The whole version in one sabotage: a dialog that goes back to
+    // typing its own primary button instead of importing one.
+    name: "a dialog that spells its own primary button again",
+    file: src("components/layout/ProjectSettingsDialog.tsx"),
+    from: '        <Button intent="primary" onClick={handleSave}>\n          Save\n        </Button>',
+    to: '        <button type="button" onClick={handleSave} className="rounded-md bg-[var(--accent)] px-3.5 py-2 text-sm font-medium text-[var(--accent-text-on)]">Save</button>',
+    spec: "kit",
+    expect: "EVERY PRIMARY BUTTON IS THE SAME SIZE",
+  },
+  {
+    // ...and the same for the type. This is the exact state New Project
+    // shipped in for thirty-odd versions.
+    name: "a dialog title back in a semibold sans",
+    file: src("components/common/DialogHeader.tsx"),
+    from: '      <h2 className="font-serif-narrative text-base italic text-[var(--text)]">{title}</h2>',
+    to: '      <h2 className="text-base font-semibold text-[var(--text)]">{title}</h2>',
+    spec: "kit",
+    expect: "the app's own serif italic",
+  },
+  {
+    name: "the kit's default size quietly changed under everything",
+    file: src("components/common/Button.tsx"),
+    from: '  md: "rounded-md px-3 py-1.5 text-sm",',
+    to: '  md: "rounded-md px-3.5 py-2 text-sm",',
+    spec: "kit",
+    expect: "the kit's md: px-3 py-1.5",
+  },
+  {
+    name: "Cancel drawn as a second action beside the one that acts",
+    file: src("components/layout/ProjectSettingsDialog.tsx"),
+    from: '        <Button intent="ghost" onClick={onClose}>',
+    to: '        <Button intent="secondary" onClick={onClose}>',
+    spec: "kit",
+    expect: "Cancel is a ghost",
+  },
+  {
+    // The Variable Manager's whole argument: the row answers the question
+    // without being opened.
+    name: "a variable's type back behind a dropdown",
+    file: src("components/variables/VariableManagerDialog.tsx"),
+    from: "          {VARIABLE_TYPE_LABELS[variable.type]}\n        </span>",
+    to: "          {\"\"}\n        </span>",
+    spec: "variables-manager",
+    expect: "THE TYPE IS A WORD",
+  },
+  {
+    name: "a row that no longer says what the variable starts as",
+    file: src("components/variables/VariableManagerDialog.tsx"),
+    from: '          starts <span className="text-[var(--text-2)]">{startsAs(variable)}</span>',
+    to: '          {null}',
+    spec: "variables-manager",
+    expect: "says what it starts as",
+  },
+  {
+    name: "an empty string drawn as nothing at all",
+    file: src("components/variables/VariableManagerDialog.tsx"),
+    from: '    return text.length > 0 ? `\u201c${text}\u201d` : "\u201c\u201d";',
+    to: "    return text;",
+    spec: "variables-manager",
+    expect: "visible pair of quotes",
+  },
+  {
+    name: "a new variable that arrives collapsed and blank",
+    file: src("components/variables/VariableManagerDialog.tsx"),
+    from: "    const id = addVariable();\n    if (id) setOpenId(id);",
+    to: "    addVariable();",
+    spec: "variables-manager",
+    expect: "arrives open, ready to be named",
+  },
+
+  // ── v0.57.0 · Play Mode reads on a reading ground ────────────────────
+  {
+    // The whole version in one sabotage: if the ground block stops
+    // matching the Play surface, the writer's theme floods back in and
+    // Play is a preview of the draft again.
+    name: "a ground block that no longer reaches the Play surface",
+    file: src("runtime/playGroundStyles.ts"),
+    from: '[data-play-root][data-ground="night"] {',
+    to: '[data-play-root][data-ground="nightfall"] {',
+    spec: "play-ground",
+    expect: "no longer reaches the page they are rehearsing",
+  },
+  {
+    name: "a Night that has drifted away from the export's Night",
+    file: src("runtime/playGroundStyles.ts"),
+    from: "${GROUND_TOKENS.night}",
+    to: "  --page: oklch(19% 0.009 75);\n  --bg: oklch(15% 0.008 75);",
+    spec: "play-ground",
+    expect: "the export's Night, token for token",
+  },
+  {
+    name: "a switch that offers the ground you are already on",
+    file: src("runtime/PlayRuntime.tsx"),
+    from: "READING_GROUNDS.find((g) => g.id !== ground) ?? READING_GROUNDS[0]",
+    to: "READING_GROUNDS[0]",
+    spec: "play-ground",
+    expect: "offers the other ground by name",
+  },
+  {
+    name: "a light ground that never says it is light",
+    file: src("runtime/playGroundStyles.ts"),
+    from: '[data-play-root][data-ground="paper"] {\n  color-scheme: light;',
+    to: '[data-play-root][data-ground="paper"] {',
+    spec: "play-ground",
+    expect: "form controls and scrollbars follow it",
+  },
+  {
+    // The five tokens a reading ground has no opinion about. Left to fall
+    // through, they are the writer's theme leaking into the reader's page
+    // through the back door — the Restart button's label, on Paper, in a
+    // dark theme's --accent-text-on.
+    name: "a derived token that falls through to the theme instead",
+    file: src("runtime/playGroundStyles.ts"),
+    from: "    --accent-text-on:        var(--page);",
+    to: "",
+    spec: "play-ground",
+    expect: "derived from the ground, not the theme",
+  },
+  {
+    name: "a highlight left to the browser's own yellow",
+    file: src("runtime/playGroundStyles.ts"),
+    from: "[data-play-root] mark {\n  background: var(--highlight);",
+    to: "[data-play-root] mark.never {\n  background: var(--highlight);",
+    spec: "play-ground",
+    expect: "not the browser's yellow",
+  },
+  {
+    name: "a ground the machine forgets the moment you leave Play",
+    file: src("state/playGroundStore.ts"),
+    from: "      window.localStorage.setItem(STORAGE_KEY, ground);",
+    to: "",
+    spec: "play-ground",
+    expect: "remembered on this machine",
+  },
+  {
+    // The one the widened themes walk found on its first run: every
+    // container inside Play was still inheriting the writer's ink,
+    // because body resolved `color` from --text before the ground
+    // redefined it.
+    name: "the writer's ink still inherited by everything inside Play",
+    file: src("runtime/playGroundStyles.ts"),
+    from: "     line. */\n  color: var(--text);",
+    to: "     line. */",
+    spec: "themes",
+    expect: "outside the palette",
+  },
+  {
+    // Scoped too widely is the other half of scoped too narrowly: a
+    // reading ground that reaches :root repaints the editor the writer
+    // came from, which is the promise this version does NOT break.
+    name: "a reading ground that escapes into the writer's editor",
+    file: src("runtime/playGroundStyles.ts"),
+    from: '[data-play-root][data-ground="paper"] {\n  color-scheme: light;',
+    to: ':root[data-theme], [data-play-root][data-ground="paper"] {\n  color-scheme: light;',
+    spec: "play-ground",
+    expect: "the room behind it keeps the writer's theme",
+  },
 ];
+
 
 
 

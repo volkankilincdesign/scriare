@@ -1,5 +1,7 @@
 import { useConfirmDialogStore } from "../../state/confirmDialogStore";
 import { Modal } from "./Modal";
+import { Button } from "./Button";
+import { DialogHeader } from "./DialogHeader";
 
 /**
  * Mounted once near the app root. Renders whatever confirmation is
@@ -15,28 +17,22 @@ export function ConfirmDialogHost() {
 
   return (
     <Modal onClose={() => resolve(false)} onEnter={() => resolve(true)}>
-      <h2 className="mb-2 text-base font-semibold text-[var(--text)]">{request.title}</h2>
-      <p className="mb-5 text-sm leading-relaxed text-[var(--text-2)]">{request.message}</p>
+      <DialogHeader title={request.title} />
+      <p className="-mt-2 mb-5 text-sm leading-relaxed text-[var(--text-2)]">{request.message}</p>
       <div className="flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={() => resolve(false)}
-          className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
-        >
+        {/* Cancel is the way OUT of a dialog, not a second action — so it
+            is a ghost rather than a bordered control competing with the
+            one that does something. */}
+        <Button intent="ghost" onClick={() => resolve(false)}>
           {request.cancelLabel ?? "Cancel"}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          intent={request.danger ? "danger" : "primary"}
           autoFocus
           onClick={() => resolve(true)}
-          className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-            request.danger
-              ? "bg-[var(--danger)] text-[var(--danger-text-on)] hover:bg-[var(--danger-hover)]"
-              : "bg-[var(--accent)] text-[var(--accent-text-on)] hover:bg-[var(--accent-hover)]"
-          }`}
         >
           {request.confirmLabel ?? "Confirm"}
-        </button>
+        </Button>
       </div>
     </Modal>
   );

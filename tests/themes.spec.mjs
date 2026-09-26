@@ -248,8 +248,18 @@ export default async function ({ page, api, check, seedProject }) {
   // this lived in Check Story, which is a dialog, and an audit that only ever
   // sees the editor would have missed it — as the first version of this check
   // did, confirmed by putting the amber back and watching it pass.
-  const walk = () =>
-    api((tokens) => {
+  /**
+   * `within` limits the walk to one subtree and `paletteFrom` says whose
+   * custom properties count as the palette for it (v0.57.0). Both were
+   * ":root and everything under body" until Play Mode stopped being
+   * chrome: the Play surface is now painted in a READING GROUND, which is
+   * deliberately not in any theme's palette, so measuring it against the
+   * theme would report the whole feature as eight themes' worth of
+   * strays. Scoping it instead makes the check stronger rather than
+   * weaker — the ground surface is now audited against the ground.
+   */
+  const walk = (scope = {}) =>
+    api(({ tokens, within, paletteFrom, except }) => {
       const p = window.__themeProbe;
       // Both sides are composited over the same opaque backdrop before they
       // are compared, so a translucent token and the same token painted on
@@ -319,7 +329,10 @@ export default async function ({ page, api, check, seedProject }) {
         if (alpha < 0.15) return null;
         return onBlack.map((v) => Math.min(255, Math.round(v / alpha)));
       };
-      const palette = tokens.map((t) => flat(p.token(t)));
+      const source = paletteFrom ? document.querySelector(paletteFrom) : document.documentElement;
+      if (!source) return [`palette source ${paletteFrom} is not on screen`];
+      const sourceStyle = getComputedStyle(source);
+      const palette = tokens.map((t) => flat(sourceStyle.getPropertyValue(t).trim()));
       const NEAR = 8;
       const fromPalette = (rgb) =>
         palette.some(
@@ -328,8 +341,11 @@ export default async function ({ page, api, check, seedProject }) {
         );
 
       const out = new Map();
-      for (const el of document.querySelectorAll("body *")) {
+      const container = within ? document.querySelector(within) : document.body;
+      if (!container) return [`${within} is not on screen`];
+      for (const el of container.querySelectorAll("*")) {
         if (el.closest("[data-content-colour]")) continue;
+        if (except && el.closest(except)) continue;
         const box = el.getBoundingClientRect();
         if (box.width < 1 || box.height < 1) continue;
         const cs = getComputedStyle(el);
@@ -345,7 +361,7 @@ export default async function ({ page, api, check, seedProject }) {
         }
       }
       return [...out.values()];
-    }, PALETTE_TOKENS);
+    }, { tokens: PALETTE_TOKENS, within: null, paletteFrom: null, except: null, ...scope });
 
   /**
    * Every surface that can be opened without leaving the app (v0.50.0).
@@ -460,7 +476,16 @@ export default async function ({ page, api, check, seedProject }) {
         ),
       close: () => api(() => window.__scriareProjectStore.setState({ saveConflict: null })),
     },
-    { name: "Play Mode", open: () => store("startPlay"), close: () => store("exitPlay") },
+    {
+      // Two walks, because two palettes are on screen at once: the app's
+      // top bar is still chrome in the writer's theme, and the Play
+      // surface below it is the reader's ground (v0.57.0).
+      name: "Play Mode",
+      open: () => store("startPlay"),
+      close: () => store("exitPlay"),
+      also: { within: "[data-play-root]", paletteFrom: "[data-play-root]" },
+      except: "[data-play-root]",
+    },
     {
       name: "the Welcome screen",
       open: () => api(() => window.__scriareProjectStore.setState({ project: null, filePath: null })),
@@ -481,8 +506,12 @@ export default async function ({ page, api, check, seedProject }) {
         await surface.open();
         await wait(340);
       }
-      const rows = await walk();
+      const rows = await walk({ except: surface.except ?? null });
       if (rows.length) strays[`${id} — ${surface.name}`] = rows;
+      if (surface.also) {
+        const inside = await walk(surface.also);
+        if (inside.length) strays[`${id} — ${surface.name} (the reader's ground)`] = inside;
+      }
       if (surface.close) {
         await surface.close();
         await wait(240);

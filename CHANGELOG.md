@@ -12,6 +12,146 @@ omitting them.
 
 ---
 
+## v0.57.0 — Play Mode reads on the reader's ground
+
+Since v0.48.0 the export has refused to ship the writer's theme, on a
+stated principle: **a theme is chrome and a reading ground is content.**
+Eight themes tune a room full of panels and borders; the two reading
+grounds tune one column of prose for a stranger on a phone. Play Mode
+shipped in v0.8.0 and did the thing the export refuses to do — it wore
+whichever theme the writer happened to be in. Nobody decided that; the
+two features were written twenty versions apart and never met.
+
+**Measured before it was fixed.** With the app in Phosphor, Play painted
+`--page` at `oklch(15% 0.016 150)` — the theme's own value, terminal
+green — and `--accent` at `oklch(82% 0.17 145)`. A writer rehearsed their
+story in green and then exported something they had never seen.
+
+**Play now reads on Night or Paper, with the same switch the reader
+gets.** One button in the Play bar, labelled with the ground you would
+move to, with the same accessible name the exported page's bar uses. The
+choice is remembered on this machine, exactly as the reader's choice is
+remembered in their browser: press Play tomorrow and you are on the
+ground you were reading on.
+
+**This breaks a promise on purpose.** Play Mode has said since v0.6.2
+that it reads the way you wrote it — same column, same typography. That
+was right when there was no export and wrong the day there was one. Play
+answers *what will my reader see*, not *what does my draft look like*.
+The column and the typography are unchanged; only the ground is.
+
+**One table, two renderers.** The grounds are generated from
+`GROUND_TOKENS` — the same constant the exported stylesheet is built from
+— rather than copied into the app's CSS, because two implementations of
+one look is the pair that always drifts, and the only defence is that
+there is one table and both read it. The spec asserts token for token
+against that table, read out of the running app rather than restated in
+the test.
+
+**Five tokens a reading ground has no opinion about.** An exported page
+has no raised panel and no hover state, so a ground defines neither.
+Play has both, so `--surface`, `--surface-translucent`, `--shadow-raised`,
+`--accent-text-on` and `--accent-hover` are derived from the ground
+rather than left to fall through to the theme — which would have been the
+same leak through a back door, visible as the Restart button's label in a
+dark theme's ink on a Paper page. `--accent-text-on: var(--page)` is not
+a guess: it is what the exported page already paints on an accent fill.
+
+**And a highlight is no longer the browser's yellow.** Tiptap's Highlight
+mark renders in the user agent's own colour unless something says
+otherwise. The export says otherwise; Play did not, so a highlighted line
+was the one piece of a story that looked different in the rehearsal and
+in the finished file.
+
+**The ground stays inside Play.** The editor and graph are only CSS-hidden
+underneath while playing, so a ground scoped one selector too wide would
+repaint the room behind the page. That is asserted while Play is on
+screen — the only moment an escaped ground is visible, since the style
+block leaves with the runtime — and the negative control that widens the
+selector is caught there.
+
+**The audit found one more thing on its first run.** The themes walk now
+measures the Play surface against the GROUND rather than against the
+theme — a stronger check than before, since the ground is deliberately
+not in any theme's palette — and it immediately reported five elements
+per theme still painted in the writer's ink. Redefining `--text` on the
+Play surface does not change the `color` that `body` already resolved
+from it, so every container inside Play was inheriting the editor's text
+colour. Nothing visible was wrong today, because each piece of text
+happens to set its own colour; that is the kind of luck that stops
+holding the next time someone adds a line.
+
+Nine more negative controls, all caught; one new spec (14 checks).
+
+---
+
+## v0.56.0 — The button that was never written
+
+The app's oldest visuals were found by measuring rather than by looking:
+every component's own comments record the version its visuals were last
+revised in, and six mention none at all. What that turned up was not a
+taste problem.
+
+**`common/` held a Modal, a toast host, a dialog back-link and a whole
+icon set — and no button.** So every dialog re-typed its own Done and its
+own Cancel from memory, and the primary action existed in nine spellings:
+`px-3 py-1.5 text-sm` six times, `px-3.5 py-1.5` twice, plus `px-3 py-2`,
+`px-4 py-2`, `px-5 py-3`, and one at `text-xs`. Nobody can name a
+two-pixel disagreement when they look at an app, and it is most of why
+the older dialogs felt unsettled beside the newer ones. Downstream of the
+same absence: 19 distinct rounded-class strings in the Inspector, 10 in
+the Content Browser, 9 in the Variable Manager.
+
+**The dialog title was written four ways.** The serif italic in five
+dialogs, `text-base font-semibold` in three, and `text-sm font-semibold`
+in exactly one — New Project, the first dialog a new writer ever sees.
+That file's own comment gives it away: Sprint 8D moved it onto the shared
+`<Modal>` because it had a hand-rolled backdrop, and never looked at its
+type.
+
+**`Button`, `Field` and `DialogHeader` now exist, and they invent
+nothing.** The default size is `px-3 py-1.5 text-sm` — the spelling six
+places already used. Every colour is the token that was already there.
+This is the language v0.40.0 and v0.44.0 chose, written down once instead
+of retyped forty times. `intent` says what a button MEANS rather than what
+it looks like, which is what makes "danger" survive a palette change when
+`text-red-500` would not — the mistake v0.46.0 had to go and find in Check
+Story.
+
+**Two variants drawn in the mockups are not in the code.** An outlined
+danger button, because the confirm dialog's filled one was already right
+and nothing needed the other; and an `lg` size, drawn for the Welcome
+hero's Continue, which turned out to be a `<span>` inside a larger button
+— a button inside a button is invalid markup, so the size had no caller.
+A variant nothing uses is a decision made in advance of the question.
+
+**The Variable Manager was the oldest surface anyone will actually see.**
+No version note, no section labels (the only manager without them), a
+delete drawn as a bare ✕ at `text-xs`, and the word "Default" repeated on
+every row; three of six variables fitted the dialog. It has its sibling's
+shape now — Choice Styles has done the same job since v0.34.0 — chosen
+from three mockups against a real story's variables. The collapsed row
+answers the question you actually have: what it is called, what kind it
+is, what it starts as. The type is spelled out rather than drawn as a
+glyph, because a chip reading "01" is a thing a writer has to be taught
+and this dialog is where most people meet the type system.
+
+**Move To was checked and left alone.** Clicking a folder moves
+immediately with no confirm step, which looks like a gap and is the app's
+own rule — the action happens, the way out is Ctrl+Z, and `toastStore`'s
+header argues the case at length. Only its title and its Cancel changed.
+
+**And the claim is measured, not asserted.** `kit.spec.mjs` opens five
+dialogs for real, finds each one's primary action by the colour it is
+painted, and reads the computed padding, size and radius back off the
+element — because a test that checks the source imports `Button` would
+pass the day someone imports it and overrides its padding, which is
+exactly how the drift happened the first time.
+
+Eight more negative controls, all caught; two new specs.
+
+---
+
 ## v0.55.0 — Three things a stranger can walk into
 
 No new features. Three defects with nothing in common except that each one

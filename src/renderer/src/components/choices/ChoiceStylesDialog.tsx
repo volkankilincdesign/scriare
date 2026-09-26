@@ -1,7 +1,9 @@
 import { useMemo, useRef, useState } from "react";
 import { Modal } from "../common/Modal";
-import { DialogBackLink } from "../common/DialogBackLink";
+import { Button } from "../common/Button";
+import { DialogHeader } from "../common/DialogHeader";
 import { useUIStore } from "../../state/uiStore";
+import { Field } from "../common/Field";
 import { useProjectStore } from "../../state/projectStore";
 import { useToastStore } from "../../state/toastStore";
 import { DEFAULT_CHOICE_STYLE_ID, choiceBoxCss } from "../../types/choiceStyles";
@@ -48,26 +50,25 @@ export function ChoiceStylesDialog({ onClose }: ChoiceStylesDialogProps) {
 
   return (
     <Modal onClose={onClose} label="Choice Styles" widthClassName="max-w-lg">
-      {cameFromSettings && (
-        <DialogBackLink
-          label="Project Settings"
-          onBack={() => {
-            // A swap, not a stack — see DialogBackLink. The order matters
-            // only in that both flags change in the same tick, so no frame
-            // is drawn with neither dialog on screen.
-            useUIStore.getState().closeChoiceStyles();
-            useUIStore.getState().openSettings();
-          }}
-        />
-      )}
-      <h2 className="mb-1 font-serif-narrative text-base italic text-[var(--text)]">
-        Choice Styles
-      </h2>
-      <p className="mb-4 text-xs text-[var(--text-3)]">
-        How a choice looks, named once and used anywhere. Change a style here and
-        every choice wearing it changes with it. The words inside a choice are
-        styled with the toolbar, like any other sentence.
-      </p>
+      <DialogHeader
+        title="Choice Styles"
+        back={
+          cameFromSettings
+            ? {
+                label: "Project Settings",
+                onBack: () => {
+                  // A swap, not a stack — see DialogBackLink.
+                  useUIStore.getState().closeChoiceStyles();
+                  useUIStore.getState().openSettings();
+                },
+              }
+            : undefined
+        }
+      >
+        How a choice looks, named once and used anywhere. Change a style here
+        and every choice wearing it changes with it. The words inside a choice
+        are styled with the toolbar, like any other sentence.
+      </DialogHeader>
 
       <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
         {styles.map((style) => {
@@ -137,33 +138,14 @@ export function ChoiceStylesDialog({ onClose }: ChoiceStylesDialogProps) {
       </div>
 
       <div className="mt-4 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={handleAdd}
-          className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
-        >
+        <Button intent="accentGhost" onClick={handleAdd}>
           + Add Style
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-[var(--accent-text-on)] hover:bg-[var(--accent-hover)]"
-        >
+        </Button>
+        <Button intent="primary" onClick={onClose}>
           Done
-        </button>
+        </Button>
       </div>
     </Modal>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="scriare-section-label mb-1 block text-[var(--text-3)]">
-        {label}
-      </span>
-      {children}
-    </label>
   );
 }
 

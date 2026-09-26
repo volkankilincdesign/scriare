@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Button } from "../common/Button";
 import { Modal } from "../common/Modal";
 import { useProjectStore } from "../../state/projectStore";
 import { useInspectorStore } from "../../state/inspectorStore";
@@ -217,13 +218,9 @@ export function StoryCheckDialog({ onClose }: StoryCheckDialogProps) {
       </div>
 
       <div className="mt-4 flex justify-end">
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-[var(--accent-text-on)] hover:bg-[var(--accent-hover)]"
-        >
+        <Button intent="primary" onClick={onClose}>
           Done
-        </button>
+        </Button>
       </div>
     </Modal>
   );

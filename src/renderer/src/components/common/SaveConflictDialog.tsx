@@ -46,6 +46,12 @@ export function SaveConflictDialog() {
         <button
           type="button"
           onClick={() => void saveCopy()}
+          /* Deliberately NOT the kit's Button (v0.56.0). These are not
+             footer actions — they are three full-width, left-aligned
+             choices stacked as a list, each one a different answer to the
+             question the dialog asks. Sizing them like a Done button
+             would make the hardest decision in the app look like a form
+             footer. */
           className="rounded-md border border-[var(--accent)] bg-[var(--accent)] px-3 py-2 text-left text-sm font-medium text-[var(--accent-text-on)] hover:bg-[var(--accent-hover)]"
         >
           Save my version as a copy

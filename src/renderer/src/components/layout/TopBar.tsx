@@ -1,4 +1,5 @@
 import { useProjectStore } from "../../state/projectStore";
+import { Button } from "../common/Button";
 import { confirmDialog } from "../../state/confirmDialogStore";
 import { useUIStore } from "../../state/uiStore";
 import { ProjectSettingsDialog } from "./ProjectSettingsDialog";
@@ -155,13 +156,12 @@ export function TopBar() {
             ■ Exit Play
           </button>
         ) : (
-          <button
-            type="button"
+          <Button
+            intent="primary"
             onClick={startPlay}
-            className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-[var(--accent-text-on)] hover:bg-[var(--accent-hover)]"
           >
             ▶ Play
-          </button>
+          </Button>
         )}
         {!isPlaying && (
           <button

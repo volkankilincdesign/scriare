@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useProjectStore } from "../../state/projectStore";
 import { Modal } from "../common/Modal";
+import { Button } from "../common/Button";
+import { DialogHeader } from "../common/DialogHeader";
+import { INPUT_CLASS } from "../common/Field";
 
 interface NewProjectDialogProps {
   onClose: () => void;
@@ -31,31 +34,30 @@ export function NewProjectDialog({ onClose }: NewProjectDialogProps) {
   // window-level listener only fires once the input isn't swallowing the key.
   return (
     <Modal onClose={onClose} onEnter={() => void handleCreate()}>
-      <h2 className="mb-4 text-sm font-semibold text-[var(--text)]">New Project</h2>
+      {/* v0.56.0: this was the app's only `text-sm font-semibold` title —
+          a fourth size, on the first dialog a new writer ever sees. */}
+      <DialogHeader title="New Project">
+        Name it now; you can rename it whenever you like.
+      </DialogHeader>
       <input
         autoFocus
         type="text"
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Story title"
-        className="mb-4 w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
+        className={`mb-4 ${INPUT_CLASS}`}
       />
       <div className="flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-md px-3 py-1.5 text-sm text-[var(--text-2)] hover:bg-[var(--surface-2)]"
-        >
+        <Button intent="ghost" onClick={onClose}>
           Cancel
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          intent="primary"
           onClick={() => void handleCreate()}
           disabled={!name.trim() || creating}
-          className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-[var(--accent-text-on)] hover:bg-[var(--accent-hover)] disabled:opacity-50"
         >
-          {creating ? "Creating..." : "Create"}
-        </button>
+          {creating ? "Creating…" : "Create"}
+        </Button>
       </div>
     </Modal>
   );
