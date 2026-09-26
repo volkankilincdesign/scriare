@@ -12,6 +12,98 @@ omitting them.
 
 ---
 
+## v0.55.0 — Three things a stranger can walk into
+
+No new features. Three defects with nothing in common except that each one
+is reachable by someone who has never been told anything.
+
+**Settings opened Choice Styles by closing itself, and left no way back.**
+The swap is deliberate — two dimmed backdrops stacked over each other is
+how a settings screen starts feeling like a maze, and the styles manager
+is a place you go rather than a detail of the dialog you left. But it
+meant changing the Start Scene after looking at a style required
+dismissing the manager and reopening Settings from the top bar. The
+relationship is drawn instead of stacked now: one line at the top of the
+child dialog naming the parent. Project Settings moved out of TopBar's own
+`useState` into the UI store to make it possible at all — which is exactly
+the limitation that store's own header describes.
+
+Escape still closes everything rather than stepping back one level.
+Stepping back is the other defensible rule, and it was considered: it is
+what a nested settings screen does elsewhere. But Escape and the backdrop
+are the same gesture in this app — "I am done here" — and turning that
+into "up one level" would land a writer who clicks well outside the card
+in a dialog they did not ask for. The way back is visible; nobody has to
+guess it from a key.
+
+**"Where you left off" took you somewhere else.** The hero names a scene,
+a character or a location, and `Continue` opened the story at its start
+scene — a promise broken on the action every session begins with. The
+resume record now carries the page's id, and the id is checked against the
+story that actually loaded rather than trusted: a page can be deleted
+between two launches, and landing on nothing is worse than landing on the
+start scene. Opening a story from its **card** still lands on the start
+scene, and the distinction is the point — a card says "open this story",
+the hero says "go back to this page".
+
+**The colour picker pinned a theme colour without a word.** Opening it on
+a style whose fill is `var(--surface-2-translucent)` and moving the
+pointer at all writes a hex into the story file, permanently; the style
+stops following light and dark for good. The "Theme" button beside it has
+always been the way back, but an affordance nobody knows they need is not
+a way back. The app now says so at the moment it happens, once — not once
+a frame, which is what a native colour input would otherwise produce — and
+the notice carries an Undo that restores the variable. The swatch also
+borders itself in the accent while a fixed colour is set. Raising the
+notice correctly meant committing that one edit outside the per-frame
+throttle: a toast can only carry the history step that already exists when
+it is raised.
+
+**And one line of dead code, found the way this project finds them.** The
+"came in another door" control passed: clearing the dialog's origin on
+close could not matter, because the open path already sets it every time.
+The line went, not the control — which now sabotages the open path and is
+caught.
+
+Six more negative controls; a new `settings-navigation` spec.
+
+---
+
+## v0.54.0 — Where you left off, whatever you were working on
+
+The hero read `selectedSceneId` and nothing else. So an afternoon spent
+on a character or a location ended with a Welcome screen that had no
+"where you left off" at all — the app quietly deciding those hours were
+not work. A Character and a Location are the same object as a Scene with
+a different `kind`, each with a page written in the same editor, so there
+was nothing to build for them but the decision to look. Only one of the
+two ids is ever set, because selecting a scene clears the entity and vice
+versa, so "what was open" is a question the store could already answer.
+
+**Which forces the hero to say what it is naming.** "Yseide" on its own
+could be a scene called Yseide. The kind now sits on its own line between
+the title and the prose, a small icon and a word.
+
+Beside the name was the other candidate and lost on two counts. A
+bordered chip is a component that exists nowhere else in Scriare, and the
+app already has a way of saying what a thing is — the small uppercase
+label, on its own line, used throughout the Inspector and the panels.
+And setting a rectangular uppercase box against a 25px serif italic — the
+one place on that screen where the type is doing the work — reads as
+pinned on however well it is drawn. Under the name also leaves the
+title's line to the title, which matters when a name is long.
+
+**Resumes written by v0.53.x are read, not discarded.** They have
+`sceneTitle` and `groupName` and no `kind`, and they described a scene,
+because a scene was the only thing they could describe. Unlike the cached
+story shape, nothing about the old fields is *wrong* — only narrower — so
+they are read as scenes and the next save writes the current shape over
+them.
+
+Four more negative controls, all caught.
+
+---
+
 ## v0.53.3 — The shelf is the whole shelf
 
 The story you were last in was cut out of the grid, because it was

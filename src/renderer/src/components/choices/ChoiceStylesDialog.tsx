@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Modal } from "../common/Modal";
+import { DialogBackLink } from "../common/DialogBackLink";
+import { useUIStore } from "../../state/uiStore";
 import { useProjectStore } from "../../state/projectStore";
 import { useToastStore } from "../../state/toastStore";
 import { DEFAULT_CHOICE_STYLE_ID, choiceBoxCss } from "../../types/choiceStyles";
@@ -25,6 +27,7 @@ export function ChoiceStylesDialog({ onClose }: ChoiceStylesDialogProps) {
   const updateChoiceStyle = useProjectStore((s) => s.updateChoiceStyle);
   const deleteChoiceStyle = useProjectStore((s) => s.deleteChoiceStyle);
   const [openId, setOpenId] = useState<string | null>(null);
+  const cameFromSettings = useUIStore((s) => s.choiceStylesFrom) === "settings";
 
   if (!project) return null;
   const styles = project.choiceStyles;
@@ -44,7 +47,19 @@ export function ChoiceStylesDialog({ onClose }: ChoiceStylesDialogProps) {
   }
 
   return (
-    <Modal onClose={onClose} widthClassName="max-w-lg">
+    <Modal onClose={onClose} label="Choice Styles" widthClassName="max-w-lg">
+      {cameFromSettings && (
+        <DialogBackLink
+          label="Project Settings"
+          onBack={() => {
+            // A swap, not a stack — see DialogBackLink. The order matters
+            // only in that both flags change in the same tick, so no frame
+            // is drawn with neither dialog on screen.
+            useUIStore.getState().closeChoiceStyles();
+            useUIStore.getState().openSettings();
+          }}
+        />
+      )}
       <h2 className="mb-1 font-serif-narrative text-base italic text-[var(--text)]">
         Choice Styles
       </h2>
@@ -193,9 +208,12 @@ function useRafThrottledPatch(
 export function BoxControls({
   box,
   onChange,
+  subject = "style",
 }: {
   box: ChoiceBox;
   onChange: (patch: Partial<ChoiceBox>) => void;
+  /** What the writer is editing, for the notice when a colour gets pinned. */
+  subject?: "style" | "choice";
 }) {
   // Coalesced to one commit per frame, for the reason EditorToolbar.tsx
   // documents at length: a native colour input fires on every pixel of
@@ -212,14 +230,18 @@ export function BoxControls({
         <ColorField
           value={box.fill}
           fallback="#2a2a28"
+          subject={subject}
           onChange={(fill) => onChangeFrame({ fill })}
+          onPin={(fill) => onChange({ fill })}
         />
       </Field>
       <Field label="Border">
         <ColorField
           value={box.border}
           fallback="#3a3a37"
+          subject={subject}
           onChange={(border) => onChangeFrame({ border })}
+          onPin={(border) => onChange({ border })}
         />
       </Field>
       <Field label={`Thickness — ${box.borderWidth}px`}>
@@ -257,24 +279,74 @@ export function BoxControls({
 function ColorField({
   value,
   fallback,
+  subject,
   onChange,
+  onPin,
 }: {
   value: string | null;
   fallback: string;
+  subject: "style" | "choice";
+  /** Throttled to one commit per frame — the ordinary path. */
   onChange: (value: string | null) => void;
+  /**
+   * The same edit, NOT throttled. Used for the single event that turns a
+   * themed colour into a fixed one, because the notice raised alongside it
+   * offers to undo that edit — and a toast can only carry the history step
+   * that already exists when it is raised. Through the throttle, the step
+   * lands a frame later and the toast is left with nothing to reverse.
+   */
+  onPin: (value: string | null) => void;
 }) {
   const isThemed = !value || value.startsWith("var(");
+  // Fires once per themed → fixed crossing, not once per pointer event.
+  // A native colour input emits continuously while the pointer moves
+  // inside it, and `value` only catches up a frame later, so a check on
+  // the prop alone would raise the same notice sixty times a second.
+  const announced = useRef(false);
+  if (isThemed && announced.current) announced.current = false;
+
   return (
     <span className="flex items-center gap-1.5">
       <label
-        className="flex h-7 w-9 shrink-0 cursor-pointer items-center justify-center rounded border border-[var(--border)]"
+        className={`flex h-7 w-9 shrink-0 cursor-pointer items-center justify-center rounded border ${
+          isThemed ? "border-[var(--border)]" : "border-[var(--accent)]"
+        }`}
         style={{ background: value ?? "var(--surface-2)" }}
-        title="Pick a colour"
+        title={isThemed ? "Pick a colour" : "A fixed colour — this no longer follows the theme"}
       >
         <input
           type="color"
           value={isThemed ? fallback : value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => {
+            /*
+              SAY IT AT THE MOMENT IT HAPPENS (v0.55.0).
+              Opening this picker on a themed colour and moving the pointer
+              at all writes a hex into the STORY FILE, permanently — the
+              style stops following light and dark for good, and nothing
+              said so. A writer found out when a reader opened the export
+              on a light ground and the choices were dark boxes. The
+              "Theme" button beside this has always been the way back; it
+              was just never announced, and an affordance nobody knows they
+              need is not a way back.
+
+              `showUndo` rather than a plain notice, because the edit is a
+              history step with a merge key (see `updateChoiceStyle`), so
+              one click reverses the whole colour change rather than one
+              frame of it.
+            */
+            if (!announced.current) {
+              announced.current = true;
+              // Commit first, announce second. See `onPin`.
+              onPin(e.target.value);
+              useToastStore
+                .getState()
+                .showUndo(
+                  `This ${subject} now uses a fixed colour and no longer follows the theme`,
+                );
+              return;
+            }
+            onChange(e.target.value);
+          }}
           className="h-0 w-0 opacity-0"
         />
       </label>

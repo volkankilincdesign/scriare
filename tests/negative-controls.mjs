@@ -555,7 +555,7 @@ const CONTROLS = [
     // that saving never calls it.
     name: "a save that never refreshes what Recent Projects knows",
     file: src("state/projectStore.ts"),
-    from: "      const touched = await refreshRecentEntry(project, filePath, get().selectedSceneId, false);",
+    from: "      const touched = await refreshRecentEntry(\n        project,\n        filePath,\n        get().selectedSceneId,\n        get().selectedEntityId,\n        false,\n      );",
     to: "      const touched = null;",
     spec: "welcome",
     expect: "caches its shape on the recent entry",
@@ -624,8 +624,8 @@ const CONTROLS = [
   {
     name: "launching and landing on nothing instead of in the scene",
     file: src("components/welcome/WelcomeScreen.tsx"),
-    from: "      type=\"button\"\n      autoFocus\n      onClick={() => void onOpen(entry.filePath)}",
-    to: "      type=\"button\"\n      onClick={() => void onOpen(entry.filePath)}",
+    from: "      type=\"button\"\n      autoFocus\n",
+    to: "      type=\"button\"\n",
     spec: "welcome",
     expect: "where the keyboard lands",
   },
@@ -732,7 +732,104 @@ const CONTROLS = [
     spec: "welcome",
     expect: "gets one drawn, without being opened",
   },
+  // ── v0.54.0 · the hero names any page ────────────────────────────────
+  {
+    // What it did before: read the selected SCENE and nothing else, so an
+    // afternoon on a character ended with no "where you left off" at all.
+    name: "a hero that only ever looks at the selected scene",
+    file: src("utils/recentShape.ts"),
+    from: "  const entity = selectedEntityId\n    ? project.entities.find((e) => e.id === selectedEntityId)\n    : undefined;",
+    to: "  const entity = undefined;",
+    spec: "welcome",
+    expect: "ended on a character is remembered as one",
+  },
+  {
+    name: "a hero that names a page without saying what kind it is",
+    file: src("components/welcome/WelcomeScreen.tsx"),
+    from: "            <KindIcon kind={resume.kind} />\n            {kind}",
+    to: "            {null}",
+    spec: "welcome",
+    expect: "the hero names",
+  },
+  {
+    name: "the kinds told apart by a word and nothing else",
+    file: src("components/welcome/WelcomeScreen.tsx"),
+    from: "function KindIcon({ kind }: { kind: ResumeKind }) {",
+    to: "function KindIcon({ kind }: { kind: ResumeKind }) {\n  if (kind) return null;",
+    spec: "welcome",
+    expect: "told apart by a drawing",
+  },
+  {
+    // Every resume already on a writer's disk is in the older shape. It
+    // described a scene, which is still true — discarding it would empty
+    // the hero for everyone on the day they update.
+    name: "a resume written by the previous version thrown away",
+    file: src("utils/recentShape.ts"),
+    from: "  const title = typeof r.title === \"string\" ? r.title : r.sceneTitle;",
+    to: "  const title = r.title;",
+    spec: "welcome",
+    expect: "old format still shows its scene",
+  },
+  // ── v0.55.0 · the three defects a stranger can walk into ─────────────
+  {
+    // The dead end: Settings hands off to Choice Styles by closing itself,
+    // and for five versions there was no way back to it.
+    name: "a child dialog with no way back to the one that opened it",
+    file: src("components/layout/ProjectSettingsDialog.tsx"),
+    from: '          useUIStore.getState().openChoiceStyles("settings");',
+    to: "          useUIStore.getState().openChoiceStyles();",
+    spec: "settings-navigation",
+    expect: "THE WAY BACK IS ON SCREEN",
+  },
+  {
+    // ...and the opposite mistake: offering a way "back" to a dialog the
+    // writer reached this one from somewhere else entirely.
+    name: "a way back offered to someone who came in another door",
+    file: src("state/uiStore.ts"),
+    from: "  openChoiceStyles: (from = null) => set({ choiceStylesOpen: true, choiceStylesFrom: from }),",
+    to: '  openChoiceStyles: () => set({ choiceStylesOpen: true, choiceStylesFrom: "settings" }),',
+    spec: "settings-navigation",
+    expect: "no way back to a dialog you were never in",
+  },
+  {
+    name: "a colour pinned to a hex without a word about it",
+    file: src("components/choices/ChoiceStylesDialog.tsx"),
+    from: "              onPin(e.target.value);",
+    to: "              onChange(e.target.value);",
+    spec: "settings-navigation",
+    expect: "it offers the way back",
+  },
+  {
+    // The notice must survive a colour input firing sixty times a second.
+    name: "one notice per pointer event instead of one per pinning",
+    file: src("components/choices/ChoiceStylesDialog.tsx"),
+    from: "            if (!announced.current) {",
+    to: "            if (true) {",
+    spec: "settings-navigation",
+    expect: "once, not once a frame",
+  },
+  {
+    // The broken promise: "where you left off", then somewhere else.
+    name: "Continue opening the story's first scene instead of the page it named",
+    file: src("state/projectStore.ts"),
+    from: "        ...landingFor(project, target),",
+    to: "        selectedSceneId: project.startSceneId ?? project.scenes[0]?.id ?? null,\n        selectedEntityId: null,",
+    spec: "welcome",
+    expect: "CONTINUE LANDS ON THE PAGE",
+  },
+  {
+    // ...and the other half: an id from a record written days ago, trusted
+    // against a story that has changed since.
+    name: "a remembered page trusted without checking it still exists",
+    file: src("utils/recentShape.ts"),
+    from: "    return project.scenes.some((s) => s.id === target.id)\n      ? { selectedSceneId: target.id, selectedEntityId: null }\n      : fallback;",
+    to: "    return { selectedSceneId: target.id, selectedEntityId: null };",
+    spec: "welcome",
+    expect: "falls back to the start scene when that page is gone",
+  },
 ];
+
+
 
 
 

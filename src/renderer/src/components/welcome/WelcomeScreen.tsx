@@ -4,7 +4,8 @@ import { NewProjectDialog } from "./NewProjectDialog";
 import { StoryMap } from "./StoryMap";
 import { useShapeBackfill } from "./useShapeBackfill";
 import { BrandMark } from "../common/BrandMark";
-import type { StoryShape } from "../../utils/recentShape";
+import { RESUME_LABEL, readResume } from "../../utils/recentShape";
+import type { ResumeKind, StoryShape } from "../../utils/recentShape";
 
 interface RecentEntry {
   name: string;
@@ -319,19 +320,34 @@ function EmptyShelf({ onStart }: { onStart: () => void }) {
  * the hero can name the SCENE — and it is deliberately the first thing the
  * keyboard reaches, so the whole gesture is: launch, Enter, you are back.
  */
-function ResumeHero({ entry, onOpen }: { entry: RecentEntry; onOpen: (p: string) => void }) {
-  const resume = entry.resume;
+function ResumeHero({
+  entry,
+  onOpen,
+}: {
+  entry: RecentEntry;
+  onOpen: (p: string, target?: { kind: ResumeKind; id: string | null } | null) => void;
+}) {
+  const resume = readResume(entry.resume);
   if (!resume) return null;
-  const where = [entry.name, resume.groupName, sinceLabel(resume.at)]
+  const where = [entry.name, resume.context, sinceLabel(resume.at)]
     .filter(Boolean)
     .join(" · ");
+  const kind = RESUME_LABEL[resume.kind];
 
   return (
     <button
       type="button"
       autoFocus
-      onClick={() => void onOpen(entry.filePath)}
-      aria-label={`Continue writing: ${resume.sceneTitle}, in ${entry.name}`}
+      /*
+        The hero carries the page it named (v0.55.0). Until then this
+        opened the story at its start scene, so the one line on this
+        screen that makes a promise — "where you left off" — broke it on
+        the most-repeated action in the app. A story CARD still passes
+        nothing and still lands on the start scene: a card says "open this
+        story", the hero says "go back to this page".
+      */
+      onClick={() => void onOpen(entry.filePath, { kind: resume.kind, id: resume.id })}
+      aria-label={`Continue: ${resume.title}, a ${kind.toLowerCase()} in ${entry.name}`}
       /* Same UA `align-items: center` on <button>: without this the
          accent rail below has no height and never appears at all. */
       className="scriare-resume-hero flex w-full flex-shrink-0 items-stretch overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-left"
@@ -341,7 +357,22 @@ function ResumeHero({ entry, onOpen }: { entry: RecentEntry; onOpen: (p: string)
         <span className="min-w-0 flex-grow">
           <span className="scriare-section-label block text-[var(--text-3)]">Where you left off</span>
           <span className="font-serif-narrative mt-2 block truncate text-[25px] italic leading-tight text-[var(--text)]">
-            {resume.sceneTitle || "Untitled scene"}
+            {resume.title || `Untitled ${kind.toLowerCase()}`}
+          </span>
+          {/*
+            WHICH KIND OF PAGE, on its own line under the name (v0.54.0).
+            Beside the name was the other candidate and lost on two
+            counts: a bordered chip is a component that exists nowhere
+            else in the app, and setting a rectangular uppercase box
+            against a 25px serif italic — the one place on this screen
+            where the type is doing the work — reads as pinned on. This
+            reuses the label the app already uses everywhere to say what
+            a thing is, and it leaves the title's line to the title,
+            which matters when a name is long.
+          */}
+          <span className="mt-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.04em] text-[var(--text-3)]">
+            <KindIcon kind={resume.kind} />
+            {kind}
           </span>
           {resume.excerpt && (
             <span className="font-serif-narrative mt-2 block max-w-[640px] truncate text-[15px] leading-relaxed text-[var(--text-2)]">
@@ -500,6 +531,52 @@ function StoryGrid({ entries, onOpen }: { entries: RecentEntry[]; onOpen: (p: st
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * What kind of page the hero is naming.
+ *
+ * Drawn rather than lettered — a scene, a character and a location are
+ * told apart at a glance by shape, and the word beside it carries the
+ * meaning for anyone the shape does not reach. Stroke SVG at the same
+ * weight as every other icon in the app; no emoji anywhere near a
+ * writer's own words.
+ */
+function KindIcon({ kind }: { kind: ResumeKind }) {
+  const common = {
+    width: 12,
+    height: 12,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.7,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+    className: "flex-shrink-0",
+  };
+  if (kind === "character") {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="8" r="3.4" />
+        <path d="M5.2 20.5c0-3.5 3-6.1 6.8-6.1s6.8 2.6 6.8 6.1" />
+      </svg>
+    );
+  }
+  if (kind === "location") {
+    return (
+      <svg {...common}>
+        <path d="M12 21.2s6.6-6.1 6.6-10.7a6.6 6.6 0 1 0-13.2 0c0 4.6 6.6 10.7 6.6 10.7z" />
+        <circle cx="12" cy="10.2" r="2.4" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common}>
+      <path d="M6 2.5h7l5 5v14H6z" />
+      <path d="M13 2.5v5h5" />
+    </svg>
   );
 }
 

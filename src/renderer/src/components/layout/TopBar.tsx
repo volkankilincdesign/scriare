@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useProjectStore } from "../../state/projectStore";
 import { confirmDialog } from "../../state/confirmDialogStore";
 import { useUIStore } from "../../state/uiStore";
@@ -20,7 +19,9 @@ export function TopBar() {
   const isPlaying = useProjectStore((s) => s.isPlaying);
   const startPlay = useProjectStore((s) => s.startPlay);
   const exitPlay = useProjectStore((s) => s.exitPlay);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsOpen = useUIStore((s) => s.settingsOpen);
+  const openSettings = useUIStore((s) => s.openSettings);
+  const closeSettings = useUIStore((s) => s.closeSettings);
   const openVariableManager = useUIStore((s) => s.openVariableManager);
   const undo = useProjectStore((s) => s.undo);
   const redo = useProjectStore((s) => s.redo);
@@ -138,7 +139,7 @@ export function TopBar() {
         {!isPlaying && (
           <button
             type="button"
-            onClick={() => setSettingsOpen(true)}
+            onClick={() => openSettings()}
             title="Project Settings"
             className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
           >
@@ -174,7 +175,7 @@ export function TopBar() {
         )}
       </div>
 
-      {settingsOpen && <ProjectSettingsDialog onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && <ProjectSettingsDialog onClose={closeSettings} />}
     </header>
   );
 }

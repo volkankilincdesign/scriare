@@ -323,3 +323,160 @@ export function sceneGroupName(project: Project, sceneId: string): string | null
   const parent = project.content.find((n) => n.id === node.parentId);
   return parent && parent.kind === "folder" ? parent.name : null;
 }
+
+/* ── What the writer was in the middle of (v0.54.0) ──────────────────── */
+
+/**
+ * The kinds of page the hero can name.
+ *
+ * Mirrors `EntityKind` plus scenes, and it is a string on the stored
+ * record rather than a boolean pair because Notes and Assets are expected
+ * to join as further entity kinds (see types/entities.ts) — a
+ * `isCharacter` flag would have to be replaced the day they do.
+ */
+export type ResumeKind = "scene" | "character" | "location";
+
+export interface ResumeSnapshot {
+  kind: ResumeKind;
+  /**
+   * The scene's or entity's id, so "Continue" can put the writer back on
+   * the page the hero is naming (v0.55.0). Absent on anything written
+   * before that, and never trusted on the way back in: a page can be
+   * deleted between two launches, so the id is checked against the story
+   * that was actually loaded — see `landingFor`.
+   */
+  id: string | null;
+  /** The scene's title, or the entity's name. */
+  title: string;
+  /** The opening of its page. */
+  excerpt: string;
+  /** Where it sits — a scene's group. Entities have none. */
+  context: string | null;
+  at: string;
+}
+
+/**
+ * What the writer had open when the project was last saved.
+ *
+ * SCENES ARE NOT THE ONLY THING YOU WORK ON (v0.54.0). Until now this
+ * read `selectedSceneId` and nothing else, so an afternoon spent on a
+ * character or a location ended with a Welcome screen that had no "where
+ * you left off" at all — the app quietly deciding that those hours were
+ * not work. A Character and a Location are the same object as a Scene
+ * with a different `kind`, each with a page written in the same editor,
+ * so there was nothing to build for them but the decision to look.
+ *
+ * Only one of the two ids is ever set — `selectScene` and `selectEntity`
+ * each clear the other, because one document is open at a time — so the
+ * entity is checked first and the scene is the fallback rather than the
+ * two being ranked against each other.
+ */
+export function buildResume(
+  project: Project,
+  selectedSceneId: string | null,
+  selectedEntityId: string | null,
+): ResumeSnapshot | null {
+  const entity = selectedEntityId
+    ? project.entities.find((e) => e.id === selectedEntityId)
+    : undefined;
+  if (entity) {
+    return {
+      kind: entity.kind,
+      id: entity.id,
+      title: entity.name,
+      excerpt: sceneExcerpt(entity.content),
+      context: null,
+      at: new Date().toISOString(),
+    };
+  }
+
+  const scene = selectedSceneId
+    ? project.scenes.find((s) => s.id === selectedSceneId)
+    : undefined;
+  if (!scene) return null;
+
+  return {
+    kind: "scene",
+    id: scene.id,
+    title: scene.title,
+    excerpt: sceneExcerpt(scene.content),
+    context: sceneGroupName(project, scene.id),
+    at: new Date().toISOString(),
+  };
+}
+
+/**
+ * Reads back whatever version of the record is on disk.
+ *
+ * A resume written before v0.54.0 has `sceneTitle` and `groupName` and no
+ * `kind` — and it described a scene, because a scene was the only thing
+ * that could be recorded. So it is read as one rather than discarded:
+ * unlike the cached shape, nothing about the old fields is WRONG, only
+ * narrower, and the next save writes the current shape over it.
+ */
+export function readResume(stored: unknown): ResumeSnapshot | null {
+  const r = stored as Partial<ResumeSnapshot> & { sceneTitle?: string; groupName?: string | null };
+  if (!r || typeof r !== "object") return null;
+
+  const title = typeof r.title === "string" ? r.title : r.sceneTitle;
+  if (typeof title !== "string") return null;
+
+  const kind: ResumeKind =
+    r.kind === "character" || r.kind === "location" || r.kind === "scene" ? r.kind : "scene";
+
+  return {
+    kind,
+    id: typeof r.id === "string" ? r.id : null,
+    title,
+    excerpt: typeof r.excerpt === "string" ? r.excerpt : "",
+    context: typeof r.context === "string" ? r.context : (r.groupName ?? null),
+    at: typeof r.at === "string" ? r.at : "",
+  };
+}
+
+/** What the hero calls each kind. Characters and Locations use the app's own words. */
+export const RESUME_LABEL: Record<ResumeKind, string> = {
+  scene: "Scene",
+  character: "Character",
+  location: "Location",
+};
+
+/**
+ * Where opening a project should LAND (v0.55.0).
+ *
+ * The Welcome screen's hero says "where you left off" and names a scene,
+ * a character or a location — and until now `Continue` opened the story
+ * at its start scene, so the screen made a promise on the most-repeated
+ * action in the app and then broke it. It now carries the page it named.
+ *
+ * The id is checked against the project that was actually loaded rather
+ * than trusted. A page can be deleted, or the file can have been edited
+ * by another copy of the app, between the save that wrote this record and
+ * the launch that reads it — and landing on nothing is worse than landing
+ * on the start scene, because the editor would open on a blank document
+ * the writer cannot account for.
+ *
+ * With no target at all — opening a story from its card, or from the file
+ * dialog — the answer is the start scene, which is what opening a STORY
+ * has always meant. The distinction is the point: a card says "open this
+ * story", the hero says "go back to this page".
+ */
+export function landingFor(
+  project: Project,
+  target: { kind: ResumeKind; id: string | null } | null | undefined,
+): { selectedSceneId: string | null; selectedEntityId: string | null } {
+  const fallback = {
+    selectedSceneId: project.startSceneId ?? project.scenes[0]?.id ?? null,
+    selectedEntityId: null,
+  };
+  if (!target?.id) return fallback;
+
+  if (target.kind === "scene") {
+    return project.scenes.some((s) => s.id === target.id)
+      ? { selectedSceneId: target.id, selectedEntityId: null }
+      : fallback;
+  }
+  return project.entities.some((e) => e.id === target.id)
+    ? { selectedSceneId: null, selectedEntityId: target.id }
+    : fallback;
+}

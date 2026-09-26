@@ -35,10 +35,24 @@ export default async function run({ page, api, check, seedProject, app }) {
       window.__scriareProjectStore.setState({ project: null, filePath: null });
     });
     await wait(350);
-    await api((list) => {
-      window.__scriareProjectStore.setState({ recentProjects: list });
-    }, entries);
-    await wait(250);
+    // Set, then CHECK IT STUCK. The shape backfill runs in the
+    // background against the real recent list, and every entry it fills
+    // pushes that list back into the store — so a fixture set a moment
+    // earlier can be replaced by the tester's own stories between the set
+    // and the assertion. Setting once and hoping is how this spec started
+    // measuring somebody's Documents folder.
+    for (let i = 0; i < 20; i++) {
+      await api((list) => {
+        window.__scriareProjectStore.setState({ recentProjects: list });
+      }, entries);
+      await wait(250);
+      const held = await api(
+        (n) => window.__scriareProjectStore.getState().recentProjects.length === n,
+        entries.length,
+      );
+      if (held) return;
+    }
+    throw new Error("the recent list would not hold still");
   };
 
   // Section labels are uppercased in CSS, and `innerText` reports what is
@@ -493,8 +507,8 @@ export default async function run({ page, api, check, seedProject, app }) {
       total: entry?.shape?.total ?? null,
       nodes: entry?.shape?.nodes?.length ?? null,
       edges: entry?.shape?.edges?.length ?? null,
-      sceneTitle: entry?.resume?.sceneTitle ?? null,
-      excerpt: entry?.resume?.excerpt ?? null,
+      sceneTitle: window.__scriareRecentShape.readResume(entry?.resume)?.title ?? null,
+      excerpt: window.__scriareRecentShape.readResume(entry?.resume)?.excerpt ?? null,
       missing: entry?.missing,
     };
   }, tempPath);
@@ -563,6 +577,129 @@ export default async function run({ page, api, check, seedProject, app }) {
     "a story whose map is missing or out of date gets one drawn, without being opened",
     backfilled?.total === 3 && backfilled?.edges?.length === 1,
     backfilled ? `${backfilled.nodes.length} nodes, ${backfilled.edges.length} edge` : "never filled",
+  );
+
+  // ------------------------------------------- Continue lands on the page
+
+  /**
+   * The hero says "where you left off" and names a page. Until v0.55.0
+   * `Continue` opened the story at its START SCENE — so the one line on
+   * the Welcome screen that makes a promise broke it, on the action every
+   * session begins with.
+   *
+   * Driven through `openRecentProject` against the real file, because the
+   * landing is decided while the project is being loaded and the id has
+   * to be checked against the story that actually came back.
+   */
+  const landings = await api(async (file) => {
+    const store = window.__scriareProjectStore;
+    const open = async (target) => {
+      await store.getState().openRecentProject(file, target);
+      const s = store.getState();
+      return { scene: s.selectedSceneId, entity: s.selectedEntityId };
+    };
+
+    return {
+      // A story card passes nothing: opening a STORY means its start.
+      card: await open(null),
+      // The hero passes the page it named.
+      hero: await open({ kind: "scene", id: "spec-b" }),
+      // A page deleted since the record was written must not land the
+      // writer on a blank document they cannot account for.
+      gone: await open({ kind: "scene", id: "deleted-since" }),
+      // Read LAST, from the project these opens actually loaded. Read
+      // first, it came from whatever the store happened to be holding —
+      // which by this point in the spec is nothing, because the backfill
+      // case above closes the project.
+      startSceneId: store.getState().project?.startSceneId ?? null,
+    };
+  }, tempPath);
+
+  check(
+    "opening a story from its card still lands on the start scene",
+    landings.card.scene === landings.startSceneId && landings.card.entity === null,
+    `landed on ${landings.card.scene}, start is ${landings.startSceneId}`,
+  );
+  check(
+    "CONTINUE LANDS ON THE PAGE THE HERO NAMED",
+    landings.hero.scene === "spec-b" && landings.hero.entity === null,
+    `${landings.hero.scene}`,
+  );
+  check(
+    "...and falls back to the start scene when that page is gone",
+    landings.gone.scene === landings.startSceneId,
+    `${landings.gone.scene}`,
+  );
+
+  /**
+   * ...and a session that ended on a CHARACTER.
+   *
+   * Through `closeProject`, which forces the refresh past its six-second
+   * throttle — the same path a writer takes by closing the app, and the
+   * only one that reliably writes twice inside one test.
+   */
+  const afterEntity = await api(async (file) => {
+    const store = window.__scriareProjectStore;
+    const { buildEntity } = window.__scriareEntities;
+    // OPEN IT FIRST. The backfill case above closed the project, and
+    // `{...null, entities: [...]}` is a perfectly valid object with no
+    // scenes and no content — so this block quietly ran against a project
+    // that did not exist, `closeProject` found no `filePath` and wrote
+    // nothing, and the app rendered an editor over a story with no scenes
+    // until the next state change swept it away. Diagnostics said
+    // "entities: 1" the whole time.
+    await store.getState().openRecentProject(file);
+    const yseide = {
+      ...buildEntity("character", "Yseide"),
+      content: {
+        type: "doc",
+        content: [
+          {
+            type: "paragraph",
+            content: [{ type: "text", text: "The only one in Ashmoor who reads the old hand." }],
+          },
+        ],
+      },
+    };
+    const project = store.getState().project;
+    store.setState({
+      project: { ...project, entities: [yseide] },
+      saveStatus: "unsaved",
+    });
+    store.getState().selectEntity(yseide.id);
+    await store.getState().closeProject();
+    const entry = store.getState().recentProjects.find((e) => e.filePath === file);
+    return window.__scriareRecentShape.readResume(entry?.resume);
+  }, tempPath);
+
+  check(
+    "a session that ended on a character is remembered as one",
+    afterEntity?.kind === "character" && afterEntity?.title === "Yseide",
+    `${afterEntity?.kind} — ${JSON.stringify(afterEntity?.title)}`,
+  );
+  check(
+    "...with the opening of HER page, not of a scene",
+    (afterEntity?.excerpt ?? "").startsWith("The only one in Ashmoor"),
+    JSON.stringify(afterEntity?.excerpt),
+  );
+  check(
+    "...and the id needed to open it again",
+    typeof afterEntity?.id === "string" && afterEntity.id.length > 0,
+    `id: ${JSON.stringify(afterEntity?.id)}`,
+  );
+
+  const entityLanding = await api(async (args) => {
+    const store = window.__scriareProjectStore;
+    await store.getState().openRecentProject(args.file, { kind: "character", id: args.id });
+    const s = store.getState();
+    const landed = { scene: s.selectedSceneId, entity: s.selectedEntityId };
+    await store.getState().closeProject();
+    return landed;
+  }, { file: tempPath, id: afterEntity?.id });
+  check(
+    "Continue opens a CHARACTER's page, not the story's first scene",
+    entityLanding.entity === afterEntity?.id && entityLanding.scene === null,
+    `entity ${entityLanding.entity}, scene ${entityLanding.scene}`,
   );
 
   await api((file) => window.api.recent.remove(file), tempPath);
@@ -658,7 +795,7 @@ export default async function run({ page, api, check, seedProject, app }) {
   );
   check(
     "the hero is where the keyboard lands — launch, Enter, back in the scene",
-    (one.focused ?? "").startsWith("Continue writing: The clerk counts twice"),
+    (one.focused ?? "").startsWith("Continue: The clerk counts twice"),
     JSON.stringify(one.focused),
   );
 
@@ -744,6 +881,98 @@ export default async function run({ page, api, check, seedProject, app }) {
 
 
 
+
+
+  // ------------------------------------------- the hero names any page
+
+  /**
+   * The hero used to read `selectedSceneId` and nothing else, so an
+   * afternoon spent on a character or a location ended with no "where you
+   * left off" at all. These three drive the RENDERED hero rather than the
+   * builder, because what is being checked is that the screen says which
+   * kind of page it is naming — "Yseide" on its own could be a scene
+   * called Yseide.
+   */
+  const kinds = [];
+  for (const sample of [
+    // Written the way v0.53.x wrote it: no `kind`, and `sceneTitle` /
+    // `groupName` rather than `title` / `context`. It described a scene,
+    // because a scene was the only thing it could describe.
+    {
+      label: "a resume written before this version",
+      want: "Scene",
+      resume: {
+        sceneTitle: "The clerk counts twice",
+        excerpt: "He wet his thumb, went back to the top of the column.",
+        groupName: "Act Two",
+        at: iso(1),
+      },
+    },
+    {
+      label: "a character",
+      want: "Character",
+      resume: {
+        kind: "character",
+        title: "Yseide",
+        excerpt: "The only one in Ashmoor who reads the old hand.",
+        context: null,
+        at: iso(1),
+      },
+    },
+    {
+      label: "a location",
+      want: "Location",
+      resume: {
+        kind: "location",
+        title: "The Long Hall",
+        excerpt: "Cold even in summer.",
+        context: null,
+        at: iso(1),
+      },
+    },
+  ]) {
+    await showWelcome([
+      { name: "v0.38.0", filePath: path("Kinds"), lastOpened: iso(1), resume: sample.resume },
+    ]);
+    kinds.push({
+      label: sample.label,
+      want: sample.want,
+      ...(await api(() => {
+        const hero = document.querySelector(".scriare-resume-hero");
+        const text = hero ? hero.innerText : "";
+        return {
+          // The tag line sits between the title and the prose, so it is
+          // read off the hero itself rather than off the whole page —
+          // "the word Character appears somewhere on screen" is not the
+          // same claim.
+          text,
+          icons: hero ? hero.querySelectorAll("svg").length : 0,
+          aria: hero?.getAttribute("aria-label") ?? "",
+        };
+      })),
+    });
+  }
+
+  for (const seen of kinds) {
+    check(
+      `the hero names ${seen.label}`,
+      seen.text.toLowerCase().includes(seen.want.toLowerCase()) &&
+        seen.aria.toLowerCase().includes(seen.want.toLowerCase()),
+      `drawn and announced as “${seen.want}”`,
+    );
+  }
+  check(
+    "the three kinds are told apart by a drawing as well as a word",
+    kinds.every((k) => k.icons >= 2),
+    // The Continue arrow is the other one; a kind with no glyph of its own
+    // would leave exactly one.
+    kinds.map((k) => `${k.want}:${k.icons}`).join(" "),
+  );
+  check(
+    "a story whose resume is in the old format still shows its scene",
+    kinds[0].text.includes("The clerk counts twice") && kinds[0].text.includes("Act Two"),
+    "title and group both survived the format change",
+  );
 
   // ------------------------------------------------ is it the SAME graph
 

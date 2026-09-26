@@ -1369,7 +1369,10 @@ function ChoiceAppearance({
         </select>
         <button
           type="button"
-          onClick={openChoiceStyles}
+          // No origin: this route came from the Inspector, not from
+          // Settings, so the dialog must not offer a way "back" to a
+          // Settings dialog the writer was never in (v0.55.0).
+          onClick={() => openChoiceStyles()}
           title="Edit the project's Choice Styles"
           className="shrink-0 rounded px-1.5 py-1 text-xs text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
         >
@@ -1391,7 +1394,7 @@ function ChoiceAppearance({
         <summary className="cursor-pointer select-none text-[11px] text-[var(--text-3)] hover:text-[var(--text-2)]">
           {overridden ? "Custom for this choice" : "Customise just this one"}
         </summary>
-        <BoxControls box={resolved} onChange={setOverride} />
+        <BoxControls box={resolved} onChange={setOverride} subject="choice" />
         {overridden && (
           <button
             type="button"

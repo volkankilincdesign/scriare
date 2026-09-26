@@ -24,10 +24,21 @@ export interface StoredShape {
 
 /** What the writer was in the middle of when they last saved. */
 export interface StoredResume {
-  sceneTitle: string;
-  excerpt: string;
-  groupName: string | null;
-  at: string;
+  /**
+   * v0.54.0 — which kind of page it was: "scene", "character" or
+   * "location". Absent on anything written before that, which could only
+   * ever have been a scene, so the reader treats a record without it as
+   * one. Every field is optional for the same reason the cached shape's
+   * are: this is a record of what some version of the app once wrote.
+   */
+  kind?: string;
+  title?: string;
+  context?: string | null;
+  /** Pre-v0.54.0 spellings of `title` and `context`. */
+  sceneTitle?: string;
+  groupName?: string | null;
+  excerpt?: string;
+  at?: string;
 }
 
 export interface RecentProjectEntry {

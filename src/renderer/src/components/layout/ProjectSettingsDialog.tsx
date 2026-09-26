@@ -91,8 +91,10 @@ export function ProjectSettingsDialog({ onClose }: ProjectSettingsDialogProps) {
         onClick={() => {
           // Closes this dialog rather than stacking one modal on another:
           // the styles manager is a place you go, not a detail of Settings.
+          // It is told WHERE IT CAME FROM, so it can offer the way back
+          // that this swap left missing until v0.55.0.
           onClose();
-          useUIStore.getState().openChoiceStyles();
+          useUIStore.getState().openChoiceStyles("settings");
         }}
         className="mb-5 w-full rounded-md border border-[var(--border)] px-3 py-2 text-left text-sm text-[var(--text-2)] hover:border-[var(--border-faint)] hover:text-[var(--text)]"
       >

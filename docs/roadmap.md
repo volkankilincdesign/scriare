@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.51.0.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.55.0.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -131,8 +131,63 @@ than gaps.
   24.8. The Content panel's 16 ms is real but the filter was never the
   cause, so that fix was reverted rather than shipped as one. Full
   reasoning in `claude/perf-v0.51.0.md`.
+- **v0.52.0 Tidying up** — the audit's tier 5, and the repository itself. The
+  only fully dead export gone; `26` written four times across three files
+  for two quantities reduced to two names in the module whose header says
+  they must agree; `CHOICE_OPTION_TYPE` declared twice, including once in
+  the module that exists to stop exactly that. Snapping was implemented
+  twice with each comment denying the other — the inner one removed after
+  measuring that graph-auto-layout's 17 checks and graph-grid's 16 stay
+  green without it. Cycle guards on the two tree walkers that would
+  otherwise spin forever on a corrupt `parentId` loop. Two comments that
+  sent readers to concepts the app no longer has, corrected. And the
+  fifteen design documents are mirrored into the repo's `docs/` with an
+  index, so a reader who clones it gets the reasoning as well as the
+  result. **This closes the v0.48.0 audit: tiers 1 through 5, all taken.**
 
-473 tests, 55 negative controls, all caught.
+- **v0.53.0 The Welcome screen** — the first screen anyone sees was the
+  last one nobody had looked at: a 448px column dead centre in 1280×800,
+  85% flat `--bg`, and a stranger's first thirty seconds ending at "No
+  recent projects yet." Rebuilt from three mockup rounds as ONE screen in
+  three states — the frame is identical at nought stories and ninety, and
+  only what the hero slot MEANS changes. Each card carries its story's
+  map, drawn from a shape cached on save (≈675 bytes, no prose, no ids)
+  because a writer with nine stories recognises one by its shape, not its
+  name. Full reasoning in `claude/welcome-v0.53.0.md`.
+- **v0.53.1 / v0.53.2 / v0.53.3** — three rounds of him holding it up
+  against the real thing. A `<button>` carries `align-items: center` from
+  the UA stylesheet, so the map panel measured 0px and every map was drawn
+  at its own size inside a card of a different size (and the hero's accent
+  rail had no height at all). Then the harder one: **normalising x and y
+  independently is not a smaller picture of the graph, it is a different
+  graph** — a real 7.5:1 story in a 2.3:1 card gets every vertical
+  distance multiplied by 3.2. Both axes share one scale now, and the test
+  that should have existed first checks that the projection is a
+  SIMILARITY transform, across every pair of scenes, off the rendered SVG.
+  And the shelf stopped omitting the story in the hero from "your
+  stories".
+- **v0.54.0 Where you left off, whatever you were working on** — the hero
+  read `selectedSceneId` and nothing else, so an afternoon on a character
+  or a location ended with no "where you left off" at all. It names any
+  page now, with the kind on its own line under the title — chosen from
+  three mockups over a chip beside the name, because the app already has a
+  way of saying what a thing is and a rectangular box against a 25px serif
+  italic reads as pinned on.
+
+- **v0.55.0 Three things a stranger can walk into** — no new features, and
+  the last pass before the installer. Project Settings opened Choice
+  Styles by closing itself and left no route back (the swap is right; the
+  dead end was not, and Settings had to move out of TopBar's `useState`
+  to fix it). The Welcome hero's "where you left off" opened the story's
+  START SCENE rather than the page it named — a promise broken on the
+  action every session begins with; the resume now carries the page's id,
+  checked against the story that actually loaded. And the Choice Style
+  colour picker pinned a theme variable to a hex in the story file,
+  permanently and silently; it now says so at the moment it happens, once,
+  with an Undo that restores the variable. One line of dead code found by
+  a control that passed.
+
+550 tests, 88 negative controls, all caught.
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and
@@ -288,12 +343,15 @@ No dates. Sizes are sessions; the order is what matters.
 
 - **Installer.** The last piece of software before the rest of the launch
   list is writing and filming. See item 2 below; nothing about it is
-  blocked.
+  blocked, and as of v0.54.0 nothing else is in front of it.
 
 **Done since this section was last written:** save safety (v0.47.0),
 Export (v0.48.0) — both from the launch list — the audit pass
-(v0.49.0), its own two data-loss bugs (v0.49.1), and tier 4
-(v0.50.0), and tier 3 (v0.51.0).
+(v0.49.0), its own two data-loss bugs (v0.49.1), tier 4 (v0.50.0),
+tier 3 (v0.51.0), tier 5 plus the repository tidy (v0.52.0), and the
+Welcome screen (v0.53.0–v0.54.0). **The v0.48.0 audit is closed.**
+Everything left is the launch list — and of the five items on it, only
+the installer is Claude's to build.
 
 ### Also in flight
 
@@ -396,8 +454,13 @@ Nothing here blocks the launch, and nothing here gets started before it.
   following the ground. The dialog has a "Theme" button back, and Export now
   warns when the result doesn't read — but nothing tells a writer at the
   moment the conversion happens. Worth a small mark in the Inspector.
-- **A UI pass on the oldest surfaces** — Welcome screen, Project Settings,
-  the Inspector's field stack.
+- **A UI pass on the oldest surfaces** — ~~Welcome screen~~ (done,
+  v0.53.0–v0.54.0), Project Settings, the Inspector's field stack.
+  Deliberately NOT taken before the installer: there is no defect
+  underneath it, it has no natural stopping point, and it is the same
+  shape as the v0.42–v0.46 detour this file already keeps an honest note
+  about. The parts with real bugs behind them — the missing way back, and
+  the colour picker — were taken on their own as v0.55.0.
 - **Crash-recovery drafts** — the autosave journal deliberately left out of
   the save-safety work. Only worth it if he ever loses something to a power
   cut that the atomic write couldn't catch.
@@ -423,7 +486,7 @@ reading ground is content, and a tool that ships the author's working
 environment as the reader's has confused the two. That is the same argument
 about authoring tools, pointed at typography instead of at graphs.
 
-Worth saying out loud in the case study: 473 tests against the real packaged
+Worth saying out loud in the case study: 550 tests against the real packaged
 app, every load-bearing one confirmed to fail on a deliberately broken
 build. Most solo projects can't claim that; most professional ones can't
 either — and v0.49.0 is the honest footnote to it, because a green suite of
@@ -512,3 +575,7 @@ exists, lines that can be used in a tease — lives in
   machine, so that is what the tests and controls check; the timings stay
   as documentation and say out loud when the machine is too loaded to
   judge.
+- **The design documents live in two places now**, and the project
+  workspace is the source of truth. The repo's `docs/` is a snapshot
+  mirrored at release time — so a doc edited here is stale there until the
+  next version ships, and refreshing the mirror is part of shipping.

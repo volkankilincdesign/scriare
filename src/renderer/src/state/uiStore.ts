@@ -10,6 +10,9 @@ import { create } from "zustand";
  * `useState` (the pattern `ProjectSettingsDialog` uses from TopBar) can't
  * be reached from a sibling panel.
  */
+/** Where a dialog was opened from, when that decides how it gets back. */
+export type DialogOrigin = "settings";
+
 interface UIState {
   variableManagerOpen: boolean;
   openVariableManager: () => void;
@@ -19,8 +22,26 @@ interface UIState {
    *  looking for it, and the Inspector's per-choice Appearance section is
    *  where you realise you need it. */
   choiceStylesOpen: boolean;
-  openChoiceStyles: () => void;
+  /**
+   * `from` records WHERE the writer came in, so the dialog can offer a way
+   * back (v0.55.0). Choice Styles closes Project Settings on its way open —
+   * deliberately, because it is a place you go rather than a detail of
+   * Settings — and until now that left no route back: the only way to
+   * change the Start Scene after looking at a style was to reopen Settings
+   * from the top bar.
+   */
+  openChoiceStyles: (from?: DialogOrigin | null) => void;
   closeChoiceStyles: () => void;
+  choiceStylesFrom: DialogOrigin | null;
+  /**
+   * v0.55.0 — Project Settings. It was TopBar's own `useState`, which is
+   * exactly the limitation the header of this file describes: a dialog
+   * Settings opened could not get back to it, because nothing outside
+   * TopBar could reopen it.
+   */
+  settingsOpen: boolean;
+  openSettings: () => void;
+  closeSettings: () => void;
   /** v0.36.0 — Check Story. */
   storyCheckOpen: boolean;
   openStoryCheck: () => void;
@@ -72,8 +93,17 @@ export const useUIStore = create<UIState>((set) => ({
   openVariableManager: () => set({ variableManagerOpen: true }),
   closeVariableManager: () => set({ variableManagerOpen: false }),
   choiceStylesOpen: false,
-  openChoiceStyles: () => set({ choiceStylesOpen: true }),
+  choiceStylesFrom: null,
+  // The origin is set on EVERY open, including the ones that pass none —
+  // which is what stops a writer who arrives from the Inspector being
+  // offered a way "back" to a Settings dialog they were never in. Clearing
+  // it again on close was written first and was dead: its negative control
+  // came back green, because the open path had already covered the case.
+  openChoiceStyles: (from = null) => set({ choiceStylesOpen: true, choiceStylesFrom: from }),
   closeChoiceStyles: () => set({ choiceStylesOpen: false }),
+  settingsOpen: false,
+  openSettings: () => set({ settingsOpen: true }),
+  closeSettings: () => set({ settingsOpen: false }),
   storyCheckOpen: false,
   openStoryCheck: () => set({ storyCheckOpen: true }),
   closeStoryCheck: () => set({ storyCheckOpen: false }),

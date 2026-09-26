@@ -35,7 +35,8 @@ import {
 import type { ContentClipboard } from "../utils/contentClipboard";
 import type { Variable, VariableAction, VariableType, VariableValue } from "../types/variables";
 import { applyVariableAction, buildVariable, changeVariableType } from "../types/variables";
-import { buildStoryShape, sceneExcerpt, sceneGroupName } from "../utils/recentShape";
+import { buildResume, buildStoryShape, landingFor } from "../utils/recentShape";
+import type { ResumeKind } from "../utils/recentShape";
 import type { StoredShape } from "../../../preload/index.d";
 import { useInspectorStore } from "./inspectorStore";
 import {
@@ -55,12 +56,8 @@ interface RecentProjectEntry {
   lastOpened: string;
   /** v0.53.0 — see utils/recentShape.ts and main/ipc/projectHandlers.ts. */
   shape?: StoredShape | null;
-  resume?: {
-    sceneTitle: string;
-    excerpt: string;
-    groupName: string | null;
-    at: string;
-  } | null;
+  /** Read with `readResume` — the fields have changed once. */
+  resume?: unknown;
   /** Derived from the disk on every list; never stored. */
   missing?: boolean;
 }
@@ -167,7 +164,15 @@ interface ProjectState {
   loadRecent: () => Promise<void>;
   newProject: (name: string) => Promise<void>;
   openProject: () => Promise<void>;
-  openRecentProject: (filePath: string) => Promise<void>;
+  /**
+   * `target` is the page to land on — the Welcome hero passes the one it
+   * named, a story card passes nothing and gets the start scene. See
+   * `landingFor`.
+   */
+  openRecentProject: (
+    filePath: string,
+    target?: { kind: ResumeKind; id: string | null } | null,
+  ) => Promise<void>;
 
   selectScene: (sceneId: string) => void;
   createScene: (parentId?: string | null) => void;
@@ -384,18 +389,11 @@ async function refreshRecentEntry(
   project: Project,
   filePath: string,
   selectedSceneId: string | null,
+  selectedEntityId: string | null,
   force: boolean,
 ): Promise<RecentProjectEntry[] | null> {
   const shape = buildStoryShape(project);
-  const scene = project.scenes.find((s) => s.id === selectedSceneId) ?? null;
-  const resume = scene
-    ? {
-        sceneTitle: scene.title,
-        excerpt: sceneExcerpt(scene.content),
-        groupName: sceneGroupName(project, scene.id),
-        at: new Date().toISOString(),
-      }
-    : null;
+  const resume = buildResume(project, selectedSceneId, selectedEntityId);
 
   // Deduped on content as well as throttled on time. `at` is deliberately
   // left out of the key: including it would make every payload unique and
@@ -404,7 +402,7 @@ async function refreshRecentEntry(
   const key = JSON.stringify([
     filePath,
     shape,
-    resume && [resume.sceneTitle, resume.excerpt, resume.groupName],
+    resume && [resume.kind, resume.title, resume.excerpt, resume.context],
   ]);
   const now = Date.now();
   if (key === lastRecentTouch.key) return null;
@@ -627,7 +625,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     });
   },
 
-  openRecentProject: async (filePath: string) => {
+  openRecentProject: async (filePath: string, target = null) => {
     try {
       const result = await window.api.project.openPath(filePath);
       const project: Project = normalizeProject(JSON.parse(result.raw));
@@ -637,8 +635,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         filePath: result.filePath,
         fileStamp: result.stamp,
         saveConflict: null,
-        selectedSceneId: project.startSceneId ?? project.scenes[0]?.id ?? null,
-        selectedEntityId: null,
+        ...landingFor(project, target),
         documentToken: get().documentToken + 1,
         saveStatus: "saved",
         recentProjects: result.recent,
@@ -1921,7 +1918,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       // save does is done" — closing the project relies on that (see
       // saveRun above), and it is the one caller that needs this write to
       // have landed.
-      const touched = await refreshRecentEntry(project, filePath, get().selectedSceneId, false);
+      const touched = await refreshRecentEntry(
+        project,
+        filePath,
+        get().selectedSceneId,
+        get().selectedEntityId,
+        false,
+      );
       // Same guard as the stamp above: the writer may have opened another
       // project while this was in flight, and that project's Welcome list
       // is not this one's.
@@ -2121,9 +2124,15 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     // Before the state is cleared, and awaited: after the `set` below
     // there is no project left to describe.
     {
-      const { project, filePath, selectedSceneId } = get();
+      const { project, filePath, selectedSceneId, selectedEntityId } = get();
       if (project && filePath) {
-        const touched = await refreshRecentEntry(project, filePath, selectedSceneId, true);
+        const touched = await refreshRecentEntry(
+          project,
+          filePath,
+          selectedSceneId,
+          selectedEntityId,
+          true,
+        );
         if (touched) set({ recentProjects: touched });
       }
     }
