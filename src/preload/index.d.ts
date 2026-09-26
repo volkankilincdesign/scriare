@@ -78,6 +78,15 @@ export interface ScriareAPI {
       /** Keep a backup even if one was taken recently — see main/projectFile.ts. */
       forceBackup?: boolean,
     ) => Promise<SaveOutcome>;
+    /**
+     * v0.53.1 — reads a project without opening it or touching its place
+     * in Recent Projects. Used only to backfill a missing story map.
+     * `raw` is null when the file could not be read or is too large to be
+     * worth parsing for a thumbnail.
+     */
+    readForShape: (
+      filePath: string,
+    ) => Promise<{ raw: string | null; reason: "too-large" | "unreadable" | null }>;
     /** Writes the open project somewhere else, and switches to it. */
     saveCopy: (
       suggestedPath: string,

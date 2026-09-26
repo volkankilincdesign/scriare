@@ -12,6 +12,66 @@ omitting them.
 
 ---
 
+## v0.53.1 — The Welcome screen, actually fitting the window
+
+Three visual bugs in v0.53.0, two of them the same bug wearing different
+clothes, plus the piece of the feature that only arrived after you no
+longer needed it.
+
+**A `<button>` centres its children.** The UA stylesheet sets
+`align-items: center` on `button`, so a block child of a flex button is
+sized to its *content* instead of being stretched. The map panel
+therefore measured 0px wide, the `<svg>` fell back to its own 372×104
+viewBox, and every story map was drawn at a fixed size inside a card that
+was a different size — a stripe of drawing with the rest of the card
+empty, worse the wider the window. The same line is why the resume
+hero's accent rail was invisible: a 4px-wide flex child with no height is
+nothing at all. One `items-stretch` on each, and a test that measures the
+drawing against the card, then resizes the window and measures again,
+because a map that looks right at one width is exactly what shipped.
+
+**The map is measured, not scaled.** It now lays itself out at the real
+pixel size of the element it is in, with the scene cards staying the size
+they are meant to be — the same thing the Story Graph does when its panel
+is resized. Letting the browser fit a fixed viewBox either letterboxes
+the drawing or smears every scene card, and this screen had the first.
+
+**The shelf has a column.** Content — the frame's contents included —
+sits in a centred 1240px column, and the cards fill the row with
+`auto-fill` rather than three fixed thirds. On a 1900px monitor the old
+layout pinned the header to the window's edges, stretched the hero from
+one side to the other, and left a single card marooned at the left: two
+unrelated screens stacked. Cards are also lifted now with the Story
+Graph's own `--lift-node` and lit top edge, and respond to the pointer,
+because a card here is a picture of a scene card there.
+
+**Maps arrive without opening the story.** v0.53.0 wrote a story's shape
+on save and only on save, so the first launch after updating showed the
+dot field on every card, and a map appeared only once you had opened that
+story and saved it — the picture that exists to help you *find* a story
+turning up after you had found it. The screen now fills them in itself:
+one story at a time, after the first paint, yielding between each, never
+twice for the same file, and without moving anything in Recent Projects.
+Once per story, ever.
+
+**Two paragraphs are no longer welded into one word.** The excerpt
+concatenated every text node it found, so a three-paragraph scene read
+"...But I know... We're in scene 2We are sooo in scene 3" on the most
+prominent line of the screen. Block boundaries are a space; only inline
+runs join with nothing.
+
+**And one finding from the suite itself.** The new resize check drove
+`BrowserWindow.getAllWindows()[0]`, which is the app window when that
+spec runs alone and the export spec's hidden window when the whole suite
+runs — so it resized a window nobody was looking at and then compared two
+measurements of an app window that had never moved. It passed. It now
+takes the window from the page it is showing, and throws if the window
+did not actually resize.
+
+Six more negative controls, all caught; 520 tests.
+
+---
+
 ## v0.53.0 — The Welcome screen
 
 The first screen anyone sees was the last one nobody had looked at. A

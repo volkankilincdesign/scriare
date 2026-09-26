@@ -15,6 +15,7 @@ const api = {
       forceBackup?: boolean,
     ) =>
       ipcRenderer.invoke("project:save", filePath, projectJson, expected, forceBackup),
+    readForShape: (filePath: string) => ipcRenderer.invoke("project:readForShape", filePath),
     saveCopy: (suggestedPath: string, projectJson: string) =>
       ipcRenderer.invoke("project:saveCopy", suggestedPath, projectJson),
   },

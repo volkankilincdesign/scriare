@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useProjectStore } from "../../state/projectStore";
 import { NewProjectDialog } from "./NewProjectDialog";
 import { StoryMap } from "./StoryMap";
+import { useShapeBackfill } from "./useShapeBackfill";
 import { BrandMark } from "../common/BrandMark";
 import type { StoryShape } from "../../utils/recentShape";
 
@@ -50,6 +51,12 @@ export function WelcomeScreen() {
     void loadRecent();
   }, [loadRecent]);
 
+  // Stories saved before this app cached a shape get their maps drawn
+  // here, once, in the background — see useShapeBackfill.
+  useShapeBackfill(recentProjects, (list) =>
+    useProjectStore.setState({ recentProjects: list as typeof recentProjects }),
+  );
+
   const needle = query.trim().toLowerCase();
   const searching = recentProjects.length > 0 && needle.length > 0;
 
@@ -71,8 +78,17 @@ export function WelcomeScreen() {
   const grid = hero ? recentProjects.slice(1) : recentProjects;
 
   return (
-    <div className="flex h-screen w-screen flex-col bg-[var(--bg)] text-[var(--text)]">
-      <header className="flex flex-shrink-0 items-center gap-3 border-b border-[var(--border-soft)] px-16 py-4">
+    <div className="scriare-welcome flex h-screen w-screen flex-col bg-[var(--bg)] text-[var(--text)]">
+      <header className="flex-shrink-0 border-b border-[var(--border-soft)] px-8 py-4">
+        {/*
+          The frame is full-bleed; its CONTENTS sit in the same centred
+          column as everything below, so the wordmark lines up with the
+          first card and New Project lines up with the last one. Before
+          this the header was pinned to the window's own edges and the
+          content was not, which on a wide window reads as two unrelated
+          screens stacked (v0.53.1).
+        */}
+        <div className="mx-auto flex w-full max-w-[var(--welcome-column)] items-center gap-3">
         <BrandMark className="h-7 w-7 flex-shrink-0" />
         <span className="font-serif-narrative text-xl italic text-[var(--text)]">Scriare</span>
 
@@ -126,12 +142,14 @@ export function WelcomeScreen() {
         >
           New Project
         </button>
+        </div>
       </header>
 
       {recentProjects.length === 0 ? (
         <EmptyShelf onStart={() => setShowNewProjectDialog(true)} />
       ) : (
-        <main className="flex flex-grow flex-col overflow-y-auto px-16 pb-10 pt-6">
+        <main className="flex-grow overflow-y-auto px-8 pb-12 pt-7">
+          <div className="mx-auto flex w-full max-w-[var(--welcome-column)] flex-col">
           {searching ? (
             <SearchResults
               needle={query.trim()}
@@ -159,6 +177,7 @@ export function WelcomeScreen() {
               )}
             </>
           )}
+          </div>
         </main>
       )}
 
@@ -213,7 +232,8 @@ const ILLUSTRATION: StoryShape = {
 
 function EmptyShelf({ onStart }: { onStart: () => void }) {
   return (
-    <main className="flex flex-grow flex-col justify-center px-16">
+    <main className="flex flex-grow flex-col justify-center px-8">
+      <div className="mx-auto w-full max-w-[var(--welcome-column)]">
       <div className="mb-8 max-w-[620px]">
         {/*
           The whole pitch in four words. The two lines under it answer the
@@ -234,7 +254,7 @@ function EmptyShelf({ onStart }: { onStart: () => void }) {
       <div className="grid grid-cols-2 gap-4">
         <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-raised)]">
           <div className="border-b border-[var(--border-soft)] bg-[var(--bg)]">
-            <StoryMap shape={ILLUSTRATION} width={567} height={150} nodeWidth={46} nodeHeight={18} />
+            <StoryMap shape={ILLUSTRATION} height={168} nodeWidth={48} nodeHeight={19} />
           </div>
           <div className="px-5 pb-5 pt-4">
             <div className="text-[17px] font-medium text-[var(--text)]">This is a story here</div>
@@ -269,6 +289,7 @@ function EmptyShelf({ onStart }: { onStart: () => void }) {
           </span>
         </button>
       </div>
+      </div>
     </main>
   );
 }
@@ -296,7 +317,9 @@ function ResumeHero({ entry, onOpen }: { entry: RecentEntry; onOpen: (p: string)
       autoFocus
       onClick={() => void onOpen(entry.filePath)}
       aria-label={`Continue writing: ${resume.sceneTitle}, in ${entry.name}`}
-      className="flex w-full flex-shrink-0 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-left shadow-[var(--shadow-floating)]"
+      /* Same UA `align-items: center` on <button>: without this the
+         accent rail below has no height and never appears at all. */
+      className="scriare-resume-hero flex w-full flex-shrink-0 items-stretch overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-left"
     >
       <span className="w-1 flex-shrink-0 bg-[var(--accent)]" />
       <span className="flex flex-grow items-center gap-7 px-6 py-5">
@@ -378,7 +401,7 @@ function SearchResults({
             recognising the story you are hunting, not for decorating the
             ones you are not.
           */}
-          <ul className="grid grid-cols-3 gap-x-9">
+          <ul className="grid gap-x-10 [grid-template-columns:repeat(auto-fill,minmax(272px,1fr))]">
             {rest.map((entry) => (
               <li key={entry.filePath}>
                 <button
@@ -386,7 +409,7 @@ function SearchResults({
                   onClick={() => void onOpen(entry.filePath)}
                   aria-label={ariaFor(entry)}
                   title={entry.filePath}
-                  className="flex w-full items-baseline gap-2.5 border-t border-[var(--border-soft)] px-1.5 py-2.5 text-left"
+                  className="scriare-story-row flex w-full items-baseline gap-2.5 rounded-md border-t border-[var(--border-soft)] px-2 py-2.5 text-left"
                 >
                   {entry.missing && <MissingIcon />}
                   <span className="min-w-0 flex-grow truncate text-sm font-medium text-[var(--text)]">
@@ -411,7 +434,14 @@ function SearchResults({
 
 function StoryGrid({ entries, onOpen }: { entries: RecentEntry[]; onOpen: (p: string) => void }) {
   return (
-    <ul className="grid grid-cols-3 gap-[18px]">
+    /*
+      auto-fill, not three fixed columns (v0.53.1). A card has a size it
+      wants to be — wide enough for a legible map, narrow enough to scan
+      several at once — and the number per row follows the window. Three
+      fixed columns meant a 620px card on a wide monitor with a 370px
+      drawing stranded in the middle of it.
+    */
+    <ul className="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(272px,1fr))]">
       {entries.map((entry) => (
         <li key={entry.filePath}>
           <button
@@ -419,10 +449,24 @@ function StoryGrid({ entries, onOpen }: { entries: RecentEntry[]; onOpen: (p: st
             onClick={() => void onOpen(entry.filePath)}
             aria-label={ariaFor(entry)}
             title={entry.filePath}
-            className="flex w-full flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] text-left shadow-[var(--shadow-raised)]"
+            /*
+              A card is lifted the way a scene card on the Story Graph is
+              lifted — the same --lift-node shadow and lit top edge — so
+              the thing you click here and the thing it is a picture of
+              are made of the same material.
+            */
+            /*
+              `items-stretch` is not decoration. The UA stylesheet sets
+              `align-items: center` on <button>, so a block child of a flex
+              button is sized to its CONTENT rather than stretched — which
+              made the map panel 0px wide, and the map fell back to its
+              own intrinsic size and sat in a stripe inside a wider card.
+              That was the "it doesn't resize" bug.
+            */
+            className="scriare-story-card flex w-full flex-col items-stretch overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] text-left"
           >
             <span className="block border-b border-[var(--border-soft)] bg-[var(--bg)]">
-              <StoryMap shape={entry.shape} width={372} height={104} />
+              <StoryMap shape={entry.shape} height={124} />
             </span>
             <span className="flex items-baseline gap-2.5 px-4 pb-3.5 pt-3">
               {entry.missing && <MissingIcon />}

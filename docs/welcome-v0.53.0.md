@@ -156,3 +156,88 @@ them was NOT CAUGHT on the first run — not because the assertion failed to
 fire, but because the control's `expect` string used a curly apostrophe
 where the check's name has a straight one. Same stale-`expect` mistake
 v0.49.0 made, found the same way.
+
+---
+
+# v0.53.1 — what the first build got wrong
+
+Shipped, opened on a real machine, and three things were visibly wrong.
+Recorded here because two of them were the same bug and it is one worth
+knowing.
+
+## A `<button>` centres its children
+
+The UA stylesheet sets `align-items: center` on `button`. A flex button's
+block child is therefore sized to its **content**, not stretched to the
+button — so the map panel measured 0px wide, the `<svg>` fell back to its
+own 372×104 viewBox, and every map was drawn at a fixed size inside a
+card of a different size. On a wide window that is a stripe of drawing
+with the rest of the card empty, which is what "the layout when the
+window is resized looks terrible" meant.
+
+The same line is why the resume hero's accent rail never appeared: a
+4px-wide flex child, centred, with no intrinsic height, is nothing.
+
+`items-stretch` on both. The lesson generalises: inside a `<button>`,
+flex behaves differently than it does anywhere else in the app, and
+nothing about the markup says so.
+
+## Measured, not scaled
+
+`StoryMap` now measures the element it is in (ResizeObserver) and lays
+out at real pixel size, with node cards staying the size they should be.
+Handing a fixed viewBox to the browser gives you two choices and both are
+wrong: `meet` letterboxes the drawing, `none` smears every scene card.
+The Story Graph itself re-lays-out rather than scaling when its panel
+changes size; the thumbnail should behave like the thing it is a picture
+of.
+
+## The column
+
+Everything — the frame's contents included — sits in a centred 1240px
+column, and cards fill the row with `repeat(auto-fill, minmax(272px,
+1fr))`. Before, the header was pinned to the window's edges while the
+content was not, the hero ran the full 1900px from "Where you left off"
+to "Continue", and a single card sat marooned at the left. Cards now
+carry the graph's own `--lift-node` and lit top edge and respond to the
+pointer.
+
+`--welcome-column` is declared on `.scriare-welcome`, **not** `:root`.
+`:root` in this app is the theme token contract — themes.css defines
+every token there and a test holds all eight themes to the same list — so
+a layout constant put there is reported as missing from seven themes.
+
+## Maps that arrive too late
+
+The first build wrote a story's shape on save and only on save. Every
+card showed the dot field on the first launch after updating, and a map
+appeared only once the writer had opened that story and saved it: the
+picture that exists to help you *find* a story arriving after you had
+already found it.
+
+`useShapeBackfill` fills them in on the screen itself — one story at a
+time, after the first paint, yielding between each, never twice for the
+same path, skipping anything unreadable or over 12MB, and using
+`project:readForShape`, which deliberately does **not** move the story to
+the top of Recent Projects. Reading a file to draw its thumbnail is not
+opening it.
+
+## The excerpt welded its paragraphs
+
+`sceneExcerpt` concatenated every text node it found, so a
+three-paragraph scene read `...But I know... We're in scene 2We are sooo
+in scene 3` — on the most prominent line of the screen. Block boundaries
+are a space; only inline runs (a bold word mid-sentence) join with
+nothing.
+
+## And the suite caught itself
+
+The new resize check took `BrowserWindow.getAllWindows()[0]`. That is the
+app window when the spec runs alone, and the export spec's hidden window
+when the whole suite runs — so it resized a window nobody was looking at,
+then compared two measurements of an app window that had never moved, and
+passed. It now takes the window from the page it is showing and throws if
+the window did not actually resize.
+
+It was green in `SPEC=welcome` and caught on the first full run. Which is
+the argument for the full run.

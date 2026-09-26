@@ -186,12 +186,32 @@ export function sceneExcerpt(content: JSONContent | undefined | null, limit = 14
   if (!content) return "";
   const parts: string[] = [];
 
-  function walk(node: JSONContent): void {
-    if (parts.join(" ").length > limit * 2) return;
-    if (typeof node.text === "string") parts.push(node.text);
-    node.content?.forEach(walk);
+  /**
+   * BLOCKS ARE SEPARATED (v0.53.1). The first version concatenated every
+   * text node it found, so a scene of three paragraphs came out as
+   * "...I don't know...But I know... We're in scene 2We are sooo in scene
+   * 3" — two sentences welded at the seam, on the most prominent line of
+   * the Welcome screen. A paragraph boundary is a space in flat text;
+   * only INLINE runs (a bold word mid-sentence) join with nothing.
+   */
+  function walk(node: JSONContent, inline: boolean): void {
+    if (parts.length > 400) return;
+    if (typeof node.text === "string") {
+      parts.push(node.text);
+      return;
+    }
+    const children = node.content;
+    if (!children) return;
+    // A node whose children carry text directly is an inline container
+    // (a paragraph, a heading); anything else is a stack of blocks.
+    const childrenAreInline = children.some((c) => typeof c.text === "string");
+    children.forEach((child, i) => {
+      if (i > 0 && !childrenAreInline) parts.push(" ");
+      walk(child, childrenAreInline);
+    });
+    void inline;
   }
-  walk(content);
+  walk(content, false);
 
   const flat = parts.join("").replace(/\s+/g, " ").trim();
   if (flat.length <= limit) return flat;

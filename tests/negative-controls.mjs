@@ -570,8 +570,8 @@ const CONTROLS = [
   {
     name: "the non-matching stories faded out again",
     file: src("components/welcome/WelcomeScreen.tsx"),
-    from: '          <ul className="grid grid-cols-3 gap-x-9">',
-    to: '          <ul className="grid grid-cols-3 gap-x-9 opacity-50">',
+    from: '          <ul className="grid gap-x-10 [grid-template-columns:repeat(auto-fill,minmax(272px,1fr))]">',
+    to: '          <ul className="grid gap-x-10 opacity-50 [grid-template-columns:repeat(auto-fill,minmax(272px,1fr))]">',
     spec: "welcome",
     expect: "NOTHING IS DIMMED",
   },
@@ -586,16 +586,16 @@ const CONTROLS = [
   {
     name: "a story with no cached shape showing nothing at all",
     file: src("components/welcome/StoryMap.tsx"),
-    from: "    return <DotField width={width} height={height} />;",
-    to: "    return null;",
+    from: "        : <DotField width={width} height={height} />)}",
+    to: "        : null)}",
     spec: "welcome",
     expect: "an empty canvas, not a grey box",
   },
   {
     name: "a card that draws the dot field over a story that has a shape",
     file: src("components/welcome/WelcomeScreen.tsx"),
-    from: "              <StoryMap shape={entry.shape} width={372} height={104} />",
-    to: "              <StoryMap shape={null} width={372} height={104} />",
+    from: "              <StoryMap shape={entry.shape} height={124} />",
+    to: "              <StoryMap shape={null} height={124} />",
     spec: "welcome",
     expect: "draws its map",
   },
@@ -621,8 +621,8 @@ const CONTROLS = [
     // three screens wearing the same paint.
     name: "a header that is a different size when the shelf is empty",
     file: src("components/welcome/WelcomeScreen.tsx"),
-    from: '      <header className="flex flex-shrink-0 items-center gap-3 border-b border-[var(--border-soft)] px-16 py-4">',
-    to: '      <header className={`flex flex-shrink-0 items-center gap-3 border-b border-[var(--border-soft)] px-16 ${recentProjects.length ? "py-4" : "py-7"}`}>',
+    from: '      <header className="flex-shrink-0 border-b border-[var(--border-soft)] px-8 py-4">',
+    to: '      <header className={`flex-shrink-0 border-b border-[var(--border-soft)] px-8 ${recentProjects.length ? "py-4" : "py-7"}`}>',
     spec: "welcome",
     expect: "THE FRAME DOES NOT MOVE",
   },
@@ -646,7 +646,61 @@ const CONTROLS = [
     // three lines above it — the same stale-`expect` mistake v0.49.0 made.
     expect: "follows the theme's GROUND",
   },
+  // ── v0.53.1 · the resize and polish pass ──────────────────────────────
+  {
+    // A <button> carries `align-items: center` from the UA stylesheet, so
+    // a block child is sized to its content, not stretched. That one line
+    // is why every map was drawn at its own size inside a card of a
+    // different size.
+    name: "a card whose map is sized to its content instead of the card",
+    file: src("components/welcome/WelcomeScreen.tsx"),
+    from: '            className="scriare-story-card flex w-full flex-col items-stretch overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] text-left"',
+    to: '            className="scriare-story-card flex w-full flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] text-left"',
+    spec: "welcome",
+    expect: "fills the card it is drawn in",
+  },
+  {
+    name: "a map that does not follow the window",
+    file: src("components/welcome/StoryMap.tsx"),
+    from: "    observer.observe(node);",
+    to: "    void observer;",
+    spec: "welcome",
+    expect: "follows the card when the window is resized",
+  },
+  {
+    name: "a shelf that runs to the edges of a wide monitor",
+    file: src("styles/index.css"),
+    from: "  --welcome-column: 1240px;",
+    to: "  --welcome-column: 4000px;",
+    spec: "welcome",
+    expect: "stops growing at the content column",
+  },
+  {
+    name: "an accent rail with no height, which is no accent rail",
+    file: src("components/welcome/WelcomeScreen.tsx"),
+    from: '      className="scriare-resume-hero flex w-full flex-shrink-0 items-stretch overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-left"',
+    to: '      className="scriare-resume-hero flex w-full flex-shrink-0 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-left"',
+    spec: "welcome",
+    expect: "accent rail full height",
+  },
+  {
+    name: "two paragraphs welded into one word",
+    file: src("utils/recentShape.ts"),
+    from: '      if (i > 0 && !childrenAreInline) parts.push(" ");',
+    to: "      void i;",
+    spec: "welcome",
+    expect: "not welded into one word",
+  },
+  {
+    name: "a story map that only ever arrives after you open the story",
+    file: src("components/welcome/WelcomeScreen.tsx"),
+    from: "  useShapeBackfill(recentProjects, (list) =>",
+    to: "  if (false) useShapeBackfill(recentProjects, (list) =>",
+    spec: "welcome",
+    expect: "gets one drawn without being opened",
+  },
 ];
+
 
 
 async function runSpec(spec) {

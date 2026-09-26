@@ -231,6 +231,16 @@ export default async function run({ page, api, check, seedProject, app }) {
       })(),
       empty: buildStoryShape({ ...project, scenes: [] }),
       excerpt: sceneExcerpt(scenes[0].content),
+      // Shipped as "...I don't know...But I know... We're in scene 2We are
+      // sooo in scene 3" — two sentences joined at the block boundary, on
+      // the most prominent line of the screen.
+      welded: sceneExcerpt({
+        type: "doc",
+        content: [
+          { type: "paragraph", content: [{ type: "text", text: "first line." }] },
+          { type: "paragraph", content: [{ type: "text", text: "second line" }] },
+        ],
+      }),
     };
   });
 
@@ -284,6 +294,12 @@ export default async function run({ page, api, check, seedProject, app }) {
     "a project with no scenes caches nothing rather than an empty drawing",
     shapeFacts.empty === null,
     String(shapeFacts.empty),
+  );
+
+  check(
+    "two paragraphs are not welded into one word",
+    shapeFacts.welded === "first line. second line",
+    JSON.stringify(shapeFacts.welded),
   );
 
   check(
@@ -453,8 +469,44 @@ export default async function run({ page, api, check, seedProject, app }) {
     `missing: ${cached.missing}`,
   );
 
-  await api((file) => window.api.recent.remove(file), tempPath);
+  // --------------------------------------------------- the backfill
+
+  /**
+   * A story saved before this app cached shapes gets its map drawn on the
+   * Welcome screen itself, without being opened.
+   *
+   * v0.53.0 wrote the shape on save and only on save, so the first launch
+   * after updating showed the dot field on every card and a map appeared
+   * only once the writer had opened that story and saved it — the picture
+   * that is there to help you FIND a story arriving after you had found
+   * it. Simulated exactly: take a story that IS on disk, forget its shape,
+   * show the Welcome screen, and wait.
+   *
+   * The temp story sits at the front of Recent Projects (it was opened a
+   * moment ago), and the backfill takes the first entry with no shape, so
+   * this one is picked first rather than whatever else is in the list.
+   */
+  await api((file) => window.api.recent.touch(file, { shape: null }), tempPath);
   await api(() => window.__scriareProjectStore.getState().closeProject());
+
+  let backfilled = null;
+  for (let i = 0; i < 40 && !backfilled; i++) {
+    await wait(250);
+    backfilled = await api(
+      (file) =>
+        window.__scriareProjectStore
+          .getState()
+          .recentProjects.find((e) => e.filePath === file)?.shape ?? null,
+      tempPath,
+    );
+  }
+  check(
+    "a story with no cached map gets one drawn without being opened",
+    backfilled?.total === 3 && backfilled?.edges?.length === 1,
+    backfilled ? `${backfilled.nodes.length} nodes, ${backfilled.edges.length} edge` : "never filled",
+  );
+
+  await api((file) => window.api.recent.remove(file), tempPath);
 
   // ------------------------------------------------------- empty shelf
 
@@ -506,6 +558,14 @@ export default async function run({ page, api, check, seedProject, app }) {
       // The bug this exists for: a heading standing over an empty list.
       orphanHeading: /your other stories/i.test(text),
       focused: document.activeElement?.getAttribute("aria-label") ?? null,
+      // The rail is a flex child of a <button>, which the UA stylesheet
+      // centres — so without an explicit stretch it has no height and is
+      // simply not there, which is how it shipped.
+      rail: (() => {
+        const hero = document.querySelector(".scriare-resume-hero");
+        const first = hero?.firstElementChild;
+        return first ? Math.round(first.getBoundingClientRect().height) : null;
+      })(),
       headerBox: JSON.parse(JSON.stringify(document.querySelector("header").getBoundingClientRect())),
     };
   });
@@ -519,6 +579,11 @@ export default async function run({ page, api, check, seedProject, app }) {
   check(
     "'Your other stories' does not render over an empty list",
     one.orphanHeading === false,
+  );
+  check(
+    "the hero carries its accent rail full height",
+    one.rail !== null && one.rail > 40,
+    `${one.rail}px of rail`,
   );
   check(
     "the hero is where the keyboard lands — launch, Enter, back in the scene",
@@ -606,6 +671,90 @@ export default async function run({ page, api, check, seedProject, app }) {
     empty.buttons.join(" / "),
   );
 
+
+
+  // ------------------------------------------------ filling the window
+
+  /**
+   * The bug this exists for, in one sentence: the map was drawn at its own
+   * intrinsic size inside a card that was a different size.
+   *
+   * The cause was not the drawing. A <button> carries `align-items:
+   * center` from the UA stylesheet, so a block child of a flex button is
+   * sized to its CONTENT rather than stretched — the map panel measured
+   * 0px, the <svg> fell back to its viewBox, and every card showed a
+   * 372px stripe with the rest of the card empty. Which is why this check
+   * measures the drawing against the CARD, and then resizes the window
+   * and measures again: a map that merely looks right at one width is
+   * exactly what shipped.
+   */
+  /*
+    THE APP'S OWN WINDOW, via the page it is showing. The first version
+    took `BrowserWindow.getAllWindows()[0]`, which is the app window when
+    this spec runs alone and is the export spec's hidden window when the
+    whole suite runs — so the resize silently moved a window nobody was
+    looking at, and the check compared two measurements of an app window
+    that had never moved. It passed. That is the failure mode this whole
+    suite exists to avoid, and it survived until the first full run.
+  */
+  const appWindow = await app.browserWindow(page);
+  const originalBounds = await appWindow.evaluate((win) => ({
+    ...win.getBounds(),
+    maximized: win.isMaximized(),
+  }));
+
+  const setWidth = async (w) => {
+    await appWindow.evaluate((win, width) => {
+      if (win.isMaximized()) win.unmaximize();
+      win.setBounds({ ...win.getBounds(), width });
+    }, w);
+    await wait(500);
+    const seen = await api(() => {
+      const card = [...document.querySelectorAll("main ul li button")].find((b) =>
+        b.textContent.includes("Lantern"),
+      );
+      const map = card?.querySelector("[data-story-map]");
+      return {
+        window: window.innerWidth,
+        card: card ? Math.round(card.getBoundingClientRect().width) : 0,
+        map: map ? Math.round(map.getBoundingClientRect().width) : 0,
+        // The content column is capped, so the shelf must NOT run to the
+        // window's own edges on a wide monitor.
+        column: Math.round(document.querySelector("main ul").getBoundingClientRect().width),
+      };
+    });
+    // Loud, not silent. A window that refused to resize must fail this
+    // spec, not quietly let it measure the same thing twice.
+    if (Math.abs(seen.window - w) > 60) {
+      throw new Error(`asked for a ${w}px window, got ${seen.window}px`);
+    }
+    return seen;
+  };
+
+  const narrow = await setWidth(1100);
+  const wide = await setWidth(1760);
+
+  check(
+    "the map fills the card it is drawn in",
+    narrow.map > 0 && narrow.card - narrow.map <= 2,
+    `card ${narrow.card}px, map ${narrow.map}px`,
+  );
+  check(
+    "...and follows the card when the window is resized",
+    wide.map > 0 && wide.card - wide.map <= 2 && wide.map !== narrow.map,
+    `${narrow.map}px at a 1100px window → ${wide.map}px at 1760px`,
+  );
+  check(
+    "the shelf stops growing at the content column",
+    wide.column <= 1240 && wide.window >= 1700,
+    `${wide.column}px of a ${wide.window}px window`,
+  );
+
+  await appWindow.evaluate((win, bounds) => {
+    win.setBounds({ x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height });
+    if (bounds.maximized) win.maximize();
+  }, originalBounds);
+  await wait(400);
 
   // ------------------------------------------------- the mark on a page
 

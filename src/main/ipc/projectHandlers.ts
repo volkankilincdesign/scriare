@@ -96,6 +96,17 @@ function withProjectExtension(filePath: string): string {
   return KNOWN_PROJECT_EXTENSIONS.has(extension) ? filePath : `${filePath}.${PROJECT_EXT}`;
 }
 
+/**
+ * The largest project the Welcome screen will read just to draw its map.
+ *
+ * A thumbnail is not worth an unbounded read and parse. Twelve megabytes
+ * is far above any story anyone has written in this app and far below the
+ * point where parsing one janks the screen; past it the card keeps its dot
+ * field until the writer saves the story themselves, which costs nothing
+ * and is honest about what the app knows.
+ */
+const MAX_SHAPE_SOURCE_BYTES = 12 * 1024 * 1024;
+
 function recentFilePath(): string {
   return path.join(app.getPath("userData"), "recent-projects.json");
 }
@@ -232,6 +243,35 @@ export function registerProjectHandlers(): void {
       };
     },
   );
+
+  /**
+   * Read a project WITHOUT opening it (v0.53.1).
+   *
+   * Only the Welcome screen's shape backfill uses this: a story last saved
+   * before v0.53.0 has no cached map, and waiting for the writer to open
+   * and save each one means the screen's whole point — you recognise a
+   * story by its shape — does not arrive until they have already found the
+   * story without it.
+   *
+   * Deliberately NOT `project:openPath`, which files the story at the top
+   * of Recent Projects: reading a story to draw its thumbnail is not
+   * opening it, and reordering the list under the writer's cursor while
+   * they look at it would be the worst possible way to be helpful.
+   *
+   * Refuses a file too large to be worth parsing for a thumbnail, and says
+   * so rather than throwing — the caller's job is to leave the dot field
+   * up and move on.
+   */
+  ipcMain.handle("project:readForShape", async (_event, filePath: string) => {
+    try {
+      const stat = await fs.stat(filePath);
+      if (stat.size > MAX_SHAPE_SOURCE_BYTES) return { raw: null, reason: "too-large" as const };
+      const raw = await fs.readFile(filePath, "utf-8");
+      return { raw, reason: null };
+    } catch {
+      return { raw: null, reason: "unreadable" as const };
+    }
+  });
 
   ipcMain.handle("project:open", async (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);

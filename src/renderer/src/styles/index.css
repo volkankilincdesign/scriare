@@ -858,3 +858,68 @@ button.scriare-dock-btn:focus-visible {
   box-shadow: none;
 }
 
+
+/* ── The Welcome screen (v0.53.1) ─────────────────────────────────────── */
+
+/* How wide the first screen's content is allowed to get.
+   The frame, the hero and the shelf all share this column, so the
+   wordmark lines up with the first card and New Project with the last.
+   Capped rather than full-bleed because a hero that runs 1900px from
+   "Where you left off" to "Continue" is not one object any more — it is
+   two things at opposite ends of a monitor, which is exactly how the
+   first build of this screen looked on a wide window.
+
+   Scoped to the screen rather than declared on :root, because :root in
+   this app is the THEME contract — themes.css defines every token there
+   and a test holds every theme to the same list. A layout constant put
+   there is not a theme token, and the only thing that happens is that
+   seven themes are reported as missing it. */
+.scriare-welcome {
+  --welcome-column: 1240px;
+}
+
+/* A story card is made of the same material as a scene card on the Story
+   Graph: the same lift, the same lit top edge, the same response to being
+   pointed at. It is a picture of one, so it should feel like one. */
+.scriare-story-card {
+  box-shadow: var(--lift-node), var(--lift-edge);
+  transition:
+    box-shadow 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease;
+}
+
+.scriare-story-card:hover {
+  border-color: var(--border-strong, var(--text-3));
+  box-shadow: var(--lift-node-on), var(--lift-edge);
+  transform: translateY(-1px);
+}
+
+.scriare-story-card:active {
+  transform: translateY(0);
+  box-shadow: var(--lift-node), var(--lift-edge);
+}
+
+/* The hero is the one thing on this screen that is a page rather than a
+   card, so it carries the page's own elevation. */
+.scriare-resume-hero {
+  box-shadow: var(--lift-page), var(--lift-edge);
+  transition:
+    box-shadow 140ms ease,
+    border-color 140ms ease;
+}
+
+.scriare-resume-hero:hover {
+  border-color: var(--border-strong, var(--text-3));
+  box-shadow: var(--lift-page), var(--lift-edge-strong);
+}
+
+/* A row in "Everything else" is not a card and must not pretend to be
+   one — it lights its own strip instead of lifting. */
+.scriare-story-row {
+  transition: background-color 120ms ease;
+}
+
+.scriare-story-row:hover {
+  background-color: var(--surface-2);
+}
