@@ -12,6 +12,71 @@ omitting them.
 
 ---
 
+## v0.58.0 — How it reads, at the moment you pick
+
+A colour is chosen while looking at one page — whichever of the eight
+themes the writer works in — and lands on one of two, chosen by the
+reader. Nothing in the app said so until the export dialog, which may be
+weeks later.
+
+**The measurement that decided what the fix could be.** `#7a1f1f`, a dark
+red picked on a light theme, is 9.54:1 on Paper and **1.82:1 on Night**.
+`#bcd6f0`, a pale blue picked in Dark, is 12.46:1 on Night and **1.39:1
+on Paper**. And the set of colours that clear 4.5:1 on *both* grounds is
+**empty**: the best any single literal colour can manage is about 4.16:1,
+just under the line. So "warn them and let them choose a safer colour" is
+advice that sometimes has no answer, and this panel does not pretend
+otherwise. What it does is turn a surprise at export time into a decision
+at pick time.
+
+**The native colour dialog is untouched.** Drawn three ways first. Owning
+the picker would have bought a swatch list and cost the eyedropper, the OS
+palette and every colour the writer used in every other app that week —
+so `<input type="color">` stays exactly as it was, first press still opens
+Windows' own dialog, no extra click, and the reading appears underneath
+it. That input fires on every pixel of a drag and the toolbar has thrown
+those events into a one-per-frame throttle since v0.33.0, so the readings
+follow the drag for free. The panel stays after the dialog closes, because
+it cannot depend on being seen during it: Windows places that dialog where
+it likes and may sit over the toolbar.
+
+**Three controls, one component.** Text colour, highlight and a choice's
+fill are all "a colour that has to survive two grounds", so they share
+one panel rather than three near-copies — v0.56.0's lesson about the
+button. What each one is measured against differs and the differences are
+the point: ink is measured on the page, a highlight is measured as the
+ground's own text ON it, and a choice's fill is measured as the thing its
+label has to be legible against. The border is deliberately left
+unmeasured: it carries no text and the export enforces no threshold on
+it, and inventing one here would be a second rule to disagree with the
+first.
+
+**The numbers come from the export's own function.** `readColorOnGrounds`
+lives beside `checkStoryContrast` and shares its parsing, compositing and
+threshold, so the number in the picker and the number in the export
+warning cannot disagree. The spec does not ask the app what the ratio is:
+the three expected values were computed independently and written down,
+because a test that reads a number out of the app and checks the app
+printed it is a test of nothing.
+
+**It says what the number means.** "1.8:1" is nothing to a narrative
+designer; "Nearly invisible on Night" is everything. Graded rather than
+binary, because 4.4:1 and 1.1:1 are not the same news.
+
+**And it does not replace the notice it sits beside.** Picking a colour on
+a Choice Style that still follows the theme has raised an undoable notice
+since v0.55.0. The panel answers a different question — how it reads on
+each ground — and a control asserts the notice still fires, because a new
+thing quietly swallowing an old one is how a fix becomes a regression.
+
+The previews are marked `data-content-colour`: Night must look like Night
+in all eight themes, so those are literal values, and the palette audit
+skips them the way it skips the toolbar's own swatch.
+
+Eight more negative controls, all caught; one new spec (14 checks).
+
+---
+
 ## v0.57.0 — Play Mode reads on the reader's ground
 
 Since v0.48.0 the export has refused to ship the writer's theme, on a

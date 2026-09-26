@@ -1,8 +1,10 @@
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { Editor } from "@tiptap/react";
 import { Icon } from "../common/Icon";
+import { ColorOnGrounds } from "../common/ColorOnGrounds";
 import type { IconName } from "../common/Icon";
+import type { ColorSubject } from "../../export/contrastCheck";
 import { useProjectStore } from "../../state/projectStore";
 import { useInspectorStore } from "../../state/inspectorStore";
 import { appendChoiceOption } from "../../utils/choiceBlockEditing";
@@ -225,6 +227,9 @@ function ColorControl({
   swatch,
   value,
   onChange,
+  reading,
+  onPick,
+  onDismissReading,
 }: {
   icon: IconName;
   label: string;
@@ -233,11 +238,22 @@ function ColorControl({
   swatch: string;
   value: string;
   onChange: (value: string) => void;
+  /**
+   * How this colour reads on the reader's two grounds (v0.58.0), or null
+   * while this control is not the one being used. The control keeps its
+   * native `<input type="color">` exactly as it was — first press still
+   * opens the operating system's own dialog, with its eyedropper — and the
+   * reading appears underneath it.
+   */
+  reading?: ColorSubject | null;
+  /** Fired on the first event of a pick, to open the reading. */
+  onPick?: () => void;
+  onDismissReading?: () => void;
 }) {
   return (
     <label
       title={label}
-      className="flex h-7 w-7 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[5px] text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+      className="relative flex h-7 w-7 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[5px] text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
     >
       <Icon name={icon} className="h-3.5 w-3.5" />
       <span className="sr-only">{label}</span>
@@ -254,9 +270,25 @@ function ColorControl({
       <input
         type="color"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          onPick?.();
+          onChange(e.target.value);
+        }}
         className="h-0 w-0 opacity-0"
       />
+      {reading && (
+        // Anchored to the control rather than dropped into the page: the
+        // writer's eye is already here, and the toolbar wraps rather than
+        // scrolls, so nothing clips it.
+        <div
+          className="absolute left-0 top-full z-20 mt-2 cursor-default"
+          // The panel lives inside the <label> that opens the picker, so a
+          // click anywhere in it would reopen the OS dialog.
+          onClick={(e) => e.preventDefault()}
+        >
+          <ColorOnGrounds subject={reading} onDismiss={onDismissReading} />
+        </div>
+      )}
     </label>
   );
 }
@@ -366,6 +398,23 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const textStyle = editor.getAttributes("textStyle");
   const currentColor = (textStyle.color as string | undefined) ?? "";
   const currentHighlight = (editor.getAttributes("highlight").color as string | undefined) ?? "";
+
+  /**
+   * Which colour control is showing its reading (v0.58.0), if either.
+   *
+   * One at a time, and it survives the operating system's dialog closing —
+   * the panel is most useful while the dialog is open, but it cannot
+   * depend on being seen there, since Windows places that dialog where it
+   * likes and may sit over the toolbar.
+   */
+  const [reading, setReading] = useState<"text" | "highlight" | null>(null);
+
+  // The caret moving on is the writer saying they are done with this
+  // colour. Dismissing on it keeps the panel from following someone into
+  // the next paragraph, which is the failure mode of every editor notice
+  // that outstays its moment.
+  const caret = editor.state.selection.from;
+  useEffect(() => setReading(null), [caret]);
   const choice = enclosingChoice(editor);
 
   return (
@@ -513,6 +562,13 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         swatch={currentColor || "var(--text-reading)"}
         value={currentColor || "#e4e4e7"}
         onChange={setColorThrottled}
+        onPick={() => setReading("text")}
+        onDismissReading={() => setReading(null)}
+        // Read from the editor rather than from the input's own event, so
+        // the panel measures the colour that actually landed in the
+        // document — through the same one-per-frame throttle as everything
+        // else, which is what makes it follow a drag instead of racing it.
+        reading={reading === "text" ? { kind: "ink", color: currentColor } : null}
       />
       <IconButton
         icon="colorReset"
@@ -526,9 +582,10 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         // cleanup, just scoped correctly to actual text nodes instead of
         // every node — including list containers — the selection passes
         // through.
-        onClick={() =>
-          editor.chain().focus().setMark("textStyle", { color: null }).cleanupTextStyle().run()
-        }
+        onClick={() => {
+          setReading(null);
+          editor.chain().focus().setMark("textStyle", { color: null }).cleanupTextStyle().run();
+        }}
       />
 
       <ColorControl
@@ -537,11 +594,19 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         swatch={currentHighlight || "#f5d90a"}
         value={currentHighlight || "#f5d90a"}
         onChange={setHighlightThrottled}
+        onPick={() => setReading("highlight")}
+        onDismissReading={() => setReading(null)}
+        // "wash", not "ink": a highlight goes BEHIND the words, so what
+        // has to be readable is the ground's own text on top of it.
+        reading={reading === "highlight" ? { kind: "wash", color: currentHighlight } : null}
       />
       <IconButton
         icon="colorReset"
         label="Remove highlight"
-        onClick={() => editor.chain().focus().unsetHighlight().run()}
+        onClick={() => {
+          setReading(null);
+          editor.chain().focus().unsetHighlight().run();
+        }}
       />
 
       <IconButton

@@ -160,6 +160,64 @@ function labelSummary(html: string): string {
   return `${trimmed || text.slice(0, 42)}…`;
 }
 
+/* ── one colour, read on both grounds (v0.58.0) ─────────────────────── *
+ * The export's warning arrives at the door. This is the same question
+ * asked at the moment a colour is chosen, and it lives HERE, beside
+ * `checkStoryContrast`, running the same parse, the same compositing and
+ * the same threshold — so the number in the picker and the number in the
+ * export warning cannot disagree. Two implementations of one measurement
+ * is the pair that drifts; there is one, and both read it.
+ * ------------------------------------------------------------------- */
+
+/** What the colour IS, which is what decides what it is measured against. */
+export type ColorSubject =
+  /** Text painted in this colour, on the page. */
+  | { kind: "ink"; color: string }
+  /** A highlight BEHIND text — so what is measured is the ground's own ink
+   *  on this colour, not this colour on the page. */
+  | { kind: "wash"; color: string }
+  /** A choice box: the fill is what decides whether its label can be read.
+   *  A null or `var(…)` fill still follows the ground and cannot be wrong. */
+  | { kind: "box"; fill: string | null };
+
+export interface GroundReading {
+  ground: ReadingGround;
+  label: string;
+  /** null when there is nothing literal to measure — the colour follows the
+   *  ground, which is correct by construction. */
+  ratio: number | null;
+  passes: boolean;
+}
+
+export const CONTRAST_THRESHOLD = THRESHOLD;
+
+export function readColorOnGrounds(subject: ColorSubject): GroundReading[] {
+  return READING_GROUNDS.map((ground) => {
+    const page = parseColor(GROUND_PAGE_HEX[ground.id]);
+    const ink = parseColor(GROUND_TEXT_HEX[ground.id]);
+    const picked = parseColor(subject.kind === "box" ? subject.fill : subject.color);
+
+    let ratio: number | null = null;
+    if (page && ink && picked) {
+      // Composited exactly the way checkStoryContrast composites them,
+      // translucency included: a highlight and a choice fill both put
+      // themselves between the page and the text, and ink does not.
+      const backdrop = subject.kind === "ink" ? page : over(picked, page);
+      const foreground = subject.kind === "ink" ? picked : ink;
+      ratio = contrastRatio(over(foreground, backdrop), backdrop);
+    }
+
+    return {
+      ground: ground.id,
+      label: ground.label,
+      ratio,
+      // Nothing to measure reads as fine, because it IS fine: a colour that
+      // follows the ground resolves against whichever one the reader chose.
+      passes: ratio === null || ratio >= THRESHOLD,
+    };
+  });
+}
+
 export function checkStoryContrast(story: ExportStory): ContrastFinding[] {
   const findings: ContrastFinding[] = [];
 

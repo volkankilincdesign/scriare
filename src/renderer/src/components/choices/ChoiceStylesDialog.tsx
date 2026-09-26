@@ -4,6 +4,7 @@ import { Button } from "../common/Button";
 import { DialogHeader } from "../common/DialogHeader";
 import { useUIStore } from "../../state/uiStore";
 import { Field } from "../common/Field";
+import { ColorOnGrounds } from "../common/ColorOnGrounds";
 import { useProjectStore } from "../../state/projectStore";
 import { useToastStore } from "../../state/toastStore";
 import { DEFAULT_CHOICE_STYLE_ID, choiceBoxCss } from "../../types/choiceStyles";
@@ -206,6 +207,18 @@ export function BoxControls({
   // toolbar got this throttle; these two controls did not, and they reach
   // the same pipeline by a longer route (v0.49.0).
   const onChangeFrame = useRafThrottledPatch(onChange);
+  /**
+   * Whether the fill's reading on the two grounds is on screen (v0.58.0).
+   *
+   * THE FILL AND NOT THE BORDER, deliberately. The fill is what a choice's
+   * label has to be legible against, and it is what `checkStoryContrast`
+   * measures — so the panel and the export's warning are answering the
+   * same question with the same function. A border has no text on it and
+   * no threshold in the export; giving it a number here would invent a
+   * rule the export does not enforce, and two rules is how they disagree.
+   * The specimen draws the border anyway, because it is part of the box.
+   */
+  const [readingFill, setReadingFill] = useState(false);
   return (
     <div className="grid grid-cols-2 gap-2.5">
       <Field label="Fill">
@@ -215,6 +228,7 @@ export function BoxControls({
           subject={subject}
           onChange={(fill) => onChangeFrame({ fill })}
           onPin={(fill) => onChange({ fill })}
+          onPick={() => setReadingFill(true)}
         />
       </Field>
       <Field label="Border">
@@ -248,6 +262,19 @@ export function BoxControls({
           className="w-full accent-[var(--accent)]"
         />
       </Field>
+
+      {/* Across both columns and in the flow rather than floating: this is
+          a dialog and an Inspector panel, not a toolbar, so there is room
+          to say it without covering the controls it is about. */}
+      {readingFill && (
+        <div className="col-span-2">
+          <ColorOnGrounds
+            subject={{ kind: "box", fill: box.fill }}
+            onDismiss={() => setReadingFill(false)}
+            className="w-full"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -264,6 +291,7 @@ function ColorField({
   subject,
   onChange,
   onPin,
+  onPick,
 }: {
   value: string | null;
   fallback: string;
@@ -278,6 +306,9 @@ function ColorField({
    * lands a frame later and the toast is left with nothing to reverse.
    */
   onPin: (value: string | null) => void;
+  /** Fired on the first event of a pick, where the caller shows how the
+   *  colour reads on the reader's two grounds (v0.58.0). */
+  onPick?: () => void;
 }) {
   const isThemed = !value || value.startsWith("var(");
   // Fires once per themed → fixed crossing, not once per pointer event.
@@ -300,6 +331,7 @@ function ColorField({
           type="color"
           value={isThemed ? fallback : value}
           onChange={(e) => {
+            onPick?.();
             /*
               SAY IT AT THE MOMENT IT HAPPENS (v0.55.0).
               Opening this picker on a themed colour and moving the pointer

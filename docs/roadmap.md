@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.57.0.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.58.0.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -212,7 +212,19 @@ than gaps.
   widened to audit that surface against the ground, and immediately found
   every container inside Play still inheriting the writer's ink.
 
-581 tests, 105 negative controls, all caught.
+- **v0.58.0 How it reads, at the moment you pick** — a colour is chosen on
+  one page and lands on one of two, chosen by the reader; until now nothing
+  said so before the export dialog. Measured first, and the measurement
+  decided the shape: no colour clears 4.5:1 on both grounds (the band is
+  empty; the best any literal colour manages is ~4.16:1), so the panel
+  turns a late surprise into an early decision rather than promising a safe
+  colour. The native picker and its eyedropper are untouched — the reading
+  appears under the control, follows the drag through the v0.33.0 throttle,
+  and stays after the OS dialog closes. Text colour, highlight and a
+  choice's fill share one component; the numbers come from the export's own
+  `checkStoryContrast` neighbour so the two can never disagree.
+
+595 tests, 113 negative controls, all caught.
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and
@@ -410,6 +422,34 @@ Welcome screen (v0.53.0–v0.54.0). **The v0.48.0 audit is closed.**
 Everything left is the launch list — and of the five items on it, only
 the installer is Claude's to build.
 
+### The colour question, settled
+
+He asked whether the eight themes mislead a writer about what a reader
+sees — a dark colour picked in Overcast being unreadable on Night. The
+answer, and it is now the app's stated position:
+
+- **The two stay split.** A theme is the writer's room; a ground is the
+  reader's page. Merging them would make a colour survive EIGHT grounds
+  instead of two, and the reader still chooses which one they read on, so
+  the writer would control less, not more.
+- **The split costs nothing until you colour something.** Prose with no
+  colour mark carries no colour in the file: it is painted in the ground's
+  own `--text-reading`. A writer who never picks a colour never meets a
+  ground, a theme question or a warning.
+- **The one place they meet is the moment a literal colour is chosen**, so
+  that is the only place the app mentions it — one glance, not a lecture.
+  That is v0.58.0.
+- **Custom CSS stays the writer's own responsibility**, his call: one
+  warning, and then the app gets out of the way. The G2 commitment holds —
+  that warning has to sample the finished file's real pixels, since
+  checking tokens while a stylesheet overrides them is a safety net aimed
+  at a page we do not ship.
+
+Not built, and drawn only when the need is real: a colour that says what
+it is on EACH ground, or a story that pins the ground it is read on.
+Either would resolve the empty 4.5:1 band; neither is worth inventing
+before a story exists that needs it.
+
 ### Also in flight
 
 - **His verdict on the eight themes.** All eight ship; the picker is in
@@ -505,12 +545,11 @@ Nothing here blocks the launch, and nothing here gets started before it.
   building Export.** `DEFAULT_CHOICE_BOX` was never a hex: it is
   `var(--surface-2-translucent)` / `var(--border)`, written in variables in
   v0.34.0 exactly so an untouched choice follows the theme. The `#2a2a28` /
-  `#3a3a37` are only the fallback SWATCHES the colour picker shows. The real
-  trap is narrower and still open: opening that picker on a style converts
-  the variable to a hex permanently, in the story file, so the choice stops
-  following the ground. The dialog has a "Theme" button back, and Export now
-  warns when the result doesn't read — but nothing tells a writer at the
-  moment the conversion happens. Worth a small mark in the Inspector.
+  `#3a3a37` are only the fallback SWATCHES the colour picker shows. The
+  narrower trap underneath it — opening that picker converts the variable
+  to a hex permanently, in the story file — is **closed**: v0.55.0 says so
+  at the moment it happens, with an Undo that restores the variable, and
+  v0.58.0 adds the reading on both grounds beside it. Nothing left here.
 - **A UI pass on the oldest surfaces** — ~~Welcome screen~~ (v0.53.0–
   v0.54.0), ~~the dialog kit, Project Settings, New Project, Move To,
   the confirm dialog and the Variable Manager~~ (v0.56.0). WHAT IS LEFT:

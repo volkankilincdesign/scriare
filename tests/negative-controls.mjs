@@ -986,6 +986,79 @@ const CONTROLS = [
     spec: "play-ground",
     expect: "the room behind it keeps the writer's theme",
   },
+
+  // ── v0.58.0 · how a colour reads on the two grounds ──────────────────
+  {
+    // The panel's whole claim: it measures against the READER's page, not
+    // against whichever of the eight themes the writer is sitting in.
+    name: "a reading taken against the writer's theme instead of the ground",
+    file: src("components/common/ColorOnGrounds.tsx"),
+    from: "  const page = GROUND_PAGE_HEX[reading.ground as ReadingGround];",
+    to: "  const page = getComputedStyle(document.documentElement).getPropertyValue(\"--page\").trim();",
+    spec: "color-grounds",
+    expect: "painted in the grounds themselves",
+  },
+  {
+    name: "a highlight measured as ink on the page rather than as what sits behind the words",
+    file: src("export/contrastCheck.ts"),
+    from: '      const backdrop = subject.kind === "ink" ? page : over(picked, page);\n      const foreground = subject.kind === "ink" ? picked : ink;',
+    to: "      const backdrop = page;\n      const foreground = picked;",
+    spec: "color-grounds",
+    expect: "what sits BEHIND the words",
+  },
+  {
+    // A number is a fact; the sentence is what it means. A narrative
+    // designer reads "1.8:1" as nothing at all.
+    name: "a panel that reports the ratio and not what it means",
+    file: src("components/common/ColorOnGrounds.tsx"),
+    from: '  if (ratio < 3) return "Nearly invisible";',
+    to: '  if (ratio < 3) return "Low";',
+    spec: "color-grounds",
+    expect: "says what that MEANS",
+  },
+  {
+    name: "previews the palette audit would report as strays",
+    file: src("components/common/ColorOnGrounds.tsx"),
+    from: "        data-content-colour\n        data-ground-preview={reading.ground}",
+    to: "        data-ground-preview={reading.ground}",
+    spec: "color-grounds",
+    expect: "marked as content",
+  },
+  {
+    name: "a reading that outstays the sentence it was about",
+    file: src("components/editor/EditorToolbar.tsx"),
+    from: "  useEffect(() => setReading(null), [caret]);",
+    to: "  useEffect(() => undefined, [caret]);",
+    spec: "color-grounds",
+    expect: "moving the caret on puts it away",
+  },
+  {
+    name: "a panel Escape cannot close",
+    file: src("components/common/ColorOnGrounds.tsx"),
+    from: '      if (event.key === "Escape") onDismiss?.();',
+    to: "      return;",
+    spec: "color-grounds",
+    expect: "Escape puts it away",
+  },
+  {
+    // The choice side of it, through the control the Inspector shares.
+    name: "a choice fill picked with nothing said about either ground",
+    file: src("components/choices/ChoiceStylesDialog.tsx"),
+    from: "          onPick={() => setReadingFill(true)}",
+    to: "",
+    spec: "color-grounds",
+    expect: "a choice fill gets the same reading",
+  },
+  {
+    // The panel must not quietly become the pin notice's replacement:
+    // they answer different questions and v0.55.0's one can be undone.
+    name: "the pin notice dropped now that the panel says something",
+    file: src("components/choices/ChoiceStylesDialog.tsx"),
+    from: "              useToastStore\n                .getState()\n                .showUndo(",
+    to: "              (() => {}) || useToastStore\n                .getState()\n                .showUndo(",
+    spec: "color-grounds",
+    expect: "the v0.55.0 notice still fires",
+  },
 ];
 
 
