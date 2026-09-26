@@ -3,12 +3,16 @@ import { promises as fs } from "fs";
 import path from "path";
 import { readStamp, writeProjectFile } from "../projectFile";
 import type { FileStamp } from "../projectFile";
+import { forStorage, mergeRecentEntry } from "../../shared/recentEntries";
+import type { RecentEntry as SharedRecentEntry } from "../../shared/recentEntries";
 
-interface RecentProjectEntry {
-  name: string;
-  filePath: string;
-  lastOpened: string;
-}
+/**
+ * The record kept for each recent project, and the two rules about it that
+ * are easy to get wrong — see shared/recentEntries.ts, where they live so
+ * that the test build can reach them without reaching into the writer's
+ * own recent-projects.json.
+ */
+type RecentProjectEntry = SharedRecentEntry;
 
 /**
  * The file extension (v0.48.0).
@@ -106,29 +110,93 @@ async function readRecent(): Promise<RecentProjectEntry[]> {
 }
 
 async function writeRecent(list: RecentProjectEntry[]): Promise<void> {
-  await fs.writeFile(recentFilePath(), JSON.stringify(list, null, 2), "utf-8");
+  await fs.writeFile(
+    recentFilePath(),
+    JSON.stringify(list.map(forStorage), null, 2),
+    "utf-8",
+  );
 }
 
+/** Moves a story to the front of Recent Projects — see mergeRecentEntry. */
 async function addRecent(entry: RecentProjectEntry): Promise<RecentProjectEntry[]> {
   const list = await readRecent();
+  const merged = mergeRecentEntry(
+    list.find((p) => p.filePath === entry.filePath),
+    entry,
+  );
   const filtered = list.filter((p) => p.filePath !== entry.filePath);
-  filtered.unshift(entry);
+  filtered.unshift(merged);
   const trimmed = filtered.slice(0, 8);
   await writeRecent(trimmed);
-  return trimmed;
+  // Annotated rather than returned raw, so that EVERY channel that hands
+  // the renderer a recent list hands it the same shape. A list without
+  // `missing` is not merely less informative — the Welcome screen reads it
+  // as "every file is present", so one channel forgetting would quietly
+  // clear the warning icons until the next `recent:list`.
+  return listWithPresence();
+}
+
+/**
+ * Is the file still where the entry says it is?
+ *
+ * Only ENOENT counts as missing. A file that is there but locked, still
+ * syncing, or briefly unreadable by an antivirus scanner is NOT missing —
+ * marking it so would put a warning icon on a perfectly intact story, and
+ * that is the same mistake `openRecentProject` had to be fixed for in
+ * v0.49.1 (see the comment there). Anything that is not a plain "not
+ * found" is treated as present.
+ */
+async function isMissing(filePath: string): Promise<boolean> {
+  try {
+    await fs.access(filePath);
+    return false;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException)?.code === "ENOENT";
+  }
+}
+
+async function listWithPresence(): Promise<RecentProjectEntry[]> {
+  const list = await readRecent();
+  return Promise.all(
+    list.map(async (entry) => ({ ...entry, missing: await isMissing(entry.filePath) })),
+  );
 }
 
 /** Registers all project-related IPC handlers. Call once during startup. */
 export function registerProjectHandlers(): void {
   ipcMain.handle("recent:list", async () => {
-    return readRecent();
+    return listWithPresence();
   });
+
+  /**
+   * Update what is cached about a story WITHOUT touching its place in the
+   * list (v0.53.0).
+   *
+   * Separate from `addRecent` on purpose: that one means "this story was
+   * just opened", and reordering Recent Projects every time autosave fires
+   * would make the list reshuffle under the writer's cursor while they
+   * type. This one means "here is a fresher picture of a story already in
+   * the list", and it deliberately does nothing when the path is not
+   * there — a save to a file that has fallen off the end of an 8-entry
+   * list should not put it back.
+   */
+  ipcMain.handle(
+    "recent:touch",
+    async (_event, filePath: string, patch: Partial<RecentProjectEntry>) => {
+      const list = await readRecent();
+      const at = list.findIndex((p) => p.filePath === filePath);
+      if (at === -1) return listWithPresence();
+      list[at] = { ...list[at], ...patch, filePath };
+      await writeRecent(list);
+      return listWithPresence();
+    },
+  );
 
   ipcMain.handle("recent:remove", async (_event, filePath: string) => {
     const list = await readRecent();
     const next = list.filter((p) => p.filePath !== filePath);
     await writeRecent(next);
-    return next;
+    return listWithPresence();
   });
 
   ipcMain.handle(

@@ -1,72 +1,507 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useProjectStore } from "../../state/projectStore";
 import { NewProjectDialog } from "./NewProjectDialog";
+import { StoryMap } from "./StoryMap";
 import { BrandMark } from "../common/BrandMark";
+import type { StoryShape } from "../../utils/recentShape";
 
+interface RecentEntry {
+  name: string;
+  filePath: string;
+  lastOpened: string;
+  shape?: StoryShape | null;
+  resume?: { sceneTitle: string; excerpt: string; groupName: string | null; at: string } | null;
+  missing?: boolean;
+}
+
+/**
+ * The Welcome screen (rebuilt in v0.53.0).
+ *
+ * What it replaced: a 448px column dead centre in a 1280×800 window, about
+ * 85% of it flat `--bg`, using none of the app's own vocabulary — no sheet,
+ * no elevation, and the loudest thing in each recent row was a file path.
+ * A stranger's first thirty seconds ended at "No recent projects yet.",
+ * which is a dead end on the one screen where "write stories, not syntax"
+ * applies most directly.
+ *
+ * ONE SCREEN IN THREE STATES, not three screens. The frame — wordmark,
+ * search, Open Project…, New Project — is identical whether you have
+ * nought stories or ninety, and only the area below it changes. That is
+ * what makes this a screen that grows with the writer: nothing you learned
+ * on day one has moved by day thirty. What changes is what the hero slot
+ * MEANS: on an empty shelf the next thing is "see what this is"; after
+ * that it is "keep writing".
+ *
+ * The maps are the reason the rebuild was worth doing. A writer with nine
+ * stories does not recognise one by its name — they recognise it by
+ * whether it fans out early, runs as a spine, or loops. See StoryMap, and
+ * utils/recentShape.ts for what it costs to know a story's shape without
+ * opening it.
+ */
 export function WelcomeScreen() {
-  const recentProjects = useProjectStore((s) => s.recentProjects);
+  const recentProjects = useProjectStore((s) => s.recentProjects) as RecentEntry[];
   const loadRecent = useProjectStore((s) => s.loadRecent);
   const openProject = useProjectStore((s) => s.openProject);
   const openRecentProject = useProjectStore((s) => s.openRecentProject);
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     void loadRecent();
   }, [loadRecent]);
 
+  const needle = query.trim().toLowerCase();
+  const searching = recentProjects.length > 0 && needle.length > 0;
+
+  const { matches, rest } = useMemo(() => {
+    if (!searching) return { matches: recentProjects, rest: [] as RecentEntry[] };
+    const hit: RecentEntry[] = [];
+    const miss: RecentEntry[] = [];
+    for (const entry of recentProjects) {
+      (entry.name.toLowerCase().includes(needle) ? hit : miss).push(entry);
+    }
+    return { matches: hit, rest: miss };
+  }, [recentProjects, searching, needle]);
+
+  // The hero is the story you were last in, and only when the app actually
+  // knows what you were doing in it. A project last saved by an older
+  // version has no `resume`, so it takes its place in the grid like any
+  // other rather than being given a hero slot with nothing to put in it.
+  const hero = !searching && recentProjects[0]?.resume ? recentProjects[0] : null;
+  const grid = hero ? recentProjects.slice(1) : recentProjects;
+
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-[var(--bg)] text-[var(--text)]">
-      <div className="w-full max-w-md">
-        <BrandMark className="mb-4 h-14 w-14" />
-        <h1 className="font-serif-narrative mb-1 text-3xl italic text-[var(--text)]">Scriare</h1>
-        <p className="mb-8 text-sm text-[var(--text-3)]">Build stories, not syntax.</p>
+    <div className="flex h-screen w-screen flex-col bg-[var(--bg)] text-[var(--text)]">
+      <header className="flex flex-shrink-0 items-center gap-3 border-b border-[var(--border-soft)] px-16 py-4">
+        <BrandMark className="h-7 w-7 flex-shrink-0" />
+        <span className="font-serif-narrative text-xl italic text-[var(--text)]">Scriare</span>
 
-        <div className="mb-8 flex gap-3">
-          <button
-            type="button"
-            onClick={() => setShowNewProjectDialog(true)}
-            className="flex-1 rounded-md bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-[var(--accent-text-on)] hover:bg-[var(--accent-hover)] transition-colors"
+        <div className="ml-5 flex w-[250px] items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--text-3)"
+            strokeWidth={2}
+            strokeLinecap="round"
+            aria-hidden
+            className="flex-shrink-0"
           >
-            New Project
-          </button>
-          <button
-            type="button"
-            onClick={() => void openProject()}
-            className="flex-1 rounded-md border border-[var(--border)] px-4 py-2.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
-          >
-            Open Project
-          </button>
+            <circle cx="11" cy="11" r="7" />
+            <path d="M20 20l-4-4" />
+          </svg>
+          <label htmlFor="welcome-find" className="sr-only">
+            Find a story
+          </label>
+          {/*
+            ALWAYS HERE, never "turned on later". A search field that
+            appears once you cross some number of stories is a control you
+            have to discover twice; one that is always in the same place is
+            learned on the day you have one story and used on the day you
+            have thirty.
+          */}
+          <input
+            id="welcome-find"
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Find a story"
+            className="min-w-0 flex-grow border-0 bg-transparent text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-3)]"
+          />
         </div>
 
-        <div>
-          <h2 className="scriare-section-label mb-2 text-[var(--text-3)]">
-            Recent Projects
-          </h2>
-          {recentProjects.length === 0 ? (
-            <p className="text-sm text-[var(--text-3)]">No recent projects yet.</p>
+        <div className="flex-grow" />
+        <button
+          type="button"
+          onClick={() => void openProject()}
+          className="rounded-lg border border-[var(--border)] px-3.5 py-2 text-sm font-medium text-[var(--text)] transition-colors hover:bg-[var(--surface-2)]"
+        >
+          Open Project…
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowNewProjectDialog(true)}
+          className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-text-on)] transition-colors hover:bg-[var(--accent-hover)]"
+        >
+          New Project
+        </button>
+      </header>
+
+      {recentProjects.length === 0 ? (
+        <EmptyShelf onStart={() => setShowNewProjectDialog(true)} />
+      ) : (
+        <main className="flex flex-grow flex-col overflow-y-auto px-16 pb-10 pt-6">
+          {searching ? (
+            <SearchResults
+              needle={query.trim()}
+              matches={matches}
+              rest={rest}
+              total={recentProjects.length}
+              onOpen={openRecentProject}
+            />
           ) : (
-            <ul className="space-y-1">
-              {recentProjects.map((p) => (
-                <li key={p.filePath}>
-                  <button
-                    type="button"
-                    onClick={() => void openRecentProject(p.filePath)}
-                    className="w-full rounded-md px-3 py-2 text-left text-sm text-[var(--text-2)] hover:bg-[var(--surface-2)]"
-                    title={p.filePath}
-                  >
-                    <div className="font-medium text-[var(--text)]">{p.name}</div>
-                    <div className="truncate text-xs text-[var(--text-3)]">{p.filePath}</div>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <>
+              {hero && <ResumeHero entry={hero} onOpen={openRecentProject} />}
+              {/*
+                The heading renders only when there is a list under it. With
+                exactly one story and a resume hero, `grid` is empty, and a
+                "Your other stories" heading standing over nothing reads as
+                a section that failed to load.
+              */}
+              {grid.length > 0 && (
+                <>
+                  <h2 className="scriare-section-label mb-3.5 mt-6 text-[var(--text-3)]">
+                    {hero ? "Your other stories" : "Your stories"}
+                  </h2>
+                  <StoryGrid entries={grid} onOpen={openRecentProject} />
+                </>
+              )}
+            </>
           )}
-        </div>
-      </div>
+        </main>
+      )}
 
       {showNewProjectDialog && (
         <NewProjectDialog onClose={() => setShowNewProjectDialog(false)} />
       )}
     </div>
   );
+}
+
+/**
+ * The shape drawn on the empty shelf.
+ *
+ * An ILLUSTRATION, not a story you can open — which is why the card it
+ * sits in is not a button. Scriare does not ship a demo project yet (it is
+ * a launch item, and its prose is the writer's to write), and a card that
+ * looks openable and opens nothing is worse on a stranger's first screen
+ * than no card at all. When the demo story exists this becomes its card,
+ * with its real cached shape: the drawing and the layout are already
+ * right, and only the click changes.
+ *
+ * Positions are in the unit square, same as a cached shape — so this is
+ * drawn by exactly the code that draws a real story, and cannot drift into
+ * looking like something the app does not produce.
+ */
+const ILLUSTRATION: StoryShape = {
+  nodes: [
+    { x: 0, y: 0.5 },
+    { x: 0.25, y: 0.5 },
+    { x: 0.5, y: 0.08 },
+    { x: 0.5, y: 0.92 },
+    { x: 0.75, y: 0.08 },
+    { x: 0.75, y: 0.92 },
+    { x: 1, y: 0.08 },
+    { x: 1, y: 0.5 },
+    { x: 1, y: 0.92 },
+  ],
+  edges: [
+    [0, 1],
+    [1, 2],
+    [1, 3],
+    [2, 4],
+    [3, 5],
+    [4, 6],
+    [4, 7],
+    [5, 7],
+    [5, 8],
+  ],
+  start: 0,
+  total: 9,
+};
+
+function EmptyShelf({ onStart }: { onStart: () => void }) {
+  return (
+    <main className="flex flex-grow flex-col justify-center px-16">
+      <div className="mb-8 max-w-[620px]">
+        {/*
+          The whole pitch in four words. The two lines under it answer the
+          only two questions a stranger has — what does it do, and where
+          does my work live — and then the screen stops talking.
+        */}
+        <h1 className="font-serif-narrative mb-3 text-[42px] italic leading-[1.1] text-[var(--text)]">
+          Write stories, not syntax.
+        </h1>
+        <p className="mb-2 text-[15px] leading-relaxed text-[var(--text-2)]">
+          You write the scenes. The map draws itself.
+        </p>
+        <p className="text-[13px] leading-normal text-[var(--text-3)]">
+          Your stories stay on your disk.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-raised)]">
+          <div className="border-b border-[var(--border-soft)] bg-[var(--bg)]">
+            <StoryMap shape={ILLUSTRATION} width={567} height={150} nodeWidth={46} nodeHeight={18} />
+          </div>
+          <div className="px-5 pb-5 pt-4">
+            <div className="text-[17px] font-medium text-[var(--text)]">This is a story here</div>
+            <div className="mt-1.5 text-[13px] leading-normal text-[var(--text-3)]">
+              Scenes read left to right; every choice is a line to somewhere. You write the prose —
+              the map is drawn for you.
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onStart}
+          className="flex flex-col rounded-xl bg-[var(--accent)] p-6 text-left text-[var(--accent-text-on)] shadow-[var(--shadow-raised)] transition-colors hover:bg-[var(--accent-hover)]"
+        >
+          <svg
+            width="26"
+            height="26"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.5}
+            strokeLinecap="round"
+            aria-hidden
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          <span className="flex-grow" />
+          <span className="text-[19px] font-medium">Start a story</span>
+          <span className="mt-1.5 text-[13px] leading-normal opacity-80">
+            One scene, one choice. You can be writing in about ten seconds.
+          </span>
+        </button>
+      </div>
+    </main>
+  );
+}
+
+/**
+ * "Where you left off" — the sentence you stopped in, not the file you
+ * stopped in.
+ *
+ * Every editor worth the comparison opens on the thing you were doing:
+ * VS Code reopens the file, Scrivener the document, every DAW the session.
+ * Scriare already knows which scene was selected when it last saved, so
+ * the hero can name the SCENE — and it is deliberately the first thing the
+ * keyboard reaches, so the whole gesture is: launch, Enter, you are back.
+ */
+function ResumeHero({ entry, onOpen }: { entry: RecentEntry; onOpen: (p: string) => void }) {
+  const resume = entry.resume;
+  if (!resume) return null;
+  const where = [entry.name, resume.groupName, sinceLabel(resume.at)]
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <button
+      type="button"
+      autoFocus
+      onClick={() => void onOpen(entry.filePath)}
+      aria-label={`Continue writing: ${resume.sceneTitle}, in ${entry.name}`}
+      className="flex w-full flex-shrink-0 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-left shadow-[var(--shadow-floating)]"
+    >
+      <span className="w-1 flex-shrink-0 bg-[var(--accent)]" />
+      <span className="flex flex-grow items-center gap-7 px-6 py-5">
+        <span className="min-w-0 flex-grow">
+          <span className="scriare-section-label block text-[var(--text-3)]">Where you left off</span>
+          <span className="font-serif-narrative mt-2 block truncate text-[25px] italic leading-tight text-[var(--text)]">
+            {resume.sceneTitle || "Untitled scene"}
+          </span>
+          {resume.excerpt && (
+            <span className="font-serif-narrative mt-2 block max-w-[640px] truncate text-[15px] leading-relaxed text-[var(--text-2)]">
+              {resume.excerpt}
+            </span>
+          )}
+          <span className="mt-2.5 block truncate text-xs text-[var(--text-3)]">{where}</span>
+        </span>
+        <span className="flex flex-shrink-0 items-center gap-2 rounded-lg bg-[var(--accent)] px-5 py-3 text-sm font-medium text-[var(--accent-text-on)]">
+          Continue
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M5 12h13M13 6l6 6-6 6" />
+          </svg>
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function SearchResults({
+  needle,
+  matches,
+  rest,
+  total,
+  onOpen,
+}: {
+  needle: string;
+  matches: RecentEntry[];
+  rest: RecentEntry[];
+  total: number;
+  onOpen: (p: string) => void;
+}) {
+  return (
+    <>
+      <div className="mb-3.5 flex items-baseline gap-3">
+        <h2 className="scriare-section-label text-[var(--text-3)]">Matching “{needle}”</h2>
+        {/*
+          Announced, not just drawn. Filtering a list by typing changes the
+          page under someone who cannot see it change; the count is the one
+          sentence that says what happened.
+        */}
+        <span aria-live="polite" className="text-xs text-[var(--text-3)]">
+          {matches.length === 0
+            ? `No stories match “${needle}”`
+            : `${matches.length} of ${total} ${total === 1 ? "story" : "stories"}`}
+        </span>
+      </div>
+
+      {matches.length > 0 && <StoryGrid entries={matches} onOpen={onOpen} />}
+
+      {rest.length > 0 && (
+        <>
+          <h2 className="scriare-section-label mb-3.5 mt-6 text-[var(--text-3)]">Everything else</h2>
+          {/*
+            DIFFERENT BY FORM, NOT BY BEING FADED. The first draft of this
+            dimmed the non-matching list to 50% opacity, which was wrong
+            twice over: it taxed the contrast of a third of the screen for
+            every reader, and it said "less important" about stories that
+            are only "not what you typed". A rule-separated row with no
+            map, no card and no shadow carries the same meaning at full
+            legibility — and the map is the point, since a map is for
+            recognising the story you are hunting, not for decorating the
+            ones you are not.
+          */}
+          <ul className="grid grid-cols-3 gap-x-9">
+            {rest.map((entry) => (
+              <li key={entry.filePath}>
+                <button
+                  type="button"
+                  onClick={() => void onOpen(entry.filePath)}
+                  aria-label={ariaFor(entry)}
+                  title={entry.filePath}
+                  className="flex w-full items-baseline gap-2.5 border-t border-[var(--border-soft)] px-1.5 py-2.5 text-left"
+                >
+                  {entry.missing && <MissingIcon />}
+                  <span className="min-w-0 flex-grow truncate text-sm font-medium text-[var(--text)]">
+                    {entry.name}
+                  </span>
+                  <span
+                    className={`flex-shrink-0 text-xs ${
+                      entry.missing ? "text-[var(--warning)]" : "text-[var(--text-3)]"
+                    }`}
+                  >
+                    {metaFor(entry)}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </>
+  );
+}
+
+function StoryGrid({ entries, onOpen }: { entries: RecentEntry[]; onOpen: (p: string) => void }) {
+  return (
+    <ul className="grid grid-cols-3 gap-[18px]">
+      {entries.map((entry) => (
+        <li key={entry.filePath}>
+          <button
+            type="button"
+            onClick={() => void onOpen(entry.filePath)}
+            aria-label={ariaFor(entry)}
+            title={entry.filePath}
+            className="flex w-full flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] text-left shadow-[var(--shadow-raised)]"
+          >
+            <span className="block border-b border-[var(--border-soft)] bg-[var(--bg)]">
+              <StoryMap shape={entry.shape} width={372} height={104} />
+            </span>
+            <span className="flex items-baseline gap-2.5 px-4 pb-3.5 pt-3">
+              {entry.missing && <MissingIcon />}
+              <span className="min-w-0 flex-grow truncate text-[15px] font-medium text-[var(--text)]">
+                {entry.name}
+              </span>
+              <span
+                className={`flex-shrink-0 text-xs ${
+                  entry.missing ? "text-[var(--warning)]" : "text-[var(--text-3)]"
+                }`}
+              >
+                {metaFor(entry)}
+              </span>
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * A story whose file has moved is told apart by an icon AND by its own
+ * words — never by being greyer. Colour alone is not a difference everyone
+ * can see, and "this one is dimmer" is not a sentence.
+ */
+function MissingIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="var(--warning)"
+      strokeWidth={2}
+      strokeLinecap="round"
+      aria-hidden
+      className="flex-shrink-0 self-center"
+    >
+      <path d="M12 8v5M12 17h.01" />
+      <circle cx="12" cy="12" r="9" />
+    </svg>
+  );
+}
+
+function metaFor(entry: RecentEntry): string {
+  if (entry.missing) return "Can’t find this file";
+  const total = entry.shape?.total;
+  if (typeof total === "number" && total > 0) {
+    return `${total} ${total === 1 ? "scene" : "scenes"}`;
+  }
+  return sinceLabel(entry.lastOpened);
+}
+
+function ariaFor(entry: RecentEntry): string {
+  return entry.missing
+    ? `${entry.name} — file not found`
+    : `${entry.name}, ${metaFor(entry)}, opened ${sinceLabel(entry.lastOpened)}`;
+}
+
+/**
+ * "yesterday", "last week" — not a timestamp.
+ *
+ * The question this answers is "which one of these is the one I mean",
+ * and a date to the minute answers a question nobody is asking while
+ * scanning nine cards. Deliberately coarse, and deliberately not
+ * `Intl.RelativeTimeFormat`, whose "8 days ago" is less useful than "last
+ * week" for exactly this job.
+ */
+export function sinceLabel(iso: string): string {
+  const then = Date.parse(iso);
+  if (Number.isNaN(then)) return "";
+  const days = Math.floor((Date.now() - then) / 86_400_000);
+  if (days <= 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 7) return `${days} days ago`;
+  if (days < 14) return "last week";
+  if (days < 31) return `${Math.floor(days / 7)} weeks ago`;
+  if (days < 60) return "last month";
+  if (days < 365) return `${Math.floor(days / 30)} months ago`;
+  return "over a year ago";
 }

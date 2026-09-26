@@ -35,6 +35,8 @@ import {
 import type { ContentClipboard } from "../utils/contentClipboard";
 import type { Variable, VariableAction, VariableType, VariableValue } from "../types/variables";
 import { applyVariableAction, buildVariable, changeVariableType } from "../types/variables";
+import { buildStoryShape, sceneExcerpt, sceneGroupName } from "../utils/recentShape";
+import type { StoryShape } from "../utils/recentShape";
 import { useInspectorStore } from "./inspectorStore";
 import {
   clearHistory,
@@ -51,6 +53,16 @@ interface RecentProjectEntry {
   name: string;
   filePath: string;
   lastOpened: string;
+  /** v0.53.0 — see utils/recentShape.ts and main/ipc/projectHandlers.ts. */
+  shape?: StoryShape | null;
+  resume?: {
+    sceneTitle: string;
+    excerpt: string;
+    groupName: string | null;
+    at: string;
+  } | null;
+  /** Derived from the disk on every list; never stored. */
+  missing?: boolean;
 }
 
 /**
@@ -337,6 +349,75 @@ let saveRun: Promise<void> | null = null;
  * after a save has succeeded in between.
  */
 let lastSaveFailed = false;
+
+/**
+ * How often a save may also refresh the recent entry's cached picture
+ * (v0.53.0).
+ *
+ * The cached shape and excerpt are what let the Welcome screen draw a
+ * story's map without opening it, and keeping them current is the only
+ * reason this app would ever write a SECOND file during a save. Autosave
+ * fires 1.5s after a change, so refreshing on every save means an extra
+ * write every 1.5 seconds for a whole writing session — to update a
+ * picture on a screen that is, by definition, not open.
+ *
+ * Six seconds is chosen against what is lost when a refresh is skipped:
+ * the Welcome screen shows a map and an excerpt from a few seconds
+ * earlier, and the next save fixes it. Nothing is lost that waiting does
+ * not repair, so this errs generously towards not writing. Closing the
+ * project forces one through, so what the writer sees next time they
+ * launch is where they actually stopped.
+ */
+const RECENT_TOUCH_INTERVAL_MS = 6000;
+let lastRecentTouch = { key: "", at: 0 };
+
+/**
+ * Refreshes what Recent Projects knows about the story that was just
+ * saved — its shape, and the scene the writer is in.
+ *
+ * Best-effort in the strongest sense: nothing here may surface a failure,
+ * because the save it follows SUCCEEDED. A notice saying something went
+ * wrong immediately after a good save teaches the writer to distrust the
+ * one message that has to be believed.
+ */
+async function refreshRecentEntry(
+  project: Project,
+  filePath: string,
+  selectedSceneId: string | null,
+  force: boolean,
+): Promise<RecentProjectEntry[] | null> {
+  const shape = buildStoryShape(project);
+  const scene = project.scenes.find((s) => s.id === selectedSceneId) ?? null;
+  const resume = scene
+    ? {
+        sceneTitle: scene.title,
+        excerpt: sceneExcerpt(scene.content),
+        groupName: sceneGroupName(project, scene.id),
+        at: new Date().toISOString(),
+      }
+    : null;
+
+  // Deduped on content as well as throttled on time. `at` is deliberately
+  // left out of the key: including it would make every payload unique and
+  // turn the dedupe into a no-op, which is how a throttle quietly stops
+  // throttling.
+  const key = JSON.stringify([
+    filePath,
+    shape,
+    resume && [resume.sceneTitle, resume.excerpt, resume.groupName],
+  ]);
+  const now = Date.now();
+  if (key === lastRecentTouch.key) return null;
+  if (!force && now - lastRecentTouch.at < RECENT_TOUCH_INTERVAL_MS) return null;
+  lastRecentTouch = { key, at: now };
+
+  try {
+    return await window.api.recent.touch(filePath, { shape, resume });
+  } catch {
+    // See above. A stale thumbnail is not worth a word.
+    return null;
+  }
+}
 
 function scheduleAutosave(get: () => ProjectState): void {
   if (autosaveTimer) clearTimeout(autosaveTimer);
@@ -1833,6 +1914,18 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       // this save started", so it is also the answer to "is the file now
       // current", and the re-run below is what makes it so.
       set(saveQueued ? { fileStamp: outcome.stamp } : { saveStatus: "saved", fileStamp: outcome.stamp });
+
+      // The story is on disk; now refresh the picture Recent Projects keeps
+      // of it. AFTER the status is set, and awaited rather than fired and
+      // forgotten, so that `await saveNow()` still means "everything this
+      // save does is done" — closing the project relies on that (see
+      // saveRun above), and it is the one caller that needs this write to
+      // have landed.
+      const touched = await refreshRecentEntry(project, filePath, get().selectedSceneId, false);
+      // Same guard as the stamp above: the writer may have opened another
+      // project while this was in flight, and that project's Welcome list
+      // is not this one's.
+      if (touched && get().filePath === filePath) set({ recentProjects: touched });
     } catch (error) {
       // A save can fail for reasons that have nothing to do with this app —
       // a full disk, a folder that went away with the USB stick it was on, a
@@ -2014,6 +2107,25 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     // this comment said the order was the mechanism, and it isn't.
     if (get().saveStatus !== "saved" && !get().saveConflict) {
       await get().saveNow();
+    }
+
+    // The one moment the cached picture is worth writing unconditionally
+    // (v0.53.0). Every other refresh is throttled — see
+    // RECENT_TOUCH_INTERVAL_MS — so the last few seconds of a session are
+    // exactly what the throttle is most likely to have dropped, and they
+    // are also the only part the Welcome screen shows next launch. Forced
+    // here rather than inside `saveNow`, because a close that arrives
+    // while a save is already in flight takes saveNow's early branch and
+    // never reaches its refresh at all.
+    //
+    // Before the state is cleared, and awaited: after the `set` below
+    // there is no project left to describe.
+    {
+      const { project, filePath, selectedSceneId } = get();
+      if (project && filePath) {
+        const touched = await refreshRecentEntry(project, filePath, selectedSceneId, true);
+        if (touched) set({ recentProjects: touched });
+      }
     }
 
     // Module-level, and never reset here before — so a save still in

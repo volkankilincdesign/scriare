@@ -24,6 +24,7 @@ const run = promisify(execFile);
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = (p) => join(root, "src/renderer/src", p);
 const main = (p) => join(root, "src/main", p);
+const shared = (p) => join(root, "src/shared", p);
 
 const CONTROLS = [
   {
@@ -510,7 +511,143 @@ const CONTROLS = [
     spec: "perf",
     expect: "drops what the story no longer contains",
   },
+  // ── v0.53.0 · the Welcome screen ──────────────────────────────────────
+  {
+    // The map is only worth drawing if it is a picture of the STORY. A
+    // slice of the scene array is a picture of the order they were made in.
+    name: "a story map sampled in creation order instead of story order",
+    file: src("utils/recentShape.ts"),
+    from: "  if (all.length <= MAX_SHAPE_NODES) return all;",
+    to: "  if (all.length <= MAX_SHAPE_NODES) return all;\n  return all.slice(0, MAX_SHAPE_NODES);",
+    spec: "welcome",
+    expect: "the sample follows the STORY",
+  },
+  {
+    name: "positions cached raw instead of normalised into the card",
+    file: src("utils/recentShape.ts"),
+    from: "    x: spanX === 0 ? 0.5 : round3((p.x - minX) / spanX),",
+    to: "    x: round3(p.x),",
+    spec: "welcome",
+    expect: "normalised into the unit square",
+  },
+  {
+    name: "a story laid out in one row dividing by zero",
+    file: src("utils/recentShape.ts"),
+    from: "    y: spanY === 0 ? 0.5 : round3((p.y - minY) / spanY),",
+    to: "    y: round3((p.y - minY) / spanY),",
+    spec: "welcome",
+    expect: "does not divide by zero",
+  },
+  {
+    // The derived flag written back as though it were a fact — which is
+    // how a story on a USB stick gets marked missing once and stays marked.
+    name: "'missing' persisted into recent-projects.json",
+    file: shared("recentEntries.ts"),
+    from: 'const STORED_KEYS = ["name", "filePath", "lastOpened", "shape", "resume"] as const;',
+    to: 'const STORED_KEYS = ["name", "filePath", "lastOpened", "shape", "resume", "missing"] as const;',
+    spec: "welcome",
+    expect: "never written to disk",
+  },
+  {
+    name: "opening a story erasing the map it had cached",
+    file: shared("recentEntries.ts"),
+    from: "    shape: incoming.shape !== undefined ? incoming.shape : previous?.shape,",
+    to: "    shape: incoming.shape,",
+    spec: "welcome",
+    expect: "keeps its cached map",
+  },
+  {
+    // Everything else in the spec reasons about the builder or about a
+    // store the test filled in itself; only the end-to-end case notices
+    // that saving never calls it.
+    name: "a save that never refreshes what Recent Projects knows",
+    file: src("state/projectStore.ts"),
+    from: "      const touched = await refreshRecentEntry(project, filePath, get().selectedSceneId, false);",
+    to: "      const touched = null;",
+    spec: "welcome",
+    expect: "caches its shape on the recent entry",
+  },
+  {
+    name: "the non-matching stories faded out again",
+    file: src("components/welcome/WelcomeScreen.tsx"),
+    from: '          <ul className="grid grid-cols-3 gap-x-9">',
+    to: '          <ul className="grid grid-cols-3 gap-x-9 opacity-50">',
+    spec: "welcome",
+    expect: "NOTHING IS DIMMED",
+  },
+  {
+    name: "a heading rendered over an empty list",
+    file: src("components/welcome/WelcomeScreen.tsx"),
+    from: "              {grid.length > 0 && (",
+    to: "              {true && (",
+    spec: "welcome",
+    expect: "does not render over an empty list",
+  },
+  {
+    name: "a story with no cached shape showing nothing at all",
+    file: src("components/welcome/StoryMap.tsx"),
+    from: "    return <DotField width={width} height={height} />;",
+    to: "    return null;",
+    spec: "welcome",
+    expect: "an empty canvas, not a grey box",
+  },
+  {
+    name: "a card that draws the dot field over a story that has a shape",
+    file: src("components/welcome/WelcomeScreen.tsx"),
+    from: "              <StoryMap shape={entry.shape} width={372} height={104} />",
+    to: "              <StoryMap shape={null} width={372} height={104} />",
+    spec: "welcome",
+    expect: "draws its map",
+  },
+  {
+    name: "a moved file told apart by colour alone",
+    file: src("components/welcome/WelcomeScreen.tsx"),
+    from: '  if (entry.missing) return "Can\u2019t find this file";',
+    to: "  if (entry.missing) return sinceLabel(entry.lastOpened);",
+    spec: "welcome",
+    expect: "says so in words",
+  },
+  {
+    name: "a filtered list that changes silently",
+    file: src("components/welcome/WelcomeScreen.tsx"),
+    from: '        <span aria-live="polite" className="text-xs text-[var(--text-3)]">',
+    to: '        <span className="text-xs text-[var(--text-3)]">',
+    spec: "welcome",
+    expect: "announced, not merely drawn",
+  },
+  {
+    // The claim the whole design rests on: this is ONE screen in three
+    // states. A frame that is a different height on an empty shelf is
+    // three screens wearing the same paint.
+    name: "a header that is a different size when the shelf is empty",
+    file: src("components/welcome/WelcomeScreen.tsx"),
+    from: '      <header className="flex flex-shrink-0 items-center gap-3 border-b border-[var(--border-soft)] px-16 py-4">',
+    to: '      <header className={`flex flex-shrink-0 items-center gap-3 border-b border-[var(--border-soft)] px-16 ${recentProjects.length ? "py-4" : "py-7"}`}>',
+    spec: "welcome",
+    expect: "THE FRAME DOES NOT MOVE",
+  },
+  {
+    name: "launching and landing on nothing instead of in the scene",
+    file: src("components/welcome/WelcomeScreen.tsx"),
+    from: "      type=\"button\"\n      autoFocus\n      onClick={() => void onOpen(entry.filePath)}",
+    to: "      type=\"button\"\n      onClick={() => void onOpen(entry.filePath)}",
+    spec: "welcome",
+    expect: "where the keyboard lands",
+  },
+  {
+    name: "the wordmark swapped by the theme's NAME rather than its ground",
+    file: src("components/common/BrandMark.tsx"),
+    from: "  const src = isLightGround(theme) ? logoPrimaryLight : logoPrimaryDark;",
+    to: '  const src = theme === "light" ? logoPrimaryLight : logoPrimaryDark;',
+    spec: "welcome",
+    // A straight apostrophe, because that is what the check's name has.
+    // The first version of this line wrote a curly one and the control
+    // came back NOT CAUGHT while the assertion was failing correctly
+    // three lines above it — the same stale-`expect` mistake v0.49.0 made.
+    expect: "follows the theme's GROUND",
+  },
 ];
+
 
 async function runSpec(spec) {
   try {

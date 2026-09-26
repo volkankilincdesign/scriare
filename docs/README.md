@@ -18,6 +18,7 @@ These are the design documents for Scriare — the reasoning behind decisions, w
 - [export.md](export.md) — why the exported page gets its own two reading grounds instead of the writer's editor theme, what travels and what does not, and the CSS class contract later work depends on.
 - [save-safety.md](save-safety.md) — the truncating write that could destroy a story, the atomic replace that fixed it, and the three further defects found while reviewing the work.
 - [demo-story.md](demo-story.md) — the demo story scoped as a vertical slice: the two risks that make a slice read as abandoned, and what defuses each.
+- [welcome-v0.53.0.md](welcome-v0.53.0.md) — the first screen rebuilt as one screen in three states: what the cached story shape costs, why the sample is breadth-first, and why nothing on it is dimmed.
 
 ## Audits and findings
 

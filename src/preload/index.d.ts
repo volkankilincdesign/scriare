@@ -1,9 +1,41 @@
 import { ElectronAPI } from "@electron-toolkit/preload";
 
+/**
+ * A story's shape, cached so the Welcome screen can draw its map without
+ * opening it — see renderer/src/utils/recentShape.ts.
+ */
+export interface StoredShape {
+  nodes: { x: number; y: number }[];
+  edges: [number, number][];
+  start: number;
+  total: number;
+}
+
+/** What the writer was in the middle of when they last saved. */
+export interface StoredResume {
+  sceneTitle: string;
+  excerpt: string;
+  groupName: string | null;
+  at: string;
+}
+
 export interface RecentProjectEntry {
   name: string;
   filePath: string;
   lastOpened: string;
+  /**
+   * v0.53.0. Both are absent on any project last saved by an earlier
+   * version, and `shape` is explicitly null for a project with no scenes —
+   * the Welcome screen draws that state rather than treating it as an
+   * error.
+   */
+  shape?: StoredShape | null;
+  resume?: StoredResume | null;
+  /**
+   * Whether the file is still on disk. Recomputed every time a list is
+   * returned and never persisted — see main/ipc/projectHandlers.ts.
+   */
+  missing?: boolean;
 }
 
 /** A file's identity as the app last saw it — see main/projectFile.ts. */
@@ -59,6 +91,14 @@ export interface ScriareAPI {
   recent: {
     list: () => Promise<RecentProjectEntry[]>;
     remove: (filePath: string) => Promise<RecentProjectEntry[]>;
+    /**
+     * v0.53.0 — refresh what is cached about a story already in the list,
+     * without moving it. A path that is not in the list is ignored.
+     */
+    touch: (
+      filePath: string,
+      patch: { shape?: StoredShape | null; resume?: StoredResume | null; name?: string },
+    ) => Promise<RecentProjectEntry[]>;
   };
   /** v0.48.0 — the story as a page anyone can read. */
   exportStory: {

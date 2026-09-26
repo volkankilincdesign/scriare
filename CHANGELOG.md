@@ -12,6 +12,74 @@ omitting them.
 
 ---
 
+## v0.53.0 — The Welcome screen
+
+The first screen anyone sees was the last one nobody had looked at. A
+448px column dead centre in a 1280×800 window, about 85% of it flat
+`--bg`, using none of the app's own vocabulary — no sheet, no elevation,
+and the loudest thing in each recent row was a file path. A stranger's
+first thirty seconds ended at "No recent projects yet.", which is a dead
+end on the one screen where *write stories, not syntax* applies most
+directly. (That line also stopped saying *build*.)
+
+**One screen in three states, not three screens.** The frame — wordmark,
+search, Open Project…, New Project — is identical whether you have nought
+stories or ninety, and only the area below it changes. What changes is
+what the hero slot *means*: on an empty shelf the next thing is "see what
+this is"; after that it is "keep writing". A test measures the header's
+box in all three states, because that claim is the design.
+
+**The cards carry maps.** A writer with nine stories does not recognise
+one by its name — they recognise it by whether it fans out early, runs as
+a spine, or loops. Drawing that needs scene positions and edges without
+opening the project, and parsing every `.scriare` on this screen is the
+obvious answer and the wrong one: a 300-scene story is megabytes. So the
+recent-projects entry gains a cached shape, written at a moment the app
+is already writing to disk. Up to twenty node positions normalised into
+the unit square plus their edges as index pairs — 579 bytes for a
+30-scene story, and no titles, no prose, no ids, which matters because
+that file lives in userData, where a writer has no reason to expect their
+words to be.
+
+**The sample is breadth-first from the start scene, not the first twenty
+scenes in the array.** That difference is the whole value of the picture.
+Creation order is not story order: on a forty-scene story where the
+writer left nineteen scenes unwired, a slice gives twenty boxes with
+nothing between them — a map that says the story has no shape. A story
+last saved by an earlier version has no cached shape at all, and shows
+the graph's own dot field: an empty canvas rather than a grey box, filled
+in the first time the story is saved.
+
+**"Where you left off" names the scene, not the file.** Every editor
+worth the comparison opens on the thing you were doing. Scriare already
+knew which scene was selected when it last saved, so the hero shows it,
+with the opening line of its prose, and it is where the keyboard lands —
+launch, Enter, back in the scene. The excerpt is deliberately the scene's
+OPENING rather than the sentence you stopped in the middle of: the
+opening is what identifies a scene a week later, and it does not change
+while you type, so the cached snapshot does not churn on every save.
+
+**Nothing is dimmed.** When a search splits the shelf, the first draft
+faded the non-matching stories to 50% opacity. That was wrong twice over:
+it taxed the contrast of a third of the screen for every reader, and it
+said "less important" about stories that are only "not what you typed".
+They differ by form instead — a rule-separated row, no map, no card, no
+shadow — at full text contrast. The same rule settles the story whose
+file has moved: an icon and its own words, never colour alone.
+
+**Two bugs found on the way.** Re-opening a story erased the map it had
+cached, because moving an entry to the front of Recent Projects replaced
+it wholesale — the app forgetting the picture of the story you just
+opened, which is the one moment it most obviously knows it. And the logo
+swapped on `theme === "light"`, so daylight and overcast — two light
+grounds — were handed the mark drawn for dark rooms, pale on pale. Each
+theme now records its ground, because `overcast` is exactly the case a
+guess gets wrong.
+
+Fifteen negative controls, all caught.
+
+---
+
 ## v0.52.0 — Tidying up
 
 No behaviour changed. The audit's tier 5, plus the repository itself.

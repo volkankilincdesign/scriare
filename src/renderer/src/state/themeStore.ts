@@ -15,17 +15,37 @@ import { create } from "zustand";
  * variables live, so this list can never drift out of step with the CSS.
  */
 export const THEMES = [
-  { id: "dark", label: "Dark", description: "Monochrome, warm neutral" },
-  { id: "light", label: "Light", description: "Monochrome, daylight" },
-  { id: "daylight", label: "Daylight", description: "Paper and sepia ink" },
-  { id: "overcast", label: "Overcast", description: "Mid slate; the page is the bright thing" },
-  { id: "lamplight", label: "Lamplight", description: "Dark and warm, amber" },
-  { id: "deep-water", label: "Deep Water", description: "Dark and cold, cyan" },
-  { id: "nocturne", label: "Nocturne", description: "Violet and rose" },
-  { id: "phosphor", label: "Phosphor", description: "Terminal green" },
+  { id: "dark", label: "Dark", description: "Monochrome, warm neutral", ground: "dark" },
+  { id: "light", label: "Light", description: "Monochrome, daylight", ground: "light" },
+  { id: "daylight", label: "Daylight", description: "Paper and sepia ink", ground: "light" },
+  {
+    id: "overcast",
+    label: "Overcast",
+    description: "Mid slate; the page is the bright thing",
+    ground: "light",
+  },
+  { id: "lamplight", label: "Lamplight", description: "Dark and warm, amber", ground: "dark" },
+  { id: "deep-water", label: "Deep Water", description: "Dark and cold, cyan", ground: "dark" },
+  { id: "nocturne", label: "Nocturne", description: "Violet and rose", ground: "dark" },
+  { id: "phosphor", label: "Phosphor", description: "Terminal green", ground: "dark" },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];
+
+/**
+ * Is this theme's ground light or dark? (v0.53.0)
+ *
+ * Needed by anything that swaps a fixed IMAGE rather than a token — the
+ * logo is the only one today. Recorded on the theme rather than guessed,
+ * because `overcast` is the case a guess gets wrong: a mid slate, lighter
+ * than every dark theme and darker than every light one, whose `--text` is
+ * near-black. Before this, `BrandMark` asked `theme === "light"`, so
+ * daylight and overcast — two light grounds — were handed the logo drawn
+ * for dark ones, and the mark came out pale on pale.
+ */
+export function isLightGround(theme: ThemeId): boolean {
+  return THEMES.find((t) => t.id === theme)?.ground === "light";
+}
 
 const STORAGE_KEY = "scriare.theme";
 const DEFAULT_THEME: ThemeId = "dark";

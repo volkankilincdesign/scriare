@@ -72,16 +72,15 @@ different:
 
 ## Where it stands
 
-**v0.40.x — in active development and genuinely usable.** The editor,
-graph, runtime, entities, variables, validation and search are all real and
-in daily use on a 13-scene demo story.
+**v0.53.0 — in active development and genuinely usable.** The editor,
+graph, runtime, entities, variables, validation, search, export and the
+Welcome screen are all real and in daily use.
 
-**261 automated tests** run against the real packaged application, and
+**514 automated tests** run against the real packaged application, and
 every load-bearing one has been confirmed to fail on a deliberately broken
 build — a test that has never been seen to fail proves nothing.
 
-**Not built yet:** Export (the button is visible and deliberately disabled)
-and a packaged installer.
+**Not built yet:** a packaged installer, and the demo story itself.
 
 ## Built with
 
@@ -101,9 +100,9 @@ React Flow · Playwright. Single developer, built with Claude as a pair.
 
 ## Honest caveats to keep in mind while teasing
 
-- No export yet, so nobody can ship a game with it today. Don't promise a
-  date; say it's next.
-- No installer yet — it runs from source.
+- No installer yet — it runs from source. That is the next build item.
+- No demo story yet, so there is nothing to hand someone to play. It is the
+  one launch item nobody else can do.
 - It's a portfolio project by one person, not a company. That's a strength
   in how it's framed (a designer who builds his own tools), not something
   to hide.

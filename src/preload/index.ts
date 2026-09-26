@@ -21,6 +21,8 @@ const api = {
   recent: {
     list: () => ipcRenderer.invoke("recent:list"),
     remove: (filePath: string) => ipcRenderer.invoke("recent:remove", filePath),
+    touch: (filePath: string, patch: unknown) =>
+      ipcRenderer.invoke("recent:touch", filePath, patch),
   },
   exportStory: {
     html: (suggestedName: string, html: string, nearPath: string | null) =>

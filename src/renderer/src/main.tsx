@@ -52,6 +52,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./export/pageTemplate"),
     import("./export/contrastCheck"),
     import("./export/readingThemes"),
+    import("./utils/recentShape"),
+    import("../../shared/recentEntries"),
   ]).then(
     ([
       projectStore,
@@ -82,6 +84,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       pageTemplate,
       contrastCheck,
       readingThemes,
+      recentShape,
+      recentEntries,
     ]) => {
       Object.assign(window, {
         __scriareProjectStore: projectStore.useProjectStore,
@@ -122,6 +126,14 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         // assert on the page it produced, rather than driving a save
         // dialog a headless run cannot open.
         __scriareExport: { ...buildStory, ...pageTemplate, ...contrastCheck, ...readingThemes },
+        // v0.53.0 — the Welcome screen's cached story shape. Pure functions
+        // over a project, so the spec builds a story, runs the real builder
+        // and measures the bytes it produced.
+        __scriareRecentShape: recentShape,
+        // ...and the rules the main process applies to the record it is
+        // stored in, so the spec can assert on those without writing to
+        // the writer’s own recent-projects.json.
+        __scriareRecentEntries: recentEntries,
       });
     },
   );
