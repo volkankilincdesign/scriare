@@ -2,10 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { Editor } from "@tiptap/react";
 import { Icon } from "../common/Icon";
-import { ColorOnGrounds } from "../common/ColorOnGrounds";
 import type { IconName } from "../common/Icon";
-import type { ColorSubject } from "../../export/contrastCheck";
 import { useProjectStore } from "../../state/projectStore";
+import { useUIStore } from "../../state/uiStore";
 import { useInspectorStore } from "../../state/inspectorStore";
 import { appendChoiceOption } from "../../utils/choiceBlockEditing";
 
@@ -227,9 +226,7 @@ function ColorControl({
   swatch,
   value,
   onChange,
-  reading,
   onPick,
-  onDismissReading,
 }: {
   icon: IconName;
   label: string;
@@ -239,21 +236,20 @@ function ColorControl({
   value: string;
   onChange: (value: string) => void;
   /**
-   * How this colour reads on the reader's two grounds (v0.58.0), or null
-   * while this control is not the one being used. The control keeps its
+   * Fired on every event of a pick, so the caller can keep the reading on
+   * the two grounds up to date (v0.58.0). The control itself keeps its
    * native `<input type="color">` exactly as it was — first press still
-   * opens the operating system's own dialog, with its eyedropper — and the
-   * reading appears underneath it.
+   * opens the browser's own picker, with its eyedropper — and deliberately
+   * draws NOTHING of its own: the picker opens directly beneath this
+   * button, so anything drawn here spends the whole pick behind it
+   * (v0.58.1).
    */
-  reading?: ColorSubject | null;
-  /** Fired on the first event of a pick, to open the reading. */
   onPick?: () => void;
-  onDismissReading?: () => void;
 }) {
   return (
     <label
       title={label}
-      className="relative flex h-7 w-7 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[5px] text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+      className="flex h-7 w-7 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[5px] text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
     >
       <Icon name={icon} className="h-3.5 w-3.5" />
       <span className="sr-only">{label}</span>
@@ -276,19 +272,6 @@ function ColorControl({
         }}
         className="h-0 w-0 opacity-0"
       />
-      {reading && (
-        // Anchored to the control rather than dropped into the page: the
-        // writer's eye is already here, and the toolbar wraps rather than
-        // scrolls, so nothing clips it.
-        <div
-          className="absolute left-0 top-full z-20 mt-2 cursor-default"
-          // The panel lives inside the <label> that opens the picker, so a
-          // click anywhere in it would reopen the OS dialog.
-          onClick={(e) => e.preventDefault()}
-        >
-          <ColorOnGrounds subject={reading} onDismiss={onDismissReading} />
-        </div>
-      )}
     </label>
   );
 }
@@ -400,21 +383,41 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const currentHighlight = (editor.getAttributes("highlight").color as string | undefined) ?? "";
 
   /**
-   * Which colour control is showing its reading (v0.58.0), if either.
+   * The reading of whichever colour is being picked (v0.58.0), handed to
+   * the editor pane, which draws it in its own bottom corner — far from
+   * the picker, which opens directly under the control (v0.58.1).
    *
-   * One at a time, and it survives the operating system's dialog closing —
-   * the panel is most useful while the dialog is open, but it cannot
-   * depend on being seen there, since Windows places that dialog where it
-   * likes and may sit over the toolbar.
+   * Pushed on every event of the pick rather than once at the start: the
+   * throttle below already limits those to one a frame, and that is what
+   * makes the reading follow the drag instead of reporting where it began.
    */
-  const [reading, setReading] = useState<"text" | "highlight" | null>(null);
+  const showColorReading = useUIStore((s) => s.showColorReading);
+  const clearColorReading = useUIStore((s) => s.clearColorReading);
+  /**
+   * WHICH colour is being picked, not what it currently is. The value has
+   * to be re-read from the editor on every render, because the commit is
+   * throttled to one a frame: a subject captured inside the input's own
+   * event handler is always a frame stale, and on the very first event it
+   * is the colour the writer had BEFORE they started — which showed up as
+   * a panel reporting "follows it" for the first frame of every pick.
+   */
+  const [picking, setPicking] = useState<"text" | "highlight" | null>(null);
+  useEffect(() => {
+    if (picking === "text") showColorReading({ kind: "ink", color: currentColor });
+    // "wash", not "ink": a highlight goes BEHIND the words, so what has to
+    // be readable is the ground's own text on top of it.
+    else if (picking === "highlight") showColorReading({ kind: "wash", color: currentHighlight });
+  }, [picking, currentColor, currentHighlight, showColorReading]);
 
   // The caret moving on is the writer saying they are done with this
   // colour. Dismissing on it keeps the panel from following someone into
   // the next paragraph, which is the failure mode of every editor notice
   // that outstays its moment.
   const caret = editor.state.selection.from;
-  useEffect(() => setReading(null), [caret]);
+  useEffect(() => {
+    setPicking(null);
+    clearColorReading();
+  }, [caret, clearColorReading]);
   const choice = enclosingChoice(editor);
 
   return (
@@ -562,13 +565,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         swatch={currentColor || "var(--text-reading)"}
         value={currentColor || "#e4e4e7"}
         onChange={setColorThrottled}
-        onPick={() => setReading("text")}
-        onDismissReading={() => setReading(null)}
-        // Read from the editor rather than from the input's own event, so
-        // the panel measures the colour that actually landed in the
-        // document — through the same one-per-frame throttle as everything
-        // else, which is what makes it follow a drag instead of racing it.
-        reading={reading === "text" ? { kind: "ink", color: currentColor } : null}
+        onPick={() => setPicking("text")}
       />
       <IconButton
         icon="colorReset"
@@ -583,7 +580,8 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         // every node — including list containers — the selection passes
         // through.
         onClick={() => {
-          setReading(null);
+          setPicking(null);
+          clearColorReading();
           editor.chain().focus().setMark("textStyle", { color: null }).cleanupTextStyle().run();
         }}
       />
@@ -594,17 +592,14 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         swatch={currentHighlight || "#f5d90a"}
         value={currentHighlight || "#f5d90a"}
         onChange={setHighlightThrottled}
-        onPick={() => setReading("highlight")}
-        onDismissReading={() => setReading(null)}
-        // "wash", not "ink": a highlight goes BEHIND the words, so what
-        // has to be readable is the ground's own text on top of it.
-        reading={reading === "highlight" ? { kind: "wash", color: currentHighlight } : null}
+        onPick={() => setPicking("highlight")}
       />
       <IconButton
         icon="colorReset"
         label="Remove highlight"
         onClick={() => {
-          setReading(null);
+          setPicking(null);
+          clearColorReading();
           editor.chain().focus().unsetHighlight().run();
         }}
       />

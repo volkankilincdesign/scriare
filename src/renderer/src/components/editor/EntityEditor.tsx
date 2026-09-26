@@ -18,6 +18,7 @@ import { Mention } from "../../extensions/Mention";
 import { MarkerStyleSync } from "../../extensions/MarkerStyleSync";
 import { TextStyleCleanup } from "../../extensions/TextStyleCleanup";
 import { EditorToolbar } from "./EditorToolbar";
+import { ColorReadingCorner } from "./ColorReadingCorner";
 import { Icon } from "../common/Icon";
 import { ENTITY_LABEL } from "../../types/entities";
 import { mentionSites } from "../../utils/mentions";
@@ -127,8 +128,12 @@ export function EntityEditor() {
   }
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-hidden bg-[var(--bg)]">
+    // `relative` so the colour reading can sit in this pane's own bottom
+    // corner (v0.58.1). It cannot live beside the control that opens the
+    // picker: that is precisely where the browser draws the picker.
+    <div className="relative flex h-full flex-1 flex-col overflow-hidden bg-[var(--bg)]">
       <EditorToolbar editor={editor} />
+      <ColorReadingCorner />
       <div className="flex-1 overflow-y-auto px-8 py-8">
         <div className={READING_COLUMN_CLASS}>
           <div className="scriare-section-label mb-1 flex items-center gap-2 text-[var(--text-3)]">

@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.58.0.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.58.1.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -224,7 +224,7 @@ than gaps.
   choice's fill share one component; the numbers come from the export's own
   `checkStoryContrast` neighbour so the two can never disagree.
 
-595 tests, 113 negative controls, all caught.
+596 tests, 115 negative controls, all caught.
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and

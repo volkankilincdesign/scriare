@@ -1059,6 +1059,29 @@ const CONTROLS = [
     spec: "color-grounds",
     expect: "the v0.55.0 notice still fires",
   },
+
+  // ── v0.58.1 · where the reading is drawn ─────────────────────────────
+  {
+    // The whole of v0.58.1: drawn anywhere near the control, the reading
+    // spends the pick behind the picker the control opens.
+    name: "a reading drawn back up beside the control that opens the picker",
+    file: src("components/editor/ColorReadingCorner.tsx"),
+    from: 'className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-end px-4 pb-3"',
+    to: 'className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-end px-4 pt-3"',
+    spec: "color-grounds",
+    expect: "out of the picker's way",
+  },
+  {
+    // The stale-subject bug the move exposed: a subject captured in the
+    // input's own event handler is always one frame behind, and on the
+    // FIRST event it is the colour the writer had before they started.
+    name: "a reading that reports the colour from before the pick began",
+    file: src("components/editor/EditorToolbar.tsx"),
+    from: '    if (picking === "text") showColorReading({ kind: "ink", color: currentColor });',
+    to: '    if (picking === "text") showColorReading({ kind: "ink", color: "" });',
+    spec: "color-grounds",
+    expect: "the numbers are the real ones",
+  },
 ];
 
 

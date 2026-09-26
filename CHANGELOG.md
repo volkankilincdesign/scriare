@@ -12,6 +12,41 @@ omitting them.
 
 ---
 
+## v0.58.1 — The reading moves to the bottom of the page
+
+v0.58.0 drew it directly under the colour control, which is the obvious
+place and the one wrong place: that is where the browser opens the colour
+picker. So the reading sat **behind the picker** for the whole of the
+pick and only came out once the writer had already chosen — which is the
+"reports instead of prevents" failure the feature exists to avoid.
+Reported with a screenshot of the picker sitting on top of it.
+
+**It is now drawn in the writing pane's bottom corner** — out of the
+picker's way wherever the picker opens, and the corner the app already
+uses for a floating instrument (the Variable Readout sits in the same one
+during Play). Visible the whole time the writer is dragging.
+
+**Which meant the pane has to draw it, not the toolbar** — a child cannot
+render into its parent's corner — so the subject travels through
+`uiStore`, which exists for exactly this shape of problem.
+
+**And that exposed a second bug.** The subject was being captured inside
+the colour input's own event handler, where it is always one frame stale,
+because every commit on this bar is throttled to one a frame. On the FIRST
+event of a pick that value is the colour the writer had *before* they
+started — so the panel opened every pick by reporting "follows it" and
+"Reads on both grounds" about a colour nobody had chosen yet. It is read
+from the editor on each render now. Both have controls.
+
+The placement is asserted rather than described: the spec measures that
+the panel is not inside the control, is in the bottom half of the pane and
+is pinned to its bottom edge. Nothing here can measure a browser popup, so
+what is checked is the design, at whatever window size the suite runs.
+
+Two more negative controls, both caught.
+
+---
+
 ## v0.58.0 — How it reads, at the moment you pick
 
 A colour is chosen while looking at one page — whichever of the eight

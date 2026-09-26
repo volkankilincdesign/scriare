@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { ColorSubject } from "../export/contrastCheck";
 
 /**
  * Small cross-cutting UI flags that more than one component needs to
@@ -78,6 +79,23 @@ interface UIState {
   reveal: RevealRequest | null;
   requestReveal: (reveal: RevealRequest) => void;
   clearReveal: () => void;
+
+  /**
+   * The colour the writer is choosing, and how it reads on the reader's
+   * two grounds (v0.58.1) — or null when nobody is picking one.
+   *
+   * HERE RATHER THAN IN THE TOOLBAR, for the reason this store exists at
+   * all. The panel was rendered by the control that opens the picker, so
+   * it appeared directly underneath it — which is exactly where Chromium
+   * puts the colour picker itself, and the reading spent the whole pick
+   * hidden behind the thing it was about. It now belongs to the editor
+   * PANE, which draws it in its own bottom corner, and a component cannot
+   * render into its parent's corner without being told from somewhere
+   * both of them can reach.
+   */
+  colorReading: ColorSubject | null;
+  showColorReading: (subject: ColorSubject) => void;
+  clearColorReading: () => void;
 }
 
 export interface RevealRequest {
@@ -115,4 +133,7 @@ export const useUIStore = create<UIState>((set) => ({
   reveal: null,
   requestReveal: (reveal) => set({ reveal }),
   clearReveal: () => set({ reveal: null }),
+  colorReading: null,
+  showColorReading: (subject) => set({ colorReading: subject }),
+  clearColorReading: () => set({ colorReading: null }),
 }));

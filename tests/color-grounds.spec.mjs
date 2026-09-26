@@ -55,10 +55,26 @@ export default async function run({ page, api, check, seedProject }) {
         page: getComputedStyle(slab).backgroundColor,
         content: slab.getAttribute("data-content-colour") !== null,
       }));
+      // Where it is, measured — the v0.58.1 complaint was entirely about
+      // placement: the panel sat where the browser opens the picker.
+      const box = panel.getBoundingClientRect();
+      const control = [...document.querySelectorAll("label[title]")].find(
+        (l) => l.querySelector('input[type="color"]'),
+      );
+      const pane = panel.closest(".relative");
+      const paneBox = pane ? pane.getBoundingClientRect() : null;
+      const controlBox = control ? control.getBoundingClientRect() : null;
       return {
         text: panel.innerText.replace(/\s+/g, " ").trim(),
         grounds,
-        anchoredUnder: panel.closest("label")?.getAttribute("title") ?? null,
+        insideTheControl: Boolean(panel.closest("label")),
+        // How far below the colour control it starts. The picker Chromium
+        // draws is about 290px tall and opens against that control.
+        belowControl: controlBox ? Math.round(box.top - controlBox.bottom) : null,
+        inBottomHalf: paneBox ? box.top > paneBox.top + paneBox.height / 2 : null,
+        // Pinned to the pane's own bottom edge: as far from the control
+        // as this pane goes, whatever the window size.
+        offTheBottom: paneBox ? Math.round(paneBox.bottom - box.bottom) : null,
       };
     });
 
@@ -71,9 +87,24 @@ export default async function run({ page, api, check, seedProject }) {
   const ink = await readPanel();
 
   check(
-    "picking a text colour opens the reading, under the control you used",
-    Boolean(ink) && ink.anchoredUnder === "Text colour",
-    ink ? String(ink.anchoredUnder) : "no panel",
+    "picking a text colour opens the reading",
+    Boolean(ink),
+    ink ? "panel shown" : "no panel",
+  );
+
+  check(
+    "...in the writing pane's own corner, out of the picker's way",
+    // v0.58.1. It was drawn under the control, which is where the browser
+    // opens the colour picker — so the reading spent the whole pick behind
+    // the thing it was about. Nothing here can measure a browser popup, so
+    // what is asserted is the design: not inside the control, in the
+    // bottom half of the pane, and pinned to its bottom edge — which is as
+    // far from the picker as this pane goes at any window size.
+    ink.insideTheControl === false &&
+      ink.inBottomHalf === true &&
+      ink.offTheBottom !== null &&
+      ink.offTheBottom < 24,
+    `${ink.belowControl}px below the control, ${ink.offTheBottom}px off the pane's bottom`,
   );
 
   check(
@@ -161,9 +192,11 @@ export default async function run({ page, api, check, seedProject }) {
     wash ? wash.text : "no panel",
   );
   check(
-    "...and it is the highlight control it belongs to",
-    wash.anchoredUnder === "Highlight",
-    String(wash.anchoredUnder),
+    "...and picking on the other control replaces the reading rather than adding one",
+    // One panel, whichever control is in use: the numbers above are the
+    // highlight's, and there is exactly one of it on screen.
+    (await api(() => document.querySelectorAll("[data-color-on-grounds]").length)) === 1,
+    "one panel",
   );
 
   // ── a choice's fill, in the dialog that owns it ───────────────────────

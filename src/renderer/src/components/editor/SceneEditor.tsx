@@ -25,6 +25,7 @@ import { SlashCommand } from "../../extensions/SlashCommand";
 import { MarkerStyleSync } from "../../extensions/MarkerStyleSync";
 import { TextStyleCleanup } from "../../extensions/TextStyleCleanup";
 import { EditorToolbar } from "./EditorToolbar";
+import { ColorReadingCorner } from "./ColorReadingCorner";
 import { SpeakerMenu } from "./SpeakerMenu";
 import { READING_COLUMN_CLASS, READING_PROSE_CLASS } from "../../utils/readingColumn";
 import { EMPTY_EDITOR_DOC, loadDocumentIntoEditor } from "../../utils/loadDocument";
@@ -258,8 +259,12 @@ export function SceneEditor() {
   }
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-hidden bg-[var(--bg)]">
+    // `relative` so the colour reading can sit in this pane's own bottom
+    // corner (v0.58.1). It cannot live beside the control that opens the
+    // picker: that is precisely where the browser draws the picker.
+    <div className="relative flex h-full flex-1 flex-col overflow-hidden bg-[var(--bg)]">
       <EditorToolbar editor={editor} />
+      <ColorReadingCorner />
       <div className="flex-1 overflow-y-auto px-8 py-8">
         <div className={`scriare-page ${READING_COLUMN_CLASS}`}>
           <input
