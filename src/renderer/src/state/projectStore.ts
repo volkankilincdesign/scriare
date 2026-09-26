@@ -36,7 +36,7 @@ import type { ContentClipboard } from "../utils/contentClipboard";
 import type { Variable, VariableAction, VariableType, VariableValue } from "../types/variables";
 import { applyVariableAction, buildVariable, changeVariableType } from "../types/variables";
 import { buildStoryShape, sceneExcerpt, sceneGroupName } from "../utils/recentShape";
-import type { StoryShape } from "../utils/recentShape";
+import type { StoredShape } from "../../../preload/index.d";
 import { useInspectorStore } from "./inspectorStore";
 import {
   clearHistory,
@@ -54,7 +54,7 @@ interface RecentProjectEntry {
   filePath: string;
   lastOpened: string;
   /** v0.53.0 — see utils/recentShape.ts and main/ipc/projectHandlers.ts. */
-  shape?: StoryShape | null;
+  shape?: StoredShape | null;
   resume?: {
     sceneTitle: string;
     excerpt: string;

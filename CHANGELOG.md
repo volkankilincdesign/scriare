@@ -12,6 +12,73 @@ omitting them.
 
 ---
 
+## v0.53.3 — The shelf is the whole shelf
+
+The story you were last in was cut out of the grid, because it was
+already in the hero above it. So the one story you could not see on a
+screen headed "your stories" was the one you had worked on most recently,
+under a heading that had to apologise for the omission — "your **other**
+stories".
+
+The hero and the card are not two listings of the same thing: the hero is
+a shortcut back to a scene, the card is that story taking its place on the
+shelf. Both belong. One heading now, saying what is under it.
+
+---
+
+## v0.53.2 — The map is a scale model now
+
+Held a thumbnail up against the graph it claimed to be a picture of, and
+they were not the same graph. Neither v0.53.0 nor v0.53.1 drew a story's
+shape; both drew a different story's shape, confidently, and every test
+in the suite passed while they did — because every test asked whether
+something had been *drawn* and none asked whether it had been drawn in
+the right *place*.
+
+**Each axis was stretched to fill the card.** Normalising x and y
+independently into the unit square is the obvious thing to do and it
+quietly destroys the drawing. A story laid out left to right is wide and
+flat: a real 13-scene project measures about 1108 × 148 canvas units, or
+7.5:1, and the card it is drawn in is 2.3:1. Fitting each axis
+separately multiplies every vertical distance by 3.2 relative to every
+horizontal one, so a tidy spine with two short branches arrives as a
+vertical scatter of blobs.
+
+Both axes now divide by one number — the longer side of the story's own
+bounding box — and the scene cards divide by it too. What is cached is a
+scale model: every distance, every angle, and the cards themselves in the
+proportions the writer laid out. The renderer multiplies by one number
+and centres the result.
+
+**The cost is honest empty space,** and it is drawn as what it is. A 7.5:1
+story fills the card's width and about a third of its height; the rest is
+canvas, so the panel draws the graph's own dot field at the graph's own
+18px spacing behind every map. A story whose shape is not known yet is
+then the same picture with the scenes left out, rather than a special
+case.
+
+**Old cached shapes are not migrated.** A shape written by v0.53.0 has
+these very field names and different meanings, which is the worst kind of
+incompatibility — it draws, and it draws the wrong picture. Shapes now
+carry a format version, an unrecognised one reads as no shape at all, and
+the backfill redraws it from the story. That is one file read, once, and
+it is also why the backfill now asks whether a shape is *usable* rather
+than whether one is *there*.
+
+**And the test that should have existed from the start.** A faithful
+miniature is a similarity transform, so the ratio between drawn distance
+and source distance must be the same for every pair of scenes. It is now
+measured across every pair, off the rendered SVG, against a fixture with
+a real story's proportions — currently agreeing to within 0.5%. Under the
+old code the horizontal and vertical pairs disagree by that 3.2×, which
+no tolerance hides. The drawn scene card is checked against the graph's
+own 180 × 56 as well.
+
+Four more negative controls, all caught; two retired because the code
+they sabotaged no longer exists. 525 tests.
+
+---
+
 ## v0.53.1 — The Welcome screen, actually fitting the window
 
 Three visual bugs in v0.53.0, two of them the same bug wearing different

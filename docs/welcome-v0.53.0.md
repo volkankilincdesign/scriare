@@ -241,3 +241,95 @@ the window did not actually resize.
 
 It was green in `SPEC=welcome` and caught on the first full run. Which is
 the argument for the full run.
+
+---
+
+# v0.53.2 — it was not the same graph
+
+Held a card's thumbnail beside the Story Graph it claimed to be a picture
+of. Different graph. Both earlier versions drew one, and the whole suite
+was green while they did.
+
+## The arithmetic
+
+| | |
+| --- | --- |
+| A real 13-scene story | ~1108 × 148 canvas units — **7.5 : 1** |
+| The card it is drawn in | 290 × 124 — **2.3 : 1** |
+| x scale | 0.262 |
+| y scale | 0.838 |
+| **Vertical exaggeration** | **3.2×** |
+
+Normalising x and y independently into the unit square is the obvious
+thing to do, and it multiplies every vertical distance by
+`panelAspect / graphAspect`. A left-to-right spine with two short
+branches comes out as a vertical scatter. It is not a smaller picture of
+the graph; it is a picture of a graph nobody laid out.
+
+## What replaced it
+
+Both axes divide by **one** number — the longer side of the story's
+bounding box — and `SCENE_NODE_WIDTH × SCENE_NODE_HEIGHT` divides by it
+too. The cached shape is therefore a scale model, and the renderer's only
+job is to multiply by one number and centre.
+
+The stored format gained `v`, `w`, `h` and `node`, and positions are node
+**top-left** corners, with the bounding box including the cards
+themselves — otherwise the rightmost card hangs a full card-width off the
+edge of its own drawing. `node` is rounded to five decimals rather than
+three: it is the one stored pair whose *ratio* is read back, and on a
+6000-unit story three decimals turn 180 × 56 into 3.11:1 instead of
+3.21:1, visibly squatter than any card in the app.
+
+675 bytes for a 30-scene story, against the 1 KB budget.
+
+## Empty space, drawn as canvas
+
+A 7.5:1 story fills the card's width and about a third of its height.
+That is correct, and the remainder is canvas — so the panel draws the
+graph's own dot field at the graph's own 18px spacing behind every map. A
+story whose shape is not known yet is then the same drawing with the
+scenes left out, rather than a special case. The card's map panel also
+came down from 124px to 100px, which tightens the band without touching
+the drawing.
+
+Groups are deliberately **not** drawn. Scenes inside a group are counted
+and positioned like any other; a thumbnail of a story is the story's
+shape, and group boxes at that size are three grey rectangles over the
+thing you are trying to read.
+
+## No migration
+
+A v0.53.0 shape has the same field names and different meanings, which is
+the worst kind of incompatibility: it draws, and it draws the wrong
+picture. Shapes carry a format version; an unrecognised one reads as *no
+shape*, and the backfill redraws it from the story — one file read, once.
+
+Which is also why the backfill asks `isDrawableShape(entry.shape)` rather
+than `!entry.shape`. A presence check would have found every story on a
+real machine already holding an unusable shape, reported nothing to do,
+and left every card empty forever.
+
+## The test that should have existed first
+
+Every check written for v0.53.0 asked whether something was **drawn**.
+None asked whether it was drawn in the right **place**, which is why a
+3.2× distortion shipped twice through a green suite.
+
+A faithful miniature is a **similarity transform**: one scale, both axes,
+plus a translation. So the ratio of drawn distance to source distance is
+computed for *every pair* of scenes, off the rendered SVG, against a
+fixture with a real story's proportions, and the spread between the
+largest and smallest ratio must be under 3%. It currently comes in at
+0.5%. Under the old code the horizontal pairs and the vertical pairs
+disagree by that 3.2×, which no tolerance can hide.
+
+The fixtures are built by the real shape builder from real projects
+rather than written as literals — the format has already changed once,
+and a literal fixture would have gone on describing a format the app no
+longer writes.
+
+Two negative controls were retired rather than re-aimed: they sabotaged
+the per-axis normalisation and its divide-by-zero guard, and neither
+exists any more. Re-pointing a stale control at whichever line looks
+similar is how a control ends up testing nothing.

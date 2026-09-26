@@ -1,6 +1,7 @@
 import type { JSONContent } from "@tiptap/react";
 import type { Project } from "../types/project";
 import { extractChoices } from "./choiceBlocks";
+import { SCENE_NODE_HEIGHT, SCENE_NODE_WIDTH } from "./graphConstants";
 
 /**
  * The cached story shape (v0.53.0).
@@ -27,7 +28,20 @@ import { extractChoices } from "./choiceBlocks";
  * story is saved.
  */
 export interface StoryShape {
-  /** Node positions in the unit square, rounded to three decimals. */
+  /**
+   * Format version. A shape without it was written by v0.53.0, whose
+   * coordinates mean something different (see SHAPE_FORMAT), and is
+   * treated as no shape at all — the card shows an empty canvas and the
+   * backfill redraws it. Migrating those would mean guessing at an aspect
+   * ratio that was thrown away; redrawing takes one file read.
+   */
+  v: 2;
+  /**
+   * Node TOP-LEFT positions, in units where 1.0 is the longer side of the
+   * story's own bounding box. Both axes share that one scale, so the
+   * numbers are a scale model of the graph rather than two independent
+   * normalisations — see SHAPE_FORMAT.
+   */
   nodes: { x: number; y: number }[];
   /** Edges as [fromIndex, toIndex] into `nodes`. */
   edges: [number, number][];
@@ -35,6 +49,61 @@ export interface StoryShape {
   start: number;
   /** How many scenes the story actually has — `nodes.length` is the sample. */
   total: number;
+  /** The graph's extent in the same units. One of these is always 1. */
+  w: number;
+  h: number;
+  /** A scene card's size in the same units, so the drawing is a miniature. */
+  node: { w: number; h: number };
+}
+
+/**
+ * WHY ONE SCALE FOR BOTH AXES (v0.53.2).
+ *
+ * v0.53.0 normalised x and y independently into the unit square, which
+ * is the obvious thing to do and quietly destroys the drawing. A story
+ * laid out left to right is a wide, flat graph — a real 13-scene story
+ * measured 1108 × 148 canvas units, 7.5:1 — and the card it is drawn in
+ * is 290 × 124, about 2.3:1. Stretching each axis to fit multiplies
+ * every vertical distance by 3.2 relative to every horizontal one, so
+ * the neat left-to-right spine with two short branches comes out as a
+ * vertical scatter of blobs. It is not a smaller picture of the graph;
+ * it is a different graph.
+ *
+ * So both axes are divided by the SAME number — the longer side of the
+ * bounding box — and the scene-card size is divided by it too. What is
+ * stored is then a scale model: every distance, every angle and the
+ * cards themselves are in the proportions the writer laid out, and the
+ * renderer's only job is to multiply by one number and centre the
+ * result.
+ *
+ * The cost is honest empty space. A 7.5:1 graph in a 2.3:1 panel fills
+ * the width and about a third of the height, and the rest is canvas —
+ * which is what it actually is, and why the panel draws the graph's own
+ * dot field behind the drawing rather than leaving a void.
+ */
+export const SHAPE_FORMAT = 2;
+
+/**
+ * Is this stored shape one this version knows how to draw?
+ *
+ * A shape from v0.53.0 has the same field names and different meanings,
+ * which is the worst kind of incompatibility: it draws, and it draws the
+ * wrong picture. Rather than migrate coordinates whose aspect ratio was
+ * thrown away when they were written, an unrecognised shape is simply not
+ * a shape — the card shows an empty canvas and the backfill redraws it
+ * from the story itself, which costs one file read, once.
+ */
+export function isDrawableShape(shape: unknown): shape is StoryShape {
+  const s = shape as StoryShape | null;
+  return Boolean(
+    s &&
+      s.v === SHAPE_FORMAT &&
+      Array.isArray(s.nodes) &&
+      s.nodes.length > 0 &&
+      s.node &&
+      typeof s.w === "number" &&
+      typeof s.h === "number",
+  );
 }
 
 /**
@@ -50,6 +119,18 @@ export const SHAPE_BUDGET_BYTES = 1024;
 
 function round3(n: number): number {
   return Math.round(n * 1000) / 1000;
+}
+
+/**
+ * The scene-card size is kept finer than the positions, and for a reason
+ * worth the two extra bytes: it is the one stored pair whose RATIO is
+ * read back. On a 6000-unit-wide story, three decimals quantises 180×56
+ * to 0.028 × 0.009 — a card of 3.11:1 instead of 3.21:1, visibly squatter
+ * than any card in the app. Positions do not care: three decimals of the
+ * longest side is a couple of canvas units, far under a card.
+ */
+function round5(n: number): number {
+  return Math.round(n * 100000) / 100000;
 }
 
 /**
@@ -132,18 +213,24 @@ export function buildStoryShape(project: Project): StoryShape | null {
     return { x: scene?.position?.x ?? 0, y: scene?.position?.y ?? 0 };
   });
 
-  const xs = positions.map((p) => p.x);
-  const ys = positions.map((p) => p.y);
-  const minX = Math.min(...xs);
-  const maxX = Math.max(...xs);
-  const minY = Math.min(...ys);
-  const maxY = Math.max(...ys);
+  // The bounding box includes the cards themselves, not just their
+  // top-left corners — otherwise the rightmost card hangs off the edge of
+  // its own drawing by a whole card width.
+  const minX = Math.min(...positions.map((p) => p.x));
+  const minY = Math.min(...positions.map((p) => p.y));
+  const maxX = Math.max(...positions.map((p) => p.x)) + SCENE_NODE_WIDTH;
+  const maxY = Math.max(...positions.map((p) => p.y)) + SCENE_NODE_HEIGHT;
   const spanX = maxX - minX;
   const spanY = maxY - minY;
 
+  // One scale, the longer side. See SHAPE_FORMAT for why this is the
+  // whole difference between a scale model and a different graph.
+  const longest = Math.max(spanX, spanY);
+  const scale = longest > 0 ? 1 / longest : 0;
+
   const nodes = positions.map((p) => ({
-    x: spanX === 0 ? 0.5 : round3((p.x - minX) / spanX),
-    y: spanY === 0 ? 0.5 : round3((p.y - minY) / spanY),
+    x: round3((p.x - minX) * scale),
+    y: round3((p.y - minY) * scale),
   }));
 
   const edges: [number, number][] = [];
@@ -166,10 +253,17 @@ export function buildStoryShape(project: Project): StoryShape | null {
 
   const startId = project.startSceneId;
   return {
+    v: SHAPE_FORMAT,
     nodes,
     edges,
     start: startId && index.has(startId) ? (index.get(startId) as number) : -1,
     total: project.scenes.length,
+    w: round3(spanX * scale),
+    h: round3(spanY * scale),
+    node: {
+      w: round5(SCENE_NODE_WIDTH * scale),
+      h: round5(SCENE_NODE_HEIGHT * scale),
+    },
   };
 }
 

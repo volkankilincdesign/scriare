@@ -522,22 +522,15 @@ const CONTROLS = [
     spec: "welcome",
     expect: "the sample follows the STORY",
   },
-  {
-    name: "positions cached raw instead of normalised into the card",
-    file: src("utils/recentShape.ts"),
-    from: "    x: spanX === 0 ? 0.5 : round3((p.x - minX) / spanX),",
-    to: "    x: round3(p.x),",
-    spec: "welcome",
-    expect: "normalised into the unit square",
-  },
-  {
-    name: "a story laid out in one row dividing by zero",
-    file: src("utils/recentShape.ts"),
-    from: "    y: spanY === 0 ? 0.5 : round3((p.y - minY) / spanY),",
-    to: "    y: round3((p.y - minY) / spanY),",
-    spec: "welcome",
-    expect: "does not divide by zero",
-  },
+  // Two controls lived here until v0.53.2 and are deliberately gone.
+  // They sabotaged an independent per-axis normalisation and its
+  // divide-by-zero guard; neither exists any more. Both axes now share one
+  // scale — "each axis stretched to fill the card", below, is the control
+  // for that — and the bounding box includes the scene cards themselves,
+  // so a span can no longer be zero and there is nothing left to guard.
+  // A control whose `from` is gone is reported stale by the pre-flight;
+  // rewriting one to aim at whatever line looks similar is how a control
+  // ends up testing nothing.
   {
     // The derived flag written back as though it were a fact — which is
     // how a story on a USB stick gets marked missing once and stays marked.
@@ -576,26 +569,28 @@ const CONTROLS = [
     expect: "NOTHING IS DIMMED",
   },
   {
-    name: "a heading rendered over an empty list",
+    // The shelf used to cut the hero's story out of itself, so the story
+    // you were last in was the one story missing from "your stories".
+    name: "the story in the hero missing from the shelf",
     file: src("components/welcome/WelcomeScreen.tsx"),
-    from: "              {grid.length > 0 && (",
-    to: "              {true && (",
+    from: "  const grid = recentProjects;",
+    to: "  const grid = hero ? recentProjects.slice(1) : recentProjects;",
     spec: "welcome",
-    expect: "does not render over an empty list",
+    expect: "EVERY story is on the shelf",
   },
   {
     name: "a story with no cached shape showing nothing at all",
     file: src("components/welcome/StoryMap.tsx"),
-    from: "        : <DotField width={width} height={height} />)}",
-    to: "        : null)}",
+    from: "          <DotField width={width} height={height} />",
+    to: "          {null}",
     spec: "welcome",
     expect: "an empty canvas, not a grey box",
   },
   {
     name: "a card that draws the dot field over a story that has a shape",
     file: src("components/welcome/WelcomeScreen.tsx"),
-    from: "              <StoryMap shape={entry.shape} height={124} />",
-    to: "              <StoryMap shape={null} height={124} />",
+    from: "              <StoryMap shape={entry.shape} height={100} />",
+    to: "              <StoryMap shape={null} height={100} />",
     spec: "welcome",
     expect: "draws its map",
   },
@@ -697,9 +692,48 @@ const CONTROLS = [
     from: "  useShapeBackfill(recentProjects, (list) =>",
     to: "  if (false) useShapeBackfill(recentProjects, (list) =>",
     spec: "welcome",
-    expect: "gets one drawn without being opened",
+    expect: "gets one drawn, without being opened",
+  },
+  // ── v0.53.2 · is it the same graph ───────────────────────────────────
+  {
+    // The bug that shipped twice: each axis stretched to fill the panel,
+    // which multiplies every vertical distance by panelAspect/graphAspect
+    // — 3.2× for a real story — and draws a graph nobody laid out.
+    name: "each axis stretched to fill the card",
+    file: src("utils/recentShape.ts"),
+    from: "    x: round3((p.x - minX) * scale),\n    y: round3((p.y - minY) * scale),",
+    to: "    x: round3(spanX === 0 ? 0 : (p.x - minX) / spanX),\n    y: round3(spanY === 0 ? 0 : (p.y - minY) / spanY),",
+    spec: "welcome",
+    expect: "SCALE MODEL",
+  },
+  {
+    name: "scene cards drawn at a fixed size instead of to scale",
+    file: src("components/welcome/StoryMap.tsx"),
+    from: "  const nodeW = Math.max(3, shape.node.w * scale);\n  const nodeH = Math.max(2, shape.node.h * scale);",
+    to: "  const nodeW = 38;\n  const nodeH = 15;",
+    spec: "welcome",
+    expect: "proportions of a real one",
+  },
+  {
+    // A shape from v0.53.0 has these field names and different meanings,
+    // so drawing it is not a crash — it is a confidently wrong picture.
+    name: "an older shape drawn as though it were this format",
+    file: src("utils/recentShape.ts"),
+    from: "      s.v === SHAPE_FORMAT &&",
+    to: "      true &&",
+    spec: "welcome",
+    expect: "not drawn as if it were this one",
+  },
+  {
+    name: "a backfill that asks whether a shape is THERE rather than usable",
+    file: src("components/welcome/useShapeBackfill.ts"),
+    from: "              !e.missing && !isDrawableShape(e.shape) && !tried.current.has(e.filePath),",
+    to: "              !e.missing && !e.shape && !tried.current.has(e.filePath),",
+    spec: "welcome",
+    expect: "gets one drawn, without being opened",
   },
 ];
+
 
 
 

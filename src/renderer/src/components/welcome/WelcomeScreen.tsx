@@ -75,7 +75,18 @@ export function WelcomeScreen() {
   // version has no `resume`, so it takes its place in the grid like any
   // other rather than being given a hero slot with nothing to put in it.
   const hero = !searching && recentProjects[0]?.resume ? recentProjects[0] : null;
-  const grid = hero ? recentProjects.slice(1) : recentProjects;
+  /**
+   * THE SHELF IS THE WHOLE SHELF (v0.53.3).
+   *
+   * The hero used to be cut out of the grid, so the story you were last
+   * in was the one story you could not see on a screen headed "your
+   * stories" — a list that silently omits its most recent member, under a
+   * heading that has to apologise for it ("your OTHER stories"). The hero
+   * and the card are not two listings of the same thing: the hero is a
+   * shortcut back to a scene, and the card is the story taking its place
+   * on the shelf. Both belong.
+   */
+  const grid = recentProjects;
 
   return (
     <div className="scriare-welcome flex h-screen w-screen flex-col bg-[var(--bg)] text-[var(--text)]">
@@ -162,19 +173,14 @@ export function WelcomeScreen() {
             <>
               {hero && <ResumeHero entry={hero} onOpen={openRecentProject} />}
               {/*
-                The heading renders only when there is a list under it. With
-                exactly one story and a resume hero, `grid` is empty, and a
-                "Your other stories" heading standing over nothing reads as
-                a section that failed to load.
+                One heading, and it says what is under it. There is no
+                "other" case any more: this branch only renders when there
+                is at least one story, and every one of them is here.
               */}
-              {grid.length > 0 && (
-                <>
-                  <h2 className="scriare-section-label mb-3.5 mt-6 text-[var(--text-3)]">
-                    {hero ? "Your other stories" : "Your stories"}
-                  </h2>
-                  <StoryGrid entries={grid} onOpen={openRecentProject} />
-                </>
-              )}
+              <h2 className="scriare-section-label mb-3.5 mt-6 text-[var(--text-3)]">
+                Your stories
+              </h2>
+              <StoryGrid entries={grid} onOpen={openRecentProject} />
             </>
           )}
           </div>
@@ -204,16 +210,22 @@ export function WelcomeScreen() {
  * looking like something the app does not produce.
  */
 const ILLUSTRATION: StoryShape = {
+  v: 2,
+  // Five columns 280 canvas units apart, rows 120 apart — the spacing a
+  // real story gets from Auto Layout, so the illustration is a story
+  // somebody could actually have laid out rather than a decoration.
+  // Expressed in the cached format's own units: 1.0 is the longer side of
+  // the bounding box, and the scene cards are in those units too.
   nodes: [
-    { x: 0, y: 0.5 },
-    { x: 0.25, y: 0.5 },
-    { x: 0.5, y: 0.08 },
-    { x: 0.5, y: 0.92 },
-    { x: 0.75, y: 0.08 },
-    { x: 0.75, y: 0.92 },
-    { x: 1, y: 0.08 },
-    { x: 1, y: 0.5 },
-    { x: 1, y: 0.92 },
+    { x: 0, y: 0.154 },
+    { x: 0.215, y: 0.154 },
+    { x: 0.431, y: 0.062 },
+    { x: 0.431, y: 0.246 },
+    { x: 0.646, y: 0.062 },
+    { x: 0.646, y: 0.246 },
+    { x: 0.862, y: 0 },
+    { x: 0.862, y: 0.154 },
+    { x: 0.862, y: 0.308 },
   ],
   edges: [
     [0, 1],
@@ -228,6 +240,9 @@ const ILLUSTRATION: StoryShape = {
   ],
   start: 0,
   total: 9,
+  w: 1,
+  h: 0.351,
+  node: { w: 0.138, h: 0.043 },
 };
 
 function EmptyShelf({ onStart }: { onStart: () => void }) {
@@ -254,7 +269,7 @@ function EmptyShelf({ onStart }: { onStart: () => void }) {
       <div className="grid grid-cols-2 gap-4">
         <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-raised)]">
           <div className="border-b border-[var(--border-soft)] bg-[var(--bg)]">
-            <StoryMap shape={ILLUSTRATION} height={168} nodeWidth={48} nodeHeight={19} />
+            <StoryMap shape={ILLUSTRATION} height={150} />
           </div>
           <div className="px-5 pb-5 pt-4">
             <div className="text-[17px] font-medium text-[var(--text)]">This is a story here</div>
@@ -466,7 +481,7 @@ function StoryGrid({ entries, onOpen }: { entries: RecentEntry[]; onOpen: (p: st
             className="scriare-story-card flex w-full flex-col items-stretch overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] text-left"
           >
             <span className="block border-b border-[var(--border-soft)] bg-[var(--bg)]">
-              <StoryMap shape={entry.shape} height={124} />
+              <StoryMap shape={entry.shape} height={100} />
             </span>
             <span className="flex items-baseline gap-2.5 px-4 pb-3.5 pt-3">
               {entry.missing && <MissingIcon />}

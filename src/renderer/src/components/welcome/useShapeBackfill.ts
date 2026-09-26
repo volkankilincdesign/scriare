@@ -1,11 +1,10 @@
 import { useEffect, useRef } from "react";
 import { normalizeProject } from "../../types/project";
-import { buildStoryShape } from "../../utils/recentShape";
-import type { StoryShape } from "../../utils/recentShape";
+import { buildStoryShape, isDrawableShape } from "../../utils/recentShape";
 
 interface Backfillable {
   filePath: string;
-  shape?: StoryShape | null;
+  shape?: unknown;
   missing?: boolean;
 }
 
@@ -73,8 +72,13 @@ export function useShapeBackfill(
 
         for (;;) {
           if (cancelled) return;
+          // `isDrawableShape`, not `!e.shape` — a shape written by an
+          // older version is present and unusable, and testing for
+          // presence alone would leave every one of them showing an empty
+          // canvas forever while the backfill reported nothing to do.
           const next = latest.current.find(
-            (e) => !e.missing && !e.shape && !tried.current.has(e.filePath),
+            (e) =>
+              !e.missing && !isDrawableShape(e.shape) && !tried.current.has(e.filePath),
           );
           if (!next) return;
           tried.current.add(next.filePath);

@@ -10,10 +10,21 @@
  */
 
 export interface RecentShape {
+  /**
+   * Shape format version. ABSENT on anything written by v0.53.0, whose
+   * coordinates mean something different — the reader treats a shape it
+   * does not recognise as no shape, and the Welcome screen redraws it.
+   * Everything here is optional for that reason: this is a record of what
+   * some version of the app once wrote, not a promise about it.
+   */
+  v?: number;
   nodes: { x: number; y: number }[];
   edges: [number, number][];
   start: number;
   total: number;
+  w?: number;
+  h?: number;
+  node?: { w: number; h: number };
 }
 
 export interface RecentResume {
