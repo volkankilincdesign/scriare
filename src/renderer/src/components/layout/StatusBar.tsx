@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import type { JSONContent } from "@tiptap/react";
 import { useProjectStore } from "../../state/projectStore";
+import { countWords } from "../../utils/storyCheck";
 
 interface StatusBarProps {
   /** Whether the Story Graph is currently folded away. */
@@ -87,15 +87,4 @@ function Dot() {
   );
 }
 
-/** Words in a document, counting only its text nodes. */
-function countWords(doc: JSONContent | undefined | null): number {
-  if (!doc) return 0;
-  let text = "";
-  const walk = (node: JSONContent): void => {
-    if (typeof node.text === "string") text += `${node.text} `;
-    node.content?.forEach(walk);
-  };
-  walk(doc);
-  const trimmed = text.trim();
-  return trimmed ? trimmed.split(/\s+/).length : 0;
-}
+

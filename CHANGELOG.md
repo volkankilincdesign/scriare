@@ -12,6 +12,78 @@ omitting them.
 
 ---
 
+## v0.59.0 — The panel you are actually looking at
+
+Two surfaces the v0.56.0 kit never reached, measured before anything was
+drawn: `InspectorPanel.tsx` is 1,999 lines — the largest file in the app —
+with nine distinct radius-plus-padding spellings, five spellings of a
+label and **zero imports from the kit written for exactly this**.
+
+**But the drift was not the finding.** All 1,999 of those lines went into
+the state a writer is in for a few seconds at a time — a Choice Block
+selected. The state they are in for HOURS is a scene selected, and it
+showed a checkbox, a read-only list of the choices already visible in the
+document three inches to the left, and a sentence explaining that the
+panel does something else when you click elsewhere.
+
+**So the scene panel now names the scene and says three things about it.**
+Words, choices, and how many of those choices go nowhere. None of it is
+new data: words is the status bar's own count, choices is the list below
+it, and "goes nowhere" is what Check Story would tell you — if you thought
+to run it. Naming the scene also settles a quieter problem: the panel
+never said which of its two states you were looking at, and "Choices" and
+"Outgoing Choices" are not two different enough words for a full editor
+and a read-only list.
+
+**There were two word counts.** `StatusBar.tsx` walked text nodes;
+`storyCheck.ts` counts mention labels too, because a mention has no text
+of its own. So a scene with three characters mentioned in it was reported
+three words short in the status bar and correctly in Check Story — same
+scene, same screen. One implementation now, exported and read by both, and
+the spec asserts the two agree. Same rule as the reading grounds in
+v0.57.0 and the contrast check in v0.58.0.
+
+**A deleted destination is no longer called one nobody linked.** "Not
+linked yet" used to cover both, and they are different repairs — Check
+Story has named them `unlinked-choice` and `broken-link` since v0.36.0.
+The unlinked case keeps the words the Choice Block in the document already
+uses rather than inventing a fresh phrase for the same state, and both are
+painted in `--warning` rather than told by wording alone, which is
+v0.50.0's rule arriving somewhere new.
+
+**One place to make a new thing.** It was two: "+ Scene" and "+ Group" in
+the header, and a "+" that appeared on the Characters and Locations rows —
+so where the button was depended on what you were making, and the header
+grew a button per content type as the app gained them. One **+ New** menu
+now offers all four, built from the same component the right-click menu
+uses, and it opens the section a new character lands in, which the old "+"
+did on its way.
+
+**Assets is cut. Notes stays.** A section for a feature that will not be
+built is furniture a stranger opens and finds empty — the north star
+counts that as a defect rather than a gap. Notes is work not yet written
+rather than work that will never be, so it keeps its place and now says
+what it is FOR instead of "Coming soon.", which tells a writer when it
+arrives and nothing about whether they want it.
+
+**And one test was re-aimed rather than deleted.** v0.45.0's elevation
+check watched "+ Scene" to prove a ghost button stays flat; its
+replacement draws the border token, and index.css is explicit that
+anything drawing that border is a made object and gets the lift — so the
+button rising is the rule working, not the bug returning. The check now
+probes one control of each kind against the real stylesheet, which is what
+it was always claiming.
+
+**Not done, on purpose:** the choice editor's own layout. It is drawn
+(I2 on the design canvas, four headings — Text, Destination, Conditions,
+Actions) and it is still the wrong thing to build before the installer:
+the largest file in the app, rewritten for no new capability, before
+anyone outside the project has judged it.
+
+Eight more negative controls, all caught; one new spec (13 checks).
+
+---
+
 ## v0.58.1 — The reading moves to the bottom of the page
 
 v0.58.0 drew it directly under the colour control, which is the obvious

@@ -1082,6 +1082,78 @@ const CONTROLS = [
     spec: "color-grounds",
     expect: "the numbers are the real ones",
   },
+
+  // ── v0.59.0 · the scene panel, and one place to make a new thing ─────
+  {
+    name: "a word count the panel does not actually take from the story",
+    file: src("components/layout/InspectorPanel.tsx"),
+    from: "  const words = countWords(scene.content);",
+    to: "  const words = 0;",
+    spec: "scene-panel",
+    expect: "counts the words the way the rest of the app counts them",
+  },
+  {
+    name: "a panel that still does not say which scene it is showing",
+    file: src("components/layout/InspectorPanel.tsx"),
+    from: '          {scene.title || "Untitled scene"}',
+    to: '          {""}',
+    spec: "scene-panel",
+    expect: "names the scene it is showing",
+  },
+  {
+    // The number that earns the panel its place: Check Story would tell
+    // you, but only if you thought to run it.
+    name: "unfinished choices no longer counted",
+    file: src("components/layout/InspectorPanel.tsx"),
+    from: "  const goingNowhere = choices.filter((choice) => destination(choice.targetSceneId).wrong).length;",
+    to: "  const goingNowhere = 0;",
+    spec: "scene-panel",
+    expect: "how many of them go nowhere",
+  },
+  {
+    name: "a deleted destination reported as one nobody linked",
+    file: src("components/layout/InspectorPanel.tsx"),
+    from: '    if (!target) return { label: "target missing", wrong: true };',
+    to: '    if (!target) return { label: "not linked yet", wrong: true };',
+    spec: "scene-panel",
+    expect: "two ways of going nowhere are told apart",
+  },
+  {
+    // v0.50.0's rule, in a new place: a state told by wording alone is a
+    // state half the readers miss.
+    name: "a broken destination told by words alone",
+    file: src("components/layout/InspectorPanel.tsx"),
+    from: '                        to.wrong ? "text-[var(--warning)]" : "text-[var(--text-3)]"',
+    to: '                        "text-[var(--text-3)]"',
+    spec: "scene-panel",
+    expect: "painted in the warning colour",
+  },
+  {
+    name: "a + New that cannot make everything the tree holds",
+    file: src("components/layout/ContentBrowser.tsx"),
+    from: '      {\n        label: "New Character",',
+    to: '      {\n        label: "New Charactor",',
+    spec: "scene-panel",
+    expect: "all four things the tree holds",
+  },
+  {
+    // The old per-category "+" opened its section on the way; the menu
+    // has to do the same or the writer's new character lands out of sight.
+    name: "a new character that lands in a closed section",
+    file: src("components/layout/ContentBrowser.tsx"),
+    from: '          if (!expanded.has("root:characters")) toggleExpand("root:characters");',
+    to: "",
+    spec: "scene-panel",
+    expect: "opens the section it lands in",
+  },
+  {
+    name: "a placeholder that says when rather than what",
+    file: src("components/layout/ContentBrowser.tsx"),
+    from: '    promise: "Nothing here yet. Notes are for what the story needs and the reader never sees.",',
+    to: '    promise: "Coming soon.",',
+    spec: "scene-panel",
+    expect: "says what it is for",
+  },
 ];
 
 

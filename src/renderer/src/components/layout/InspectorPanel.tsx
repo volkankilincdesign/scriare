@@ -7,6 +7,7 @@ import { useUIStore } from "../../state/uiStore";
 import { useEditorRefStore } from "../../state/editorStore";
 import { extractChoices, findChoiceBlockOptions } from "../../utils/choiceBlocks";
 import { mentionResolver } from "../../utils/mentions";
+import { countWords } from "../../utils/storyCheck";
 import type { ChoiceOption } from "../../utils/choiceBlocks";
 import { PLAYER_SPEAKER, PLAYER_SPEAKER_LABEL, canSpeak } from "../../types/speaker";
 import type { Entity } from "../../types/entities";
@@ -109,7 +110,31 @@ export function InspectorPanel({ collapsed, onToggle }: InspectorPanelProps) {
   );
 }
 
-/** Scene Properties — unchanged from Sprint 9A. */
+/**
+ * Scene Properties, rebuilt in v0.59.0.
+ *
+ * THE STATE THE INSPECTOR IS ACTUALLY IN. A writer selects a Choice Block
+ * for a few seconds at a time; the rest of the session — the hours — the
+ * panel shows this. Until now it showed a checkbox, a read-only list of
+ * the choices that are already visible in the document three inches to the
+ * left, and a sentence explaining that the panel does something else when
+ * you click elsewhere. All nineteen hundred lines of this file went into
+ * the state nobody is in for long.
+ *
+ * So: it names the scene, which also settles a second problem — the panel
+ * never said which of its two states you were looking at, and "Choices"
+ * and "Outgoing Choices" are not two different enough words for a full
+ * editor and a read-only list.
+ *
+ * THE THREE NUMBERS ARE NOT NEW DATA. Words is the status bar's own count
+ * (one implementation now, see storyCheck.countWords), choices is the list
+ * already below it, and "goes nowhere" is the thing Check Story would tell
+ * you about if you ran it — which the panel you are already staring at can
+ * tell you now. Nothing here is a new property of a scene: no notes, no
+ * tags, no colour, no word goal. A thin panel padded with fields nobody
+ * asked for is worse than an honest thin one, and a scene genuinely has
+ * few properties.
+ */
 function SceneProperties() {
   const project = useProjectStore((s) => s.project);
   const selectedSceneId = useProjectStore((s) => s.selectedSceneId);
@@ -126,19 +151,66 @@ function SceneProperties() {
     : [];
   const isStartScene = Boolean(scene) && project?.startSceneId === scene?.id;
 
-  function destinationLabel(targetSceneId: string | null): string {
-    if (!targetSceneId) return "Not linked yet";
+  /**
+   * Where a choice ends up, in three states rather than two.
+   *
+   * "Not linked yet" used to cover both a choice nobody has pointed
+   * anywhere and one whose destination has since been deleted. Those are
+   * different things — Check Story has called them `unlinked-choice` and
+   * `broken-link` since v0.36.0 — and telling a writer their choice was
+   * never linked when in fact their scene is gone sends them to the wrong
+   * place to fix it.
+   *
+   * The unlinked case keeps the words the Choice Block in the document
+   * already uses, rather than a fresh phrase for the same state: two
+   * names for one thing, three inches apart, is how a vocabulary rots.
+   * The summary line above says "goes nowhere" because it counts BOTH
+   * kinds, and is a count rather than the name of a state.
+   */
+  function destination(targetSceneId: string | null): { label: string; wrong: boolean } {
+    if (!targetSceneId) return { label: "not linked yet", wrong: true };
     const target = project?.scenes.find((sc) => sc.id === targetSceneId);
-    return target ? `→ ${target.title || "Untitled scene"}` : "Not linked yet";
+    if (!target) return { label: "target missing", wrong: true };
+    return { label: `→ ${target.title || "Untitled scene"}`, wrong: false };
   }
 
   if (!scene) {
     return <p className="text-[var(--text-3)]">Select a scene to see its details.</p>;
   }
 
+  const words = countWords(scene.content);
+  // Both kinds at once, deliberately: the count answers "is anything in
+  // this scene unfinished", and the list below says which kind each one is.
+  const goingNowhere = choices.filter((choice) => destination(choice.targetSceneId).wrong).length;
+
   return (
     <div>
-      <label className="mb-4 flex items-center gap-2 text-sm text-[var(--text-2)]">
+      <div className="mb-2 flex items-baseline gap-2">
+        <h3 className="min-w-0 flex-1 truncate font-medium text-[var(--text)]" title={scene.title}>
+          {scene.title || "Untitled scene"}
+        </h3>
+        <span className="shrink-0 text-xs text-[var(--text-3)]">scene</span>
+      </div>
+
+      {/* Tabular figures, like the status bar's: these change as the writer
+          types, and proportional digits make a panel twitch. */}
+      <div className="mb-3 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-xs text-[var(--text-3)]">
+        <span>
+          <span className="tabular-nums text-[var(--text-2)]">{words.toLocaleString()}</span> words
+        </span>
+        <span>
+          <span className="tabular-nums text-[var(--text-2)]">{choices.length}</span>{" "}
+          {choices.length === 1 ? "choice" : "choices"}
+        </span>
+        {goingNowhere > 0 && (
+          <span className="text-[var(--warning)]">
+            <span className="tabular-nums">{goingNowhere}</span>{" "}
+            {goingNowhere === 1 ? "goes nowhere" : "go nowhere"}
+          </span>
+        )}
+      </div>
+
+      <label className="mb-3 flex items-center gap-2 text-sm text-[var(--text-2)]">
         <input
           type="checkbox"
           checked={isStartScene}
@@ -148,41 +220,52 @@ function SceneProperties() {
         This is the Start Scene
       </label>
 
-      <h3 className="scriare-section-label mb-2 text-[var(--text-3)]">
-        Outgoing Choices
-      </h3>
+      <div className="border-t border-[var(--border-soft)] pt-3">
+        <h4 className="scriare-section-label mb-2 text-[var(--text-3)]">Where it leads</h4>
 
-      {choices.length === 0 ? (
-        <p className="text-[var(--text-3)]">
-          This scene has no Choice Blocks yet. Insert one from the editor's
-          toolbar (+ Choice) or by typing <code>/choice</code> to let this
-          scene branch somewhere else.
-        </p>
-      ) : (
-        <ul className="space-y-3">
-          {choices.map((choice) => (
-            <li key={choice.id} className="rounded-md border border-[var(--border-soft)] px-2 py-1.5">
-              <div
-                className="mb-1 truncate text-[var(--text-2)]"
-                title={choice.text || "(untitled choice)"}
-              >
-                {choice.text || "(untitled choice)"}
-              </div>
-              <span
-                className={`text-xs ${
-                  choice.targetSceneId ? "text-[var(--accent)]" : "text-[var(--text-3)]"
-                }`}
-              >
-                {destinationLabel(choice.targetSceneId)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <p className="mt-3 text-xs text-[var(--text-3)]">
-        Select a Choice Block in the document to edit its choices, destinations, and actions here.
-      </p>
+        {choices.length === 0 ? (
+          <p className="text-xs leading-relaxed text-[var(--text-3)]">
+            This scene has no Choice Blocks yet. Insert one from the editor's toolbar
+            (+ Choice) or by typing <code>/choice</code> to let this scene branch
+            somewhere else.
+          </p>
+        ) : (
+          <>
+            <ul>
+              {choices.map((choice) => {
+                const to = destination(choice.targetSceneId);
+                return (
+                  <li
+                    key={choice.id}
+                    data-outgoing-choice
+                    className="flex items-baseline gap-2 py-0.5 text-xs"
+                  >
+                    {/* One line each, not a bordered card: this is a list to
+                        run your eye down, and thirteen of them in a card
+                        apiece is a panel you scroll instead of read. */}
+                    <span
+                      className="min-w-0 flex-1 truncate text-[var(--text-2)]"
+                      title={choice.text || "(untitled choice)"}
+                    >
+                      {choice.text || "(untitled choice)"}
+                    </span>
+                    <span
+                      className={`shrink-0 ${
+                        to.wrong ? "text-[var(--warning)]" : "text-[var(--text-3)]"
+                      }`}
+                    >
+                      {to.label}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="mt-2.5 text-xs text-[var(--text-3)]">
+              Click a choice in the page to edit where it goes.
+            </p>
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -113,8 +113,16 @@ function sceneChoices(
  * player reads, and the names that appear in sentences. A mention has no
  * text of its own — it's a reference — so its label is counted in its
  * place, or "Behind it, Mara waits" would come out as three words.
+ *
+ * EXPORTED IN v0.59.0, and the status bar now reads it. There were two of
+ * these: this one, and a simpler copy in StatusBar.tsx that walked only
+ * text nodes — so a scene with three characters mentioned in it was
+ * reported three words short in the status bar and correctly in Check
+ * Story, about the same scene, on the same screen. One measurement, one
+ * implementation; the same rule v0.57.0 applied to the reading grounds and
+ * v0.58.0 to the contrast check.
  */
-function countWords(content: JSONContent | undefined | null): number {
+export function countWords(content: JSONContent | undefined | null): number {
   if (!content) return 0;
   let text = "";
   (function walk(node: JSONContent): void {

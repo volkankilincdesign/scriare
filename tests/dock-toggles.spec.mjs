@@ -170,8 +170,11 @@ export default async function ({ page, api, check, seedProject }) {
   await wait(150);
 
   // 3 — the room that was asked for. The Content toggle was the third item
-  // in a row of three, hard against "+ Group"; the graph's sat directly under
-  // the splitter, all but touching the editor above it.
+  // in a row of three, hard against the header's own buttons; the graph's
+  // sat directly under the splitter, all but touching the editor above it.
+  // Re-aimed in v0.59.0: "+ Scene" and "+ Group" became one "+ New", so the
+  // neighbour the toggle must keep its distance from is that button now.
+  // The claim is unchanged — only the thing it stands next to is.
   const room = await api(() => {
     const byLabel = (name) =>
       [...document.querySelectorAll("button")].find(
@@ -182,7 +185,7 @@ export default async function ({ page, api, check, seedProject }) {
         (b) => b.textContent?.trim() === text,
       );
     const dock = byLabel("Collapse Content")?.getBoundingClientRect();
-    const group = byText("+ Group")?.getBoundingClientRect();
+    const group = document.querySelector("[data-new-content]")?.getBoundingClientRect();
     const graphDock = byLabel("Collapse Story Graph")?.getBoundingClientRect();
     const splitter = document
       .querySelector('[title="Drag to resize"]')
@@ -196,7 +199,7 @@ export default async function ({ page, api, check, seedProject }) {
     };
   });
   check(
-    "the Content toggle is not crowded against + Group",
+    "the Content toggle is not crowded against + New",
     room.fromGroup !== null && room.fromGroup >= 8,
     `${room.fromGroup}px`,
   );
@@ -259,26 +262,51 @@ export default async function ({ page, api, check, seedProject }) {
   }
 
   // 5 — the elevation rule this shook loose still does its own job: a
-  // selected row rises, and a ghost button that merely lights up on hover
-  // does not. Both halves, because the fix was to stop the second from
-  // happening without stopping the first.
+  // selected row rises, and a button in the same panel that merely lights
+  // up on hover does not. Both halves, because the fix was to stop the
+  // second from happening without stopping the first.
+  //
+  // v0.59.0 re-aimed the second half. It used to watch "+ Scene", a ghost
+  // button that drew no border; its replacement, "+ New", DOES draw the
+  // border token, and index.css's rule is explicit that anything drawing
+  // that border is a made object and gets the lift — so the button rising
+  // is the rule working, not the bug returning. The claim itself is
+  // unchanged and still worth guarding, so it now watches a tree row,
+  // which is the kind of control the v0.45.0 report was actually about.
   const lift = await api(() => {
+    const panel = document.querySelector(".scriare-panel-l");
     const row = document.querySelector(".scriare-panel-l .scriare-row-on");
-    const ghost = [
-      ...document.querySelectorAll(".scriare-panel-l button"),
-    ].find((b) => b.textContent?.trim() === "+ Scene");
+    // Two probes rather than whichever buttons happen to be on screen at
+    // this point in the spec: the claim is about the RULE — a control that
+    // draws the border token is a made object and rises; one that only
+    // lights up on hover is a ghost and stays flat — and a probe of each
+    // kind measures exactly that, in the real stylesheet, in this panel.
+    const probe = (className) => {
+      const el = document.createElement("button");
+      el.className = className;
+      panel.appendChild(el);
+      const shadow = getComputedStyle(el).boxShadow;
+      el.remove();
+      return shadow;
+    };
     return {
       row: row ? getComputedStyle(row).boxShadow !== "none" : null,
-      ghost: ghost ? getComputedStyle(ghost).boxShadow : null,
+      ghost: probe("rounded px-1.5 text-xs hover:bg-[var(--surface-2)]"),
+      made: probe("rounded border border-[var(--border)] px-2 py-0.5 text-xs"),
     };
   });
+  check(
+    "a made object in the panel rises — the rule still applies to bordered controls",
+    lift.made !== "none",
+    String(lift.made).slice(0, 40),
+  );
   check(
     "a selected row in Content still rises off the panel",
     lift.row === true,
     JSON.stringify(lift.row),
   );
   check(
-    "...while a ghost button beside it stays flat until you touch it",
+    "...while a button that merely lights up on hover stays flat",
     lift.ghost === "none",
     String(lift.ghost),
   );

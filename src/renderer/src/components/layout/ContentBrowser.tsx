@@ -125,17 +125,33 @@ const STORY_ROOT = "root:story";
 
 /**
  * v0.35.0 — Characters and Locations are real now (see types/entities.ts).
- * Notes and Assets keep the "Coming soon" treatment until they are, because
- * a category that quietly does nothing is worse than one that says so.
+ * A category that quietly does nothing is worse than one that says so.
+ *
+ * v0.59.0 — ASSETS IS CUT. It was a section for a feature that will not be
+ * built, and a stranger opening a tree finds it and tries it: the north
+ * star counts that as a defect rather than a gap. Notes stays, because it
+ * is work that has not been written yet rather than work that will never
+ * be, and it now says what it is for instead of "Coming soon." — which
+ * tells a writer when it arrives and nothing about whether they want it.
  */
 const ENTITY_CATEGORIES: { kind: EntityKind; key: string; icon: IconName; label: string }[] = [
   { kind: "character", key: "root:characters", icon: "character", label: "Characters" },
   { kind: "location", key: "root:locations", icon: "location", label: "Locations" },
 ];
 
-const PLACEHOLDER_CATEGORIES: { key: string; icon: IconName; label: string }[] = [
-  { key: "root:notes", icon: "note", label: "Notes" },
-  { key: "root:assets", icon: "asset", label: "Assets" },
+const PLACEHOLDER_CATEGORIES: {
+  key: string;
+  icon: IconName;
+  label: string;
+  /** What it will hold, in the writer's terms. */
+  promise: string;
+}[] = [
+  {
+    key: "root:notes",
+    icon: "note",
+    label: "Notes",
+    promise: "Nothing here yet. Notes are for what the story needs and the reader never sees.",
+  },
 ];
 
 function loadExpanded(): Set<string> {
@@ -200,6 +216,14 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  /**
+   * The + New menu (v0.59.0). Its position rather than a boolean, because
+   * it is the SAME component the right-click menu uses — a menu is a menu,
+   * and a second one drawn from scratch here would be the kind of
+   * near-copy v0.56.0 spent a version removing.
+   */
+  const [newMenu, setNewMenu] = useState<{ x: number; y: number } | null>(null);
+  const newButton = useRef<HTMLButtonElement>(null);
   const [draggingIds, setDraggingIds] = useState<Set<string>>(new Set());
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -455,6 +479,44 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
   }, [selectedIds, startRename, deleteEntity, showUndo]);
 
   // --- context menu ---
+
+  /**
+   * Opened under its own button rather than at the pointer, so it hangs
+   * off the control that summoned it the way a menu should.
+   */
+  function openNewMenu(): void {
+    const box = newButton.current?.getBoundingClientRect();
+    if (!box) return;
+    setNewMenu({ x: box.left, y: box.bottom + 4 });
+  }
+
+  /**
+   * Everything a writer can make, in the order they will make it. A scene
+   * first because that is what a story is; a group second because it is
+   * what a story becomes; then the two kinds of entity, which the tree
+   * used to offer through a "+" that appeared on their own rows.
+   */
+  function newMenuItems(): ContentMenuItem[] {
+    return [
+      { label: "New Scene", onSelect: () => createScene(null) },
+      { label: "New Group", onSelect: () => createFolder(null) },
+      {
+        label: "New Character",
+        onSelect: () => {
+          if (!expanded.has("root:characters")) toggleExpand("root:characters");
+          createEntity("character");
+        },
+      },
+      {
+        label: "New Location",
+        onSelect: () => {
+          if (!expanded.has("root:locations")) toggleExpand("root:locations");
+          createEntity("location");
+        },
+      },
+    ];
+  }
+
   function openContextMenu(e: MouseEvent, node: ContentNode | null): void {
     e.preventDefault();
     e.stopPropagation();
@@ -651,28 +713,26 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
       >
         <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-3 py-2">
           <span className="scriare-section-label text-[var(--text-3)]">Content</span>
-          {/* The two "new thing" buttons sit together; the dock toggle is a
-              different kind of act, so it gets its own air rather than being
-              the third item in a row of three (v0.45.0, reported). */}
+          {/* ONE PLACE TO MAKE A NEW THING (v0.59.0). It was two: "+ Scene"
+              and "+ Group" here, and a "+" that appeared on the Characters
+              and Locations rows — so where the button was depended on what
+              you were making, and the header grew a button per content type
+              as the app gained them. The dock toggle keeps its own air: it
+              is a different kind of act, not the third item in a row of
+              three (v0.45.0, reported). */}
           <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => createScene(null)}
-              className="rounded px-1.5 text-xs text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-              title="New scene (Story root)"
+              ref={newButton}
+              data-new-content
+              aria-haspopup="menu"
+              aria-expanded={newMenu !== null}
+              onClick={openNewMenu}
+              className="rounded border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+              title="New scene, group, character or location"
             >
-              + Scene
+              + New ▾
             </button>
-            <button
-              type="button"
-              onClick={() => createFolder(null)}
-              className="rounded px-1.5 text-xs text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-              title="New group (Story root)"
-            >
-              + Group
-            </button>
-            </div>
             <DockToggle direction="left" onClick={onToggle} title="Collapse Content" />
           </div>
         </div>
@@ -811,18 +871,6 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
                   </span>
                   <Icon name={cat.icon} />
                   <span className="flex-1">{cat.label}</span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!expanded.has(cat.key)) toggleExpand(cat.key);
-                      createEntity(cat.kind);
-                    }}
-                    title={`New ${cat.label.slice(0, -1).toLowerCase()}`}
-                    className="rounded px-1.5 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-                  >
-                    +
-                  </button>
                 </div>
                 {expanded.has(cat.key) && <EntityList kind={cat.kind} />}
               </div>
@@ -842,7 +890,9 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
                   <span>{cat.label}</span>
                 </div>
                 {expanded.has(cat.key) && (
-                  <div className="px-3 py-2 text-xs text-[var(--text-3)]">Coming soon.</div>
+                  <div className="px-3 py-2 text-xs leading-relaxed text-[var(--text-3)]">
+                    {cat.promise}
+                  </div>
                 )}
               </div>
             ))}
@@ -855,6 +905,15 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
           y={contextMenu.y}
           items={buildMenuItems(contextMenu.node)}
           onClose={() => setContextMenu(null)}
+        />
+      )}
+
+      {newMenu && (
+        <ContentContextMenu
+          x={newMenu.x}
+          y={newMenu.y}
+          items={newMenuItems()}
+          onClose={() => setNewMenu(null)}
         />
       )}
 

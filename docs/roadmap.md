@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.58.1.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.59.0.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -224,7 +224,17 @@ than gaps.
   choice's fill share one component; the numbers come from the export's own
   `checkStoryContrast` neighbour so the two can never disagree.
 
-596 tests, 115 negative controls, all caught.
+- **v0.59.0 The panel you are actually looking at** — the Inspector's
+  scene state (the one a writer is in for hours, against the choice editor
+  they are in for seconds) now names the scene and counts words, choices
+  and how many of them go nowhere; a deleted destination is told apart from
+  one nobody linked, both in the warning colour. The Content Browser gets
+  one + New instead of a button per content type, Assets is cut and Notes
+  says what it is for. Two word counts became one, exported from
+  storyCheck: the status bar had been under-reporting any scene with a
+  mention in it.
+
+610 tests, 123 negative controls, all caught.
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and
@@ -387,7 +397,7 @@ No dates. Sizes are sessions; the order is what matters.
   1. ~~**Play Mode on a reading ground**~~ — shipped as v0.57.0. His
      words, choosing it: "Idea 2 is the easiest one but if I wanted it to
      be easy I wouldn't want to build an app."
-  2. **In-place choice options — the Exchange.** An option that adds a
+  2. **In-place choice options — the Dialogue.** An option that adds a
      reply to the page instead of turning it, Disco Elysium / Narrat
      style. The one thing on this list Twine structurally cannot do.
      SMALLER THAN FIRST ESTIMATED: `ConditionalBlock` already exists and
@@ -398,7 +408,13 @@ No dates. Sizes are sessions; the order is what matters.
      engine". Two directions were drawn (G5): sugar that writes the
      hidden variables for the writer (~1 session, and the Variable
      Manager tells on it), or a block of its own (recommended, 2–3
-     sessions). The two decisions that are not code are settled on G6 —
+     sessions). **Named the Dialogue on 27 Sep**, his call — the word the
+     field already uses, and a block a narrative designer meets for the
+     first time should be a word they already own. One thing to settle
+     while building it, since the word now does two jobs: a scene already
+     CONTAINS dialogue, so the block's wording has to say it is a
+     conversation that stays on the page rather than "where dialogue
+     goes". The two decisions that are not code are settled on G6 —
      the graph draws ONE BADGE on the node ("4 in-page · 2 exits"), not
      silence and not a self-loop; and Check Story re-states one rule, *an
      option is an edge only if it leaves*, which yields two new warnings
