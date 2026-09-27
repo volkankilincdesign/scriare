@@ -167,8 +167,13 @@ export default async function run({ api, check, seedProject }) {
     return items;
   });
   check(
-    "...and it can make all four things the tree holds",
-    menu.join(" · ") === "New Scene · New Group · New Character · New Location",
+    // Four in v0.59.0, five since v0.60.0 made Notes a real kind. The
+    // claim is that the ONE menu can make everything the tree holds, so
+    // the list has to grow with the tree — a check pinned to "four" would
+    // have to be argued with every time the app gained something.
+    "...and it can make everything the tree holds",
+    menu.join(" · ") ===
+      "New Scene · New Group · New Character · New Location · New Note",
     menu.join(" · "),
   );
 
@@ -197,36 +202,38 @@ export default async function run({ api, check, seedProject }) {
     JSON.stringify(made),
   );
 
-  // ── the two placeholders ──────────────────────────────────────────────
-  const placeholders = await api(async () => {
+  // ── what a section says about itself ──────────────────────────────────
+  // v0.59.0 cut Assets and gave Notes an honest line; v0.60.0 made Notes
+  // real, so the placeholder mechanism is gone entirely. What survives —
+  // and is still worth guarding — is the rule underneath both: a section
+  // with nothing in it says what it is FOR, never when it is coming.
+  const empty = await api(async () => {
     const w = (ms) => new Promise((r) => setTimeout(r, ms));
+    const store = window.__scriareProjectStore;
+    store.setState({
+      project: { ...store.getState().project, entities: [] },
+    });
+    await w(200);
     const aside = document.querySelector("aside");
-    const notes = [...aside.querySelectorAll("div")].find(
-      (d) => d.children.length === 3 && d.textContent.trim() === "▸Notes",
+    const notes = [...aside.querySelectorAll("[data-category]")].find(
+      (row) => row.getAttribute("data-category") === "root:notes",
     );
-    const text = aside.innerText;
-    // Open whatever section is called Notes and read what it says.
-    const row = [...aside.querySelectorAll("[aria-expanded]")].find((r) =>
-      r.textContent.includes("Notes"),
-    );
-    row?.click();
-    await w(220);
-    return {
-      hasNotes: text.includes("Notes"),
-      hasAssets: text.includes("Assets"),
-      says: aside.innerText.replace(/\s+/g, " ").match(/Notes (.*?)(?:$|Characters|Locations)/)?.[1] ?? "",
-      found: Boolean(notes),
-    };
+    if (!notes) return { missing: true };
+    if (notes.getAttribute("aria-expanded") !== "true") notes.click();
+    await w(260);
+    return { text: aside.innerText.replace(/\s+/g, " "), hasAssets: /Assets/.test(aside.innerText) };
   });
+
   check(
     "Assets is gone — a section for a feature that will never exist",
-    placeholders.hasAssets === false && placeholders.hasNotes === true,
-    `Notes: ${placeholders.hasNotes}, Assets: ${placeholders.hasAssets}`,
+    empty.missing !== true && empty.hasAssets === false,
+    `Assets present: ${empty.hasAssets}`,
   );
   check(
-    "...and Notes says what it is for, not when it is coming",
-    /what the story needs/.test(placeholders.says) && !/Coming soon/.test(placeholders.says),
-    placeholders.says.slice(0, 90),
+    "...and an empty section says what it is for, not when it is coming",
+    /what the story needs and the reader never sees/i.test(empty.text) &&
+      !/coming soon/i.test(empty.text),
+    (empty.text ?? "").slice(0, 120),
   );
 
   await seedProject();

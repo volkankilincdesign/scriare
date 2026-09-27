@@ -12,6 +12,73 @@ omitting them.
 
 ---
 
+## v0.60.0 — Notes
+
+A note is the writer's own page: **it can mention the story, and the story
+can never mention it.** That one asymmetry is the whole definition, and
+everything else about a note — its page, its rename, its drag, its search,
+its backlinks — is what being an entity has meant since v0.35.0.
+
+**Which is why this is small.** `ContentCategory` has included `"notes"`
+since the file format was written, and `entities.ts` said in its own
+header that Notes were expected to arrive as a further KIND rather than a
+new system. Five of the six exclusions were already true before a line was
+written: a note cannot be a speaker (`canSpeak` has been character-only
+since v0.37.1), cannot reach the export (built from scenes; no entity page
+ships), cannot touch the word count or Check Story (both walk scenes), and
+is found by search (which already walked entity pages — deliberately: a
+note you cannot find again is a note you stop writing).
+
+**The one exclusion that needed writing is the `@` menu.** It filters on
+`isMentionable(entity)` rather than on `kind !== "note"` at the call site,
+because the next kind will have to answer the same question and a rule
+spelled out twice is a rule remembered once. The filter sits at the
+SOURCE list, so nothing downstream — matching, best-name, the menu's
+keyboard handling — can offer one by accident.
+
+**"Appears in" turns around into "Points at".** A character's page lists
+where she is mentioned. A note is never mentioned, so that list would be
+empty for as long as the note existed, and a permanently empty section is
+worse than none. It shows what the note points AT instead: the same walk
+read backwards, counted once per thing named rather than once per mention,
+because a note that says "Yseide" four times has one relationship with
+Yseide. It also makes a note a place you navigate FROM.
+
+**And a note has no aliases.** An alias exists for exactly one job —
+matching what a writer types after an `@`. On a note it is a control for
+something that cannot happen, and a field that does nothing teaches a
+writer to distrust the ones that do.
+
+**The placeholder mechanism is deleted, not extended.** Assets was cut in
+v0.59.0 and Notes was the only thing left using it, so the Content Browser
+ends up with LESS machinery than it had: three kinds, one list, one shape.
+The status bar counts notes only when there are any — the same restraint
+as "goes nowhere" in the scene panel: a writer who keeps no notes should
+not be told twice a day that they have none.
+
+**One conditional was a bug waiting for a third kind.** `kind ===
+"character" ? "character" : "location"` appeared in two places, and every
+note would have been drawn with a location's pin. There is one
+`ENTITY_ICON` table now. The `@` menu keeps its two-way version, with a
+comment saying why it is correct by construction: a note can never appear
+in that menu.
+
+**Two tests were re-aimed rather than deleted.** v0.59.0 checked that
++ New could make "all four things the tree holds" — it is five now, and the
+claim is that ONE menu makes everything the tree holds, so the check grows
+with the tree. And the placeholder's "says what it is for, not when it is
+coming" moved to the category's own empty state, which is where that rule
+now lives; its negative control moved with it.
+
+**A spec crash, found by a control.** The check for "+ New can make a
+note" clicked the menu item without checking it existed, so sabotaging the
+item CRASHED the spec instead of failing it — and a crash tells a negative
+control nothing. It reports now.
+
+Seven more negative controls, all caught; one new spec (16 checks).
+
+---
+
 ## v0.59.0 — The panel you are actually looking at
 
 Two surfaces the v0.56.0 kit never reached, measured before anything was

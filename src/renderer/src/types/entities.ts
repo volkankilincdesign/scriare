@@ -40,7 +40,7 @@ export const MENTION_TYPE = "mention";
  *    id, never the text, which is what lets renaming a character update
  *    every sentence she appears in (see extensions/Mention.ts).
  */
-export type EntityKind = "character" | "location";
+export type EntityKind = "character" | "location" | "note";
 
 export interface Entity {
   id: string;
@@ -56,12 +56,43 @@ export interface Entity {
 export const ENTITY_CATEGORY: Record<EntityKind, ContentCategory> = {
   character: "characters",
   location: "locations",
+  note: "notes",
 };
 
 export const ENTITY_LABEL: Record<EntityKind, string> = {
   character: "Character",
   location: "Location",
+  note: "Note",
 };
+
+/**
+ * The icon each kind is drawn with, named once (v0.60.0).
+ *
+ * It was `kind === "character" ? "character" : "location"` in two places,
+ * which is a conditional that silently became wrong the moment a third
+ * kind existed: every note would have been drawn as a location. The icon
+ * names here are the Icon component's own.
+ */
+export const ENTITY_ICON: Record<EntityKind, "character" | "location" | "note"> = {
+  character: "character",
+  location: "location",
+  note: "note",
+};
+
+/**
+ * Can the story point at this? (v0.60.0)
+ *
+ * The one thing that makes a note a note. A mention is the story naming
+ * something inside itself; a note is the writer talking to themselves
+ * beside it, so it never appears in the `@` menu and can never be
+ * mentioned. Written as a question about the ENTITY rather than as a
+ * `kind !== "note"` test at the two call sites, because the next kind —
+ * whatever it is — will have to answer the same question, and a test
+ * spelled out twice is a rule that will be remembered once.
+ */
+export function isMentionable(entity: Entity | { kind: EntityKind }): boolean {
+  return entity.kind !== "note";
+}
 
 export function buildEntity(kind: EntityKind, name = ""): Entity {
   return {

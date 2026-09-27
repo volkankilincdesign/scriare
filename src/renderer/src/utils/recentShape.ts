@@ -334,7 +334,7 @@ export function sceneGroupName(project: Project, sceneId: string): string | null
  * to join as further entity kinds (see types/entities.ts) — a
  * `isCharacter` flag would have to be replaced the day they do.
  */
-export type ResumeKind = "scene" | "character" | "location";
+export type ResumeKind = "scene" | "character" | "location" | "note";
 
 export interface ResumeSnapshot {
   kind: ResumeKind;
@@ -439,6 +439,10 @@ export const RESUME_LABEL: Record<ResumeKind, string> = {
   scene: "Scene",
   character: "Character",
   location: "Location",
+  // v0.60.0. A resume written before this version cannot name a note,
+  // because notes did not exist — the same way one written before v0.54.0
+  // is read as a scene.
+  note: "Note",
 };
 
 /**

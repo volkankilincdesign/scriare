@@ -40,6 +40,11 @@ export function StatusBar({ flowCollapsed, onToggleFlow }: StatusBarProps) {
 
   const characters = project.entities?.filter((e) => e.kind === "character").length ?? 0;
   const locations = project.entities?.filter((e) => e.kind === "location").length ?? 0;
+  // Counted only when there are any (v0.60.0). Scenes, characters and
+  // locations are what a story is made of and read as zero honestly; a
+  // writer who keeps no notes should not be told twice a day that they
+  // have none. Same rule as "goes nowhere" in the scene panel.
+  const notes = project.entities?.filter((e) => e.kind === "note").length ?? 0;
 
   return (
     <footer className="scriare-statusbar flex h-7 shrink-0 items-center gap-4 border-t border-[var(--border-soft)] bg-[var(--surface)] px-5 text-[11px] text-[var(--text-3)]">
@@ -54,6 +59,14 @@ export function StatusBar({ flowCollapsed, onToggleFlow }: StatusBarProps) {
       <span className="tabular-nums">
         {locations} {locations === 1 ? "location" : "locations"}
       </span>
+      {notes > 0 && (
+        <>
+          <Dot />
+          <span className="tabular-nums">
+            {notes} {notes === 1 ? "note" : "notes"}
+          </span>
+        </>
+      )}
 
       <span className="flex-1" />
 

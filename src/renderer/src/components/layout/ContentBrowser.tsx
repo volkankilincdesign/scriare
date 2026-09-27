@@ -18,7 +18,7 @@ import type { ContentMenuItem } from "./ContentContextMenu";
 import { MoveToDialog } from "./MoveToDialog";
 import { Icon } from "../common/Icon";
 import type { IconName } from "../common/Icon";
-import { ENTITY_LABEL } from "../../types/entities";
+import { ENTITY_ICON, ENTITY_LABEL } from "../../types/entities";
 import { fold } from "../../utils/textFold";
 import type { EntityKind } from "../../types/entities";
 import { DockGlyph, DockToggle } from "../common/DockToggle";
@@ -57,8 +57,13 @@ function EntityList({ kind }: { kind: EntityKind }) {
         >
           Create {ENTITY_LABEL[kind]}
         </button>
-        <p className="mt-2 text-[11px] text-[var(--text-3)]">
-          Or type @ while writing a scene.
+        <p className="mt-2 text-[11px] leading-relaxed text-[var(--text-3)]">
+          {/* A note cannot be made with @, because a note cannot be
+              mentioned — so the empty state says what a note is FOR
+              instead of offering a route that does not exist (v0.60.0). */}
+          {kind === "note"
+            ? "For what the story needs and the reader never sees."
+            : "Or type @ while writing a scene."}
         </p>
       </div>
     );
@@ -93,7 +98,7 @@ function EntityList({ kind }: { kind: EntityKind }) {
                 : "text-[var(--text-2)] hover:bg-[var(--bg)] hover:text-[var(--text)]"
             }`}
           >
-            <Icon name={kind === "character" ? "character" : "location"} />
+            <Icon name={ENTITY_ICON[kind]} />
             {renaming ? (
               <input
                 autoFocus
@@ -124,35 +129,20 @@ const EXPANDED_STORAGE_KEY = "scriare:contentExpanded";
 const STORY_ROOT = "root:story";
 
 /**
- * v0.35.0 — Characters and Locations are real now (see types/entities.ts).
- * A category that quietly does nothing is worse than one that says so.
- *
- * v0.59.0 — ASSETS IS CUT. It was a section for a feature that will not be
- * built, and a stranger opening a tree finds it and tries it: the north
- * star counts that as a defect rather than a gap. Notes stays, because it
- * is work that has not been written yet rather than work that will never
- * be, and it now says what it is for instead of "Coming soon." — which
- * tells a writer when it arrives and nothing about whether they want it.
+ * v0.35.0 — Characters and Locations are real. v0.59.0 — Assets was cut,
+ * a section for a feature that will not be built. v0.60.0 — NOTES IS REAL
+ * TOO, so the placeholder list that held it is gone: this file no longer
+ * has a mechanism for a category that does nothing, because there is no
+ * longer a category that does nothing. Three kinds, one list, one shape.
  */
 const ENTITY_CATEGORIES: { kind: EntityKind; key: string; icon: IconName; label: string }[] = [
   { kind: "character", key: "root:characters", icon: "character", label: "Characters" },
   { kind: "location", key: "root:locations", icon: "location", label: "Locations" },
+  // Last, because it is the only one the reader never meets: the story's
+  // people and places first, then the writer's own pages.
+  { kind: "note", key: "root:notes", icon: "note", label: "Notes" },
 ];
 
-const PLACEHOLDER_CATEGORIES: {
-  key: string;
-  icon: IconName;
-  label: string;
-  /** What it will hold, in the writer's terms. */
-  promise: string;
-}[] = [
-  {
-    key: "root:notes",
-    icon: "note",
-    label: "Notes",
-    promise: "Nothing here yet. Notes are for what the story needs and the reader never sees.",
-  },
-];
 
 function loadExpanded(): Set<string> {
   try {
@@ -512,6 +502,13 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
         onSelect: () => {
           if (!expanded.has("root:locations")) toggleExpand("root:locations");
           createEntity("location");
+        },
+      },
+      {
+        label: "New Note",
+        onSelect: () => {
+          if (!expanded.has("root:notes")) toggleExpand("root:notes");
+          createEntity("note");
         },
       },
     ];
@@ -876,26 +873,6 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
               </div>
             ))}
 
-          {!searchQuery &&
-            PLACEHOLDER_CATEGORIES.map((cat) => (
-              <div key={cat.key} className="mb-1">
-                <div
-                  {...rowActivation(() => toggleExpand(cat.key))}
-                  aria-expanded={expanded.has(cat.key)}
-                  onClick={() => toggleExpand(cat.key)}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-[var(--text-3)] transition-colors hover:bg-[var(--surface-2-faint)]"
-                >
-                  <span className="w-3 text-[10px] text-[var(--text-3)]">{expanded.has(cat.key) ? "▾" : "▸"}</span>
-                  <Icon name={cat.icon} />
-                  <span>{cat.label}</span>
-                </div>
-                {expanded.has(cat.key) && (
-                  <div className="px-3 py-2 text-xs leading-relaxed text-[var(--text-3)]">
-                    {cat.promise}
-                  </div>
-                )}
-              </div>
-            ))}
         </nav>
       </aside>
 

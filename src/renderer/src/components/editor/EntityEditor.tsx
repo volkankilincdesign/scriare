@@ -20,8 +20,8 @@ import { TextStyleCleanup } from "../../extensions/TextStyleCleanup";
 import { EditorToolbar } from "./EditorToolbar";
 import { ColorReadingCorner } from "./ColorReadingCorner";
 import { Icon } from "../common/Icon";
-import { ENTITY_LABEL } from "../../types/entities";
-import { mentionSites } from "../../utils/mentions";
+import { ENTITY_ICON, ENTITY_LABEL } from "../../types/entities";
+import { mentionSites, mentionTargets } from "../../utils/mentions";
 import { READING_COLUMN_CLASS, READING_PROSE_CLASS } from "../../utils/readingColumn";
 import { EMPTY_EDITOR_DOC, loadDocumentIntoEditor } from "../../utils/loadDocument";
 
@@ -115,6 +115,14 @@ export function EntityEditor() {
   if (!project || !entity) return null;
 
   const sites = mentionSites(project, entity.id);
+  /**
+   * v0.60.0 — a note is never mentioned, so "Appears in" would be empty
+   * for as long as it existed. It shows what it POINTS AT instead: the
+   * same walk, read backwards, which also makes the note a place you
+   * navigate from rather than a dead end with a title.
+   */
+  const isNote = entity.kind === "note";
+  const targets = isNote ? mentionTargets(project, entity.content) : [];
 
   function addAlias(): void {
     const value = aliasDraft.trim();
@@ -137,7 +145,7 @@ export function EntityEditor() {
       <div className="flex-1 overflow-y-auto px-8 py-8">
         <div className={READING_COLUMN_CLASS}>
           <div className="scriare-section-label mb-1 flex items-center gap-2 text-[var(--text-3)]">
-            <Icon name={entity.kind === "character" ? "character" : "location"} />
+            <Icon name={ENTITY_ICON[entity.kind]} />
             <span>{ENTITY_LABEL[entity.kind]}</span>
           </div>
 
@@ -148,6 +156,12 @@ export function EntityEditor() {
             placeholder={`${ENTITY_LABEL[entity.kind]} name`}
           />
 
+          {/* NO ALIASES ON A NOTE (v0.60.0). An alias exists for exactly
+              one job — matching what a writer types after an @ — and a note
+              can never be mentioned, so an alias on one is a control that
+              does nothing. A field that does nothing teaches a writer to
+              distrust the ones that do. */}
+          {!isNote && (
           <div className="mb-6 flex flex-wrap items-center gap-1.5">
             <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-3)]">
               Also known as
@@ -188,14 +202,45 @@ export function EntityEditor() {
               className="w-28 rounded-full border border-dashed border-[var(--border-soft)] bg-transparent px-2 py-0.5 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
             />
           </div>
+          )}
+          {isNote && <div className="mb-6" />}
 
           <EditorContent editor={editor} />
 
           <div className="mt-10 border-t border-[var(--border-soft)] pt-4">
             <h3 className="scriare-section-label mb-2 text-[var(--text-3)]">
-              Appears in
+              {isNote ? "Points at" : "Appears in"}
             </h3>
-            {sites.length === 0 ? (
+            {isNote ? (
+              targets.length === 0 ? (
+                <p className="text-xs text-[var(--text-3)]">
+                  Nothing yet. Type{" "}
+                  <span className="text-[var(--text-2)]">@</span> to name someone or somewhere from
+                  the story.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-1">
+                  {targets.map((target) => (
+                    <li key={target.id}>
+                      <button
+                        type="button"
+                        data-points-at={target.id}
+                        onClick={() => selectEntity(target.id)}
+                        className="flex w-full items-center gap-2 rounded px-1.5 py-1 text-left text-sm text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+                      >
+                        <Icon name={ENTITY_ICON[target.kind]} />
+                        <span className="min-w-0 flex-1 truncate">{target.name}</span>
+                        {target.count > 1 && (
+                          <span className="shrink-0 text-xs text-[var(--text-3)]">
+                            ×{target.count}
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )
+            ) : sites.length === 0 ? (
               <p className="text-xs text-[var(--text-3)]">
                 Nowhere yet. Type{" "}
                 <span className="text-[var(--text-2)]">@{entity.name || "name"}</span> in a scene.

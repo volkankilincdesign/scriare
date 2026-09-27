@@ -7,7 +7,7 @@ import { MentionView } from "../components/editor/MentionView";
 import { MentionMenu } from "../components/editor/MentionMenu";
 import type { MentionMenuHandle, MentionMenuItem } from "../components/editor/MentionMenu";
 import { useProjectStore } from "../state/projectStore";
-import { MENTION_TYPE, bestNameFor, matchEntities } from "../types/entities";
+import { MENTION_TYPE, bestNameFor, isMentionable, matchEntities } from "../types/entities";
 import { PLAYER_SPEAKER, PLAYER_SPEAKER_LABEL, SPEAKER_HOSTS, canSpeak } from "../types/speaker";
 import type { EditorState } from "@tiptap/pm/state";
 
@@ -103,7 +103,12 @@ export const Mention = Node.create({
       allowSpaces: true,
       items: ({ query, editor }) => {
         const project = useProjectStore.getState().project;
-        const entities = project?.entities ?? [];
+        // A note is the writer talking beside the story, not a thing the
+        // story can name — so it never reaches the @ menu (v0.60.0). The
+        // filter is here, at the source, rather than on the rendered list:
+        // everything downstream (matching, best-name, the menu's keyboard
+        // handling) then cannot accidentally offer one.
+        const entities = (project?.entities ?? []).filter(isMentionable);
         const trimmed = query.trim();
         // One space is a name; two is prose that happens to follow an @.
         if (trimmed.split(/\s+/).length > 2) return [];

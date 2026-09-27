@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.59.0.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.60.0.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -234,7 +234,15 @@ than gaps.
   storyCheck: the status bar had been under-reporting any scene with a
   mention in it.
 
-610 tests, 123 negative controls, all caught.
+- **v0.60.0 Notes** — the writer's own pages, his spec: a note can mention
+  the story and the story can never mention it. A third entity KIND rather
+  than a new system, which is what the file format and `entities.ts` had
+  both expected since v0.35.0 — so five of the six exclusions were already
+  true and only the `@` menu needed a filter. "Appears in" turns around
+  into "Points at", a note has no aliases, and the placeholder mechanism is
+  deleted rather than extended: three kinds, one list, one shape.
+
+626 tests, 131 negative controls, all caught.
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and

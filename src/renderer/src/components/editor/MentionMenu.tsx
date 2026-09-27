@@ -118,6 +118,8 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(
               }`}
             >
               <Icon
+                // Two kinds, not three: a note can never be mentioned, so
+                // one can never appear in this menu (see isMentionable).
                 name={kind === "character" ? "character" : "location"}
                 className="h-3.5 w-3.5 shrink-0"
               />

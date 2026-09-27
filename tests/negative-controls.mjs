@@ -1147,12 +1147,76 @@ const CONTROLS = [
     expect: "opens the section it lands in",
   },
   {
-    name: "a placeholder that says when rather than what",
+    // Re-aimed in v0.60.0: the placeholder table it used to sabotage no
+    // longer exists, because Notes became real and it was the last one in
+    // it. The claim it protects — an empty section says what it is FOR —
+    // moved to the category's own empty state, so the control moved too.
+    name: "a section that says when rather than what",
     file: src("components/layout/ContentBrowser.tsx"),
-    from: '    promise: "Nothing here yet. Notes are for what the story needs and the reader never sees.",',
-    to: '    promise: "Coming soon.",',
+    from: '            ? "For what the story needs and the reader never sees."',
+    to: '            ? "Coming soon."',
     spec: "scene-panel",
     expect: "says what it is for",
+  },
+
+  // ── v0.60.0 · Notes ─────────────────────────────────────────────────
+  {
+    // The one asymmetry that makes a note a note.
+    name: "a note the story can point at",
+    file: src("types/entities.ts"),
+    from: '  return entity.kind !== "note";',
+    to: "  return true;",
+    spec: "notes",
+    expect: "never a note",
+  },
+  {
+    name: "the @ menu handed every entity, filtered nowhere",
+    file: src("extensions/Mention.ts"),
+    from: "        const entities = (project?.entities ?? []).filter(isMentionable);",
+    to: "        const entities = project?.entities ?? [];",
+    spec: "notes",
+    expect: "never a note",
+  },
+  {
+    // A permanently empty section is worse than no section.
+    name: "a note asking where it is mentioned, which is nowhere, forever",
+    file: src("components/editor/EntityEditor.tsx"),
+    from: '              {isNote ? "Points at" : "Appears in"}',
+    to: '              {"Appears in"}',
+    spec: "notes",
+    expect: "says Points at",
+  },
+  {
+    name: "one row per mention rather than one per thing named",
+    file: src("utils/mentions.ts"),
+    from: "    counts.set(id, (counts.get(id) ?? 0) + 1);",
+    to: "    counts.set(id, 1);",
+    spec: "notes",
+    expect: "counted once per thing",
+  },
+  {
+    name: "aliases on a note — a control for a thing that cannot happen",
+    file: src("components/editor/EntityEditor.tsx"),
+    from: "          {!isNote && (\n          <div className=\"mb-6 flex flex-wrap items-center gap-1.5\">",
+    to: "          {true && (\n          <div className=\"mb-6 flex flex-wrap items-center gap-1.5\">",
+    spec: "notes",
+    expect: "no aliases",
+  },
+  {
+    name: "a note counted as part of the story",
+    file: src("components/layout/StatusBar.tsx"),
+    from: "      {notes > 0 && (",
+    to: "      {notes >= 0 && (",
+    spec: "notes",
+    expect: "says nothing at all about notes when there are none",
+  },
+  {
+    name: "a tree that cannot make a note",
+    file: src("components/layout/ContentBrowser.tsx"),
+    from: '        label: "New Note",',
+    to: '        label: "New Notes",',
+    spec: "notes",
+    expect: "+ New can make a note",
   },
 ];
 

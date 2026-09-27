@@ -64,6 +64,45 @@ export function mentionSites(project: Project | null, entityId: string): Mention
 }
 
 /**
+ * What a page points AT — the other direction of the same walk (v0.60.0).
+ *
+ * `mentionSites` answers "where is this mentioned", which is the right
+ * question for a character and a meaningless one for a NOTE: a note can
+ * never be mentioned, so its "Appears in" list would be empty for as long
+ * as it existed, and a section that is permanently empty is worse than no
+ * section. The useful question about a note is the reverse one, and it is
+ * the same data read backwards — the entities this page names, in the
+ * order it names them, counted.
+ *
+ * Distinct rather than one row per mention: a note that says "Yseide" four
+ * times has one relationship with Yseide, not four.
+ */
+export interface MentionTarget {
+  id: string;
+  name: string;
+  kind: Entity["kind"];
+  count: number;
+}
+
+export function mentionTargets(project: Project | null, content: JSONContent | undefined): MentionTarget[] {
+  if (!project) return [];
+  const counts = new Map<string, number>();
+  for (const id of mentionedEntityIds(content)) {
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+  const out: MentionTarget[] = [];
+  for (const [id, count] of counts) {
+    const entity = project.entities.find((e: Entity) => e.id === id);
+    // A mention of something deleted is dropped rather than drawn as a
+    // broken row: the mention itself already falls back to its stored
+    // label in the prose, and a list of links has nowhere to send you.
+    if (!entity) continue;
+    out.push({ id, name: entity.name || "Untitled", kind: entity.kind, count });
+  }
+  return out;
+}
+
+/**
  * A copy of `content` with every mention's stored label replaced by the
  * entity's CURRENT name — what Play Mode renders through.
  *
