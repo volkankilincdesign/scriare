@@ -631,6 +631,28 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         <Icon name="branch" className="h-[15px] w-[15px]" />
         Choice
       </button>
+
+      {/* v0.66.1 — the Dialogue, beside the Choice, because they are the
+          two block types a writer reaches for and one of them being a
+          button while the other was only a slash command said the wrong
+          thing about which was real. Same schema guard, same reason.
+
+          Not a second accent-filled button: one primary per bar. It is
+          the pair's quieter half by weight, not by importance — the
+          Choice is what most scenes end with. */}
+      {editor.schema.nodes.dialogueBlock && (
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => editor.chain().focus().insertDialogueBlock().run()}
+          title="Insert a Dialogue — a conversation that stays on this page"
+          data-insert-dialogue
+          className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] border border-[var(--border)] bg-[var(--surface-2)] px-2.5 text-xs font-semibold text-[var(--text-2)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+        >
+          <Icon name="dialogue" className="h-[15px] w-[15px]" />
+          Dialogue
+        </button>
+      )}
         </>
       )}
 

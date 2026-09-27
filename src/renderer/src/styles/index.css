@@ -627,10 +627,26 @@ input[type="number"],
    a little colour — and nothing about it suggests a control. Same
    instinct as a mention, which stops looking like a mention the moment a
    player is reading it. */
+/* v0.66.1 — WHERE THE CHIP SITS, and why it is not `vertical-align`.
+
+   The chip's own text was on the line's baseline, which is the correct
+   answer to the wrong question. A pill is not a word: what the eye lines
+   up is the BOX against the band the letters occupy — cap-height down to
+   the baseline — and a box whose text is baselined hangs below the line
+   by its descender space and its padding. Measured at 16px prose: the
+   pill dropped 5.8px below the baseline and its centre sat 1.6px under
+   the centre of the cap band, which is the "misalignment" a reader sees
+   without being able to name it. `vertical-align: middle` does not fix
+   it (it moved the pill 0.05px, because it aligns to the parent's
+   x-height midpoint, not to an optical centre).
+
+   So: a shorter box, and a nudge in `em` so it scales with the text it
+   sits beside. The result measures 0.24px off the centre of the cap
+   band, and speaker-alignment.spec holds it there. */
 .scriare-speaker-chip {
   display: inline-block;
   margin-right: .4em;
-  padding: .05em .4em;
+  padding: .1em .45em;
   border: 1px solid var(--border-faint);
   border-radius: 999px;
   background: var(--surface-2);
@@ -639,8 +655,10 @@ input[type="number"],
   font-size: .72em;
   font-weight: 600;
   letter-spacing: .02em;
-  line-height: 1.5;
+  line-height: 1.15;
   vertical-align: baseline;
+  position: relative;
+  top: -.12em;
   cursor: pointer;
   user-select: none;
   transition: color .12s, border-color .12s, background-color .12s;

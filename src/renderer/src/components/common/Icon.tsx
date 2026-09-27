@@ -49,6 +49,10 @@ export type IconName =
   | "colorReset"
   | "clearFormat"
   | "branch"
+  // v0.66.1 — the Dialogue's own mark in the toolbar. A branch says the
+  // scene splits; this one has to say the opposite, that the talking
+  // happens here and the page stays put.
+  | "dialogue"
   | "plus"
   | "properties";
 
@@ -233,6 +237,15 @@ const PATHS: Record<IconName, JSX.Element> = {
       <path d="M2.6 8h2.4c1.1 0 1.7.6 2.3 1.5l.8 1.1c.6.9 1.2 1.2 2.2 1.2h1.3" />
       <circle cx="12.6" cy="4.2" r="1.1" fill="currentColor" stroke="none" />
       <circle cx="12.6" cy="11.8" r="1.1" fill="currentColor" stroke="none" />
+    </>
+  ),
+  // A speech shape with the lines still inside it. Drawn as one closed
+  // outline rather than two overlapping bubbles: at 15px two bubbles
+  // become a grey blob, and one bubble with two lines survives the size.
+  dialogue: (
+    <>
+      <path d="M2.7 4.4c0-.55.45-1 1-1h8.6c.55 0 1 .45 1 1v5.2c0 .55-.45 1-1 1H6.6L3.6 13v-2.4h-.9V4.4Z" />
+      <path d="M5.4 6.1h5.2M5.4 8.2h3.2" />
     </>
   ),
   plus: <path d="M8 3.4v9.2M3.4 8h9.2" />,

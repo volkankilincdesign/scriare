@@ -12,6 +12,62 @@ omitting them.
 
 ---
 
+## v0.66.1 — Where a speaker's name sits, and a button for the Dialogue
+
+Two things Volkan found within an hour of opening v0.66.0, plus one the
+fix for them turned up.
+
+**The Dialogue had no button.** It was a slash command and nothing else,
+sitting next to a Choice Block that has had a filled button on the toolbar
+since v0.33.0 — which said, to anyone who had not read the changelog, that
+one of them was a real feature and the other was a trick. It is beside the
+Choice now, outlined rather than filled: one primary per bar, and the
+Choice is still what most scenes end with. The icon is a speech shape with
+the lines left inside it, because a branch says *the scene splits* and this
+block's whole claim is the opposite.
+
+**The speaker chip was hung off the baseline.** His word was
+"misalignment" and he was right, but the code was not obviously wrong: the
+chip's own text was exactly on the line's baseline, to the pixel. That is
+the correct answer to the wrong question. **A pill is not a word.** What
+the eye lines up is the box against the band the letters occupy — cap
+height down to baseline — and a box whose *text* is baselined hangs below
+the line by its descender space and its padding. Measured at 16px prose:
+the pill fell **5.8px below the baseline** and its centre sat **1.63px
+under** the centre of the cap band.
+
+`vertical-align: middle` does not fix this, which is worth recording
+because it is the obvious thing to try: measured, it moved the pill
+**0.05px**, since it aligns to the parent's x-height midpoint rather than
+to any optical centre. The fix is a shorter box and a nudge in `em` so it
+scales with whatever the writer sets the prose to. Now **0.24px** off
+centre, and it dips 3px rather than 5.8.
+
+**The reply's name was on a hand-picked padding** — `pt-[3px]`, chosen by
+eye at one font size — so it sat below the words it introduces. It cannot
+be fixed with `align-items: baseline` either: a textarea reports its
+*bottom edge* as its baseline, so a two-line reply would drag the name
+down with it. Both sides get the same line box instead, and the smaller
+type centres itself in it. 0.5px apart now.
+
+**And while photographing that fix: a reply that could not be seen.** The
+textarea grows to its content, and the code that grew it was a ref
+callback — which is the one place it cannot work, because ProseMirror
+builds a node view's DOM *before* putting it in the document. The callback
+measured `scrollHeight` on a detached element, got 0, wrote `height: 0px`,
+and nothing ever recomputed it. The reply was in the file and in the
+field's value the whole time. Measured height on a freshly built block:
+**zero**. It is a layout effect now, re-run when the reply changes, and it
+refuses to write a height of nought.
+
+**Five new negative controls**, and one of them had to be rewritten twice
+before it caught anything — removing the auto-grow effect still left the
+field tall enough to pass, because the assertion had been written as "not
+zero" and a CSS floor satisfies that. The reply in the spec is long enough
+to wrap now, and the assertion is that you can read all of it.
+
+---
+
 ## v0.66.0 — The Dialogue
 
 A conversation that happens on the page instead of turning it. Four

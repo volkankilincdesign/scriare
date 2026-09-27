@@ -1618,6 +1618,50 @@ const CONTROLS = [
     spec: "dialogue",
     expect: "prints the conversation as its own kind of block",
   },
+  // ── v0.66.1, where a speaker's name sits ──────────────────────────────
+  // All four break what the eye complained about rather than what the code
+  // says, which is the only way an alignment assertion is worth anything:
+  // a test that reads the CSS back would pass with the pill still hanging.
+  {
+    name: "the chip baselined again, as v0.66.0 had it",
+    file: src("styles/index.css"),
+    from: "  top: -.12em;\n  cursor: pointer;",
+    to: "  top: 0;\n  cursor: pointer;",
+    spec: "speaker-alignment",
+    expect: "CENTRED ON THE LINE'S CAP BAND",
+  },
+  {
+    name: "a chip given back its leading",
+    file: src("styles/index.css"),
+    from: "  line-height: 1.15;\n  vertical-align: baseline;",
+    to: "  line-height: 1.5;\n  vertical-align: baseline;",
+    spec: "speaker-alignment",
+    expect: "does not hang below the baseline",
+  },
+  {
+    name: "the reply's name back on a hand-picked padding",
+    file: src("components/editor/DialogueLineView.tsx"),
+    from: 'className="shrink-0 text-[10px] font-semibold uppercase leading-[16.5px] tracking-wide text-[var(--text-3)]"',
+    to: 'className="shrink-0 pt-[3px] text-[10px] font-semibold uppercase tracking-wide text-[var(--text-3)]"',
+    spec: "speaker-alignment",
+    expect: "SHARES A BASELINE",
+  },
+  {
+    name: "a Dialogue button that inserts the other block",
+    file: src("components/editor/EditorToolbar.tsx"),
+    from: "onClick={() => editor.chain().focus().insertDialogueBlock().run()}",
+    to: "onClick={() => editor.chain().focus().insertChoiceBlock().run()}",
+    spec: "speaker-alignment",
+    expect: "puts one in the document",
+  },
+  {
+    name: "a reply field that never grows to its content",
+    file: src("components/editor/DialogueLineView.tsx"),
+    from: '  el.style.height = "auto";\n  const height = el.scrollHeight;',
+    to: "  const height = 0;",
+    spec: "speaker-alignment",
+    expect: "TALL ENOUGH TO READ ALL OF IT",
+  },
 ];
 
 

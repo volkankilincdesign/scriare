@@ -1,3 +1,4 @@
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { NodeViewContent, NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
 import { useProjectStore } from "../../state/projectStore";
@@ -21,6 +22,15 @@ import type { DialogueAfter } from "../../types/nodeTypes";
  * often, and the Inspector still owns the same control for anyone who
  * wants to see all three named.
  */
+/** Grows a reply field to its content, or leaves it alone if it cannot be
+ *  measured yet (see the note in the component). */
+function fit(el: HTMLTextAreaElement | null): void {
+  if (!el) return;
+  el.style.height = "auto";
+  const height = el.scrollHeight;
+  if (height > 0) el.style.height = `${height}px`;
+}
+
 const AFTER_ORDER: DialogueAfter[] = ["stay", "end", "leave"];
 const AFTER_MARK: Record<DialogueAfter, string> = { stay: "·", end: "✓", leave: "↪" };
 const AFTER_TITLE: Record<DialogueAfter, string> = {
@@ -31,6 +41,7 @@ const AFTER_TITLE: Record<DialogueAfter, string> = {
 
 export function DialogueLineView({ node, editor, getPos }: NodeViewProps) {
   const project = useProjectStore((s) => s.project);
+  const replyRef = useRef<HTMLTextAreaElement | null>(null);
   const entities = project?.entities ?? [];
 
   const lineId = (node.attrs.lineId as string) ?? "";
@@ -52,6 +63,30 @@ export function DialogueLineView({ node, editor, getPos }: NodeViewProps) {
   }
 
   const who = speakerName(replySpeaker, entities);
+
+  /**
+   * The reply grows with what is typed rather than scrolling inside two
+   * lines — the difference between a field and a place to write.
+   *
+   * v0.66.1 — THIS USED TO BE A REF CALLBACK, and a ref callback is the one
+   * place it cannot work. ProseMirror builds a node view's DOM before it
+   * puts it in the document, so the callback ran on a detached element,
+   * `scrollHeight` was 0, and the height was written as `0px` and never
+   * recomputed: a reply that existed in the file, was in the field's value,
+   * and could not be seen. Measured height on a freshly seeded block: 0.
+   *
+   * So: measure after layout AND again on the next frame, once ProseMirror
+   * has inserted the view, and never write a height of zero — a measurement
+   * that comes back empty means the element is not in the document yet, not
+   * that the reply is empty.
+   */
+  useLayoutEffect(() => {
+    fit(replyRef.current);
+  }, [reply]);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => fit(replyRef.current));
+    return () => cancelAnimationFrame(id);
+  }, [reply]);
 
   function cycleAfter(): void {
     const next = AFTER_ORDER[(AFTER_ORDER.indexOf(after) + 1) % AFTER_ORDER.length];
@@ -118,26 +153,33 @@ export function DialogueLineView({ node, editor, getPos }: NodeViewProps) {
           </span>
         ) : (
           <div className="flex items-start gap-1.5 border-l-2 border-[var(--border-faint)] pl-2">
+            {/* v0.66.1 — the name and the reply share a line box rather
+                than a hand-picked padding. `pt-[3px]` was a guess made at
+                one font size and it put the name a baseline's width below
+                the words it introduces. A textarea cannot be aligned with
+                `items-baseline` — a scrollable box reports its bottom
+                edge as its baseline, so a two-line reply would drag the
+                name down with it — so both sides are given the SAME line
+                box (16.5px, which is the reply's own `leading-snug` at
+                12px) and the name's smaller type is centred in it by the
+                browser. Measured at 0.3px apart, and held there by
+                speaker-alignment.spec. */}
             {who && (
-              <span className="shrink-0 pt-[3px] text-[10px] font-semibold uppercase tracking-wide text-[var(--text-3)]">
+              <span className="shrink-0 text-[10px] font-semibold uppercase leading-[16.5px] tracking-wide text-[var(--text-3)]">
                 {who}
               </span>
             )}
             <textarea
+              ref={replyRef}
               value={reply}
               rows={1}
               placeholder="…and the reply"
               onChange={(e) => applyDialogueLineAttrs(editor, lineId, { reply: e.target.value })}
               data-reply-for={lineId}
-              className="min-w-0 flex-1 resize-none border-0 bg-transparent p-0 text-xs leading-snug text-[var(--text-2)] outline-none placeholder:text-[var(--text-3)]"
-              // Grows with what is typed rather than scrolling inside two
-              // lines, which is the difference between a field and a place
-              // to write.
-              ref={(el) => {
-                if (!el) return;
-                el.style.height = "auto";
-                el.style.height = `${el.scrollHeight}px`;
-              }}
+              // min-h is the floor the measurement can never go under: see
+              // the note on `fit` above. leading-snug here and on the name
+              // beside it are the same line box on purpose.
+              className="min-h-[1.05rem] min-w-0 flex-1 resize-none border-0 bg-transparent p-0 text-xs leading-snug text-[var(--text-2)] outline-none placeholder:text-[var(--text-3)]"
             />
           </div>
         )}

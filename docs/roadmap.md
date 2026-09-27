@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.66.0.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.66.1.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -323,12 +323,26 @@ than gaps.
   one badge per scene in the graph (`◆ 4 in-page · 1 exit`), and **a stable
   id on every paragraph**, stamped in while the schema change was open.
 
+- **v0.66.1 Where a speaker's name sits** — his first hour with v0.66.0.
+  The Dialogue got a toolbar button beside the Choice (it had been a slash
+  command only, which said it was the lesser of the two block types), and
+  the speaker chip stopped hanging off its line: it was baselined, which
+  is right for a word and wrong for a pill — what the eye aligns is the
+  box against the cap band, and the box was 1.63px low and dipped 5.8px
+  under the baseline. `vertical-align: middle` moves it 0.05px, measured,
+  so it is a shorter box and an `em` nudge instead. The reply's
+  attribution came off a hand-picked 3px padding onto a shared line box.
+  The fix's own photographs then turned up a reply that could not be
+  seen at all: the textarea's auto-grow ran as a ref callback, which
+  ProseMirror calls before the node view is in the document, so it
+  measured zero and wrote it.
+
 **Next, agreed 27 Sep:** the **spreadsheet export** (.xlsx) for
 localisation and VO, now unblocked — `lineId` rode in with the Dialogue,
 so every line in the story has something a translator can key against.
 Then the elective list: Custom CSS for the export (G2), Twine import.
 
-728 tests, 169 negative controls. Two bugs were found by the new spec and
+737 tests, 174 negative controls. Two bugs were found by the new spec and
 one control came back green — the green one was a gap in the tests (the
 graph badge had no assertion), and the assertion is what got written.
 
