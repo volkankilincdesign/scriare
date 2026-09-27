@@ -2,6 +2,17 @@ import { contextBridge, ipcRenderer } from "electron";
 import { electronAPI } from "@electron-toolkit/preload";
 
 const api = {
+  /**
+   * v0.63.0 — which build this is. Asked for rather than baked in: the
+   * main process reads it off the packaged app, so what the Welcome screen
+   * prints and what Windows lists under Apps & features cannot disagree.
+   */
+  app: {
+    version: (): Promise<string> => ipcRenderer.invoke("app:version"),
+    /** Puts the full "version · platform · Electron · Chromium" line on the
+     *  clipboard and returns it. Composed and copied in main — see there. */
+    copyVersion: (): Promise<string> => ipcRenderer.invoke("app:copyVersion"),
+  },
   project: {
     create: (projectJson: string, projectName: string) =>
       ipcRenderer.invoke("project:create", projectJson, projectName),

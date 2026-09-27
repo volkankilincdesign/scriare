@@ -5,6 +5,7 @@ import { StoryMap } from "./StoryMap";
 import { useShapeBackfill } from "./useShapeBackfill";
 import { BrandMark } from "../common/BrandMark";
 import { Button } from "../common/Button";
+import { VersionTag } from "../common/VersionTag";
 import { RESUME_LABEL, readResume } from "../../utils/recentShape";
 import type { ResumeKind, StoryShape } from "../../utils/recentShape";
 
@@ -111,6 +112,9 @@ export function WelcomeScreen() {
         <div className="mx-auto flex w-full max-w-[var(--welcome-column)] items-center gap-3">
         <BrandMark className="h-7 w-7 flex-shrink-0" />
         <span className="font-serif-narrative text-xl italic text-[var(--text)]">Scriare</span>
+        {/* Attached to the wordmark, not floating in the header: it is the
+            version OF that name, and it reads as one thing (v0.63.0). */}
+        <VersionTag className="-ml-1.5 self-end pb-1" />
 
         <div className="ml-5 flex w-[250px] items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5">
           <svg

@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.62.0.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.63.0.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -263,7 +263,21 @@ than gaps.
   before the page's own scripts run, and slows the recent-list handler to
   400ms so the race is real on a machine too fast to have it.
 
-648 tests, 143 negative controls, all caught.
+- **v0.63.0 The installer wears the badge, and the app admits its
+  version** — his badge artwork, made to the NSIS sidebar's exact
+  164×314, replaces the stock blue graphic on the finish page and through
+  the whole uninstaller. The "who is this for?" page is skipped
+  altogether: Scriare installs per-user and cannot do otherwise, so the
+  page offered a greyed option beside the only real one — and carried an
+  untranslatable English "(must run as admin)" inside an otherwise Turkish
+  wizard. The app also says which build it is now, beside the wordmark on
+  the Welcome screen, and clicking it copies version, platform and engine
+  for a bug report. Writing the test for that found that
+  `app.getVersion()` had been answering Electron's default `"0.0"` in the
+  suite for twelve versions, because the harness started the app from a
+  file rather than a directory.
+
+657 tests, 148 negative controls, all caught.
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and

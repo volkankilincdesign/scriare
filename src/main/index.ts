@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, Menu, ipcMain } from "electron";
+import { app, shell, BrowserWindow, Menu, ipcMain, clipboard } from "electron";
 import { join } from "path";
 import { is } from "@electron-toolkit/utils";
 import { registerProjectHandlers } from "./ipc/projectHandlers";
@@ -292,7 +292,7 @@ app.whenReady().then(() => {
     applicationName: "Scriare",
     applicationVersion: app.getVersion(),
     version: app.getVersion(),
-    copyright: "© Volkan",
+    copyright: "© Volkan Kılınç",
   });
 
   registerProjectHandlers();
@@ -308,6 +308,41 @@ app.whenReady().then(() => {
     const file = pendingOpen;
     pendingOpen = null;
     return file;
+  });
+
+  /**
+   * WHICH BUILD IS THIS? (v0.63.0)
+   *
+   * Until now the answer existed in three places a writer cannot reach —
+   * the installer's wizard, Windows' Apps & features, and package.json —
+   * and in none they can. That is fine right up until somebody says "the
+   * graph jumps when I drag a node" and the only useful question back is
+   * "which version?".
+   *
+   * `app.getVersion()` rather than a build-time constant baked into the
+   * renderer, for the same reason SHELL_GRACE_MS lives in shared/: two
+   * copies of a number are two numbers, and the one the app prints must be
+   * the one electron-builder stamped on the file. In development this is
+   * package.json's version, which is also the truth there.
+   */
+  ipcMain.handle("app:version", () => app.getVersion());
+
+  /**
+   * ...and the same answer in the form a bug report wants. Composed HERE,
+   * where the versions actually live, and copied by the main process:
+   * a renderer channel that puts arbitrary text on the writer's clipboard
+   * is a wider door than this needs to be, so the renderer can ask for
+   * this one string and nothing else.
+   */
+  ipcMain.handle("app:copyVersion", () => {
+    const line = [
+      `Scriare ${app.getVersion()}`,
+      `${process.platform} ${process.arch}`,
+      `Electron ${process.versions.electron}`,
+      `Chromium ${process.versions.chrome}`,
+    ].join(" · ");
+    clipboard.writeText(line);
+    return line;
   });
 
   createWindow();

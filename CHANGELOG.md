@@ -12,6 +12,79 @@ omitting them.
 
 ---
 
+## v0.63.0 — The installer wears the badge, and the app admits its version
+
+Small things, all of them found by looking at the shipped product rather
+than at the code.
+
+**The setup wizard's sidebar is the badge now.** The finish page and the
+whole uninstaller were still showing NSIS's stock blue graphic, which is
+the last thing a stranger sees on the way in and on the way out.
+`installerSidebar.bmp` and `uninstallerSidebar.bmp`, 164×314, straight
+from the badge artwork — a separate image from the app icon, which is why
+the wizard's header already looked right while its sidebar did not.
+
+**The "who is this for?" page is gone.** Scriare installs per-user and
+cannot do anything else, so that page offered a greyed-out option beside
+the only real one — a page whose every control is already decided costs a
+click to agree with itself. It also carried a wart nothing else could fix:
+electron-builder appends the words "(must run as admin)" to the disabled
+option with a literal `SendMessage` rather than through a translated
+string, so on a Turkish Windows the page read as Turkish with one English
+fragment inside it. Skipping the page removes the fragment along with the
+page, through electron-builder's own `customInstallMode` hook rather than
+a patch of its template.
+
+**The app will now tell you which build it is.** Until now the answer
+lived in the setup wizard, in Apps & features and in `package.json` —
+three places a writer does not look — which is fine right up until
+somebody says "the graph jumps when I drag a node" and the only useful
+reply is "which version?". It sits beside the wordmark on the Welcome
+screen, at the size of a footnote. Not in the status bar: that bar carries
+the three things a writer glances down for *while writing*, and a build
+number is something you go and look up once, on purpose.
+
+**It copies more than it shows.** The visible tag is the number, because
+that is what a writer can read; clicking it puts `Scriare 0.63.0 · win32
+x64 · Electron … · Chromium …` on the clipboard, because that is what a
+bug report wants and nobody is going to type it out. The line is composed
+and copied in the main process — a renderer channel that can put arbitrary
+text on somebody's clipboard is a wider door than this needs.
+
+**Asked for, not baked in.** The number comes from `app.getVersion()` over
+IPC rather than a constant compiled into the renderer, for the same reason
+the boot timings live in `shared/`: two copies of a number are two
+numbers, and the one the app prints has to be the one electron-builder
+stamped on the file. The spec proves it by making the main process answer
+`1.2.3-probe` and demanding the screen follow.
+
+**Which immediately caught something.** Written the obvious way, the test
+compared what the screen said against what the app said and passed — while
+both were `"0.0"`. The suite launched Electron by handing it
+`out/main/index.js`, a file, and an app started from a file has no
+`package.json` to read, so `app.getVersion()` had been quietly answering
+Electron's own default for twelve versions. Nothing noticed because
+nothing asked. The suite now starts the app from the project directory,
+the way dev and the packaged app both do, and there is an assertion that a
+version has to *look* like one — a screen faithfully printing a fallback
+is the exact failure a version display exists to prevent.
+
+**And one blind spot in the negative controls.** Some controls wrap a line
+rather than replace it, which leaves the original text in place — so the
+pre-flight's "the source still contains that line, fine" said fine about a
+file that was currently sabotaged. Two interrupted runs had left an
+off-palette background in `ToastHost.tsx`, the pre-flight cleared it
+twice, and the next full suite failed in `themes.spec` with a colour
+nobody had written. A wrapping control is now recognised by its `to`, and
+`--restore` peels off every layer instead of one.
+
+Also: one stale control re-aimed at where its behaviour moved in v0.58.1,
+and the About panel's copyright matched to `package.json`.
+
+Five negative controls, all caught; one new spec (9 checks).
+
+---
+
 ## v0.62.0 — The app opens on the screen you are going to
 
 Reported with two screenshots: opening a `.scriare` flashed the empty

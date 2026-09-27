@@ -72,6 +72,12 @@ export type SaveOutcome =
   | { status: "changed"; stamp: FileStamp };
 
 export interface ScriareAPI {
+  /** v0.63.0 — which build this is, straight from the packaged app. */
+  app: {
+    version: () => Promise<string>;
+    /** Copies the full report line and returns exactly what was copied. */
+    copyVersion: () => Promise<string>;
+  };
   project: {
     create: (
       projectJson: string,

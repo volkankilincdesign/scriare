@@ -715,7 +715,14 @@ export default async function run({ page, api, check, seedProject, app }) {
       text,
       deadEnd: text.includes("No recent projects yet"),
       search: Boolean(document.querySelector("#welcome-find")),
-      buttons: [...document.querySelectorAll("header button")].map((b) => b.textContent.trim()),
+      // The header's ACTIONS, which is what "exactly these two, no strays"
+      // has always been about. The version tag is a button because it can
+      // be clicked to copy itself (v0.63.0), but it is a label rather than
+      // something to do — and any OTHER stray button still breaks this
+      // check exactly as it did before.
+      buttons: [...document.querySelectorAll("header button:not([data-version-tag])")].map((b) =>
+        b.textContent.trim(),
+      ),
       headerBox: header ? JSON.parse(JSON.stringify(header.getBoundingClientRect())) : null,
       // The illustration is drawn by the same component a real story uses.
       mapRects: document.querySelectorAll("main [data-story-map] rect").length,

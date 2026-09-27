@@ -1025,10 +1025,16 @@ const CONTROLS = [
     expect: "marked as content",
   },
   {
+    // RE-AIMED in v0.63.0. The behaviour is unchanged — the caret moving
+    // on still puts the panel away — but v0.58.1 moved the panel out of
+    // the toolbar's own state and into uiStore, so the single line this
+    // control used to break no longer exists. A control that cannot find
+    // its target reports COULD NOT APPLY, which reads like a retired test
+    // rather than an untested behaviour.
     name: "a reading that outstays the sentence it was about",
     file: src("components/editor/EditorToolbar.tsx"),
-    from: "  useEffect(() => setReading(null), [caret]);",
-    to: "  useEffect(() => undefined, [caret]);",
+    from: "    setPicking(null);\n    clearColorReading();",
+    to: "    setPicking(null);",
     spec: "color-grounds",
     expect: "moving the caret on puts it away",
   },
@@ -1334,6 +1340,57 @@ const CONTROLS = [
     spec: "boot",
     expect: "opens on a splash",
   },
+
+  // ── v0.63.0 — which build is this ────────────────────────────────────
+  {
+    // The whole point of the feature, and the only way it can be wrong
+    // while looking right: a number compiled into the renderer is correct
+    // until the day somebody bumps one file and not the other.
+    name: "a version baked into the bundle instead of asked for",
+    file: src("components/common/VersionTag.tsx"),
+    from: "        if (!cancelled) setVersion(v);",
+    to: '        if (!cancelled) setVersion("0.63.0");',
+    spec: "version",
+    expect: "comes from the app, not from the bundle",
+  },
+  {
+    name: "a report line that is only the number",
+    file: main("index.ts"),
+    from: "      `Electron ${process.versions.electron}`,\n      `Chromium ${process.versions.chrome}`,",
+    to: "      // the engine versions, removed by a negative control",
+    spec: "version",
+    expect: "the platform and the engine",
+  },
+  {
+    name: "a copy that composes the line and never copies it",
+    file: main("index.ts"),
+    from: "    clipboard.writeText(line);",
+    to: "    void line;",
+    spec: "version",
+    expect: "puts the version on the clipboard",
+  },
+  {
+    name: "a click that copies in silence",
+    file: src("components/common/VersionTag.tsx"),
+    from: '      showNotice("Version details copied — paste them into a bug report.");',
+    to: "      void 0;",
+    spec: "version",
+    expect: "it says so, so the writer knows",
+  },
+  {
+    // Aimed at the HARNESS, which is unusual and deliberate. Launching the
+    // app by file rather than by directory leaves it with no package.json
+    // to read, so app.getVersion() quietly answers Electron's own "0.0" —
+    // and a screen faithfully printing a fallback passes every check that
+    // only compares the two against each other. One assertion noticed;
+    // this keeps it the one that notices.
+    name: "a suite that launches the app where it cannot find its own version",
+    file: join(root, "tests/run.mjs"),
+    from: "  args: [root],",
+    to: '  args: [join(root, "out/main/index.js")],',
+    spec: "version",
+    expect: "knows its own version at all",
+  },
 ];
 
 
@@ -1400,6 +1457,29 @@ async function preflight({ restore }) {
   const sabotaged = [];
   for (const control of CONTROLS) {
     const text = await readFile(control.file, "utf-8");
+
+    /**
+     * A blind spot this had until v0.63.0, found the hard way.
+     *
+     * Some controls do not REPLACE a line, they wrap one — `to` contains
+     * `from` and adds something around it (the toast's off-palette
+     * background is the standing example). After such a sabotage the
+     * original text is still there, so the first test below ("from
+     * present — fine") said fine about a file that was currently broken.
+     * Two interrupted runs left that style attribute in ToastHost.tsx,
+     * the pre-flight cleared it twice, and the next full suite failed in
+     * themes.spec with an off-palette toast nobody had written.
+     *
+     * For a control that wraps, the presence of `to` is the only honest
+     * question — `from` tells you nothing either way.
+     */
+    const wraps = control.to !== "" && control.to.includes(control.from);
+    if (wraps) {
+      if (text.includes(control.to)) sabotaged.push(control);
+      else if (!text.includes(control.from)) stale.push(control);
+      continue;
+    }
+
     if (text.includes(control.from)) continue;
     if (control.to !== "" && text.includes(control.to)) sabotaged.push(control);
     else stale.push(control);
@@ -1407,9 +1487,20 @@ async function preflight({ restore }) {
 
   for (const control of sabotaged) {
     if (restore) {
-      const text = await readFile(control.file, "utf-8");
-      await writeFile(control.file, text.replace(control.to, control.from), "utf-8");
-      console.log(`↺  restored: ${control.file.replace(root, ".")} — ${control.name}`);
+      // In a LOOP, because a wrapping sabotage can be applied more than
+      // once — two interrupted runs put that toast background in twice,
+      // and a single replace takes one of them back out and reports the
+      // file restored.
+      let text = await readFile(control.file, "utf-8");
+      let passes = 0;
+      while (text.includes(control.to) && passes < 20) {
+        text = text.replace(control.to, control.from);
+        passes += 1;
+      }
+      await writeFile(control.file, text, "utf-8");
+      console.log(
+        `↺  restored${passes > 1 ? ` (${passes} layers)` : ""}: ${control.file.replace(root, ".")} — ${control.name}`,
+      );
     } else {
       console.log(`!  STILL SABOTAGED: ${control.file.replace(root, ".")} — ${control.name}`);
     }

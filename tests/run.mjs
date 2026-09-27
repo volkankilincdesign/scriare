@@ -36,7 +36,15 @@ function check(name, pass, detail) {
 
 const app = await _electron.launch({
   executablePath: process.env.ELECTRON_PATH ?? join(root, "node_modules/electron/dist/electron"),
-  args: [join(root, "out/main/index.js")],
+  // THE PROJECT DIRECTORY, not out/main/index.js (v0.63.0). Both start the
+  // same script — package.json's `main` points at it — but an app Electron
+  // was handed a FILE has no package.json to read, so everything Electron
+  // takes from there falls back to its own defaults: app.getVersion() came
+  // back "0.0" instead of the version in package.json. Nothing noticed for
+  // twelve versions because nothing asked; v0.63.0's version tag asks.
+  // Dev and the packaged app both start from the directory, so this is the
+  // suite running the app the way it runs, not a second way of starting it.
+  args: [root],
   cwd: root,
 });
 const page = await app.firstWindow();
