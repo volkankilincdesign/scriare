@@ -126,6 +126,15 @@ interface ProjectState {
   isPlaying: boolean;
   playSceneId: string | null;
   /**
+   * v0.66.0 — which VISIT this is. Bumped by every start and every
+   * restart, so anything that belongs to one pass through a scene — a
+   * conversation's spent lines, above all — can reset on a restart that
+   * lands on the scene it was already on. Keying that reset on
+   * `playSceneId` alone left a story you restarted with its conversations
+   * already exhausted.
+   */
+  playToken: number;
+  /**
    * Live variable values for the CURRENT play session — seeded from
    * `project.variables`' defaultValue on startPlay/restartPlay, then
    * mutated by applyVariableActions as Choice Actions fire. Deliberately
@@ -510,6 +519,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   isPlaying: false,
   playSceneId: null,
+  playToken: 0,
   playVariableValues: {},
 
   canUndo: false,
@@ -1807,6 +1817,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       isPlaying: true,
       playSceneId: project.startSceneId ?? project.scenes[0]?.id ?? null,
       playVariableValues,
+      playToken: get().playToken + 1,
     });
   },
 
@@ -1819,7 +1830,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     if (!project) return;
     const playVariableValues: Record<string, VariableValue> = {};
     for (const variable of project.variables) playVariableValues[variable.id] = variable.defaultValue;
-    set({ playSceneId: project.startSceneId ?? project.scenes[0]?.id ?? null, playVariableValues });
+    set({
+      playSceneId: project.startSceneId ?? project.scenes[0]?.id ?? null,
+      playVariableValues,
+      playToken: get().playToken + 1,
+    });
   },
 
   // Called by the Choice runtime block (runtime/blocks/choiceRuntimeBlock.tsx)

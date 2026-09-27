@@ -19,6 +19,10 @@ import { ChoiceBlock } from "../../extensions/ChoiceBlock";
 import { Callout } from "../../extensions/Callout";
 import { ConditionalBlock } from "../../extensions/ConditionalBlock";
 import { ChoiceOption } from "../../extensions/ChoiceOption";
+import { DialogueBlock } from "../../extensions/DialogueBlock";
+import { DialogueLine } from "../../extensions/DialogueLine";
+import { LineId } from "../../extensions/LineId";
+import { DIALOGUE_BLOCK_TYPE, DIALOGUE_LINE_TYPE } from "../../types/nodeTypes";
 import { Mention } from "../../extensions/Mention";
 import { Speaker } from "../../extensions/Speaker";
 import { SlashCommand } from "../../extensions/SlashCommand";
@@ -55,6 +59,9 @@ export function SceneEditor() {
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       ChoiceBlock,
       ChoiceOption,
+      DialogueBlock,
+      DialogueLine,
+      LineId,
       Mention,
       Speaker,
       Callout,
@@ -128,6 +135,15 @@ export function SceneEditor() {
         }
       }
 
+      // v0.66.0 — the same, for the Dialogue.
+      if (selection instanceof NodeSelection && selection.node.type.name === DIALOGUE_BLOCK_TYPE) {
+        const blockId = selection.node.attrs?.blockId as string | undefined;
+        if (blockId) {
+          inspector.selectTarget({ kind: "dialogue", sceneId, blockId });
+          return;
+        }
+      }
+
       // One walk up the ancestors, answering all three questions at once:
       // which Choice Block the caret is in, which option inside it, and —
       // failing those — whether it's inside a Conditional Block.
@@ -141,6 +157,7 @@ export function SceneEditor() {
       // a Choice Block while they were typing inside one.
       const { $from } = selection;
       let optionId: string | null = null;
+      let lineId: string | null = null;
       for (let depth = $from.depth; depth > 0; depth -= 1) {
         const ancestor = $from.node(depth);
         const name = ancestor.type.name;
@@ -148,6 +165,21 @@ export function SceneEditor() {
         if (name === "choiceOption") {
           optionId = (ancestor.attrs?.optionId as string) ?? null;
           continue;
+        }
+        if (name === DIALOGUE_LINE_TYPE) {
+          lineId = (ancestor.attrs?.lineId as string) ?? null;
+          continue;
+        }
+        if (name === DIALOGUE_BLOCK_TYPE) {
+          const blockId = ancestor.attrs?.blockId as string | undefined;
+          if (blockId) {
+            // Same rule as the Choice Block above: an edit never re-aims
+            // the Inspector inside the block it is already showing.
+            const already = inspector.target;
+            if (cameFromAnEdit && already.kind === "dialogue" && already.blockId === blockId) return;
+            inspector.selectTarget({ kind: "dialogue", sceneId, blockId, lineId });
+            return;
+          }
         }
         if (name === "choiceBlock") {
           const blockId = ancestor.attrs?.blockId as string | undefined;

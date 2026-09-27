@@ -9,6 +9,9 @@ import { FontSize } from "../extensions/FontSize";
 import { Callout } from "../extensions/Callout";
 import { ConditionalBlock } from "../extensions/ConditionalBlock";
 import { ChoiceBlock } from "../extensions/ChoiceBlock";
+import { DialogueBlock } from "../extensions/DialogueBlock";
+import { DialogueLine } from "../extensions/DialogueLine";
+import { LineId } from "../extensions/LineId";
 import { ChoiceOption } from "../extensions/ChoiceOption";
 import { Mention } from "../extensions/Mention";
 import { SpeakerLabel } from "../extensions/SpeakerLabel";
@@ -63,5 +66,8 @@ export const RUNTIME_EXTENSIONS = [
   // is still drawn by its own runtime renderer — this is only here so the
   // schema knows these node types exist when a label is generated.
   ChoiceBlock,
+  DialogueBlock,
+  DialogueLine,
+  LineId,
   ChoiceOption,
 ];

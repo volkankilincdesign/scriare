@@ -49,10 +49,33 @@ export interface ScriptChoice {
   unmet: "hide" | "lock";
 }
 
+/** One thing that can be said in a conversation (v0.66.0). */
+export interface ScriptDialogueLine {
+  ref: string;
+  speaker: string | null;
+  text: string;
+  reply: string;
+  replySpeaker: string | null;
+  /** "stay" | "end" | "leave", in words a reader of paper understands. */
+  after: string;
+  target: { n: number; title: string } | null;
+  repeatable: boolean;
+  conditions: string[];
+  actions: string[];
+  unmet: "hide" | "lock";
+}
+
 export type ScriptBlock =
   | { kind: "line"; line: ScriptLine }
   | { kind: "gate"; conditions: string[]; lines: ScriptLine[] }
-  | { kind: "choices"; options: ScriptChoice[] };
+  | { kind: "choices"; options: ScriptChoice[] }
+  /**
+   * v0.66.0 — a conversation is not a branch, so it is not printed as one.
+   * Its own kind rather than a flag on `choices`, for the same reason the
+   * node type is its own: every renderer has to be able to tell a door out
+   * of the scene from a thing said inside it.
+   */
+  | { kind: "dialogue"; lines: ScriptDialogueLine[] };
 
 export interface ScriptScene {
   id: string;

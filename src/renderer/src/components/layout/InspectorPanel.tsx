@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useProjectStore } from "../../state/projectStore";
+import { DialogueProperties } from "./DialoguePanel";
 import { useInspectorStore } from "../../state/inspectorStore";
 import type { InspectorTarget } from "../../state/inspectorStore";
 import { useUIStore } from "../../state/uiStore";
@@ -100,6 +101,39 @@ export function InspectorPanel({ collapsed, onToggle }: InspectorPanelProps) {
       <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4 text-sm">
         {target.kind === "choice" ? (
           <ChoiceProperties target={target} key={target.blockId} />
+        ) : target.kind === "dialogue" ? (
+          // v0.66.0 — the condition and action rows are HANDED to the
+          // Dialogue panel rather than duplicated inside it. They are the
+          // two most fiddly controls in the app (a variable picker that
+          // can create a variable, a comparator list that changes with the
+          // variable's type), and a second copy of either would be a
+          // second place to fix the next bug in them.
+          <DialogueProperties
+            key={target.blockId}
+            sceneId={target.sceneId}
+            blockId={target.blockId}
+            lineId={target.lineId}
+            FieldRow={FieldRow}
+            QuietRule={QuietRule}
+            renderConditionRow={(condition, onChange, onRemove) => (
+              <ConditionRow
+                key={condition.id}
+                condition={condition}
+                variables={useProjectStore.getState().project?.variables ?? []}
+                onChange={onChange}
+                onRemove={onRemove}
+              />
+            )}
+            renderActionRow={(action, onChange, onRemove) => (
+              <ActionRow
+                key={action.id}
+                action={action}
+                variables={useProjectStore.getState().project?.variables ?? []}
+                onChange={onChange}
+                onRemove={onRemove}
+              />
+            )}
+          />
         ) : target.kind === "conditional" ? (
           <ConditionalProperties target={target} key={target.blockId} />
         ) : (
@@ -1505,7 +1539,7 @@ function ChoiceAppearance({
  * up with each other; a ragged left edge on three stacked selects reads
  * as three unrelated things.
  */
-function FieldRow({ label, children }: { label: string; children: ReactNode }) {
+export function FieldRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="grid grid-cols-[52px_minmax(0,1fr)] items-start gap-2">
       <span className="pt-1.5 text-[11px] leading-none text-[var(--text-3)]">{label}</span>
@@ -1523,7 +1557,7 @@ function FieldRow({ label, children }: { label: string; children: ReactNode }) {
  * sections cost a heading, a control and the gaps around both — on every
  * choice, and most choices have neither a condition nor an action.
  */
-function QuietRule({
+export function QuietRule({
   says,
   action,
   onAction,

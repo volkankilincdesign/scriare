@@ -6,6 +6,8 @@ import { StartBadge } from "../common/StartBadge";
 interface SceneNodeData {
   label: string;
   choiceCount: number;
+  /** v0.66.0 — the Dialogue's one badge, or null when there is none. */
+  dialogue?: { inPage: number; exits: number } | null;
   isActive: boolean;
   isStart: boolean;
   [key: string]: unknown;
@@ -29,7 +31,7 @@ interface SceneNodeData {
 const HANDLE_STYLE = { opacity: 0, pointerEvents: "none" as const };
 
 export function SceneNode({ data, selected }: NodeProps) {
-  const { label, choiceCount, isActive, isStart } = data as SceneNodeData;
+  const { label, choiceCount, dialogue, isActive, isStart } = data as SceneNodeData;
 
   return (
     <div
@@ -88,6 +90,16 @@ export function SceneNode({ data, selected }: NodeProps) {
           ? "No choices"
           : `${choiceCount} choice${choiceCount === 1 ? "" : "s"}`}
       </div>
+      {/* ONE badge, settled on board G6: neither silence — which makes a
+          scene where five things can happen look empty — nor a self-loop,
+          which would claim the scene leads to itself when it leads
+          nowhere at all. */}
+      {dialogue && (dialogue.inPage > 0 || dialogue.exits > 0) && (
+        <div className="mt-0.5 text-[10px] text-[var(--accent)]" data-dialogue-badge>
+          ◆ {dialogue.inPage} in-page
+          {dialogue.exits > 0 && ` · ${dialogue.exits} exit${dialogue.exits === 1 ? "" : "s"}`}
+        </div>
+      )}
     </div>
   );
 }

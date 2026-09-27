@@ -6,7 +6,7 @@ import type { NarrativeBlockDefinition } from "./types";
  * Quote just call the same commands the toolbar already uses (no new node
  * types), Choice inserts a Choice Block, and Callout wraps the current block
  * in a callout. Deliberately small for now, per the current milestone: only
- * these four. Future blocks (Variables, Conditions, Images, Dialogue, Audio,
+ * these four. Future blocks (Variables, Images, Audio,
  * embedded widgets, ...) are meant to slot in here the same way, each with
  * its own Tiptap extension registered alongside ChoiceBlock/Callout.
  */
@@ -18,6 +18,14 @@ export const NARRATIVE_BLOCKS: NarrativeBlockDefinition[] = [
     icon: "⤷",
     keywords: ["choice", "branch", "option", "decision", "path"],
     command: (editor, range) => editor.chain().focus().deleteRange(range).insertChoiceBlock().run(),
+  },
+  {
+    id: "dialogue",
+    title: "Dialogue",
+    description: "A conversation that stays on this page",
+    icon: "◆",
+    keywords: ["dialogue", "conversation", "talk", "ask", "topic", "speak", "reply", "in-place"],
+    command: (editor, range) => editor.chain().focus().deleteRange(range).insertDialogueBlock().run(),
   },
   {
     id: "divider",

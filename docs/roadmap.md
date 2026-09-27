@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.65.0.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.66.0.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -304,12 +304,33 @@ than gaps.
   scenes share pages again — 29 pages became 22, with 13 of them carrying
   two scenes or more.
 
-**Next, agreed 27 Sep:** the Dialogue, with **stable line IDs** stamped
-into the document while that schema change is open — prose paragraphs
-carry no id today, which is why the spreadsheet export is queued behind
-it rather than in front of it.
+- **v0.66.0 The Dialogue** — a conversation that happens on the page
+  instead of turning it, chosen from four drawings (board M) as M2. Three
+  rules and nothing else: **said is spent** unless a line is marked
+  repeatable; **every line has an after** — stay, end, leave, and only
+  *leave* draws a wire in the Story Graph; **the page waits**, so anything
+  written below an open conversation is not drawn until it closes. His
+  question during the review — *what if the writer wants the rest of the
+  text after the conversation?* — is answered by rule 3 rather than by a
+  setting: they always do. A conversation is **not remembered between
+  visits**, on purpose; exhausting topics for the whole story is a variable
+  and a condition, which is what this block is sugar for. Rule 3 lives in
+  the runtime rather than the block, which means it lives there **twice** —
+  React in the app, plain JavaScript in the exported page — and that second
+  copy is why most of the new negative controls break the export. Also:
+  two new Check Story warnings (a conversation nothing can end; a line
+  whose condition can never be met), a third block kind in Script Export,
+  one badge per scene in the graph (`◆ 4 in-page · 1 exit`), and **a stable
+  id on every paragraph**, stamped in while the schema change was open.
 
-704 tests, 160 negative controls, all caught.
+**Next, agreed 27 Sep:** the **spreadsheet export** (.xlsx) for
+localisation and VO, now unblocked — `lineId` rode in with the Dialogue,
+so every line in the story has something a translator can key against.
+Then the elective list: Custom CSS for the export (G2), Twine import.
+
+728 tests, 169 negative controls. Two bugs were found by the new spec and
+one control came back green — the green one was a gap in the tests (the
+graph badge had no assertion), and the assertion is what got written.
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and
@@ -476,7 +497,11 @@ No dates. Sizes are sessions; the order is what matters.
   1. ~~**Play Mode on a reading ground**~~ — shipped as v0.57.0. His
      words, choosing it: "Idea 2 is the easiest one but if I wanted it to
      be easy I wouldn't want to build an app."
-  2. **In-place choice options — the Dialogue.** An option that adds a
+  2. ~~**In-place choice options — the Dialogue.**~~ — shipped as
+     v0.66.0, built as M2 of four drawings. The notes below are kept as
+     they were written; the one thing they got wrong is the estimate of
+     what the graph badge would say (`◆ 4 in-page · 1 exit` — the count is
+     of exits, singular when there is one). An option that adds a
      reply to the page instead of turning it, Disco Elysium / Narrat
      style. The one thing on this list Twine structurally cannot do.
      SMALLER THAN FIRST ESTIMATED: `ConditionalBlock` already exists and

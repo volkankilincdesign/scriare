@@ -7,6 +7,8 @@ import { describeCondition } from "../types/variables";
 import { resolveChoiceBox } from "../types/choiceStyles";
 import type { ChoiceBox } from "../types/choiceStyles";
 import { readChoiceBlockOptions } from "../utils/choiceBlocks";
+import { extractDialogueLines, DIALOGUE_BLOCK_TYPE } from "../utils/dialogueBlocks";
+import { speakerName } from "../types/speaker";
 import { resolveMentions } from "../utils/mentions";
 import { applySpeakerPrefixes } from "../utils/speakerLines";
 import { splitDocumentIntoSegments } from "../runtime/documentSegments";
@@ -59,10 +61,35 @@ export interface ExportChoice {
   b: ChoiceBox;
 }
 
+/** One line of a Dialogue, as the exported page needs it (v0.66.0). */
+export interface ExportDialogueLine {
+  /** Stable id — what the page keys "already said" on. */
+  i: string;
+  /** Pre-rendered label, with the writer's own formatting. */
+  l: string;
+  /** The speaker's name, already resolved. The page has no entity list. */
+  s: string;
+  /** The reply, flat, and who gives it. */
+  y: string;
+  ys: string;
+  /** "stay" | "end" | "leave". */
+  f: string;
+  /** Destination, only when f is "leave". */
+  t: string;
+  /** Does not leave the list when said. */
+  rp: boolean;
+  c: VariableCondition[];
+  u: "hide" | "lock";
+  r: string;
+  a: VariableAction[];
+  b: ChoiceBox;
+}
+
 export type ExportSegment =
   | { k: "p"; h: string }
   | { k: "c"; o: ExportChoice[] }
-  | { k: "if"; c: VariableCondition[]; h: string };
+  | { k: "if"; c: VariableCondition[]; h: string }
+  | { k: "d"; id: string; o: ExportDialogueLine[] };
 
 export interface ExportScene {
   id: string;
@@ -157,6 +184,37 @@ export function buildExportStory(project: Project): ExportStory {
         if (content.length === 0) continue;
         const h = renderProse({ type: "doc", content });
         if (h) seg.push({ k: "if", c: conditions, h });
+        continue;
+      }
+
+      // v0.66.0 — the Dialogue. Everything it needs is resolved HERE, in
+      // the app, where the entity list and the style table live: the page
+      // gets names and boxes, never a lookup table plus an algorithm.
+      if (node.type === DIALOGUE_BLOCK_TYPE) {
+        const lines = extractDialogueLines(node).map<ExportDialogueLine>((line) => ({
+          i: line.id,
+          l: renderLabel(line.node, line.text),
+          s: speakerName(line.speaker, entities) ?? "",
+          y: line.reply,
+          ys: speakerName(line.replySpeaker, entities) ?? "",
+          f: line.after,
+          // A leaving line with nowhere to go is shipped with an empty
+          // destination rather than dropped: unlike a choice, it still has
+          // a reply and a place in the conversation, and silently removing
+          // it would change what the reader can say.
+          t: line.after === "leave" ? (line.targetSceneId ?? "") : "",
+          rp: line.repeatable,
+          c: line.conditions ?? [],
+          u: line.whenUnmet,
+          r: line.conditions?.length
+            ? line.conditions.map((condition) => describeCondition(condition, variables)).join(", and ")
+            : "",
+          a: line.actions ?? [],
+          b: resolveChoiceBox(styles, line.style),
+        }));
+        if (lines.length > 0) {
+          seg.push({ k: "d", id: (node.attrs?.blockId as string) ?? "", o: lines });
+        }
         continue;
       }
 

@@ -107,6 +107,15 @@ export function pageRuntime(): string {
   }
 
   var state = { scene: STORY.start, values: freshValues(), trail: [] };
+  /* ── the Dialogue's state (v0.66.0) ───────────────────────────────
+     Per VISIT, not per story: leaving a scene and coming back starts the
+     conversation fresh. A writer who wants a topic exhausted for good has
+     a variable and a condition, which is what the block is sugar for —
+     and persisting a set of line ids into the save file to buy the other
+     behaviour would be paying for what half of all conversations do not
+     want. Deliberately NOT in saveProgress for the same reason. */
+  var talk = { said: {}, order: [], closed: {} };
+  var talkScene = null;
   var pendingSave = null;
   var firstRender = true;
 
@@ -246,6 +255,127 @@ export function pageRuntime(): string {
     return list;
   }
 
+  /* ── the Dialogue ─────────────────────────────────────────────────
+     Said is spent; every line has an "after"; and whether the page is
+     still held is asked separately, by dialogueHolds, because the loop
+     above needs the answer before it decides what else to draw. */
+  function dialogueOffered(segment) {
+    var out = [];
+    for (var i = 0; i < segment.o.length; i++) {
+      var line = segment.o[i];
+      if (talk.said[line.i] && !line.rp) continue;
+      var passes = evaluateConditions(line.c, state.values);
+      if (passes || line.u === "lock") out.push({ line: line, passes: passes });
+    }
+    return out;
+  }
+
+  function dialogueHolds(segment) {
+    if (talk.closed[segment.id]) return false;
+    return dialogueOffered(segment).length > 0;
+  }
+
+  function saidLine(who, text, isPlayer) {
+    var wrap = element("div", "scriare-said");
+    if (who) {
+      var name = element("div", "scriare-speaker");
+      name.textContent = who;
+      wrap.appendChild(name);
+    }
+    var body = element("p", isPlayer ? "scriare-said-you" : null);
+    body.textContent = text;
+    wrap.appendChild(body);
+    return wrap;
+  }
+
+  function dialogueLineButton(line, segment) {
+    var button = element("button", "scriare-choice");
+    button.type = "button";
+    button.setAttribute("data-dialogue-line", line.i);
+    button.setAttribute("data-after", line.f);
+    button.style.background = line.b.fill || "var(--surface-2-translucent)";
+    button.style.borderColor = line.b.border || "var(--border)";
+    button.style.borderWidth = line.b.borderWidth + "px";
+    button.style.borderStyle = line.b.borderWidth > 0 ? "solid" : "none";
+    button.style.borderRadius = line.b.radius + "px";
+    button.innerHTML = line.l;
+    button.addEventListener("click", function () { sayIt(line, segment); });
+    return button;
+  }
+
+  function sayIt(line, segment) {
+    for (var i = 0; i < line.a.length; i++) {
+      var action = line.a[i];
+      var variable = VARS[action.variableId];
+      if (!variable) continue;
+      state.values[action.variableId] = applyVariableAction(state.values[action.variableId], variable, action);
+    }
+    talk.said[line.i] = true;
+    talk.order.push(line.i);
+
+    if (line.f === "leave") {
+      if (line.t) {
+        // Through choose() so a leaving line takes the same route a
+        // choice does: the trail, the scroll, the focus move and the save
+        // are one path, not two.
+        // (No backticks anywhere in this file — it is one big template
+        // literal, and a backtick in a comment ends it. Third time.)
+        choose({ a: [], t: line.t });
+        return;
+      }
+      // Nowhere to go: treat it as ending the conversation rather than
+      // doing nothing, so the reader is never stuck on a dead button.
+      talk.closed[segment.id] = true;
+    } else if (line.f === "end") {
+      talk.closed[segment.id] = true;
+    }
+    render();
+  }
+
+  function dialogue(segment) {
+    var wrap = element("div", "scriare-dialogue");
+    wrap.setAttribute("data-dialogue", segment.id);
+
+    var byId = {};
+    for (var i = 0; i < segment.o.length; i++) byId[segment.o[i].i] = segment.o[i];
+
+    for (var t = 0; t < talk.order.length; t++) {
+      var spoken = byId[talk.order[t]];
+      if (!spoken) continue;
+      wrap.appendChild(saidLine(spoken.s, stripTags(spoken.l), true));
+      if (spoken.f !== "leave" && spoken.y) wrap.appendChild(saidLine(spoken.ys, spoken.y, false));
+    }
+
+    if (!talk.closed[segment.id]) {
+      var offered = dialogueOffered(segment);
+      if (offered.length > 0) {
+        var list = element("div", "scriare-choices");
+        for (var j = 0; j < offered.length; j++) {
+          var entry = offered[j];
+          list.appendChild(
+            entry.passes ? dialogueLineButton(entry.line, segment) : lockedButton(entry.line),
+          );
+        }
+        wrap.appendChild(list);
+      } else {
+        // Nothing left to say closes it, so the page below can come
+        // through on the NEXT render rather than never.
+        talk.closed[segment.id] = true;
+      }
+    }
+    wrap.setAttribute("data-closed", talk.closed[segment.id] ? "true" : "false");
+    return wrap;
+  }
+
+  /* The transcript prints what was SAID, which is text, not markup — the
+     label carries the writer's formatting for the button and would arrive
+     here as tags a reader would see literally. */
+  function stripTags(html) {
+    var box = document.createElement("div");
+    box.innerHTML = html;
+    return box.textContent || "";
+  }
+
   function endingCard() {
     var card = element("div", "scriare-ending");
     var label = element("div", "scriare-ending-label");
@@ -276,11 +406,28 @@ export function pageRuntime(): string {
       return;
     }
 
+    /* Only when the SCENE changes — not on every render. This used to sit
+       unguarded, and since saying a line calls render(), every click wiped
+       the conversation it had just added to: the page redrew with an empty
+       transcript and the line back on offer. Caught by driving the
+       exported file the way a reader drives it, which is the only way that
+       bug was ever going to show up. */
+    if (talkScene !== scene.id) {
+      talk = { said: {}, order: [], closed: {} };
+      talkScene = scene.id;
+    }
+
     var title = element("h1", "scriare-scene-title");
     title.textContent = scene.title;
     title.tabIndex = -1;
     page.appendChild(title);
 
+    /* THE PAGE WAITS (v0.66.0). Everything below an open Dialogue is held
+       back until the conversation closes. The same rule as Play Mode's,
+       written a second time because this file has no React and no shared
+       code with it — which is exactly why the negative controls for it
+       break THIS file rather than the app. */
+    var held = false;
     for (var i = 0; i < scene.seg.length; i++) {
       var segment = scene.seg[i];
       if (segment.k === "p") {
@@ -293,10 +440,15 @@ export function pageRuntime(): string {
       } else if (segment.k === "c") {
         var list = choiceList(segment.o);
         if (list) page.appendChild(list);
+      } else if (segment.k === "d") {
+        page.appendChild(dialogue(segment));
+        if (dialogueHolds(segment)) { held = true; break; }
       }
     }
 
-    if (!hasAnyChoice(scene)) page.appendChild(endingCard());
+    // An ending is a scene with nothing left to do — which a conversation
+    // still in progress is not, whatever is written below it.
+    if (!held && !hasAnyChoice(scene)) page.appendChild(endingCard());
 
     reader.appendChild(page);
     updateBar();

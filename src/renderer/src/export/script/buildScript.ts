@@ -5,6 +5,8 @@ import { mentionLabel } from "../../types/entities";
 import { PLAYER_SPEAKER_LABEL, isPlayerSpeaker } from "../../types/speaker";
 import { CHOICE_BLOCK_TYPE, CHOICE_OPTION_TYPE } from "../../types/nodeTypes";
 import { CONDITIONAL_BLOCK_TYPE } from "../../utils/choiceBlockEditing";
+import { extractDialogueLines } from "../../utils/dialogueBlocks";
+import { DIALOGUE_BLOCK_TYPE } from "../../types/nodeTypes";
 import { actionPhrase, conditionPhrase } from "../../../../shared/script/model";
 import type {
   ScriptBlock,
@@ -202,6 +204,37 @@ export function buildScript(
             };
           });
         if (choiceOptions.length) blocks.push({ kind: "choices", options: choiceOptions });
+      } else if (node.type === DIALOGUE_BLOCK_TYPE) {
+        // A conversation prints as the conversation it is: each line with
+        // its reply under it, and what happens after in the margin where
+        // conditions already go.
+        const spoken = extractDialogueLines(node, resolve).map((line, i) => {
+          lineCount += 1;
+          const who = speakerOf({ speaker: line.speaker } as Record<string, unknown>);
+          if (who) castCounts.set(who, (castCounts.get(who) ?? 0) + 1);
+          const replyWho = speakerOf({ speaker: line.replySpeaker } as Record<string, unknown>);
+          if (replyWho && line.reply) {
+            castCounts.set(replyWho, (castCounts.get(replyWho) ?? 0) + 1);
+          }
+          const target = line.targetSceneId ? sceneById.get(line.targetSceneId) : undefined;
+          return {
+            ref: `D${i + 1}`,
+            speaker: who,
+            text: line.text.trim(),
+            reply: line.reply.trim(),
+            replySpeaker: replyWho,
+            after: line.after,
+            target:
+              target && numberOf.has(target.id)
+                ? { n: numberOf.get(target.id)!, title: target.title || "Untitled scene" }
+                : null,
+            repeatable: line.repeatable,
+            conditions: options.showConditions ? conditionWords(line.conditions) : [],
+            actions: options.showConditions ? actionWords(line.actions) : [],
+            unmet: line.whenUnmet,
+          };
+        });
+        if (spoken.length) blocks.push({ kind: "dialogue", lines: spoken });
       } else if (node.type === CONDITIONAL_BLOCK_TYPE) {
         const lines = (node.content ?? [])
           .filter((c) => c.type === "paragraph")

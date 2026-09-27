@@ -130,6 +130,42 @@ function screenplay(scene: ScriptScene): Paragraph[] {
       block.lines.forEach((l, i) =>
         out.push(...speech(l.speaker, l.text, holdAll || i < block.lines.length - 1)),
       );
+    } else if (block.kind === "dialogue") {
+      // A conversation prints as one unbreakable run: keepNext on every
+      // paragraph but the last, which is Word's only way to say
+      // break-inside: avoid.
+      out.push(
+        line("CONVERSATION", {
+          bold: true, size: 9, keepNext: true, spacing: { before: mm(4), after: mm(1.5) },
+        }),
+      );
+      block.lines.forEach((spoken, i) => {
+        const last = i === block.lines.length - 1;
+        out.push(...speech(spoken.speaker, spoken.text, !last || holdAll));
+        if (spoken.after !== "leave" && spoken.reply) {
+          out.push(...speech(spoken.replySpeaker, spoken.reply, !last || holdAll));
+        }
+        const meta = [
+          spoken.repeatable ? "can be said again" : "",
+          spoken.conditions.length
+            ? `${spoken.unmet === "lock" ? "locked unless" : "only if"} ${spoken.conditions.join(" and ")}`
+            : "",
+          spoken.actions.length ? spoken.actions.join(", ") : "",
+          spoken.after === "end"
+            ? "ends the conversation"
+            : spoken.after === "leave"
+              ? `leaves to ${spoken.target ? `${spoken.target.n}. ${spoken.target.title}` : "nowhere yet"}`
+              : "",
+        ].filter(Boolean);
+        if (meta.length) {
+          out.push(
+            line(meta.join("   ·   "), {
+              size: 8.5, color: "595959", keepNext: !last || holdAll,
+              indent: { left: mm(30) }, spacing: { after: mm(2) },
+            }),
+          );
+        }
+      });
     } else {
       out.push(
         line("CHOICES", { bold: true, size: 9, keepNext: true, spacing: { before: mm(4), after: mm(1.5) } }),
@@ -237,6 +273,40 @@ function production(scene: ScriptScene): Paragraph[] {
           ),
         ),
       );
+    } else if (block.kind === "dialogue") {
+      out.push(
+        line("CONVERSATION", {
+          bold: true, size: 8.5, keepNext: true, spacing: { before: mm(3), after: mm(1) },
+        }),
+      );
+      block.lines.forEach((spoken, i) => {
+        const last = i === block.lines.length - 1;
+        out.push(row(`${scene.n}.${spoken.ref}`, spoken.speaker, spoken.text, !last || holdAll));
+        if (spoken.after !== "leave" && spoken.reply) {
+          out.push(
+            row(`${scene.n}.${spoken.ref}r`, spoken.replySpeaker, spoken.reply, !last || holdAll, true),
+          );
+        }
+        const meta = [
+          spoken.repeatable ? "repeatable" : "",
+          spoken.conditions.length
+            ? `${spoken.unmet === "lock" ? "locked unless" : "only if"} ${spoken.conditions.join(" and ")}`
+            : "",
+          spoken.actions.length ? spoken.actions.join(", ") : "",
+          spoken.after === "end" ? "ends" : "",
+          spoken.after === "leave"
+            ? `leaves → ${spoken.target ? spoken.target.n : "—"}`
+            : "",
+        ].filter(Boolean);
+        if (meta.length) {
+          out.push(
+            line(meta.join(" · "), {
+              size: 8.5, color: "595959", keepNext: !last || holdAll,
+              indent: { left: mm(44) }, spacing: { after: mm(1) },
+            }),
+          );
+        }
+      });
     } else {
       out.push(
         line("CHOICES", { bold: true, size: 8.5, keepNext: true, spacing: { before: mm(3), after: mm(1) } }),

@@ -20,6 +20,7 @@ import {
   reuseBySignature,
 } from "../../utils/reuseBySignature";
 import { mentionResolver } from "../../utils/mentions";
+import { dialogueExits, extractDialogueLines } from "../../utils/dialogueBlocks";
 import { GRAPH_GRID, snapRect } from "../../utils/graphConstants";
 import {
   COLLAPSED_GROUP_SIZE,
@@ -361,12 +362,18 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   // a 40-scene story and 24.8 ms on a 300-scene one; roughly half of that
   // was the duplicate. They are still keyed on `project` alone, which is
   // the part that matters: neither runs on a drag frame.
-  const { choiceCountByScene, edgesBase } = useMemo<{
+  const { choiceCountByScene, dialogueByScene, edgesBase } = useMemo<{
     choiceCountByScene: Map<string, number>;
+    dialogueByScene: Map<string, { inPage: number; exits: number }>;
     edgesBase: Edge[];
   }>(() => {
     const counts = new Map<string, number>();
-    if (!project) return { choiceCountByScene: counts, edgesBase: [] };
+    // v0.66.0 — one badge per node, "4 in-page · 2 exits", settled on
+    // board G6. Not silence, which would make a scene where five things
+    // can happen look empty, and not a self-loop, which would say the
+    // scene leads to itself when it leads nowhere at all.
+    const talk = new Map<string, { inPage: number; exits: number }>();
+    if (!project) return { choiceCountByScene: counts, dialogueByScene: talk, edgesBase: [] };
 
     // An endpoint hidden inside a folded group is re-pointed at the box you
     // can actually see, so folding a chapter never makes a connection
@@ -398,6 +405,29 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       // agrees with the page when every option happens to be linked.
       const sceneChoices = extractChoices(scene.content, resolve);
       counts.set(scene.id, sceneChoices.length);
+
+      // THE RULE: a line is an edge only if it leaves. The ones that stay
+      // are counted for the badge and contribute no wire at all.
+      const dialogue = extractDialogueLines(scene.content, resolve);
+      if (dialogue.length > 0) {
+        const exits = dialogue.filter(dialogueExits);
+        talk.set(scene.id, { inPage: dialogue.length - exits.length, exits: exits.length });
+        for (const line of exits) {
+          if (!line.targetSceneId) continue;
+          sceneChoices.push({
+            blockId: "",
+            option: {
+              id: line.id,
+              text: line.text,
+              targetSceneId: line.targetSceneId,
+              actions: line.actions,
+              conditions: line.conditions,
+              whenUnmet: line.whenUnmet,
+              style: line.style,
+            },
+          } as never);
+        }
+      }
       for (const [index, choice] of sceneChoices.entries()) {
         if (!choice.targetSceneId) continue;
         const ordinal = index + 1;
@@ -461,7 +491,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       data: { bundled: true, short: `×${count}` },
     }));
 
-    return { choiceCountByScene: counts, edgesBase: [...direct, ...bundles] };
+    return { choiceCountByScene: counts, dialogueByScene: talk, edgesBase: [...direct, ...bundles] };
   }, [project]);
 
   // Edges connected to the selected scene read as part of what's selected,
@@ -764,6 +794,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
         data: {
           label: scene.title || "Untitled scene",
           choiceCount: choiceCountByScene.get(scene.id) ?? 0,
+          dialogue: dialogueByScene.get(scene.id) ?? null,
           // "Open in the Scene Editor" (thicker accent border + fill) —
           // unchanged meaning, but no longer set by a single click; see
           // `handleNodeDoubleClick` below.

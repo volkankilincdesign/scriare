@@ -51,7 +51,14 @@ export type InspectorTarget =
   // anywhere INSIDE it rather than by a NodeSelection over it, because
   // unlike a Choice Block it holds ordinary prose the writer types into;
   // see SceneEditor's onSelectionUpdate.
-  | { kind: "conditional"; sceneId: string; blockId: string };
+  | { kind: "conditional"; sceneId: string; blockId: string }
+  /**
+   * v0.66.0 — the Dialogue. Targeted exactly like a Choice Block, and with
+   * the same `lineId` hint for which line the caret is in, because the
+   * panel has the same job: show every line in the block and open the one
+   * being worked on.
+   */
+  | { kind: "dialogue"; sceneId: string; blockId: string; lineId?: string | null };
 
 interface InspectorState {
   target: InspectorTarget;

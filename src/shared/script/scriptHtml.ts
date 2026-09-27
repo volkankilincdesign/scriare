@@ -73,6 +73,32 @@ function screenplayScene(scene: ScriptScene): string {
           block.lines.map((l) => speech(l.speaker, l.text)).join("") +
           `</div>`,
       );
+    } else if (block.kind === "dialogue") {
+      out.push(
+        `<div class="talk"><div class="talk-h">CONVERSATION</div>` +
+          block.lines
+            .map((line) => {
+              const meta = [
+                line.repeatable ? "can be said again" : "",
+                line.conditions.length
+                  ? `${line.unmet === "lock" ? "locked unless" : "only if"} ${line.conditions.join(" and ")}`
+                  : "",
+                line.actions.length ? line.actions.join(", ") : "",
+                line.after === "end"
+                  ? "ends the conversation"
+                  : line.after === "leave"
+                    ? `leaves to ${line.target ? `${line.target.n}. ${line.target.title}` : "nowhere yet"}`
+                    : "",
+              ].filter(Boolean);
+              return (
+                speech(line.speaker, line.text) +
+                (line.after !== "leave" && line.reply ? speech(line.replySpeaker, line.reply) : "") +
+                (meta.length ? `<div class="talk-m">${esc(meta.join("   ·   "))}</div>` : "")
+              );
+            })
+            .join("") +
+          `</div>`,
+      );
     } else {
       out.push(
         `<div class="choices"><div class="choices-h">CHOICES</div>` +
@@ -122,6 +148,35 @@ function productionScene(scene: ScriptScene): string {
           `<div class="row cond"><span class="ref"></span><span class="who"></span>` +
           `<span class="say">if ${esc(block.conditions.join(" and "))}</span></div>` +
           block.lines.map((l) => row(l.ref, l.speaker, l.text, "in")).join("") +
+          `</div>`,
+      );
+    } else if (block.kind === "dialogue") {
+      out.push(
+        `<div class="talk"><div class="choices-h">CONVERSATION</div>` +
+          block.lines
+            .map((line) => {
+              const meta = [
+                line.repeatable ? "repeatable" : "",
+                line.conditions.length
+                  ? `${line.unmet === "lock" ? "locked unless" : "only if"} ${line.conditions.join(" and ")}`
+                  : "",
+                line.actions.length ? line.actions.join(", ") : "",
+                line.after === "end" ? "ends" : "",
+              ].filter(Boolean);
+              return (
+                row(line.ref, line.speaker, line.text, "opt") +
+                (line.after !== "leave" && line.reply
+                  ? row(`${line.ref}r`, line.replySpeaker, line.reply, "in")
+                  : "") +
+                (meta.length
+                  ? `<div class="row"><span class="ref"></span><span class="who"></span><span class="say"><i>${esc(meta.join(" · "))}</i></span></div>`
+                  : "") +
+                (line.after === "leave"
+                  ? `<div class="row"><span class="ref"></span><span class="who">&rarr; ${line.target ? line.target.n : "—"}</span><span class="say"><i>leaves the scene</i></span></div>`
+                  : "")
+              );
+            })
+            .join("") +
           `</div>`,
       );
     } else {
@@ -206,6 +261,9 @@ p, .dlg, .say { orphans: 2; widows: 2; }
 .k-screenplay .dlg { margin: 0 0 4mm 30mm; max-width: 92mm; }
 .k-screenplay .gate { margin: 0 0 4mm; border-left: 1.5pt solid #777; padding-left: 4mm; }
 .k-screenplay .gate-h { font-size: 9pt; letter-spacing: .06em; color: #444; margin-bottom: 2mm; }
+.talk { break-inside: avoid; border-left: 1.5pt solid #999; padding-left: 4mm; margin: 4mm 0; }
+.talk-h { font-size: 9pt; font-weight: bold; letter-spacing: .14em; margin-bottom: 2mm; }
+.k-screenplay .talk-m { margin: 0 0 3mm 30mm; font-size: 8.5pt; color: #555; }
 .k-screenplay .choices-h { font-size: 9pt; font-weight: bold; letter-spacing: .14em; margin: 5mm 0 2mm; }
 .k-screenplay .opt { display: flex; gap: 3mm; align-items: baseline; }
 .k-screenplay .opt-n { width: 6mm; flex: none; }

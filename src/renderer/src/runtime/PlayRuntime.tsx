@@ -1,10 +1,12 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { generateHTML } from "@tiptap/core";
 import { useProjectStore } from "../state/projectStore";
 import { EMPTY_DOC } from "../types/project";
 import { extractChoices } from "../utils/choiceBlocks";
 import { READING_COLUMN_CLASS, READING_PROSE_CLASS } from "../utils/readingColumn";
 import { splitDocumentIntoSegments } from "./documentSegments";
+import { dialogueHoldsPage } from "./blocks/dialogueRuntimeBlock";
+import { DIALOGUE_BLOCK_TYPE } from "../types/nodeTypes";
 import { resolveMentions } from "../utils/mentions";
 import { applySpeakerPrefixes } from "../utils/speakerLines";
 import { renderRuntimeBlock } from "./registry";
@@ -20,6 +22,7 @@ export function PlayRuntime() {
   const ground = usePlayGroundStore((s) => s.ground);
   const toggleGround = usePlayGroundStore((s) => s.toggleGround);
   const playSceneId = useProjectStore((s) => s.playSceneId);
+  const playToken = useProjectStore((s) => s.playToken);
   const goToPlayScene = useProjectStore((s) => s.goToPlayScene);
   const restartPlay = useProjectStore((s) => s.restartPlay);
   const exitPlay = useProjectStore((s) => s.exitPlay);
@@ -41,6 +44,39 @@ export function PlayRuntime() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [exitPlay]);
 
+  /**
+   * Conversation state, for this visit to this scene (v0.66.0).
+   *
+   * Reset on every scene change rather than persisted — a conversation is
+   * a thing that happens now, and "topics exhausted for the rest of the
+   * story" is already available to a writer with a variable and a
+   * condition, which is what the block is sugar for.
+   */
+  const [saidLines, setSaidLines] = useState<Record<string, boolean>>({});
+  const [transcript, setTranscript] = useState<string[]>([]);
+  const [closedDialogues, setClosedDialogues] = useState<Record<string, boolean>>({});
+
+  // On the scene AND on the visit. Keying this on the scene alone left a
+  // restart that lands on the scene it was already on with its
+  // conversations still exhausted — which the spec caught by restarting
+  // and finding the leaving line no longer on offer.
+  useEffect(() => {
+    setSaidLines({});
+    setTranscript([]);
+    setClosedDialogues({});
+  }, [playSceneId, playToken]);
+
+  const sayLine = useCallback((lineId: string) => {
+    setSaidLines((prev) => ({ ...prev, [lineId]: true }));
+    setTranscript((prev) => [...prev, lineId]);
+  }, []);
+  const closeDialogue = useCallback((blockId: string) => {
+    // Guarded rather than set blindly: the block reports "nothing left to
+    // say" from inside its own render, and an unguarded set would be a
+    // state update on every pass.
+    setClosedDialogues((prev) => (prev[blockId] ? prev : { ...prev, [blockId]: true }));
+  }, []);
+
   const runtimeContext: RuntimeContext = useMemo(
     () => ({
       goToScene: goToPlayScene,
@@ -49,8 +85,26 @@ export function PlayRuntime() {
       variables: project?.variables ?? [],
       values: playVariableValues,
       choiceStyles: project?.choiceStyles ?? [],
+      entities: project?.entities ?? [],
+      saidLines,
+      transcript,
+      closedDialogues,
+      sayLine,
+      closeDialogue,
     }),
-    [goToPlayScene, applyVariableActions, project?.variables, playVariableValues],
+    [
+      goToPlayScene,
+      applyVariableActions,
+      project?.variables,
+      project?.choiceStyles,
+      project?.entities,
+      playVariableValues,
+      saidLines,
+      transcript,
+      closedDialogues,
+      sayLine,
+      closeDialogue,
+    ],
   );
 
   const renderedSegments = useMemo(() => {
@@ -77,6 +131,31 @@ export function PlayRuntime() {
       }
     });
   }, [scene, project?.entities]);
+
+  /**
+   * The segments the reader is allowed to see right now: everything up to
+   * and including the first Dialogue that is still open.
+   */
+  const visibleSegments = useMemo(() => {
+    const out: typeof renderedSegments = [];
+    for (const segment of renderedSegments) {
+      out.push(segment);
+      if (
+        segment.kind === "block" &&
+        segment.node.type === DIALOGUE_BLOCK_TYPE &&
+        dialogueHoldsPage(
+          segment.node,
+          closedDialogues,
+          project?.variables ?? [],
+          playVariableValues,
+          saidLines,
+        )
+      ) {
+        break;
+      }
+    }
+    return out;
+  }, [renderedSegments, closedDialogues, saidLines, playVariableValues, project?.variables]);
 
   const hasAnyLinkedChoice = useMemo(
     () => (scene ? extractChoices(scene.content).some((c) => c.targetSceneId) : false),
@@ -133,7 +212,18 @@ export function PlayRuntime() {
                 {scene.title || "Untitled scene"}
               </h1>
 
-              {renderedSegments.map((segment, index) =>
+              {/*
+                THE PAGE WAITS (v0.66.0). Everything below an open Dialogue
+                is held back until the conversation closes — which is what
+                turns a scene from prose-then-a-menu into beats: prose, a
+                conversation, more prose, a choice.
+
+                Measured before it was written: the runtime paints every
+                segment of a scene at once, so prose after a Choice Block
+                is already on screen before the reader has chosen. A
+                conversation must not inherit that.
+              */}
+              {visibleSegments.map((segment, index) =>
                 segment.kind === "block" ? (
                   renderRuntimeBlock(segment.node, runtimeContext, index)
                 ) : (

@@ -1525,6 +1525,99 @@ const CONTROLS = [
     spec: "script-export",
     expect: "pages carry more than one scene",
   },
+  // ── v0.66.0 — the Dialogue ───────────────────────────────────────────
+  //
+  // HALF OF THESE BREAK THE EXPORT AND NOT THE APP, on purpose. The rules
+  // are written twice — once in React, once in the exported page's plain
+  // JavaScript — and a control set that only broke the app would leave the
+  // riskier implementation untested while looking thorough.
+  {
+    name: "a Play Mode that draws the whole page while the conversation is open",
+    file: src("runtime/PlayRuntime.tsx"),
+    from: "      ) {\n        break;\n      }",
+    to: "      ) {\n        void 0;\n      }",
+    spec: "dialogue",
+    expect: "THE PAGE WAITS",
+  },
+  {
+    name: "an exported page that draws the whole page while the conversation is open",
+    file: src("export/pageRuntime.ts"),
+    from: "        if (dialogueHolds(segment)) { held = true; break; }",
+    to: "        if (dialogueHolds(segment)) { held = true; }",
+    spec: "dialogue",
+    expect: "THE EXPORTED PAGE WAITS",
+  },
+  {
+    name: "a line that is said and stays on offer",
+    file: src("runtime/blocks/dialogueRuntimeBlock.tsx"),
+    from: "    if (said[line.id] && !line.repeatable) return false;\n    return true;",
+    to: "    return true;",
+    spec: "dialogue",
+    expect: "SAID IS SPENT",
+  },
+  {
+    name: "an exported page where saying a line spends nothing",
+    file: src("export/pageRuntime.ts"),
+    from: "      if (talk.said[line.i] && !line.rp) continue;",
+    to: "      if (false) continue;",
+    spec: "dialogue",
+    expect: "and spends it",
+  },
+  {
+    // The bug this feature shipped with for ten minutes: resetting the
+    // conversation inside the scene render, which runs on every click.
+    name: "an exported page that forgets the conversation on every click",
+    file: src("export/pageRuntime.ts"),
+    from: "    if (talkScene !== scene.id) {",
+    to: "    if (true) {",
+    spec: "dialogue",
+    expect: "saying a line in the export appends it",
+  },
+  {
+    name: "an END line that does not end the conversation",
+    file: src("runtime/blocks/dialogueRuntimeBlock.tsx"),
+    from: '    if (line.after === "end") context.closeDialogue?.(blockId);',
+    to: '    if (line.after === "never") context.closeDialogue?.(blockId);',
+    spec: "dialogue",
+    expect: "a line marked END closes the conversation",
+  },
+  {
+    // The other half of the bug pair: a restart that lands on the scene it
+    // was already on left every conversation exhausted.
+    name: "a restart that does not begin the conversation again",
+    file: src("runtime/PlayRuntime.tsx"),
+    from: "  }, [playSceneId, playToken]);",
+    to: "  }, [playSceneId]);",
+    spec: "dialogue",
+    expect: "a line marked LEAVE turns the scene",
+  },
+  {
+    name: "a conversation with no way out that nobody warns about",
+    file: src("utils/dialogueBlocks.ts"),
+    from: "  return lines.some((line) => !line.repeatable);",
+    to: "  return true;",
+    spec: "dialogue",
+    expect: "nothing can end is reported",
+  },
+  {
+    // The rule every downstream surface shares.
+    name: "a dialogue line counted as an edge even though it stays",
+    file: src("utils/dialogueBlocks.ts"),
+    from: '  return line.after === "leave";',
+    to: "  return true;",
+    spec: "dialogue",
+    // Aimed at the graph badge, which is the surface that reads this rule
+    // most directly: five lines, four of which stay, and the badge says so.
+    expect: "draws one badge for the conversation",
+  },
+  {
+    name: "a script that prints a conversation as if it were a branch",
+    file: src("export/script/buildScript.ts"),
+    from: '        if (spoken.length) blocks.push({ kind: "dialogue", lines: spoken });',
+    to: "        void spoken;",
+    spec: "dialogue",
+    expect: "prints the conversation as its own kind of block",
+  },
 ];
 
 

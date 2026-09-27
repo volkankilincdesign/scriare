@@ -247,6 +247,16 @@ body {
 }
 
 /* ── The last screen ────────────────────────────────────────────── */
+/* ── the Dialogue (v0.66.0) ────────────────────────────────────────
+   A conversation that stayed on the page. The transcript is set in the
+   reading face like the prose it is; the player's own lines are italic so
+   a reader can tell at a glance which half of the exchange was theirs. */
+.scriare-dialogue { margin: 2rem 0; }
+.scriare-dialogue .scriare-said { margin-bottom: 0.9rem; }
+.scriare-dialogue .scriare-said p { margin: 0; }
+.scriare-dialogue .scriare-said-you { font-style: italic; color: var(--text-2); }
+.scriare-dialogue .scriare-choices { margin-top: 1.2rem; }
+
 .scriare-ending {
   margin-top: 2.4em;
   display: flex; flex-direction: column; align-items: center; gap: 16px;

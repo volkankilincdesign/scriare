@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { JSONContent } from "@tiptap/react";
 import type { Variable, VariableAction, VariableValue } from "../types/variables";
 import type { ChoiceStyle } from "../types/choiceStyles";
+import type { Entity } from "../types/entities";
 
 /**
  * The minimal set of capabilities a runtime block's render function can call
@@ -33,6 +34,27 @@ export interface RuntimeContext {
    * Export arrives.
    */
   choiceStyles: ChoiceStyle[];
+  /**
+   * v0.66.0 — what the Dialogue needs, and nothing the other blocks use.
+   *
+   * It lives on the shared context rather than inside the block because
+   * the rule "nothing below an open conversation is drawn" belongs to
+   * whoever walks the scene's segments, not to the block — a block cannot
+   * decide what is rendered after it.
+   *
+   * Optional so that anything constructing a context for a narrower
+   * purpose (a test, a future preview) is not forced to invent
+   * conversation state it has no use for.
+   */
+  entities?: Entity[];
+  /** Line ids said in this visit to the scene. */
+  saidLines?: Record<string, boolean>;
+  /** The same ids in the order they were said — the transcript. */
+  transcript?: string[];
+  /** Blocks whose conversation has closed. */
+  closedDialogues?: Record<string, boolean>;
+  sayLine?: (lineId: string) => void;
+  closeDialogue?: (blockId: string) => void;
 }
 
 /**

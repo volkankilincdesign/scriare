@@ -3,6 +3,7 @@ import type { JSONContent } from "@tiptap/react";
 import type { RuntimeBlockDefinition, RuntimeContext } from "./types";
 import { choiceRuntimeBlock } from "./blocks/choiceRuntimeBlock";
 import { conditionalRuntimeBlock } from "./blocks/conditionalRuntimeBlock";
+import { dialogueRuntimeBlock } from "./blocks/dialogueRuntimeBlock";
 
 /**
  * Every narrative block the Play runtime knows how to render, keyed by the
@@ -15,6 +16,7 @@ import { conditionalRuntimeBlock } from "./blocks/conditionalRuntimeBlock";
 export const RUNTIME_BLOCKS: RuntimeBlockDefinition[] = [
   choiceRuntimeBlock,
   conditionalRuntimeBlock,
+  dialogueRuntimeBlock,
 ];
 
 /**

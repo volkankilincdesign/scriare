@@ -12,6 +12,79 @@ omitting them.
 
 ---
 
+## v0.66.0 — The Dialogue
+
+A conversation that happens on the page instead of turning it. Four
+drawings were made (board M); M2 won, and what shipped is M2 with one
+question answered that the drawings did not cover.
+
+**What was missing:** a choice block is a door. Every option leads
+somewhere, and asking a bartender three things in a row meant three scenes
+that exist only to be left. Writers were making scenes as a workaround for
+not having a conversation, and the Story Graph filled with nodes that
+weren't places.
+
+**Three rules, and they are the whole feature:**
+
+1. **Said is spent.** A line said leaves the list, unless it is marked as
+   one that can be asked again. This is what makes a conversation feel like
+   one: the list shortens as you talk.
+2. **Every line has an after** — *stay*, *end*, or *leave*. Stay is the
+   default and the point. End closes the conversation where it stands.
+   Leave is the old behaviour, a door, and it is the only one of the three
+   that draws a wire in the Story Graph, because it is the only one that
+   goes anywhere.
+3. **The page waits.** Anything written below an open conversation is not
+   drawn until the conversation closes. This is the rule his question was
+   about — *what if the writer wants the rest of the text to render after?*
+   — and the answer is that they always do, so it isn't a setting. Prose
+   after a Dialogue reads as what happens once you stop talking, which is
+   what a writer means by putting it there.
+
+**A conversation is not remembered between visits, on purpose.** Leaving
+the scene and coming back starts it fresh. The alternative — topics
+exhausted for the rest of the story — is already available with a variable
+and a condition, which is what this block is sugar for; making it the
+default would mean persisting a set of line ids in the save file to buy a
+behaviour half of all conversations don't want.
+
+**Rule 3 cannot live in the block.** A block cannot decide what is drawn
+after it. So it lives in the runtime — twice, because there are two
+runtimes: React in the app, and plain JavaScript in the exported page,
+which has no framework and no network. **That second implementation is the
+honest risk in this feature,** and it's why most of the new negative
+controls break the *export* rather than the app. A control that only broke
+the app would have left the riskier half untested while looking thorough.
+
+**The spec found two bugs, both of them the same bug in different
+clothes** — state that survived when it shouldn't and state that died when
+it shouldn't:
+
+- *Restart left the conversation exhausted.* The reset effect was keyed on
+  the scene id, and restarting a story that begins in that scene doesn't
+  change the scene id. There is now a `playToken` that a restart bumps, so
+  "the same scene again" and "this scene, again from the top" are
+  distinguishable.
+- *The exported page wiped the conversation it had just added to.* The
+  reset ran inside the scene render, which in a single-page export runs on
+  every click. Guarded on the scene actually having changed.
+
+**One control came back green and that was a finding about the test.** The
+sabotage aimed at "a line is an edge only if it leaves" — and nothing
+asserted on the Story Graph badge, so nothing noticed. The badge now has
+its own assertion (`◆ 4 in-page · 1 exit`) rather than the control being
+retired, which is the third time this project has chosen that way round.
+
+**Also:** Check Story gained two warnings — a conversation nothing can end
+(the reader would be held there forever) and a line whose condition can
+never be met. Script Export prints a conversation as its own third kind of
+block, beside prose and choices, and says in words what happens after a
+line that ends one. Every paragraph now carries a stable id, stamped in
+while this schema change was open — that is what unblocks the spreadsheet
+export, which is the next thing.
+
+---
+
 ## v0.65.0 — The choice editor says what a choice does
 
 I2, finally applied where it was always meant to go, plus the page-density

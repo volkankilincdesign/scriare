@@ -1,6 +1,6 @@
 {
   "name": "scriare",
-  "version": "0.65.0",
+  "version": "0.66.0",
   "description": "A writing-first workspace for branching narratives.",
   "main": "./out/main/index.js",
   "author": {
@@ -116,5 +116,9 @@
         "role": "Editor"
       }
     ]
+  },
+  "allowScripts": {
+    "electron@33.4.11": true,
+    "esbuild@0.21.5": true
   }
 }

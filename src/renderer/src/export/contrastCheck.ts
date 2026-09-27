@@ -1,4 +1,5 @@
 import type { ExportStory } from "./buildStory";
+import type { ChoiceBox } from "../types/choiceStyles";
 import { GROUND_PAGE_HEX, GROUND_TEXT_HEX, READING_GROUNDS } from "./readingThemes";
 import type { ReadingGround } from "./readingThemes";
 
@@ -218,6 +219,34 @@ export function readColorOnGrounds(subject: ColorSubject): GroundReading[] {
   });
 }
 
+/**
+ * The worst contrast a label reaches inside its own box, or null when the
+ * box has no literal fill to be wrong about.
+ *
+ * Factored out in v0.66.0 when the Dialogue arrived: its lines are painted
+ * exactly as choices are, and two copies of this arithmetic would be two
+ * places for the next fix to miss.
+ */
+function worstOnBox(
+  label: string,
+  box: ChoiceBox,
+  page: Rgba,
+  defaultText: Rgba,
+): number | null {
+  const fill = parseColor(box.fill);
+  // A variable fill resolves against this ground and is fine by
+  // construction. Only a literal one can be wrong.
+  if (!fill) return null;
+  const solid = over(fill, page);
+  // The label is painted in --text unless the writer coloured it
+  // themselves, in which case THAT is the foreground that matters.
+  const labelColors = inlineColors(label).color
+    .map(parseColor)
+    .filter((c): c is Rgba => c !== null);
+  const foregrounds = labelColors.length > 0 ? labelColors : [defaultText];
+  return Math.min(...foregrounds.map((fg) => contrastRatio(over(fg, solid), solid)));
+}
+
 export function checkStoryContrast(story: ExportStory): ContrastFinding[] {
   const findings: ContrastFinding[] = [];
 
@@ -230,24 +259,30 @@ export function checkStoryContrast(story: ExportStory): ContrastFinding[] {
       for (const segment of scene.seg) {
         if (segment.k === "c") {
           for (const choice of segment.o) {
-            const fill = parseColor(choice.b.fill);
-            // A variable fill resolves against this ground and is fine by
-            // construction. Only a literal one can be wrong.
-            if (!fill) continue;
-            const solid = over(fill, page);
-
-            // The label is painted in --text unless the writer coloured it
-            // themselves, in which case THAT is the foreground that matters.
-            const labelColors = inlineColors(choice.l).color
-              .map(parseColor)
-              .filter((c): c is Rgba => c !== null);
-            const foregrounds = labelColors.length > 0 ? labelColors : [defaultText];
-
-            const worst = Math.min(...foregrounds.map((fg) => contrastRatio(over(fg, solid), solid)));
-            if (worst < THRESHOLD) {
+            const worst = worstOnBox(choice.l, choice.b, page, defaultText);
+            if (worst !== null && worst < THRESHOLD) {
               findings.push({
                 scene: scene.title,
                 what: `Choice “${labelSummary(choice.l)}”`,
+                ground: ground.id,
+                ratio: worst,
+              });
+            }
+          }
+          continue;
+        }
+
+        // v0.66.0 — a Dialogue's lines are checked as choices are, because
+        // on the page they are the same thing: a box of text the writer
+        // may have coloured by hand. The reply is not checked: it is a
+        // flat string and carries no colour of its own by construction.
+        if (segment.k === "d") {
+          for (const line of segment.o) {
+            const worst = worstOnBox(line.l, line.b, page, defaultText);
+            if (worst !== null && worst < THRESHOLD) {
+              findings.push({
+                scene: scene.title,
+                what: `Dialogue line “${labelSummary(line.l)}”`,
                 ground: ground.id,
                 ratio: worst,
               });

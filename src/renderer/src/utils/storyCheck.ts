@@ -2,6 +2,9 @@ import type { JSONContent } from "@tiptap/react";
 import { CHOICE_BLOCK_TYPE, readChoiceBlockOptions } from "./choiceBlocks";
 import type { MentionLabelResolver } from "./choiceBlocks";
 import { mentionResolver } from "./mentions";
+import { dialogueCanClose, findDialogueBlockLines } from "./dialogueBlocks";
+import type { DialogueLine } from "./dialogueBlocks";
+import { DIALOGUE_BLOCK_TYPE } from "../types/nodeTypes";
 import { MENTION_TYPE } from "../types/entities";
 import type { ChoiceOption } from "./choiceBlocks";
 import type { Project, Scene } from "../types/project";
@@ -30,6 +33,10 @@ export type StoryIssueKind =
   | "unlinked-choice"
   | "broken-link"
   | "unreachable-scene"
+  /** v0.66.0 — a conversation with no way out holds the reader forever. */
+  | "dialogue-never-ends"
+  /** v0.66.0 — a line gated on a variable that no longer exists. */
+  | "dialogue-dead-gate"
   | "missing-variable-condition"
   | "missing-variable-action"
   | "empty-scene";
@@ -246,6 +253,112 @@ export function checkStory(project: Project | null): StoryCheck {
       });
     });
 
+    // ── the Dialogue (v0.66.0) ──────────────────────────────────────
+    //
+    // THE RULE, restated: an option is an edge only if it LEAVES. A line
+    // that stays on the page is not a link, so it adds nothing to
+    // `targets` — which is what makes reachability MORE accurate than it
+    // was, not less: before this block existed, a writer faking a
+    // conversation with self-linking choices made every such scene look
+    // like it led somewhere.
+    const dialogueBlocks: { blockId: string; lines: DialogueLine[] }[] = [];
+    (function findBlocks(node: JSONContent): void {
+      if (node.type === DIALOGUE_BLOCK_TYPE) {
+        const blockId = (node.attrs?.blockId as string) ?? "";
+        dialogueBlocks.push({
+          blockId,
+          lines: findDialogueBlockLines(scene.content, blockId, resolve) ?? [],
+        });
+        return;
+      }
+      (node.content ?? []).forEach(findBlocks);
+    })(scene.content ?? { type: "doc", content: [] });
+
+    dialogueBlocks.forEach(({ blockId, lines: dialogueLines }) => {
+      if (!dialogueCanClose(dialogueLines)) {
+        issues.push({
+          id: `dialogue-open:${blockId}`,
+          kind: "dialogue-never-ends",
+          severity: "problem",
+          title: title(scene),
+          detail:
+            "This conversation can never be left — every line can be said again, and none of them ends it or leaves the scene. A reader would be held here, and anything written below it never appears.",
+          label: title(scene),
+          what: "no way out",
+          sceneId: scene.id,
+          blockId,
+        });
+      }
+
+      dialogueLines.forEach((line, index) => {
+        const label = line.text || `line ${index + 1}`;
+        const where = `${title(scene)} — "${label}"`;
+
+        if (line.after === "leave") {
+          if (!line.targetSceneId) {
+            issues.push({
+              id: `dialogue-unlinked:${line.id}`,
+              kind: "unlinked-choice",
+              severity: "problem",
+              title: where,
+              detail: "This line leaves the scene but doesn't say where to.",
+              label,
+              what: "unlinked",
+              sceneId: scene.id,
+              blockId,
+            });
+          } else if (!byId.has(line.targetSceneId)) {
+            issues.push({
+              id: `dialogue-broken:${line.id}`,
+              kind: "broken-link",
+              severity: "problem",
+              title: where,
+              detail: "It points at a scene that no longer exists.",
+              label,
+              what: "broken link",
+              sceneId: scene.id,
+              blockId,
+            });
+          } else {
+            targets.push(line.targetSceneId);
+          }
+        }
+
+        line.conditions.forEach((condition) => {
+          if (!variableIds.has(condition.variableId)) {
+            issues.push({
+              id: `dialogue-cond:${condition.id}`,
+              kind: "dialogue-dead-gate",
+              severity: "problem",
+              title: where,
+              detail:
+                "A condition on this line uses a variable that was deleted, so this line can never be said.",
+              label,
+              what: "can never be said",
+              sceneId: scene.id,
+              blockId,
+            });
+          }
+        });
+
+        line.actions.forEach((action) => {
+          if (!variableIds.has(action.variableId)) {
+            issues.push({
+              id: `dialogue-act:${action.id}`,
+              kind: "missing-variable-action",
+              severity: "problem",
+              title: where,
+              detail:
+                "An action on this line changes a variable that was deleted, so it does nothing.",
+              label,
+              what: "dead action",
+              sceneId: scene.id,
+              blockId,
+            });
+          }
+        });
+      });
+    });
     links.set(scene.id, targets);
 
     if (isEmptyScene(scene)) {
