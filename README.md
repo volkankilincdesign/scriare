@@ -2,12 +2,13 @@
 
 # Scriare
 
-**A branching-narrative editor for people who came to write.**
+**Write stories, not syntax.**
 
 Interactive fiction tools make you choose: a node canvas that shows the
 structure but cramps the prose, or a scripting language that frees the
 prose and hides the structure in syntax. Scriare is a writing app that
-happens to know about branches.
+happens to know about branches — a branching-narrative editor for people
+who came to write.
 
 [Changelog](CHANGELOG.md) · [Case study](CASE_STUDY.md) · [Design documents](docs/)
 
@@ -67,6 +68,9 @@ lives in.
 - **Characters and Locations** with pages, aliases and backlinks. `@` them
   in prose; rename one and every sentence follows, because no sentence ever
   stored the name.
+- **Notes** — your own pages, in the same editor. A note can mention the
+  story; the story can never mention a note, and none of it reaches the
+  reader or the word count.
 
 **Logic, with no syntax**
 
@@ -89,6 +93,24 @@ lives in.
 - **Play Mode** renders the scene exactly as written, in document order,
   with a live read-only variable readout and a proper ending screen. Escape
   returns you to the same scene, scroll position and graph view.
+- It plays on a **reading ground — Night or Paper — not on your theme**,
+  with the same switch your reader gets, so a rehearsal is a rehearsal of
+  the finished file rather than a preview of the draft.
+
+**Sharing it**
+
+- **Export** writes the whole story as one self-contained HTML page. No
+  network requests of any kind: it works offline, from a folder or a USB
+  stick, and nobody learns who read it. Formatting, choices, variables and
+  conditions arrive intact, the reader keeps their place, and they can
+  switch between the two reading grounds.
+- Those grounds — **Night and Paper** — are built for reading rather than
+  for sitting beside panels, which is why the app's eight themes are
+  deliberately not among them: a theme is the room you write in, a ground
+  is the page a stranger reads.
+- Colours you pick yourself say how they read on both grounds **at the
+  moment you pick them**, measured, rather than at the export dialog weeks
+  later.
 
 **Everywhere**
 
@@ -112,15 +134,18 @@ lives in.
 
 ## Status
 
-**v0.47.0 — in active development, and usable.** The editor, graph,
-runtime, entities, variables, validation and search are all real. Not yet
-built: **Export** (the button is visible and disabled on purpose) and a
-packaged installer. See [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for
-the honest list.
+**v0.60.0 — in active development, and usable.** The editor, graph,
+runtime, entities, notes, variables, validation, search and **export** are
+all real. Not yet built: a packaged installer, so today you run it from
+source. See [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest
+list of what is still missing.
 
-344 automated tests run against the real packaged application. Every
-load-bearing one has been confirmed to fail on a deliberately broken build
-— a test that has never been seen to fail proves nothing.
+**626 automated tests** run against the real packaged application, and
+**131 negative controls**: each one breaks a specific line of the shipped
+source on purpose and checks that a named assertion fails. A test that has
+never been seen to fail proves nothing — and twice in the last week a
+control failed to catch its sabotage, which was a finding about the test
+rather than the app, and the test is what got rewritten.
 
 ## Running it
 
@@ -141,12 +166,20 @@ Other commands:
 | `npx tsc --noEmit -p tsconfig.web.json` | Type-check without writing files |
 
 To run a single spec file — which is what you want while negative-controlling
-a fix, rather than waiting for all 344 — set `SPEC` to the start of its
-filename:
+a fix, rather than waiting for the whole suite — set `SPEC` to the start of
+its filename:
 
 ```bash
 SPEC=find npm test            # macOS / Linux
 $env:SPEC="find"; npm test    # Windows PowerShell
+```
+
+The controls themselves are a script rather than part of the suite, run
+while a feature is being built:
+
+```bash
+node tests/negative-controls.mjs          # all of them — about a quarter of an hour
+ONLY=notes node tests/negative-controls.mjs   # just one spec's
 ```
 
 > **Don't run `tsc -b` on this project.** Its build mode writes compiled
@@ -167,6 +200,9 @@ src/renderer/src/
     layout/     top bar, Content Browser, Inspector, Find results
     graph/      the Story Graph, its nodes, groups and minimap
     story/      Check Story
+    welcome/    the Welcome screen, and the map each story draws of itself
+    common/     the shared kit — Button, Field, Modal, DialogHeader, Icon
+  export/       the exported page: its stylesheet, runtime and contrast check
   extensions/   Tiptap nodes and marks — ChoiceBlock, Mention, Speaker…
   runtime/      Play Mode, deliberately importing nothing from the editor
   state/        Zustand stores (project, inspector, editor ref, UI, toasts)
@@ -192,7 +228,9 @@ anything:
 
 ## The writing
 
-The [changelog](CHANGELOG.md) lists every release. The
-[case study](CASE_STUDY.md) is the part worth reading: twelve findings from
-the build, mostly about the moments when a user-interface complaint turned
-out to be a data-model problem wearing a costume.
+The [changelog](CHANGELOG.md) lists every release, and each entry is
+written as the reasoning rather than as a line item — what was measured,
+what it turned out to be, and what was deliberately not done. The
+[case study](CASE_STUDY.md) is the part worth reading: findings from the
+build, mostly about the moments when a user-interface complaint turned out
+to be a data-model problem wearing a costume.

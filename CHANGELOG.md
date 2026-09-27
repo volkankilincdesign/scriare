@@ -12,6 +12,51 @@ omitting them.
 
 ---
 
+## v0.60.1 — The documents catch up
+
+No code. The four documents a stranger actually reads had drifted, and one
+of them was selling the app short.
+
+**The README was thirteen versions stale.** It said *"Not yet built:
+Export (the button is visible and disabled on purpose)"* — Export shipped
+in v0.48.0 — and *"344 automated tests"*, which is now 626 plus 131
+negative controls. The front door of a portfolio piece was telling visitors
+the app could not do the thing that is its front door.
+
+It now also describes what it gained since v0.47.0: the export and its two
+reading grounds, Play Mode on those grounds, Notes, and the pick-time
+colour reading. The **negative controls get a paragraph of their own**,
+including the part worth admitting — twice in the last week a control
+failed to catch its sabotage, and each time that was a finding about the
+test rather than the app.
+
+**The tagline is settled.** The Welcome screen has said *"Write stories,
+not syntax."* since v0.53.0 and the README never carried the line at all.
+It leads with it now, and the project brief does too.
+
+**The case study's "what's unresolved" list was lying in the app's
+favour.** It opened with "Export doesn't exist". That item is gone;
+the installer and the empty-colour-band finding took its place — the latter
+being the honest limit of v0.58.0: no colour clears 4.5:1 on both grounds,
+the best any single literal colour manages is about 4.16:1, and the app can
+turn that surprise into a decision but cannot offer a colour that works.
+
+**`docs/architecture-plan.md` is frozen rather than rewritten.** It carries
+a header saying so. It was the Sprint 1–8 planning document; its module
+boundaries and its "Known pitfalls" section are still cited by code
+comments, and its "next candidates" list still proposes Variables, an
+entities editor and electron-builder as future work — two of which shipped
+long ago. Rewriting nine hundred lines of superseded planning would produce
+a fourth document worse than the three that replaced it: the roadmap for
+what is next, the changelog for what each release decided, the case study
+for what the build taught.
+
+The per-version reports in `docs/` are left exactly as they are. They are
+records of what was true in v0.48, v0.50, v0.51 and v0.53, and a record
+that gets updated is not a record.
+
+---
+
 ## v0.60.0 — Notes
 
 A note is the writer's own page: **it can mention the story, and the story

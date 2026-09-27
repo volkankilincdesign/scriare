@@ -9,7 +9,8 @@ whole.
 **Scriare is a desktop editor for branching narrative.** It's a writing app
 that happens to know about branches — not a node canvas you also type into.
 
-One line: *a branching-narrative editor for people who came to write.*
+One line: *write stories, not syntax* — a branching-narrative editor for
+people who came to write.
 
 ## Why it exists
 
@@ -72,13 +73,16 @@ different:
 
 ## Where it stands
 
-**v0.53.0 — in active development and genuinely usable.** The editor,
-graph, runtime, entities, variables, validation, search, export and the
-Welcome screen are all real and in daily use.
+**v0.60.0 — in active development and genuinely usable.** The editor,
+graph, runtime, entities, notes, variables, validation, search, export and
+the Welcome screen are all real and in daily use. Play Mode reads on the
+same grounds the export ships, so a rehearsal is a rehearsal of the
+finished file.
 
-**514 automated tests** run against the real packaged application, and
-every load-bearing one has been confirmed to fail on a deliberately broken
-build — a test that has never been seen to fail proves nothing.
+**626 automated tests** run against the real packaged application, and
+**131 negative controls** — each breaks a line of the shipped source on
+purpose and checks that a named assertion fails. A test that has never been
+seen to fail proves nothing.
 
 **Not built yet:** a packaged installer, and the demo story itself.
 
@@ -89,6 +93,7 @@ React Flow · Playwright. Single developer, built with Claude as a pair.
 
 ## Lines you can use when teasing it
 
+- "Write stories, not syntax."
 - "A branching-narrative editor for people who came to write."
 - "Type `/choice` and keep going. The map draws itself."
 - "Every branching tool makes you stop writing to do structure. This one

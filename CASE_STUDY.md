@@ -356,12 +356,19 @@ Honesty is more useful than a clean ending, so:
   properties, so the concept is familiar; Scriare's contribution would be
   that it needs no syntax, just two dropdowns. It's deep, and it pays off
   at a scale the demo story won't reach.
-- **Export doesn't exist.** The button is visible and disabled, which is a
-  deliberate promise rather than an oversight — but a promise with a
-  deadline attached.
 - **Validation doesn't know about speakers.** A line attributed to a
   deleted character quietly becomes narration. That's the right runtime
   behaviour and arguably something the story checker should mention.
+- **There is no installer yet.** Export shipped, so the front door is a
+  playable HTML file that needs nothing installed — but a writer who wants
+  the app itself still runs it from source.
+- **No colour reads well on both reading grounds.** Measured while building
+  the pick-time warning: the set of colours clearing 4.5:1 on Night *and*
+  Paper is empty, and the best any single literal colour manages on both is
+  about 4.16:1. The app now says so at the moment you choose a colour, which
+  turns a surprise into a decision — but it cannot offer you a safe colour,
+  because there isn't one. The real fix is a colour that can say what it is
+  on each ground, and that isn't built.
 
 ---
 
@@ -383,6 +390,8 @@ cheaper than confidence.
 ---
 
 *Scriare is built with Electron, React, TypeScript, Tiptap/ProseMirror and
-React Flow. 227 automated tests run against the real packaged application,
-every load-bearing one confirmed to fail on a deliberately broken build.
-The full release history is in [CHANGELOG.md](CHANGELOG.md).*
+React Flow. 626 automated tests run against the real packaged application,
+with 131 negative controls — each one breaks a specific line of the shipped
+source and checks that a named assertion fails. Every load-bearing
+assertion has been seen to fail on a deliberately broken build. The full
+release history is in [CHANGELOG.md](CHANGELOG.md).*

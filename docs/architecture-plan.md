@@ -1,3 +1,22 @@
+> **This document is a historical record, frozen at v0.19.0.**
+>
+> It was the planning document for Sprints 1–8 and it describes the app as
+> it stood at the end of that arc. Much of it is still true — the module
+> boundaries, the registries, the "Known pitfalls" section that code
+> comments cite by name — and some of it is not: its "next candidates" list
+> proposes Variables, an entities editor and electron-builder packaging as
+> future work, and two of those shipped long ago.
+>
+> It is kept rather than updated because the three documents that replaced
+> it are better at their jobs: [the roadmap](roadmap.md) for what is agreed
+> and what is next, [the changelog](../CHANGELOG.md) for what each release
+> decided and why, and [the case study](../CASE_STUDY.md) for what the
+> build taught. Rewriting nine hundred lines of superseded planning would
+> produce a fourth document worse than all three.
+>
+> Read it for the architecture and the pitfalls. Do not read it for the
+> plan.
+
 # Scriare — Architecture Plan (MVP)
 
 ## Philosophy
