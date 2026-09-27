@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.63.0.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.64.0.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -277,7 +277,21 @@ than gaps.
   suite for twelve versions, because the harness started the app from a
   file rather than a directory.
 
-657 tests, 148 negative controls, all caught.
+- **v0.64.0 Script Export** — the story on paper. Two layouts drawn on
+  board K against the real fixture before any code: **Screenplay** for a
+  reader, **Production script** (numbered lines, speakers in a column) for
+  anyone who has to work from it; each as **PDF or .docx**. One
+  `ScriptDocument` model, two renderers, one phrasing for conditions
+  shared by both. Order is the Content tree, his call. The page rules are
+  the feature — chapters open a page, short scenes never split, headings
+  and cues never end one, choice blocks are atomic — and Word's lack of
+  `break-inside` is why "keep this whole" is decided in the model rather
+  than the CSS. **The third layout he saw, a dialogue table, was cut on
+  purpose and is not cancelled:** it comes back as a real spreadsheet
+  export for localisation and VO, which is a different feature with a
+  different file type.
+
+686 tests, 154 negative controls, all caught.
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and
@@ -576,9 +590,9 @@ before a story exists that needs it.
   in `claude/export.md`, and the exported page is built from tokens
   specifically so one override recolours everything. It must apply to Play
   Mode too, or a writer is styling blind.
-- **Script export** — a readable PDF/DOCX of every branch. *~0.5 session*,
-  and for a narrative-design portfolio it is the artifact studios actually
-  ask to see.
+- ~~**Script export**~~ — **shipped in v0.64.0**, and it took rather more
+  than the half session it was sized at, most of it spent finding three
+  ways the tests were passing for the wrong reason.
 
 ### Post-Launch
 

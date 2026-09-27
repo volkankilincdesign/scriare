@@ -42,6 +42,14 @@ const api = {
     open: (filePath: string) => ipcRenderer.invoke("export:reveal", filePath),
   },
   /**
+   * v0.64.0 — the story as a script somebody can read on paper. The model
+   * crosses as plain JSON; the HTML is what printToPDF lays out.
+   */
+  script: {
+    save: (payload: unknown) => ipcRenderer.invoke("script:save", payload),
+    open: (filePath: string) => ipcRenderer.invoke("script:reveal", filePath),
+  },
+  /**
    * v0.49.0 — the window asks before it closes, so a pending autosave is
    * written rather than discarded. See main/index.ts for the handshake.
    */

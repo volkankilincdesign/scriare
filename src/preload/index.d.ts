@@ -153,6 +153,17 @@ export interface ScriareAPI {
     /** Hands the exported file to the OS — in practice, the browser. */
     open: (filePath: string) => Promise<void>;
   };
+  /** v0.64.0 — the story as a printable script. */
+  script: {
+    save: (payload: {
+      format: "pdf" | "docx";
+      model: unknown;
+      html: string;
+      suggestedName: string;
+      nearPath: string | null;
+    }) => Promise<{ filePath: string; bytes: number } | null>;
+    open: (filePath: string) => Promise<void>;
+  };
   /** v0.49.0 — closing the window writes what is pending first. */
   lifecycle: {
     /**

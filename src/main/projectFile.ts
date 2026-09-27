@@ -179,7 +179,14 @@ async function renameWithRetry(from: string, to: string): Promise<void> {
  */
 export async function writeProjectFile(
   filePath: string,
-  contents: string,
+  /**
+   * v0.64.0 — a Uint8Array as well as a string, so Script Export's PDF and
+   * DOCX get the same atomic temp-file-then-rename as everything else. A
+   * half-written .docx is not a file Word will open, and the previous
+   * export is exactly what the writer would want left standing.
+   * Node ignores the encoding argument below when handed a buffer.
+   */
+  contents: string | Uint8Array,
   expected: FileStamp | null,
   options?: {
     /**
@@ -268,7 +275,7 @@ export async function writeProjectFile(
 
   const stamp = (await readStamp(filePath)) ?? {
     mtimeMs: Date.now(),
-    size: Buffer.byteLength(contents, "utf-8"),
+    size: Buffer.byteLength(contents as string, "utf-8"),
   };
   return { status: "saved", stamp, backedUp };
 }

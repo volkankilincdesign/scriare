@@ -56,6 +56,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("../../shared/recentEntries"),
     import("../../shared/fileArgs"),
     import("./state/playGroundStore"),
+    import("./export/script/buildScript"),
+    import("../../shared/script/scriptHtml"),
   ]).then(
     ([
       projectStore,
@@ -90,6 +92,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       recentEntries,
       fileArgs,
       playGroundStore,
+      scriptBuilder,
+      scriptHtml,
     ]) => {
       Object.assign(window, {
         __scriareProjectStore: projectStore.useProjectStore,
@@ -115,6 +119,10 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         __scriareSpeakerLines: speakerLines,
         __scriareFind: findInStory,
         __scriareTextFold: textFold,
+        // v0.64.0 — Script Export, so the spec can drive the real builder
+        // and the real page renderer rather than a copy of either.
+        __scriareBuildScript: scriptBuilder.buildScript,
+        __scriareScriptHtml: scriptHtml.buildScriptHtml,
         __scriareReuse: reuseBySignature,
         __scriareUIStore: uiStore.useUIStore,
         // v0.43.0 — the layout rules are pure arithmetic, so the specs that

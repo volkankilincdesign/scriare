@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "../common/Button";
+import { ScriptPanel } from "./ScriptPanel";
 import { Modal } from "../common/Modal";
 import { useProjectStore } from "../../state/projectStore";
 import { useUIStore } from "../../state/uiStore";
@@ -39,6 +40,13 @@ export function ExportDialog() {
   const filePath = useProjectStore((s) => s.filePath);
   const showNotice = useToastStore((s) => s.showNotice);
 
+  /**
+   * Which way the story is leaving the app (v0.64.0). Reset with the
+   * dialog, for the same reason `done` is: a writer who exported a script
+   * last time and opens this looking for the web page should find the
+   * dialog as they first met it.
+   */
+  const [tab, setTab] = useState<"page" | "script">("page");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ filePath: string; bytes: number } | null>(null);
 
@@ -53,6 +61,7 @@ export function ExportDialog() {
     if (!open) {
       setDone(null);
       setBusy(false);
+      setTab("page");
     }
   }, [open]);
 
@@ -110,7 +119,37 @@ export function ExportDialog() {
         </span>
       </div>
 
-      {done ? (
+      {/* One door for "get this story out of the app". A writer looking
+          for a script should not have to know it was filed under a
+          different menu (v0.64.0). Hidden while a result is showing, so
+          the success screen is not competing with a way to leave it. */}
+      {!done && (
+        <div className="mb-4 flex gap-1 border-b border-[var(--border-soft)]">
+          {([
+            ["page", "Web Page"],
+            ["script", "Script"],
+          ] as const).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              data-export-tab={id}
+              aria-pressed={tab === id}
+              onClick={() => setTab(id)}
+              className={`-mb-px border-b-2 px-3 py-1.5 text-sm transition-colors ${
+                tab === id
+                  ? "border-[var(--accent)] text-[var(--text)]"
+                  : "border-transparent text-[var(--text-3)] hover:text-[var(--text-2)]"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {tab === "script" && !done ? (
+        <ScriptPanel onClose={close} />
+      ) : done ? (
         <Exported
           result={done}
           onClose={() => {

@@ -25,6 +25,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = (p) => join(root, "src/renderer/src", p);
 const main = (p) => join(root, "src/main", p);
 const shared = (p) => join(root, "src/shared", p);
+const mainScript = (p) => join(root, "src/main", p);
 
 const CONTROLS = [
   {
@@ -1390,6 +1391,82 @@ const CONTROLS = [
     to: '  args: [join(root, "out/main/index.js")],',
     spec: "version",
     expect: "knows its own version at all",
+  },
+  // ── v0.64.0 — Script Export ──────────────────────────────────────────
+  // RETIRED, with the measurement that retired it.
+  //
+  // The rule is real: printed through this same path, a 17-page document
+  // of 40 headings strands one of them without `break-after: avoid` and
+  // none of them with it, so Chromium does honour it. But one in
+  // seventeen pages is too rare for a suite to see reliably — the
+  // 64-page stress script strands none even with the rule removed,
+  // because `.speech { break-inside: avoid }` and the paragraph
+  // orphan/widow rules already absorb almost every case. A control that
+  // comes back green because the event is rare is worse than no control:
+  // it reads as proof.
+  //
+  // What IS controlled is the choice-block rule below, which the same
+  // script breaks seventeen times over when it is removed.
+  {
+    name: "a choice block allowed to split across a page",
+    file: shared("script/scriptHtml.ts"),
+    from: ".gate, .choices { break-inside: avoid; }",
+    to: ".gate, .choices { break-inside: auto; }",
+    spec: "script-export",
+    // The A/B assertion, not the one about the real story: without the
+    // rule the stress script splits seventeen blocks, and that is the
+    // check that goes red.
+    expect: "not one choice block is split across a page",
+  },
+  {
+    // A hidden choice is one the player never sees. It still has to be
+    // translated and still has to be recorded.
+    name: "a script that quietly drops the choices a player never sees",
+    file: src("export/script/buildScript.ts"),
+    from: "          .filter((o) => o.type === CHOICE_OPTION_TYPE)",
+    to: '          .filter((o) => o.type === CHOICE_OPTION_TYPE && (o.attrs?.whenUnmet ?? "hide") !== "hide")',
+    spec: "script-export",
+    expect: "HIDDEN choice is printed anyway",
+  },
+  {
+    name: "a conditions checkbox that does not turn conditions off",
+    file: src("export/script/buildScript.ts"),
+    from: "              conditions: options.showConditions ? conditionWords(o.attrs?.conditions) : [],",
+    to: "              conditions: conditionWords(o.attrs?.conditions),",
+    spec: "script-export",
+    expect: "with conditions off, none of them print",
+  },
+  {
+    // Word has no break-inside, so every rule the stylesheet states has to
+    // be rebuilt out of keepNext. Dropping it leaves a document that opens
+    // perfectly and breaks in all the wrong places.
+    name: "a Word file that never asks to keep anything together",
+    file: mainScript("script/scriptDocx.ts"),
+    from: "    keepNext: o.keepNext ?? false,",
+    to: "    keepNext: false,",
+    spec: "script-export",
+    // Counting keepNext across the file is too blunt to fail; the cue
+    // check is per paragraph and is the one that bites.
+    expect: "every character cue in the Word file holds on to its line",
+  },
+  {
+    name: "chapters that do not start a page in Word",
+    file: mainScript("script/scriptDocx.ts"),
+    from: "            pageBreakBefore: true,",
+    to: "            pageBreakBefore: false,",
+    spec: "script-export",
+    expect: "start every chapter on a fresh page",
+  },
+  {
+    // The two renderers must not drift over how a condition is worded: a
+    // PDF and a Word file of the same script differing by one line is the
+    // kind of bug nobody finds until somebody records the wrong take.
+    name: "a Word file that words a locked choice differently from the PDF",
+    file: mainScript("script/scriptDocx.ts"),
+    from: '      `${choice.unmet === "lock" ? "locked unless" : "only if"} ${choice.conditions.join(" and ")}`,',
+    to: '      choice.conditions.join(" and "),',
+    spec: "script-export",
+    expect: "worded the same way",
   },
 ];
 

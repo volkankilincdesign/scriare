@@ -12,6 +12,94 @@ omitting them.
 
 ---
 
+## v0.64.0 — The story, on paper
+
+A script is linear. A branching story is not. This is the first of the two
+honest ways to print one — the second, a proper spreadsheet for
+localisation and VO, is a separate feature with a separate file type and is
+committed to rather than cut.
+
+**Two layouts, two formats, drawn before any of it was written** (board K,
+rendered from the real fixture rather than from lorem ipsum, because the
+question was about where conditions and locked choices land on a page and
+lorem ipsum never locks a choice). **Screenplay** — slug lines, centred
+cues, indented dialogue — for handing to a reader. **Production script** —
+every line numbered `22.3`, `26.C1`, speakers in their own column,
+conditions on their own rows — for handing to anyone who has to do
+something with it. Each writes **PDF or .docx**.
+
+**One model, two renderers.** The project is walked into a
+`ScriptDocument` once and nothing downstream looks at a Tiptap document
+again. Four ways to get the same story onto a page is four chances for
+them to disagree, and a PDF and a Word file that differ by one line is the
+kind of bug nobody finds until somebody records the wrong take. Even the
+*wording* of a condition is shared: "locked unless resolve is at least 3"
+is composed in one place, so the two files cannot phrase it differently.
+
+**The order is the Content tree**, his call — chapters top to bottom, each
+starting a fresh page. A walk of the graph reads closer to play order right
+up until the first loop, and a story with loops has no correct linear
+order, only a rule. The tree is a rule the writer can see and change, and
+it has the property a script needs most: export twice, get the same
+document. Scenes the tree does not mention are printed at the end under
+their own heading rather than dropped.
+
+**The page rules are the feature.** His words asking for it: *"some
+branches could go off the page, make it seem organized regarding the pages,
+don't wanna see it clutter in the page ends."* So a chapter always starts a
+page; a scene short enough to fit is never split; a heading or a cue can
+never be the last thing on a page; a choice block and a gated passage are
+atomic. Word has no `break-inside`, so every one of those had to be rebuilt
+out of `keepNext` and `keepLines` — which is why "is this scene short
+enough to keep whole" is decided in the model rather than in the CSS: the
+renderer that cannot express the rule still has to obey it.
+
+**The PDF is printed, not generated.** An offscreen window loads the page
+and Chromium's own paged-media engine decides the breaks. Writing a PDF by
+hand with a library would mean re-implementing pagination, badly, in the
+one place the writer will notice it.
+
+**Hidden choices print.** A locked choice is shown to the player, so it
+obviously prints. A hidden one the player never sees — but a translator
+still has to translate it and an actor still has to record it, and leaving
+lines out of a script is how lines go unrecorded. It prints marked.
+
+### Three false greens, and what they cost to find
+
+**The page-end assertions could not fail.** `pdftotext` returns the running
+footer like any other text, so "the last line on the page" was always
+"Blue screenplay full   7". Four assertions about what a page may end on
+were describing the rules rather than testing them, and the two negative
+controls aimed at them came back green.
+
+**The real story was too well behaved to test the rules.** Every scene in
+the fixture is short enough that the whole scene is wrapped as one
+unbreakable block, which quietly subsumes the finer rules. A 40-scene
+stress script had to be built inside the spec, with scenes deliberately
+past that threshold.
+
+**And the rules are now measured against a control**, the way a drug is:
+the same script is printed twice, once with the page rules and once with
+them neutered, and the difference is the assertion. The control render
+states its own precondition — without the rules it splits seventeen choice
+blocks, and if it ever splits none the spec says so rather than passing.
+
+One control was **retired with its measurement**: printed through this same
+path, a 17-page document of 40 headings strands one without
+`break-after: avoid` and none with it, so the rule is real — but one in
+seventeen pages is too rare for a suite to see reliably. A control that
+comes back green because the event is rare is worse than no control,
+because it reads as proof.
+
+**And a bug the stress script found:** `break-after: avoid` keeps a heading
+with what follows it and says nothing about a break *inside* it, so a page
+could end between a slug line and its scene number — two halves of one
+heading, split across a page.
+
+Six negative controls, all caught; one new spec (29 checks). 686 tests.
+
+---
+
 ## v0.63.0 — The installer wears the badge, and the app admits its version
 
 Small things, all of them found by looking at the shipped product rather
