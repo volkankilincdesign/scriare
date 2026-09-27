@@ -91,7 +91,14 @@ export function WelcomeScreen() {
   const grid = recentProjects;
 
   return (
-    <div className="scriare-welcome flex h-screen w-screen flex-col bg-[var(--bg)] text-[var(--text)]">
+    <div
+      data-screen="welcome"
+      // Which of the three states this is — the empty one is the screen a
+      // returning writer must never be shown, and v0.62.0 exists because
+      // they were (see hooks/useBoot.ts).
+      data-welcome={recentProjects.length === 0 ? "empty" : "stories"}
+      className="scriare-welcome flex h-screen w-screen flex-col bg-[var(--bg)] text-[var(--text)]"
+    >
       <header className="flex-shrink-0 border-b border-[var(--border-soft)] px-8 py-4">
         {/*
           The frame is full-bleed; its CONTENTS sit in the same centred

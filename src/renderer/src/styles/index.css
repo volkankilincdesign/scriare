@@ -247,6 +247,35 @@ input[type="number"],
   animation: runtimeFadeIn 220ms ease-out;
 }
 
+/* The splash's one moving thing (v0.62.0) — a line that travels rather
+   than a spinner, because the app has no other spinner and one control
+   that spins would be the only thing in Scriare that does. The sweep is a
+   transform, so it costs a compositor layer and nothing else while the
+   renderer is busy opening a project. */
+@keyframes splashSweep {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(310%);
+  }
+}
+
+.scriare-splash-sweep {
+  animation: splashSweep 1.15s cubic-bezier(0.45, 0, 0.35, 1) infinite;
+}
+
+/* A writer who has asked the system not to animate gets a still line
+   instead — it still says "the app is doing something", which is the only
+   thing this element has to say. */
+@media (prefers-reduced-motion: reduce) {
+  .scriare-splash-sweep {
+    animation: none;
+    width: 100%;
+    opacity: 0.55;
+  }
+}
+
 /* React Flow's default Controls widget is styled for a light background —
    restyle it to match the active theme. */
 .react-flow__controls {

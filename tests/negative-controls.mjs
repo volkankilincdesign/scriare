@@ -1293,6 +1293,47 @@ const CONTROLS = [
     spec: "open-from-disk",
     expect: "already open does nothing",
   },
+
+  // ── v0.62.0 · what the app shows first ──────────────────────────────
+  {
+    // The bug itself: paint the default state while the answers are still
+    // in flight and a writer with nine stories is told they have none.
+    name: "the Welcome screen painted before the recent list has arrived",
+    file: src("App.tsx"),
+    from: '  if (boot === "booting") return <Splash />;',
+    to: "",
+    spec: "boot",
+    expect: "THE EMPTY WELCOME IS NEVER PAINTED",
+  },
+  {
+    // Re-aimed once: on this machine the recent list returns in a
+    // millisecond, so the missing `await` was invisible and the control
+    // came back green. The spec now slows the real handler to 400ms — a
+    // large recent file on a synced disk — and the race it exists for
+    // happens.
+    name: "a boot that does not wait for the recent list",
+    file: src("hooks/useBoot.ts"),
+    from: "          await useProjectStore.getState().loadRecent();",
+    to: "          void useProjectStore.getState().loadRecent();",
+    spec: "boot",
+    expect: "never paints the empty screen when the list is slow",
+  },
+  {
+    name: "a story waiting at launch that the Welcome gets to answer first",
+    file: src("hooks/useBoot.ts"),
+    from: "          await useProjectStore.getState().openRecentProject(pending);",
+    to: "          void useProjectStore.getState().openRecentProject(pending);",
+    spec: "boot",
+    expect: "without the Welcome appearing at all",
+  },
+  {
+    name: "a splash that is not the first thing on screen",
+    file: src("components/common/Splash.tsx"),
+    from: '      data-screen="booting"',
+    to: '      data-screen="welcome"',
+    spec: "boot",
+    expect: "opens on a splash",
+  },
 ];
 
 

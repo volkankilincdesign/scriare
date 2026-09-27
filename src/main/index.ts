@@ -4,6 +4,7 @@ import { is } from "@electron-toolkit/utils";
 import { registerProjectHandlers } from "./ipc/projectHandlers";
 import { registerExportHandlers } from "./ipc/exportHandlers";
 import { projectFileFromArgv } from "../shared/fileArgs";
+import { SHELL_GRACE_MS } from "../shared/boot";
 
 // Sprint 8C (v0.18.0): `package.json`'s "name" field ("scriare", all
 // lowercase — the npm-package-name convention) is what Electron otherwise
@@ -164,8 +165,30 @@ function createWindow(): void {
 
   mainWindow = window;
 
+  /**
+   * THE WINDOW APPEARS ONCE THERE IS SOMETHING WORTH SEEING (v0.62.0).
+   *
+   * `ready-to-show` means the first frame is painted — and the first frame
+   * is the app's default state, which for a writer with nine stories is
+   * the screen that says they have none. Showing it there is how a launch
+   * came to flash the empty Welcome before the shelf, and how opening a
+   * `.scriare` flashed it before the story.
+   *
+   * So the renderer says when it knows (`app:shell-ready`), and this waits
+   * — but only for SHELL_GRACE_MS, because an app that stays invisible
+   * while it reads a large project looks like an app that did not start.
+   * Whichever comes first wins, and the timer means a renderer that never
+   * reports cannot leave an invisible window behind.
+   */
   window.on("ready-to-show", () => {
-    window.show();
+    let shown = false;
+    const show = (): void => {
+      if (shown || window.isDestroyed()) return;
+      shown = true;
+      window.show();
+    };
+    ipcMain.once("app:shell-ready", show);
+    setTimeout(show, SHELL_GRACE_MS);
   });
 
   /**

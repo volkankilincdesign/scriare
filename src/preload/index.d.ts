@@ -158,6 +158,8 @@ export interface ScriareAPI {
     readyToClose: (proceed: boolean) => void;
     /** The story this launch was asked to open, or null (v0.61.0). */
     pendingOpen: () => Promise<string | null>;
+    /** The first screen is decided; the window may be shown (v0.62.0). */
+    shellReady: () => void;
     /** A story opened from the desktop while the app was already running. */
     onOpenFromDisk: (handler: (filePath: string) => void) => () => void;
     /**

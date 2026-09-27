@@ -12,6 +12,63 @@ omitting them.
 
 ---
 
+## v0.62.0 — The app opens on the screen you are going to
+
+Reported with two screenshots: opening a `.scriare` flashed the empty
+"no stories yet" Welcome before the story appeared, and so did an ordinary
+launch before the shelf of stories arrived.
+
+**One bug, twice.** The renderer painted its default state while the
+answers were still coming over IPC — is a story waiting from a
+double-click, and what is in Recent Projects — and the default state is
+the one screen that tells a returning writer they have nothing.
+
+**So the app works out what to draw before it draws anything.** A boot
+phase, in one place instead of three components: ask for a pending story
+and open it, or load the recent list, and only then let the shell render.
+Until that finishes it shows a splash — the app's own ground, the
+wordmark, and a line that travels rather than a spinner, because the app
+has no other spinner and one control that spins would be the only thing in
+Scriare that does.
+
+**Most launches will never show it.** The window is held back for 350ms
+while the renderer decides, so a fast boot arrives already showing the
+story or the shelf and the splash is never seen. If the boot outlasts the
+grace the window appears with the splash in it — because an app that does
+nothing visible for half a second reads as an app that failed — and the
+splash then stays at least 220ms, or a boot finishing at 360ms would flash
+for ten milliseconds, which is the same bug in a different costume. **The
+grace is also the fallback:** the window is shown when it elapses whether
+or not the renderer reported, so a renderer that never reports cannot
+leave an invisible app behind. Both numbers live in `shared/boot.ts`,
+because a disagreement between the two sides is exactly the flicker this
+removes.
+
+**The launch path has one asker now.** The main process clears the pending
+story as it hands it over, so `useOpenFromDisk` gave that route up and
+keeps only the running-app one. Two askers would mean one of them gets a
+story and the other gets null, and which one is a race.
+
+**A flash cannot be tested by looking afterwards** — by then the wrong
+screen has been and gone. The spec installs a recorder before the page's
+own scripts run, watches every mutation, and asks what the app SHOWED:
+`["booting", "welcome:stories"]` on an ordinary launch, `["booting",
+"editor"]` when a story is waiting. The first version of that recorder
+observed `document.documentElement`, which is null at document-start, so
+`observe()` threw and it recorded nothing at all — it watches `document`.
+
+**And the machine was too fast to catch its own bug.** The control for
+"a boot that does not wait for the recent list" came back green, because
+the list returns in about a millisecond here and the race never happened.
+The spec now wraps the real handler in a 400ms delay — a large recent file
+on a synced disk — and runs the whole boot again against it. The control
+is caught, and the app is checked on the machine it will actually be slow
+on rather than the one it was written on.
+
+Four more negative controls, all caught; one new spec (9 checks).
+
+---
+
 ## v0.61.0 — Double-clicking a story
 
 The installer, and the half of it that is not configuration.

@@ -54,6 +54,11 @@ const api = {
      * when it is ready to act on the answer.
      */
     pendingOpen: (): Promise<string | null> => ipcRenderer.invoke("app:pendingOpen"),
+    /**
+     * v0.62.0 — "I know what to draw." The main process is holding the
+     * window back until this, or until the grace elapses.
+     */
+    shellReady: () => ipcRenderer.send("app:shell-ready"),
     /** ...and the same request arriving while the app is already running. */
     onOpenFromDisk: (handler: (filePath: string) => void) => {
       const listener = (_event: unknown, filePath: string): void => handler(filePath);

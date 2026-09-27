@@ -26,8 +26,6 @@ import { useToastStore } from "../state/toastStore";
  */
 export function useOpenFromDisk(): void {
   useEffect(() => {
-    let cancelled = false;
-
     async function open(filePath: string): Promise<void> {
       const store = useProjectStore.getState();
 
@@ -47,17 +45,13 @@ export function useOpenFromDisk(): void {
       await useProjectStore.getState().openRecentProject(filePath);
     }
 
-    // Asked for once on mount: the app may have been STARTED by a
-    // double-click, in which case the path was waiting in the main process
-    // before this window existed.
-    void window.api.lifecycle.pendingOpen().then((filePath) => {
-      if (!cancelled && filePath) void open(filePath);
-    });
-
+    // The LAUNCH route is not here: a story waiting from a double-click
+    // that started the app is opened by useBoot, before anything is
+    // painted (v0.62.0). The main process clears that path as it hands it
+    // over, so two askers would mean one of them gets a story and the
+    // other gets null — and which one is a race. This hook owns the
+    // running-app route only.
     const stop = window.api.lifecycle.onOpenFromDisk((filePath) => void open(filePath));
-    return () => {
-      cancelled = true;
-      stop();
-    };
+    return stop;
   }, []);
 }

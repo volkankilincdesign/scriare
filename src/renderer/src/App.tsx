@@ -12,6 +12,8 @@ import { ToastHost } from "./components/common/ToastHost";
 import { ChoiceStylesDialog } from "./components/choices/ChoiceStylesDialog";
 import { useCloseGuard } from "./hooks/useCloseGuard";
 import { useOpenFromDisk } from "./hooks/useOpenFromDisk";
+import { useBoot } from "./hooks/useBoot";
+import { Splash } from "./components/common/Splash";
 import { installFocusModality } from "./utils/focusModality";
 import { StoryCheckDialog } from "./components/story/StoryCheckDialog";
 import { ExportDialog } from "./components/export/ExportDialog";
@@ -92,6 +94,10 @@ export default function App() {
   // The window asks before it closes, so a pending autosave is
   // written instead of discarded — see hooks/useCloseGuard.ts.
   useCloseGuard();
+  // Nothing is drawn until it is known WHAT to draw — a story waiting from
+  // a double-click, the shelf of recent stories, or a genuinely first
+  // launch (v0.62.0).
+  const boot = useBoot();
   // ...and the other end of the same idea: a story the desktop asked us to
   // open, by double-click or by the file association (v0.61.0).
   useOpenFromDisk();
@@ -119,6 +125,11 @@ export default function App() {
     });
   }, [findToken]);
 
+  // Before the default state, not after it: rendering the Welcome while
+  // the answers are still in flight is what flashed "no stories yet" at a
+  // writer who has nine.
+  if (boot === "booting") return <Splash />;
+
   if (!project) {
     return (
       <>
@@ -130,7 +141,10 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen w-screen flex-col bg-[var(--bg)] text-[var(--text)]">
+    <div
+      data-screen="editor"
+      className="flex h-screen w-screen flex-col bg-[var(--bg)] text-[var(--text)]"
+    >
       <ConfirmDialogHost />
       <ToastHost />
       <TopBar />

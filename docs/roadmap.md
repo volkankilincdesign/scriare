@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.61.0.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.62.0.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -253,7 +253,17 @@ than gaps.
   open closes through `closeProject()` so nothing is lost; an unanswered
   save conflict refuses and says why.
 
-639 tests, 139 negative controls, all caught.
+- **v0.62.0 The app opens on the screen you are going to** — his report,
+  with screenshots: opening a `.scriare` flashed the empty Welcome before
+  the story, and so did an ordinary launch before the shelf. The renderer
+  was painting its default while the answers were in flight. A boot phase
+  now decides first, behind a splash; the window is held back 350ms so a
+  fast launch never shows one, and the grace doubles as the fallback that
+  cannot leave an invisible window. The spec records every frame from
+  before the page's own scripts run, and slows the recent-list handler to
+  400ms so the race is real on a machine too fast to have it.
+
+648 tests, 143 negative controls, all caught.
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and
@@ -409,11 +419,11 @@ No dates. Sizes are sessions; the order is what matters.
 
 - ~~**Installer.**~~ **Built in v0.61.0**, and the last piece of software
   on the launch list. What remains is not building but CONFIRMING: the
-  packaged artifact can only be produced on Windows, so Volkan runs
-  `npm install` then `npm run dist`, and checks four things by hand — the
-  Start-menu entry, that double-clicking a `.scriare` opens the app, that
-  the uninstaller works, and exactly what SmartScreen says so the README
-  can quote it rather than guess.
+  packaged artifact can only be produced on Windows. **He ran it on 27 Sep
+  and it built.** What the build turned up was not the installer but the
+  boot: opening a story flashed the empty Welcome first, fixed in v0.62.0.
+  Still worth confirming when convenient: the uninstaller, and exactly
+  what SmartScreen says so the README can quote it rather than guess.
 
 - **Three ideas of his own, mocked up before any code** (the G boards on
   the design canvas), in this order:
