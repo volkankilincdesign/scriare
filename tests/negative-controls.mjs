@@ -1218,6 +1218,81 @@ const CONTROLS = [
     spec: "notes",
     expect: "+ New can make a note",
   },
+
+  // ── v0.61.0 · opening a story from the desktop ──────────────────────
+  {
+    name: "a command line read from the front, where the executable is",
+    file: shared("fileArgs.ts"),
+    from: "  for (let i = argv.length - 1; i >= 1; i -= 1) {",
+    to: "  for (let i = 1; i < argv.length; i += 1) {",
+    spec: "open-from-disk",
+    expect: "the last one wins",
+  },
+  {
+    name: "a Chromium switch mistaken for a story",
+    file: shared("fileArgs.ts"),
+    from: '    if (!arg || arg.startsWith("-")) continue;',
+    to: "    if (!arg) continue;",
+    spec: "open-from-disk",
+    expect: "not a story",
+  },
+  {
+    name: "the executable itself offered as the story to open",
+    file: shared("fileArgs.ts"),
+    from: "  for (let i = argv.length - 1; i >= 1; i -= 1) {",
+    to: "  for (let i = argv.length - 1; i >= 0; i -= 1) {",
+    spec: "open-from-disk",
+    expect: "argv[0] is never it",
+  },
+  {
+    // Two windows over one recent-projects file, each with its own
+    // autosave timer, is what save-safety exists to prevent.
+    name: "a second launch that opens a second window",
+    file: main("index.ts"),
+    from: "const gotTheLock = app.requestSingleInstanceLock();",
+    to: "const gotTheLock = true;",
+    spec: "open-from-disk",
+    expect: "single-instance lock",
+  },
+  {
+    // The bug the full suite caught: getAllWindows()[0] is whichever
+    // window exists first, and a spec that opens one to read an exported
+    // story makes that the export's. Same class as the v0.53.1 resize
+    // probe, which measured the wrong window and passed.
+    name: "a double-click sent to whichever window happens to be first",
+    file: main("index.ts"),
+    from: "    const window = mainWindow;",
+    to: "    const [window] = BrowserWindow.getAllWindows();",
+    spec: "open-from-disk",
+    expect: "double-clicking a story while the app is running opens it",
+  },
+  {
+    name: "a double-click the running app ignores",
+    file: main("index.ts"),
+    from: '    if (file) window.webContents.send("project:open-from-disk", file);',
+    to: "",
+    spec: "open-from-disk",
+    expect: "double-clicking a story while the app is running opens it",
+  },
+  {
+    // The whole reason this goes through closeProject rather than opening
+    // over the top: a second way to put a project down is a second way to
+    // lose the last second and a half of it.
+    name: "a story opened over an unanswered conflict",
+    file: src("hooks/useOpenFromDisk.ts"),
+    from: "        if (store.saveConflict) {",
+    to: "        if (false) {",
+    spec: "open-from-disk",
+    expect: "NOT opened over an unanswered conflict",
+  },
+  {
+    name: "the story you already have open, reloaded under you",
+    file: src("hooks/useOpenFromDisk.ts"),
+    from: "        if (store.filePath === filePath) return;",
+    to: "",
+    spec: "open-from-disk",
+    expect: "already open does nothing",
+  },
 ];
 
 

@@ -1,13 +1,17 @@
 {
   "name": "scriare",
-  "version": "0.60.1",
+  "version": "0.61.0",
   "description": "A writing-first workspace for branching narratives.",
   "main": "./out/main/index.js",
-  "author": "Volkan",
+  "author": {
+    "name": "Volkan Kılınç"
+  },
   "private": true,
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
+    "dist": "npm run build && electron-builder --win",
+    "dist:dir": "npm run build && electron-builder --win --dir",
     "preview": "electron-vite preview",
     "start": "electron-vite preview",
     "test": "electron-vite build --mode test && node tests/run.mjs"
@@ -45,11 +49,71 @@
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
     "electron-vite": "^2.3.0",
     "playwright-core": "^1.49.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
     "typescript": "^5.6.3",
     "vite": "^5.4.11"
+  },
+  "productName": "Scriare",
+  "license": "UNLICENSED",
+  "build": {
+    "appId": "com.volkankilinc.scriare",
+    "productName": "Scriare",
+    "copyright": "© Volkan Kılınç",
+    "directories": {
+      "buildResources": "build",
+      "output": "release"
+    },
+    "files": [
+      "out/**/*",
+      "resources/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Scriare-${version}-${os}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Scriare",
+      "uninstallDisplayName": "Scriare ${version}",
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "Scriare-${version}-Setup.${ext}"
+    },
+    "portable": {
+      "artifactName": "Scriare-${version}-portable.${ext}"
+    },
+    "fileAssociations": [
+      {
+        "ext": "scriare",
+        "name": "Scriare Story",
+        "description": "A Scriare branching story",
+        "icon": "build/icon.ico",
+        "role": "Editor"
+      }
+    ]
   }
 }

@@ -1,5 +1,7 @@
-node_modules
-out
-dist
+node_modules/
+out/
+dist/
+*.log
 .DS_Store
 *.tsbuildinfo
+release/

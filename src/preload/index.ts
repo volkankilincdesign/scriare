@@ -48,6 +48,18 @@ const api = {
      * work. It is a liveness check now, and this is the pulse.
      */
     stillWorking: () => ipcRenderer.send("app:closing-heartbeat"),
+    /**
+     * v0.61.0 — the story this launch was asked to open, if the app was
+     * started by double-clicking one. Asked for once, by the renderer,
+     * when it is ready to act on the answer.
+     */
+    pendingOpen: (): Promise<string | null> => ipcRenderer.invoke("app:pendingOpen"),
+    /** ...and the same request arriving while the app is already running. */
+    onOpenFromDisk: (handler: (filePath: string) => void) => {
+      const listener = (_event: unknown, filePath: string): void => handler(filePath);
+      ipcRenderer.on("project:open-from-disk", listener);
+      return () => ipcRenderer.off("project:open-from-disk", listener);
+    },
   },
 };
 

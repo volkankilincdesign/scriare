@@ -54,6 +54,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./export/readingThemes"),
     import("./utils/recentShape"),
     import("../../shared/recentEntries"),
+    import("../../shared/fileArgs"),
     import("./state/playGroundStore"),
   ]).then(
     ([
@@ -87,6 +88,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       readingThemes,
       recentShape,
       recentEntries,
+      fileArgs,
       playGroundStore,
     ]) => {
       Object.assign(window, {
@@ -140,6 +142,10 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         // spec can drive the switch from the store as well as from the
         // button, and assert that the two agree.
         __scriarePlayGround: playGroundStore.usePlayGroundStore,
+        // v0.61.0 — the rule that reads a command line and finds the story
+        // in it, shared with the main process so the spec drives the same
+        // one the app runs.
+        __scriareFileArgs: fileArgs,
       });
     },
   );

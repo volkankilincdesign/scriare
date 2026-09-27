@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.60.0.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.61.0.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -242,7 +242,18 @@ than gaps.
   into "Points at", a note has no aliases, and the placeholder mechanism is
   deleted rather than extended: three kinds, one list, one shape.
 
-626 tests, 131 negative controls, all caught.
+- **v0.61.0 Double-clicking a story** — the installer: electron-builder,
+  an NSIS installer and a portable .exe, per-user and assisted with no
+  elevation (checked against Twine, whose own docs say it installs into
+  Program Files — the difference is that this one is unsigned and from a
+  stranger, so it shows one frightening dialog instead of two). And the
+  half that makes the `.scriare` association worth registering: a
+  single-instance lock, the second-instance handler, the macOS open-file
+  event, and a launch-time path the renderer asks for. The story already
+  open closes through `closeProject()` so nothing is lost; an unanswered
+  save conflict refuses and says why.
+
+639 tests, 139 negative controls, all caught.
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and
@@ -396,9 +407,13 @@ No dates. Sizes are sessions; the order is what matters.
 
 ### Next — agreed
 
-- **Installer.** The last piece of software before the rest of the launch
-  list is writing and filming. See item 2 below; nothing about it is
-  blocked, and as of v0.54.0 nothing else is in front of it.
+- ~~**Installer.**~~ **Built in v0.61.0**, and the last piece of software
+  on the launch list. What remains is not building but CONFIRMING: the
+  packaged artifact can only be produced on Windows, so Volkan runs
+  `npm install` then `npm run dist`, and checks four things by hand — the
+  Start-menu entry, that double-clicking a `.scriare` opens the app, that
+  the uninstaller works, and exactly what SmartScreen says so the README
+  can quote it rather than guess.
 
 - **Three ideas of his own, mocked up before any code** (the G boards on
   the design canvas), in this order:
@@ -506,12 +521,14 @@ before a story exists that needs it.
    file, and as of v0.48.0 it is `.scriare`. **The export is the front
    door**, not the installer: a link that plays in a browser has no
    SmartScreen warning and needs no install.
-2. **Installer.** electron-builder, Windows NSIS plus a portable build.
-   *1–2 sessions.* Unsigned to start; note the SmartScreen warning rather
-   than pretending it won't appear. Positioned as the "for writers"
-   download, behind the playable link. **Now also the place to register the
-   `.scriare` file association**, which v0.48.0 deliberately left to the
-   installer rather than faking at runtime.
+2. ~~**Installer.**~~ **v0.61.0.** electron-builder, Windows NSIS plus a
+   portable build, unsigned, per-user and assisted with no elevation. The
+   `.scriare` association is registered AND answered: single-instance lock,
+   second-instance handler, macOS open-file, and a launch-time path the
+   renderer asks for. The README states the SmartScreen warning rather than
+   pretending it will not appear. Still positioned behind the playable
+   export link, which needs no install and raises no warning. **Awaiting
+   his run on Windows** — the artifact cannot be built on this machine.
 3. **The demo story** — a **vertical slice**, 30–40 scenes, decided 17 Sep;
    full scope and the two risks it carries in `claude/demo-story.md`. He
    writes it; Claude supplies a structural scaffold at most, never prose.

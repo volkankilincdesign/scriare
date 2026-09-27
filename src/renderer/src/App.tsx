@@ -11,6 +11,7 @@ import { SaveConflictDialog } from "./components/common/SaveConflictDialog";
 import { ToastHost } from "./components/common/ToastHost";
 import { ChoiceStylesDialog } from "./components/choices/ChoiceStylesDialog";
 import { useCloseGuard } from "./hooks/useCloseGuard";
+import { useOpenFromDisk } from "./hooks/useOpenFromDisk";
 import { installFocusModality } from "./utils/focusModality";
 import { StoryCheckDialog } from "./components/story/StoryCheckDialog";
 import { ExportDialog } from "./components/export/ExportDialog";
@@ -91,6 +92,9 @@ export default function App() {
   // The window asks before it closes, so a pending autosave is
   // written instead of discarded — see hooks/useCloseGuard.ts.
   useCloseGuard();
+  // ...and the other end of the same idea: a story the desktop asked us to
+  // open, by double-click or by the file association (v0.61.0).
+  useOpenFromDisk();
 
   // Focus rings for keyboards, not for mice — see utils/focusModality.ts.
   useEffect(() => installFocusModality(), []);

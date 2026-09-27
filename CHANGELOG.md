@@ -12,6 +12,70 @@ omitting them.
 
 ---
 
+## v0.61.0 — Double-clicking a story
+
+The installer, and the half of it that is not configuration.
+
+**Packaging.** electron-builder, a Windows NSIS installer and a portable
+`.exe` beside it, built from the badge artwork into a proper multi-size
+`.ico` (16 through 256). **Per-user, assisted, no elevation** — checked
+against the rival first: Twine's own documentation says its installer
+"will put Twine in your Program Files folder", which means a UAC prompt.
+The reasoning for going the other way is that Twine is a decade old with a
+known name and this is an unsigned executable from a stranger: machine-wide
+would show a first-time reader *two* frightening dialogs instead of one,
+and per-user installs on a locked-down work or university machine, which is
+exactly where a studio lead might try it. Arcweave sidesteps the question
+entirely by being a website.
+
+**An association nobody answers is a lie.** Registering `.scriare` changes
+the icon; what makes it worth anything is that the app then opens the file.
+Windows launches the app with the path on its command line, and when a copy
+is already running it launches a SECOND copy with that path rather than
+telling the first. Both are handled now: a single-instance lock, a
+`second-instance` listener that brings the window forward and hands over
+the path, the macOS `open-file` event registered before `whenReady` where
+it has to be, and a launch-time path the renderer asks for once when it is
+ready to act on it.
+
+**The rule that reads a command line lives in `shared/`** and is a pure
+function, because both the main process and the spec need the same answer
+and a second copy would be a second set of rules. It scans from the END
+(a portable build sits in a folder that may hold a story of its own),
+skips anything starting with `-` (Chromium passes switches, and one of them
+will eventually end in something that looks like a path), and never
+considers `argv[0]`, whatever the executable is called.
+
+**The story already open is closed the way every close closes it** —
+`closeProject()`, which flushes what autosave had not written yet. Not a
+new path but the same one, because a second way to put a project down is a
+second way to lose the last second and a half of it (v0.49.0). One request
+is refused: an unanswered save conflict, where flushing is impossible by
+definition and closing would discard everything written since. The writer
+is told why, because they just double-clicked something and nothing
+happened.
+
+**The suite caught a real bug in this, and it was the same bug as v0.53.1.**
+The handler took `BrowserWindow.getAllWindows()[0]`, which is correct
+whenever one window exists — and the export spec opens a second window to
+read an exported story, so from then on index 0 was the wrong one and the
+double-click went to a page with no renderer to hear it. It reads the
+window the app itself made. **The spec now opens a second window on
+purpose**, so it fails on its own rather than depending on the order the
+suite runs in.
+
+**What could not be tested here:** the installer itself. Building a Windows
+target needs Windows or wine; on this machine electron-builder packages the
+app and then stops at the signing step. So the argv rule, the lock, the
+handler and the renderer's side are covered by the spec, and the artifact —
+that it installs, that the Start-menu entry works, that double-clicking a
+`.scriare` really does open it, and exactly what SmartScreen says — is
+verified by hand on Windows.
+
+Eight more negative controls, all caught; one new spec (13 checks).
+
+---
+
 ## v0.60.1 — The documents catch up
 
 No code. The four documents a stranger actually reads had drifted, and one

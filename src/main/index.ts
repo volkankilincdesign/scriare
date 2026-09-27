@@ -3,6 +3,7 @@ import { join } from "path";
 import { is } from "@electron-toolkit/utils";
 import { registerProjectHandlers } from "./ipc/projectHandlers";
 import { registerExportHandlers } from "./ipc/exportHandlers";
+import { projectFileFromArgv } from "../shared/fileArgs";
 
 // Sprint 8C (v0.18.0): `package.json`'s "name" field ("scriare", all
 // lowercase — the npm-package-name convention) is what Electron otherwise
@@ -21,6 +22,72 @@ app.setName("Scriare");
 // below) — an unpackaged dev build still benefits from correct taskbar
 // grouping while testing.
 app.setAppUserModelId("com.volkan.scriare");
+
+/* ── opening a story from the desktop (v0.61.0) ──────────────────────── *
+ * Windows launches the app with the file's path on the command line, and
+ * if the app is already running it launches a SECOND copy with that path
+ * rather than telling the first. Both need answering, or the association
+ * the installer registers is a lie: the icon changes and double-clicking
+ * does nothing useful.
+ * -------------------------------------------------------------------- */
+
+/** The story to open once a window exists and its renderer has asked. */
+let pendingOpen: string | null = projectFileFromArgv(process.argv);
+
+/**
+ * The window this app owns, as opposed to whatever `getAllWindows()`
+ * happens to return first.
+ *
+ * The first version of the handler below took `BrowserWindow.getAllWindows()[0]`
+ * and the suite caught it: a spec that opens a second window to read an
+ * exported story made index 0 that window, and the double-click went to a
+ * page with no renderer to hear it. The same class of mistake as the
+ * v0.53.1 resize probe, which measured the wrong window and passed.
+ */
+let mainWindow: BrowserWindow | null = null;
+
+/**
+ * One copy of Scriare, however many times it is launched.
+ *
+ * Without the lock, double-clicking a second story opens a second window
+ * with its own autosave timer over the same recent-projects file — and, if
+ * the two ever hold the same project, two writers of one file, which is
+ * the exact situation save-safety spent v0.47.0 making impossible.
+ */
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", (_event, argv) => {
+    const file = projectFileFromArgv(argv);
+    const window = mainWindow;
+    if (!window || window.isDestroyed()) {
+      pendingOpen = file;
+      return;
+    }
+    // The window comes forward whether or not there is a file: the writer
+    // just double-clicked something expecting to see the app.
+    if (window.isMinimized()) window.restore();
+    window.focus();
+    if (file) window.webContents.send("project:open-from-disk", file);
+  });
+}
+
+/**
+ * The macOS route, which is an event rather than a command line — and it
+ * fires BEFORE `whenReady`, which is why this listener is registered out
+ * here rather than inside it. Scriare ships Windows builds today; this is
+ * four lines that mean a future macOS build is not silently deaf to a
+ * double-click.
+ */
+app.on("open-file", (event, filePath) => {
+  event.preventDefault();
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send("project:open-from-disk", filePath);
+  } else {
+    pendingOpen = filePath;
+  }
+});
 
 /**
  * Replaces Electron's own default application menu, which otherwise shows
@@ -65,7 +132,12 @@ function buildApplicationMenu(): Menu | null {
 }
 
 function createWindow(): void {
-  const mainWindow = new BrowserWindow({
+  // Kept in a local for the rest of this function — everything below was
+  // written against a const and TypeScript is right that a module-level
+  // `let` could be null by the time a callback runs. The module-level one
+  // is set from this same value, and is what the desktop-open handlers
+  // read (see the note beside its declaration).
+  const window = new BrowserWindow({
     width: 1280,
     height: 800,
     show: false,
@@ -90,8 +162,10 @@ function createWindow(): void {
     },
   });
 
-  mainWindow.on("ready-to-show", () => {
-    mainWindow.show();
+  mainWindow = window;
+
+  window.on("ready-to-show", () => {
+    window.show();
   });
 
   /**
@@ -129,11 +203,11 @@ function createWindow(): void {
    * engine outright.
    */
   let closing = false;
-  mainWindow.on("close", (event) => {
-    if (closing || mainWindow.webContents.isDestroyed()) return;
+  window.on("close", (event) => {
+    if (closing || window.webContents.isDestroyed()) return;
     event.preventDefault();
     closing = true;
-    mainWindow.webContents.send("app:before-close");
+    window.webContents.send("app:before-close");
 
     // Generous against a 1-second pulse: three missed beats, not one late
     // one, and nowhere near short enough to catch a slow disk.
@@ -143,7 +217,7 @@ function createWindow(): void {
       giveUp = setTimeout(() => {
         ipcMain.off("app:closing-heartbeat", onHeartbeat);
         ipcMain.off("app:ready-to-close", onReady);
-        if (!mainWindow.isDestroyed()) mainWindow.destroy();
+        if (!window.isDestroyed()) window.destroy();
       }, SILENCE_BEFORE_GIVING_UP);
     };
     const onHeartbeat = (): void => {
@@ -158,7 +232,7 @@ function createWindow(): void {
       ipcMain.off("app:closing-heartbeat", onHeartbeat);
       ipcMain.off("app:ready-to-close", onReady);
       if (proceed) {
-        if (!mainWindow.isDestroyed()) mainWindow.close();
+        if (!window.isDestroyed()) window.close();
       } else {
         // The writer said no. Put the window back to how it was, so the
         // next X press asks again rather than closing silently.
@@ -171,15 +245,15 @@ function createWindow(): void {
     armGiveUp();
   });
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
+  window.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url);
     return { action: "deny" };
   });
 
   if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
-    mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+    window.loadURL(process.env["ELECTRON_RENDERER_URL"]);
   } else {
-    mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+    window.loadFile(join(__dirname, "../renderer/index.html"));
   }
 }
 
@@ -200,6 +274,19 @@ app.whenReady().then(() => {
 
   registerProjectHandlers();
   registerExportHandlers();
+
+  /**
+   * PULLED BY THE RENDERER, not pushed at it. A push has to guess when the
+   * renderer is listening; this is asked for once, by the side that knows
+   * it is ready, and answered once — the path is cleared as it is handed
+   * over so a reload cannot reopen a file the writer has since closed.
+   */
+  ipcMain.handle("app:pendingOpen", () => {
+    const file = pendingOpen;
+    pendingOpen = null;
+    return file;
+  });
+
   createWindow();
 
   app.on("activate", function () {

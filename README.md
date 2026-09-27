@@ -134,11 +134,20 @@ lives in.
 
 ## Status
 
-**v0.60.0 — in active development, and usable.** The editor, graph,
+**v0.61.0 — in active development, and usable.** The editor, graph,
 runtime, entities, notes, variables, validation, search and **export** are
-all real. Not yet built: a packaged installer, so today you run it from
-source. See [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest
-list of what is still missing.
+all real, and the app now builds a Windows installer. See
+[CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest list of what
+is still missing.
+
+The installer is **unsigned**, so Windows SmartScreen will warn you the
+first time — "Windows protected your PC", with the real path being *More
+info → Run anyway*. Signing costs money a portfolio project does not have,
+and saying so is better than pretending the warning is a fault in your
+machine. It installs for the current user only, needs no administrator
+rights, and registers `.scriare` so double-clicking a story opens it. A
+**portable .exe** is built alongside for anyone who would rather not
+install anything at all.
 
 **626 automated tests** run against the real packaged application, and
 **131 negative controls**: each one breaks a specific line of the shipped
@@ -163,6 +172,7 @@ Other commands:
 | `npm run build` | Compiles a production build into `out/` |
 | `npm run preview` | Runs that production build |
 | `npm test` | Builds in test mode and runs the full suite |
+| `npm run dist` | Builds, then packages the Windows installer and the portable .exe into `release/` |
 | `npx tsc --noEmit -p tsconfig.web.json` | Type-check without writing files |
 
 To run a single spec file — which is what you want while negative-controlling

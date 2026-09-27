@@ -156,6 +156,10 @@ export interface ScriareAPI {
     onBeforeClose: (handler: () => void) => () => void;
     /** `false` keeps the window open — the writer said no. */
     readyToClose: (proceed: boolean) => void;
+    /** The story this launch was asked to open, or null (v0.61.0). */
+    pendingOpen: () => Promise<string | null>;
+    /** A story opened from the desktop while the app was already running. */
+    onOpenFromDisk: (handler: (filePath: string) => void) => () => void;
     /**
      * Sent repeatedly while the close is being handled, to say the renderer
      * is alive. The main process gives up only when these STOP — a window
