@@ -89,7 +89,9 @@ export default async function ({ api, check, seedProject }) {
       );
       return {
         rows: rows.map((el) => `${el.dataset.optionId}:${el.dataset.expanded}`),
-        // "Destination" only exists inside an expanded accordion.
+        // "The Line" only exists inside an expanded accordion — it was
+        // "Destination" until v0.65.0 renamed the field to "Goes to" and
+        // put it under that heading.
         // `.every()` on an empty list is TRUE, so the count is asserted
         // separately below — otherwise an Inspector that isn't on screen
         // at all satisfies this, which is how seven of these tests once
@@ -97,7 +99,7 @@ export default async function ({ api, check, seedProject }) {
         openRows: rows.filter((el) => el.dataset.expanded === "true").length,
         expandedHasControls: rows
           .filter((el) => el.dataset.expanded === "true")
-          .every((el) => el.innerText.toUpperCase().includes("DESTINATION")),
+          .every((el) => el.innerText.toUpperCase().includes("THE LINE")),
         stillAsking: document.body.innerText.includes("Select a Choice Block in the document"),
       };
     });

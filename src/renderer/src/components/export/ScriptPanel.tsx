@@ -124,7 +124,8 @@ export function ScriptPanel({ onClose }: { onClose: () => void }) {
     <>
       <p className="mb-4 text-sm leading-relaxed text-[var(--text-2)]">
         Your story on paper, in the order your Content panel holds it — chapters first, each
-        starting a fresh page. Scenes short enough to fit are never split across one.
+        starting a fresh page. Headings, speakers and choice blocks are never left hanging at a
+        page's end.
       </p>
 
       <Choice

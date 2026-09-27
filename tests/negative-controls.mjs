@@ -1468,6 +1468,63 @@ const CONTROLS = [
     spec: "script-export",
     expect: "worded the same way",
   },
+  // ── v0.65.0 — the choice editor, and the script's page density ───────
+  {
+    // The point of L3, and the thing that is easy to lose: an unset rule
+    // is a sentence, not a heading over an empty control.
+    name: "empty rules drawn as sections anyway",
+    file: src("components/layout/InspectorPanel.tsx"),
+    from: "          {option.conditions.length === 0 ? (",
+    to: "          {false ? (",
+    spec: "choice-editor",
+    expect: "says so instead of drawing empty sections",
+  },
+  {
+    name: "the agreed headings renamed back to field labels",
+    file: src("components/layout/InspectorPanel.tsx"),
+    from: '<h4 className="scriare-section-label text-[var(--text-3)]">Shown</h4>',
+    to: '<h4 className="scriare-section-label text-[var(--text-3)]">Conditions</h4>',
+    spec: "choice-editor",
+    expect: "the three headings are the agreed words",
+  },
+  {
+    // If the quiet line were only a label, it would be a dead end dressed
+    // as an answer.
+    name: "a quiet rule whose button is decoration",
+    file: src("components/layout/InspectorPanel.tsx"),
+    from: "              onAction={variables.length === 0 ? onOpenVariableManager : addCondition}",
+    to: "              onAction={() => undefined}",
+    spec: "choice-editor",
+    expect: "turns the line into the section",
+  },
+  {
+    name: "inline field labels dropped from the choice editor",
+    file: src("components/layout/InspectorPanel.tsx"),
+    from: '      <span className="pt-1.5 text-[11px] leading-none text-[var(--text-3)]">{label}</span>',
+    to: "      <span />",
+    spec: "choice-editor",
+    expect: "labelled beside their controls",
+  },
+  {
+    // The chips are the only way to read a block of six without opening
+    // six, and his call was to keep them.
+    name: "a closed choice that stops saying what it does",
+    file: src("components/layout/InspectorPanel.tsx"),
+    from: "      {!expanded && (",
+    to: "      {false && (",
+    spec: "choice-editor",
+    expect: "still says what it does",
+  },
+  {
+    // v0.64.0 shipped with this at 7, which kept almost every scene whole
+    // and turned 3,300 words into 29 half-empty pages.
+    name: "a script that starts a fresh page for almost every scene",
+    file: src("export/script/buildScript.ts"),
+    from: "const KEEP_WHOLE_BLOCKS = 3;",
+    to: "const KEEP_WHOLE_BLOCKS = 7;",
+    spec: "script-export",
+    expect: "pages carry more than one scene",
+  },
 ];
 
 

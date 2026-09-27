@@ -12,6 +12,67 @@ omitting them.
 
 ---
 
+## v0.65.0 — The choice editor says what a choice does
+
+I2, finally applied where it was always meant to go, plus the page-density
+fix v0.64.0 earned by being looked at.
+
+**What was there:** six labelled fields at one weight — Display Text, Who
+Says It, Appearance, Destination, Conditions, Actions — stacked in a 320px
+column, inside an accordion, inside a list of accordions. The scene panel
+got its headings in v0.59.0; this did not.
+
+**Three groupings were drawn first** (board L, at the panel's real width,
+with real choices out of The Blue Hour), and the one chosen is not the
+most explicit. **The grouping was never the problem.** The problem was
+that a choice with nothing set looked exactly as complicated as a choice
+with a locked condition and two effects — and most choices have nothing
+set. Four headings would have made that worse by adding a heading and a
+divider to sections that are empty.
+
+**So an unset rule is a sentence.** *Shown always.* *Changes nothing.*
+One grey line with the way to change it beside it, instead of a heading
+over an empty control. Those are facts about the choice, and they are
+exactly the two facts a writer would otherwise open two sections to
+confirm. It is the rule the status bar already follows when it counts
+notes only if there are notes.
+
+**Three headings, his words:** **The Line**, **Shown**, **Changes** — and
+a heading only appears once it has something under it. Inside The Line the
+labels moved beside their controls rather than above them: three stacked
+label-over-control pairs cost six rows of height to say three words, in a
+panel whose whole problem was height.
+
+**The closed row keeps its chips**, his call. They are the only way to
+read a block of six choices without opening six.
+
+**And the script stopped starting a new page for almost every scene.**
+v0.64.0 kept any scene of seven blocks or fewer whole, which in practice
+meant nearly all of them — so 3,300 words printed as 29 pages, most of
+them half empty. The threshold is three now: it catches only what it was
+for, a scene of two lines and a choice block that would look absurd split.
+The same story is 22 pages, and **13 of them carry two scenes or more**,
+which is the assertion that replaced counting pages — a page count is
+brittle, and "do scenes share a page" is the thing that actually changed.
+
+The finer rules do the work his request was about and are untouched: a
+heading is never last on a page, a cue is never parted from its line, a
+choice block is never split.
+
+**Two things the tests found about themselves.** The spec first built its
+choice block straight into the store — but the Inspector patches a choice
+through the mounted editor, so every read passed and every write silently
+did nothing. And `[data-option-id]` matches the option's node view in the
+editor as well as its row in the Inspector, so the unscoped selector
+handed back the editor's copy, whose first button is the one that DELETES
+the option: the spec removed the choice it was about to read. Both now
+state themselves — the spec checks the editor is holding the block before
+it asserts anything, and every query is scoped to the panel.
+
+Six negative controls, all caught; one new spec (17 checks). 704 tests.
+
+---
+
 ## v0.64.0 — The story, on paper
 
 A script is linear. A branching story is not. This is the first of the two

@@ -162,6 +162,20 @@ export default async function run({ page, api, check, seedProject, app }) {
     `${pages.length} pages of it`,
   );
 
+  // Density, which is the v0.65.0 change. Keeping every scene whole meant
+  // almost every scene that did not fit started a fresh page: 3,300 words
+  // came out as 29 mostly-empty pages. Counting pages would be brittle;
+  // counting how many pages carry MORE THAN ONE scene says the thing that
+  // actually changed — scenes share a page again.
+  const shared = pages.filter(
+    (p) => (p.match(/^\s*\d+\.\s+[A-ZÇĞİÖŞÜ][A-ZÇĞİÖŞÜ' ,]+$/gm) ?? []).length >= 2,
+  ).length;
+  check(
+    "pages carry more than one scene, instead of one scene each",
+    shared >= 7,
+    `${shared} of ${pages.length} pages hold two or more scenes`,
+  );
+
   check(
     "the cast list names the inner voices as speakers",
     ["ARITHMETIC", "THE HANDS", "APPETITE", "Nesrin Aydın"].every((n) => pdfText.includes(n)),

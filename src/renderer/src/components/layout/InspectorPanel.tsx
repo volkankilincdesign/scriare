@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { PointerEvent as ReactPointerEvent } from "react";
+import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useProjectStore } from "../../state/projectStore";
 import { useInspectorStore } from "../../state/inspectorStore";
 import type { InspectorTarget } from "../../state/inspectorStore";
@@ -1379,9 +1379,6 @@ function ChoiceSpeaker({
   const entities = useProjectStore((s) => s.project?.entities ?? EMPTY_ENTITIES);
   return (
     <div>
-      <label className="scriare-section-label mb-1 block text-[var(--text-3)]">
-        Who Says It
-      </label>
       <select
         data-choice-speaker
         value={option.speaker ?? ""}
@@ -1435,9 +1432,6 @@ function ChoiceAppearance({
 
   return (
     <div data-appearance-for={option.id}>
-      <label className="scriare-section-label mb-1 block text-[var(--text-3)]">
-        Appearance
-      </label>
       <div className="flex items-center gap-1.5">
         <select
           value={styleId}
@@ -1499,6 +1493,63 @@ function ChoiceAppearance({
  * and Actions — everything Choice Block Integration (Sprint 9A) already
  * had, just relocated here instead of living in the editor.
  */
+/**
+ * A field and the word for it, side by side (v0.65.0).
+ *
+ * The Inspector is 320px wide with 16px of padding either side, so a
+ * label ABOVE its control costs a whole row of height to say one word.
+ * Three of those — speaker, style, destination — were three rows of
+ * height spent on labels in a panel whose problem was height.
+ *
+ * The label column is fixed rather than auto so the three controls line
+ * up with each other; a ragged left edge on three stacked selects reads
+ * as three unrelated things.
+ */
+function FieldRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="grid grid-cols-[52px_minmax(0,1fr)] items-start gap-2">
+      <span className="pt-1.5 text-[11px] leading-none text-[var(--text-3)]">{label}</span>
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * A rule that is not set, stated rather than drawn (v0.65.0).
+ *
+ * "Shown always" and "Changes nothing" are facts about the choice, and
+ * they are exactly the two facts a writer would otherwise open two
+ * sections to confirm. Saying them costs one line; drawing the empty
+ * sections cost a heading, a control and the gaps around both — on every
+ * choice, and most choices have neither a condition nor an action.
+ */
+function QuietRule({
+  says,
+  action,
+  onAction,
+  ...rest
+}: {
+  says: string;
+  action: string;
+  onAction: () => void;
+} & Record<`data-${string}`, string>) {
+  return (
+    <div
+      {...rest}
+      className="flex items-center justify-between gap-2 border-t border-[var(--border-soft)] pt-2.5 text-xs text-[var(--text-3)]"
+    >
+      <span className="text-[var(--text-2)]">{says}</span>
+      <button
+        type="button"
+        onClick={onAction}
+        className="shrink-0 whitespace-nowrap rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+      >
+        {action}
+      </button>
+    </div>
+  );
+}
+
 function ChoiceAccordion({
   option,
   expanded,
@@ -1612,15 +1663,32 @@ function ChoiceAccordion({
 
       {expanded && (
         <div className="space-y-3 border-t border-[var(--border-soft)] px-2 py-2.5">
-          {/* The label used to be edited here, as a plain string. As of
-              v0.32.0 it's real text in the document — type it in the scene,
-              and the toolbar styles it like any other sentence. Showing it
-              here read-only keeps the accordion legible without pretending
-              there are two places to write it. */}
-          <div>
-            <label className="scriare-section-label mb-1 block text-[var(--text-3)]">
-              Display Text
-            </label>
+          {/*
+            I2, applied to the choice editor (v0.65.0).
+
+            What was here was six labelled fields at one weight — Display
+            Text, Who Says It, Appearance, Destination, Conditions,
+            Actions — stacked in a 320px column, inside an accordion,
+            inside a list of accordions. The scene panel got headings in
+            v0.59.0; this did not.
+
+            THE GROUPING IS NOT THE POINT. The panel's real problem is
+            that a choice with nothing set looked exactly as complicated
+            as a choice with a locked condition and two effects, and most
+            choices have nothing set. So an empty rule is not a heading
+            over an empty control: it is one grey line that says what is
+            true — "Shown always", "Changes nothing" — with the way to
+            change it beside it. Same rule the status bar already follows
+            when it counts notes only if there are notes.
+          */}
+          <div className="space-y-2">
+            <h4 className="scriare-section-label text-[var(--text-3)]">The Line</h4>
+
+            {/* The label used to be edited here, as a plain string. As of
+                v0.32.0 it's real text in the document — type it in the
+                scene, and the toolbar styles it like any other sentence.
+                Read-only here rather than pretending there are two places
+                to write it. */}
             <div className="rounded border border-dashed border-[var(--border-soft)] px-2 py-1.5 text-xs">
               <span className={option.text ? "text-[var(--text-2)]" : "italic text-[var(--text-3)]"}>
                 {option.text || "Untitled choice"}
@@ -1629,136 +1697,124 @@ function ChoiceAccordion({
                 Edited in the scene — select it there to restyle it.
               </span>
             </div>
+
+            {/* Inline labels, not labels above. Three stacked
+                label-over-control pairs cost six rows of height in a
+                column this narrow; three rows say the same thing. */}
+            <FieldRow label="Speaker">
+              <ChoiceSpeaker option={option} onPatch={onPatch} />
+            </FieldRow>
+
+            <FieldRow label="Style">
+              <ChoiceAppearance option={option} onPatch={onPatch} />
+            </FieldRow>
+
+            <FieldRow label="Goes to">
+              <select
+                value={option.targetSceneId ?? ""}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === CREATE_SCENE_VALUE) {
+                    // Sprint 9C — create a Scene inline without leaving the
+                    // Inspector or navigating the editor away from the scene
+                    // the writer is currently in (see createUnlinkedScene's
+                    // doc comment in projectStore.ts). The new scene is
+                    // auto-selected as this choice's destination immediately.
+                    const newSceneId = useProjectStore.getState().createUnlinkedScene();
+                    if (newSceneId) onPatch({ targetSceneId: newSceneId });
+                    return;
+                  }
+                  onPatch({ targetSceneId: value || null });
+                }}
+                className="w-full rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+              >
+                <option value="">— Not linked —</option>
+                {otherScenes.map((sc) => (
+                  <option key={sc.id} value={sc.id}>
+                    → {sc.title || "Untitled scene"}
+                  </option>
+                ))}
+                <option value={CREATE_SCENE_VALUE}>+ Create New Scene</option>
+              </select>
+            </FieldRow>
           </div>
 
-          <ChoiceSpeaker option={option} onPatch={onPatch} />
-
-          <ChoiceAppearance option={option} onPatch={onPatch} />
-
-          <div>
-            <label className="scriare-section-label mb-1 block text-[var(--text-3)]">
-              Destination
-            </label>
-            <select
-              value={option.targetSceneId ?? ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value === CREATE_SCENE_VALUE) {
-                  // Sprint 9C — create a Scene inline without leaving the
-                  // Inspector or navigating the editor away from the scene
-                  // the writer is currently in (see createUnlinkedScene's
-                  // doc comment in projectStore.ts). The new scene is
-                  // auto-selected as this choice's destination immediately.
-                  const newSceneId = useProjectStore.getState().createUnlinkedScene();
-                  if (newSceneId) onPatch({ targetSceneId: newSceneId });
-                  return;
-                }
-                onPatch({ targetSceneId: value || null });
-              }}
-              className="w-full rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
-            >
-              <option value="">— Not linked —</option>
-              {otherScenes.map((sc) => (
-                <option key={sc.id} value={sc.id}>
-                  → {sc.title || "Untitled scene"}
-                </option>
+          {/* ── Shown ─────────────────────────────────────────────── */}
+          {option.conditions.length === 0 ? (
+            <QuietRule
+              data-rule="shown"
+              says="Shown always"
+              action={variables.length === 0 ? "Add a variable first" : "+ Condition"}
+              onAction={variables.length === 0 ? onOpenVariableManager : addCondition}
+            />
+          ) : (
+            <div className="space-y-2 border-t border-[var(--border-soft)] pt-2.5" data-rule="shown">
+              <h4 className="scriare-section-label text-[var(--text-3)]">Shown</h4>
+              {option.conditions.map((condition) => (
+                <ConditionRow
+                  key={condition.id}
+                  condition={condition}
+                  variables={variables}
+                  onChange={(next) => updateCondition(condition.id, next)}
+                  onRemove={() => removeCondition(condition.id)}
+                />
               ))}
-              <option value={CREATE_SCENE_VALUE}>+ Create New Scene</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="scriare-section-label mb-1 block text-[var(--text-3)]">
-              Conditions
-            </label>
-
-            {variables.length === 0 ? (
-              <div className="space-y-2 rounded-md border border-dashed border-[var(--border-soft)] px-2 py-2 text-xs text-[var(--text-3)]">
-                <p>Create a project Variable first to give this choice something to test.</p>
-                <button
-                  type="button"
-                  onClick={onOpenVariableManager}
-                  className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+              {/* Only meaningful once there's something to fail. On an
+                  unconditional choice it would be asking about a state
+                  that can never happen — which is why it lives in here
+                  and not in the quiet line above. */}
+              <div className="flex items-center gap-1.5 pt-0.5">
+                <span className="shrink-0 text-xs text-[var(--text-3)]">If not met:</span>
+                <select
+                  value={option.whenUnmet}
+                  onChange={(e) => onPatch({ whenUnmet: e.target.value as "hide" | "lock" })}
+                  className="min-w-0 flex-1 rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
                 >
-                  Open Variable Manager
-                </button>
+                  <option value="hide">Hide the choice</option>
+                  <option value="lock">Show it locked</option>
+                </select>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {option.conditions.map((condition) => (
-                  <ConditionRow
-                    key={condition.id}
-                    condition={condition}
-                    variables={variables}
-                    onChange={(next) => updateCondition(condition.id, next)}
-                    onRemove={() => removeCondition(condition.id)}
-                  />
-                ))}
-                <button
-                  type="button"
-                  onClick={addCondition}
-                  className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
-                >
-                  + Add Condition
-                </button>
+              <button
+                type="button"
+                onClick={addCondition}
+                disabled={variables.length === 0}
+                className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)] disabled:opacity-50"
+              >
+                + Add Condition
+              </button>
+            </div>
+          )}
 
-                {/* Only meaningful once there's something to fail. Showing
-                    it on an unconditional choice would be asking about a
-                    state that can never happen. */}
-                {option.conditions.length > 0 && (
-                  <div className="flex items-center gap-1.5 pt-0.5">
-                    <span className="shrink-0 text-xs text-[var(--text-3)]">If not met:</span>
-                    <select
-                      value={option.whenUnmet}
-                      onChange={(e) => onPatch({ whenUnmet: e.target.value as "hide" | "lock" })}
-                      className="min-w-0 flex-1 rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
-                    >
-                      <option value="hide">Hide the choice</option>
-                      <option value="lock">Show it locked</option>
-                    </select>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label className="scriare-section-label mb-1 block text-[var(--text-3)]">
-              Actions
-            </label>
-
-            {variables.length === 0 ? (
-              <div className="space-y-2 rounded-md border border-dashed border-[var(--border-soft)] px-2 py-2 text-xs text-[var(--text-3)]">
-                <p>Create a project Variable first to give this choice something to act on.</p>
-                <button
-                  type="button"
-                  onClick={onOpenVariableManager}
-                  className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
-                >
-                  Open Variable Manager
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {option.actions.map((action) => (
-                  <ActionRow
-                    key={action.id}
-                    action={action}
-                    variables={variables}
-                    onChange={(next) => updateAction(action.id, next)}
-                    onRemove={() => removeAction(action.id)}
-                  />
-                ))}
-                <button
-                  type="button"
-                  onClick={addAction}
-                  className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
-                >
-                  + Add Action
-                </button>
-              </div>
-            )}
-          </div>
+          {/* ── Changes ───────────────────────────────────────────── */}
+          {option.actions.length === 0 ? (
+            <QuietRule
+              data-rule="changes"
+              says="Changes nothing"
+              action={variables.length === 0 ? "Add a variable first" : "+ Action"}
+              onAction={variables.length === 0 ? onOpenVariableManager : addAction}
+            />
+          ) : (
+            <div className="space-y-2 border-t border-[var(--border-soft)] pt-2.5" data-rule="changes">
+              <h4 className="scriare-section-label text-[var(--text-3)]">Changes</h4>
+              {option.actions.map((action) => (
+                <ActionRow
+                  key={action.id}
+                  action={action}
+                  variables={variables}
+                  onChange={(next) => updateAction(action.id, next)}
+                  onRemove={() => removeAction(action.id)}
+                />
+              ))}
+              <button
+                type="button"
+                onClick={addAction}
+                disabled={variables.length === 0}
+                className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)] disabled:opacity-50"
+              >
+                + Add Action
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

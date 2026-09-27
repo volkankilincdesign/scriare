@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.64.0.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.65.0.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -291,7 +291,25 @@ than gaps.
   export for localisation and VO, which is a different feature with a
   different file type.
 
-686 tests, 154 negative controls, all caught.
+- **v0.65.0 The choice editor says what a choice does** — I2 applied to
+  the choice editor, chosen from three groupings drawn at the panel's real
+  320px width (board L). The chosen one is not the most explicit: the
+  panel's problem was never that fields were unlabelled, it was that a
+  choice with nothing set looked as complicated as one with a locked
+  condition and two effects. So an unset rule is one line — *Shown
+  always*, *Changes nothing* — with the way to change it beside it.
+  Headings are **The Line / Shown / Changes**, his words, and each appears
+  only once it has something under it; the closed row keeps its chips, his
+  call. Also: the script's keep-whole threshold dropped from 7 to 3, so
+  scenes share pages again — 29 pages became 22, with 13 of them carrying
+  two scenes or more.
+
+**Next, agreed 27 Sep:** the Dialogue, with **stable line IDs** stamped
+into the document while that schema change is open — prose paragraphs
+carry no id today, which is why the spreadsheet export is queued behind
+it rather than in front of it.
+
+704 tests, 160 negative controls, all caught.
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and

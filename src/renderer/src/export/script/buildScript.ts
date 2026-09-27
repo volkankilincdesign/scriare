@@ -43,11 +43,21 @@ function flatten(node: JSONContent, resolve: (id: string | null, stored: string)
 }
 
 /**
- * How long a scene has to be before it is allowed to break across a page.
- * Under this it is kept whole, which is the difference between a script
- * that reads as typeset and one that reads as printed by accident.
+ * How short a scene has to be before it refuses to break across a page.
+ *
+ * LOWERED FROM 7 IN v0.65.0, after looking at the output. Seven kept
+ * almost every scene in The Blue Hour whole, which meant almost every
+ * scene that did not fit in the remaining space started a fresh page —
+ * 3,300 words came out as 29 pages, most of them half empty. That reads
+ * as tidy for about four pages and as padding after that.
+ *
+ * Three is the number at which the rule only catches what it was for: a
+ * scene of two lines and a choice block, which would look absurd split
+ * in half. Everything longer flows, and the finer rules — a heading
+ * never last on a page, a cue never parted from its line, a choice block
+ * never split — go on doing the work his request was actually about.
  */
-const KEEP_WHOLE_BLOCKS = 7;
+const KEEP_WHOLE_BLOCKS = 3;
 
 export function buildScript(
   project: Project,
