@@ -78,9 +78,14 @@ export default async function ({ api, check, seedProject }) {
     r.legacyAttrGone && JSON.stringify(r.childTypes) === '["choiceOption","choiceOption"]' &&
       r.labelIsTextNode,
     `attrs.options gone: ${r.legacyAttrGone}, children: ${JSON.stringify(r.childTypes)}, label is text: ${r.labelIsTextNode}`);
+  // The id is NOT asserted to survive. v0.70.1 reshapes an old-format id
+  // on open — a legacy `o1`, like a twenty-one-character nanoid, becomes
+  // `c_xxxxxxxx` — because the id is what the spreadsheet export prints in
+  // column A and a person has to be able to read it. Everything the writer
+  // typed still survives, which is what this check is actually about.
   check("migration keeps every option's label, destination, conditions and actions",
     r.options.length === 2 &&
-      r.options[0].id === "o1" &&
+      /^c_[23456789abcdefghjkmnpqrstvwxyz]{8}$/.test(r.options[0].id) &&
       r.options[0].text === "Unlock the door" &&
       r.options[0].targetSceneId === "s2" &&
       r.options[0].conditions.length === 1 &&
@@ -143,9 +148,14 @@ export default async function ({ api, check, seedProject }) {
       stillOneBlock: twice.content.filter((n) => n.type === "choiceBlock").length,
     };
   });
+  // Idempotency, and it is a stronger claim since v0.70.1 than it was
+  // before: the FIRST load reshapes the id, so the second load proves the
+  // reshaping settles rather than rolling round again on every open. An id
+  // that changed on every open would be a story whose translation memory
+  // never matched anything twice.
   check("loading an already-current document changes nothing",
     r.stillOneBlock === 1 && r.first.length === 1 && r.second.length === 1 &&
-      r.second[0].id === "keep" && r.second[0].text === "Already current" &&
+      r.second[0].id === r.first[0].id && r.second[0].text === "Already current" &&
       r.second[0].targetSceneId === "s2",
     JSON.stringify(r.second));
 

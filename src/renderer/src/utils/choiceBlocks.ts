@@ -1,4 +1,4 @@
-import { nanoid } from "nanoid";
+import { freshContentId } from "./contentIds";
 import type { JSONContent } from "@tiptap/react";
 import type { Choice } from "../types/project";
 import type { VariableAction, VariableCondition } from "../types/variables";
@@ -138,7 +138,7 @@ function readOptions(node: JSONContent | undefined, resolve?: MentionLabelResolv
   return children
     .filter((child) => child.type === CHOICE_OPTION_TYPE)
     .map((child) => ({
-      id: (child.attrs?.optionId as string) ?? nanoid(),
+      id: (child.attrs?.optionId as string) ?? freshContentId(CHOICE_OPTION_TYPE),
       text: optionPlainText(child, resolve),
       targetSceneId: (child.attrs?.targetSceneId as string | null) || null,
       actions: Array.isArray(child.attrs?.actions) ? (child.attrs.actions as VariableAction[]) : [],
@@ -241,7 +241,7 @@ export function buildChoiceOptionNode(seed: ChoiceOptionSeed = {}): JSONContent 
   return {
     type: CHOICE_OPTION_TYPE,
     attrs: {
-      optionId: seed.id ?? nanoid(),
+      optionId: seed.id ?? freshContentId(CHOICE_OPTION_TYPE),
       targetSceneId: seed.targetSceneId ?? null,
       actions: seed.actions ?? [],
       conditions: seed.conditions ?? [],
@@ -264,7 +264,7 @@ export function buildChoiceOptionNode(seed: ChoiceOptionSeed = {}): JSONContent 
  */
 export function buildChoiceBlockNode(
   options: ChoiceOptionSeed[] = [{}, {}],
-  blockId = nanoid(),
+  blockId = freshContentId(CHOICE_BLOCK_TYPE),
 ): JSONContent {
   return {
     type: CHOICE_BLOCK_TYPE,
@@ -313,7 +313,7 @@ export function migrateLegacyChoiceBlocks(content: JSONContent | undefined | nul
 
       return {
         type: CHOICE_BLOCK_TYPE,
-        attrs: { blockId: (attrs.blockId as string) ?? nanoid() },
+        attrs: { blockId: (attrs.blockId as string) ?? freshContentId(CHOICE_BLOCK_TYPE) },
         content: legacyList.map(buildChoiceOptionNode),
       };
     }

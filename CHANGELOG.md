@@ -12,6 +12,66 @@ omitting them.
 
 ---
 
+## v0.70.1 — Two things he saw the moment he opened the file
+
+**The Keys looked like ciphertext.** `xU40lTnJ8JVN16hgSPB2I`, down the
+whole of column A. That was `nanoid()` — twenty-one characters of mixed
+case with dashes and underscores — and it had never been a decision. It was
+the library's default, taken in the first hour of the project and never
+revisited, because for sixty-nine versions nothing outside the app ever
+read an id. The design document had been writing the Key as `ln-1q` the
+whole time, which is what somebody imagines an id looks like when they have
+not looked at one.
+
+A content id is now `t_g99y4z6p` — a letter for its kind, then eight
+characters from an alphabet with no `0`/`o` and no `1`/`l`/`i`, because a
+key gets retyped and every removed character is a class of mistake that can
+no longer be made. `t_` a paragraph, `d_` a spoken line, `c_` a choice,
+`b_` a block, so column A says what the row is before the Type column
+repeats it. Twelve characters at the longest, against twenty-one.
+
+**Opening a project rewrites the ids it is carrying**, once, in the same
+pass that already repairs a missing or repeated one. That breaks the
+attachment between any sheet already exported and the story it came from —
+which is free exactly now, and never again.
+
+**Scene ids, entity ids and variable ids are deliberately untouched.** His
+call and the right one: they are pointed at by choices, by every mention,
+by every condition and by the content tree, so reshaping them is a
+project-wide remap for a column nobody objected to. A scene title's Key is
+still its scene's own id, so in a story whose scenes are `s01` it reads
+`s01:title` and in one whose scenes came from the app it will still be
+long. That is a separate decision, not an oversight.
+
+**The headings could not be read.** Bold on a near-black fill, with no font
+colour, so they inherited black and the header band was black on black. The
+spec asserted the band existed and that it was frozen. It never asserted
+that anybody could read it — which is the only thing the band is for, and
+is now measured as a contrast ratio between the ink and the ground rather
+than as the presence of a fill.
+
+**And the rest of the formatting, while the file was open.** Rows are
+banded, because seventeen columns is wider than a screen and following one
+row past the edge of the window and back is what stripes have always been
+for. The two columns a translator types into keep one constant colour
+through that banding, which is what makes them read as a block rather than
+as two more stripes. The freeze is on both axes now — the columns needed in
+view while typing into Translation are Key and Ref, and they are the two
+furthest from it. Chars is centred, the Read me has real headings, and the
+column widths follow the shorter keys.
+
+**Verified by opening the file rather than by reading the XML.** The
+workbook was converted with LibreOffice and photographed: it opens with no
+repair prompt, the header is white on slate at 14.8:1, and the Translation
+column is the one warm stripe down the page.
+
+Four tests had to change, and all four were encoding the old behaviour: two
+in the choice schema that asserted a legacy id survived a migration, and
+two in the id spec whose fixtures used ids no real project would now hold.
+One of them came back stronger — "loading an already-current document
+changes nothing" now proves the reshaping SETTLES, rather than rolling
+round again on every open.
+
 ## v0.70.0 — The third door: every string a reader sees
 
 Export has a third tab. A page to play, a script to read, and now a

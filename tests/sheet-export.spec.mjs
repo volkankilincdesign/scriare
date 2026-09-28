@@ -50,8 +50,13 @@ export default async function run({ page, api, check, seedProject, app }) {
       order: 0,
     });
 
+    // THROUGH normalizeProject, the way an opened file is. Seeding the
+    // store raw skips every migration, which made the first version of
+    // this fixture keep its hand-typed ids and the key-shape assertion
+    // fail against ids no real project would ever hold.
+    const { normalizeProject } = window.__scriareProjectTypes;
     store.setState({
-      project: {
+      project: normalizeProject({
         name: "Sheet Fixture",
         createdAt: now,
         updatedAt: now,
@@ -156,7 +161,7 @@ export default async function run({ page, api, check, seedProject, app }) {
           ]),
         ],
         content: [leaf("sa", 0), leaf("sb", 1), leaf("sz", 2)],
-      },
+      }),
       filePath: null,
       selectedSceneId: "sa",
       selectedEntityId: null,
@@ -249,6 +254,10 @@ export default async function run({ page, api, check, seedProject, app }) {
 
   // ── the rows ─────────────────────────────────────────────────────────
   /** Every cell of the Lines sheet, as {A1: "text"}. */
+  const styles = await part("xl/styles.xml");
+  // ONLY the cellXfs block — see the note at the protection check below.
+  const cellXfs = /<cellXfs[^>]*>([\s\S]*?)<\/cellXfs>/.exec(styles)?.[1] ?? "";
+
   const cells = {};
   for (const match of lines.matchAll(
     /<c r="([A-Z]+\d+)"[^>]*t="inlineStr"><is><t(?: xml:space="preserve")?\/?>?([\s\S]*?)(?:<\/t><\/is>|<\/is>)<\/c>/g,
@@ -276,6 +285,41 @@ export default async function run({ page, api, check, seedProject, app }) {
     column("A")[0] === "Key" && column("B")[0] === "Ref" && column("H")[0] === "Text" &&
       column("I")[0] === "Translation" && column("Q")[0] === "Source hash",
     [column("A")[0], column("B")[0], column("H")[0], column("I")[0], column("Q")[0]].join(" · "),
+  );
+
+  // A KEY IS READ BY A PERSON. It was `xU40lTnJ8JVN16hgSPB2I` in v0.70.0 —
+  // nanoid's default, never a decision — and the first thing a translator
+  // saw in the file looked like ciphertext.
+  const calm = /^[a-z]{1,2}_[23456789abcdefghjkmnpqrstvwxyz]{8}$/;
+  // A scene title's key is its SCENE's id, and scene ids are deliberately
+  // not touched by this version — they are pointed at by choices, by the
+  // content tree and by the start scene, and rewriting them is a
+  // project-wide remap nobody asked for. So those rows are checked for
+  // what they are rather than for the shape the others take.
+  const contentKeys = keys.filter((k) => !k.endsWith(":title"));
+  const titleKeys = keys.filter((k) => k.endsWith(":title"));
+  const noisy = contentKeys.filter((k) => !calm.test(k.replace(/:r$/, "")));
+  check(
+    "A KEY LOOKS LIKE A NAME, NOT A HASH — prefixed by kind, eight calm characters",
+    noisy.length === 0 && contentKeys.length > 0,
+    noisy.length ? `${noisy.length} still noisy, e.g. ${noisy.slice(0, 2).join(", ")}` : contentKeys.slice(0, 3).join(", "),
+  );
+  check(
+    "...and a scene title's key is plainly its scene's own id",
+    titleKeys.length > 0 && titleKeys.every((k) => k === `${cells[`E${keys.indexOf(k) + 2}`]}:title`),
+    titleKeys.slice(0, 2).join(", "),
+  );
+  check(
+    "...and its prefix says what the row is before the Type column repeats it",
+    contentKeys.some((k) => k.startsWith("t_")) &&
+      contentKeys.some((k) => k.startsWith("d_")) &&
+      contentKeys.some((k) => k.startsWith("c_")),
+    [...new Set(contentKeys.map((k) => k.slice(0, 2)))].join(" "),
+  );
+  check(
+    "...with nothing a person can mistype into another key — no 0/O, no 1/l/I",
+    !contentKeys.some((k) => /[01OolI]/.test(k.replace(/:r$/, ""))),
+    `${contentKeys.length} keys checked`,
   );
 
   check(
@@ -366,8 +410,8 @@ export default async function run({ page, api, check, seedProject, app }) {
 
   // ── what makes it usable rather than merely correct ──────────────────
   check(
-    "THE HEADER IS FROZEN — row 400 of a flat sheet is unreadable without it",
-    /<pane ySplit="1"[^>]*state="frozen"/.test(lines),
+    "THE HEADER AND THE KEY COLUMNS ARE FROZEN — both axes, not just the top",
+    /<pane xSplit="2" ySplit="1"[^>]*state="frozen"/.test(lines),
     /<pane[^>]*>/.exec(lines)?.[0] ?? "no pane",
   );
   check(
@@ -383,12 +427,10 @@ export default async function run({ page, api, check, seedProject, app }) {
 
   // Locking is the guard rail against the one accident that silently
   // ruins a whole file: a sort that moves one column and not the rest.
-  const styles = await part("xl/styles.xml");
-  // ONLY the cellXfs block. A first attempt matched every <xf> in the
+  // The cellXfs block only. A first attempt matched every <xf> in the
   // file, which swept up the one cellStyleXfs entry as well and shifted
   // every index by one — so the assertion was reading a different style
   // from the one the cells actually point at, and said so.
-  const cellXfs = /<cellXfs[^>]*>([\s\S]*?)<\/cellXfs>/.exec(styles)?.[1] ?? "";
   const unlocked = cellXfs
     .split(/(?=<xf[\s>])/)
     .filter((chunk) => chunk.trim().startsWith("<xf"))
@@ -407,6 +449,51 @@ export default async function run({ page, api, check, seedProject, app }) {
       !unlocked.includes(styleOf("H")) &&
       !unlocked.includes(styleOf("A")),
     `I→${styleOf("I")} J→${styleOf("J")} unlocked=${JSON.stringify(unlocked)}, H→${styleOf("H")} A→${styleOf("A")}`,
+  );
+
+  // THE HEADER CAN BE READ. v0.70.0 declared it bold on a near-black fill
+  // and gave it no font COLOUR, so it inherited black and every heading
+  // was black on black. The spec asserted the band existed and that it was
+  // frozen — never that anybody could read it, which is the only thing the
+  // band is for.
+  // ARGB: "FF1F2933" is alpha-first, so the colour starts at index 2.
+  const hex = (argb) => [2, 4, 6].map((i) => parseInt(argb.slice(i, i + 2), 16));
+  const luminance = (rgb) => {
+    const [r, g, b] = hex(rgb).map((v) => {
+      const c = v / 255;
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const headerStyle = Number(/<c r="A1" s="(\d+)"/.exec(lines)?.[1] ?? -1);
+  const xfs = cellXfs.split(/(?=<xf[\s>])/).filter((c) => c.trim().startsWith("<xf"));
+  const headerXf = xfs[headerStyle] ?? "";
+  const fontId = Number(/fontId="(\d+)"/.exec(headerXf)?.[1] ?? -1);
+  const fillId = Number(/fillId="(\d+)"/.exec(headerXf)?.[1] ?? -1);
+  const fonts = [...(/<fonts[^>]*>([\s\S]*?)<\/fonts>/.exec(styles)?.[1] ?? "").matchAll(/<font>[\s\S]*?<\/font>/g)].map((m) => m[0]);
+  const fills = [...(/<fills[^>]*>([\s\S]*?)<\/fills>/.exec(styles)?.[1] ?? "").matchAll(/<fill>[\s\S]*?<\/fill>/g)].map((m) => m[0]);
+  const ink = /<color rgb="(FF[0-9A-F]{6})"/.exec(fonts[fontId] ?? "")?.[1] ?? null;
+  const ground = /<fgColor rgb="(FF[0-9A-F]{6})"/.exec(fills[fillId] ?? "")?.[1] ?? null;
+  const ratio =
+    ink && ground
+      ? (Math.max(luminance(ink), luminance(ground)) + 0.05) /
+        (Math.min(luminance(ink), luminance(ground)) + 0.05)
+      : 0;
+  check(
+    "THE HEADER CAN BE READ — its ink and its ground are not the same colour",
+    ink !== null && ground !== null && ratio >= 4.5,
+    `${ink} on ${ground} — ${ratio.toFixed(1)}:1`,
+  );
+
+  check(
+    "the rows are banded, so one row can be followed across seventeen columns",
+    /<c r="C2" s="(\d+)"/.exec(lines)?.[1] !== /<c r="C3" s="(\d+)"/.exec(lines)?.[1],
+    `row 2 → ${/<c r="C2" s="(\d+)"/.exec(lines)?.[1]}, row 3 → ${/<c r="C3" s="(\d+)"/.exec(lines)?.[1]}`,
+  );
+  check(
+    "...and the column being typed into keeps ONE colour through the banding",
+    /<c r="I2" s="(\d+)"/.exec(lines)?.[1] === /<c r="I3" s="(\d+)"/.exec(lines)?.[1],
+    `I2 → ${/<c r="I2" s="(\d+)"/.exec(lines)?.[1]}, I3 → ${/<c r="I3" s="(\d+)"/.exec(lines)?.[1]}`,
   );
 
   check(

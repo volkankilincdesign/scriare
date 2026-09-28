@@ -104,13 +104,13 @@ export interface SheetDocument {
 
 /** The seventeen columns, in order, with the headers the sheet prints. */
 export const SHEET_COLUMNS: { header: string; width: number }[] = [
-  { header: "Key", width: 16 },
-  { header: "Ref", width: 9 },
+  { header: "Key", width: 13 },
+  { header: "Ref", width: 10 },
   { header: "Where", width: 34 },
   { header: "Scene", width: 22 },
-  { header: "Scene ID", width: 14 },
-  { header: "Type", width: 10 },
-  { header: "Speaker", width: 18 },
+  { header: "Scene ID", width: 15 },
+  { header: "Type", width: 11 },
+  { header: "Speaker", width: 19 },
   { header: "Text", width: 62 },
   { header: "Translation", width: 62 },
   { header: "Notes", width: 26 },
@@ -119,8 +119,8 @@ export const SHEET_COLUMNS: { header: string; width: number }[] = [
   { header: "Changes", width: 22 },
   { header: "After", width: 18 },
   { header: "VO file", width: 24 },
-  { header: "Chars", width: 7 },
-  { header: "Source hash", width: 12 },
+  { header: "Chars", width: 8 },
+  { header: "Source hash", width: 13 },
 ];
 
 /** Zero-based indices of the two columns a translator may edit. */

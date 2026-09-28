@@ -1,4 +1,4 @@
-import { nanoid } from "nanoid";
+import { freshContentId } from "./contentIds";
 import type { JSONContent } from "@tiptap/react";
 import type { Editor } from "@tiptap/react";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
@@ -70,7 +70,7 @@ export function buildDialogueLineNode(seed: DialogueLineSeed = {}): JSONContent 
   return {
     type: DIALOGUE_LINE_TYPE,
     attrs: {
-      lineId: seed.id ?? nanoid(),
+      lineId: seed.id ?? freshContentId(DIALOGUE_LINE_TYPE),
       speaker: seed.speaker ?? "@player",
       reply: seed.reply ?? "",
       replySpeaker: seed.replySpeaker ?? null,
@@ -90,7 +90,7 @@ export function buildDialogueLineNode(seed: DialogueLineSeed = {}): JSONContent 
 
 export function buildDialogueBlockNode(
   lines: DialogueLineSeed[] = [{}, {}],
-  blockId = nanoid(),
+  blockId = freshContentId(DIALOGUE_BLOCK_TYPE),
 ): JSONContent {
   return {
     type: DIALOGUE_BLOCK_TYPE,

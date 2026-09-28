@@ -352,11 +352,15 @@ export default async function run({ page, api, check, seedProject }) {
   // already broken and it breaks silently, in a spreadsheet, weeks later.
   const healed = await api((table) => {
     const { stampContentIds } = window.__scriareContentIds;
+    // Current-shaped ids, so this measures the DUPLICATE rule rather than
+    // the shape rule — v0.70.1 also reissues anything in the old
+    // twenty-one-character shape, and a fixture using one would have both
+    // rules firing at once and prove neither.
     const sick = {
       type: "doc",
       content: [
-        { type: "paragraph", attrs: { lineId: "same" }, content: [{ type: "text", text: "One." }] },
-        { type: "paragraph", attrs: { lineId: "same" }, content: [{ type: "text", text: "Two." }] },
+        { type: "paragraph", attrs: { lineId: "t_aaaaaaaa" }, content: [{ type: "text", text: "One." }] },
+        { type: "paragraph", attrs: { lineId: "t_aaaaaaaa" }, content: [{ type: "text", text: "Two." }] },
         { type: "paragraph", content: [{ type: "text", text: "Three, with no id at all." }] },
       ],
     };
@@ -377,7 +381,7 @@ export default async function run({ page, api, check, seedProject }) {
   );
   check(
     "...keeping the id on the first of the two, so an existing translation stays attached",
-    healed[0] === "same",
+    healed[0] === "t_aaaaaaaa",
     `first is ${healed[0]}`,
   );
 
@@ -387,11 +391,36 @@ export default async function run({ page, api, check, seedProject }) {
     const { stampContentIds } = window.__scriareContentIds;
     const fine = {
       type: "doc",
-      content: [{ type: "paragraph", attrs: { lineId: "a" }, content: [{ type: "text", text: "x" }] }],
+      content: [
+        { type: "paragraph", attrs: { lineId: "t_bbbbbbbb" }, content: [{ type: "text", text: "x" }] },
+      ],
     };
     return stampContentIds(fine) === fine;
   });
   check("...and a document with nothing wrong with it is not rewritten", untouched);
+
+  // v0.70.1 — the third fault the open-time pass repairs. An id in the old
+  // twenty-one-character nanoid shape is reissued, because that id is what
+  // column A of the spreadsheet prints and it looked like ciphertext.
+  const reshaped = await api(() => {
+    const { stampContentIds } = window.__scriareContentIds;
+    const old = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          attrs: { lineId: "xU40lTnJ8JVN16hgSPB2I" },
+          content: [{ type: "text", text: "An old line." }],
+        },
+      ],
+    };
+    return stampContentIds(old).content[0].attrs.lineId;
+  });
+  check(
+    "AN ID IN THE OLD NANOID SHAPE IS REISSUED on open, so no sheet prints one",
+    /^t_[23456789abcdefghjkmnpqrstvwxyz]{8}$/.test(reshaped),
+    reshaped,
+  );
 
   await seedProject();
   await wait(300);

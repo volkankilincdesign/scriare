@@ -1,4 +1,5 @@
-import { nanoid } from "nanoid";
+import { ID_PREFIX, freshId, isCurrentIdShape } from "./ids";
+import type { IdKind } from "./ids";
 import type { JSONContent } from "@tiptap/react";
 import { Fragment } from "@tiptap/pm/model";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
@@ -70,6 +71,16 @@ export function idAttrFor(typeName: string | undefined): string | null {
   return ID_ATTRS[typeName] ?? null;
 }
 
+/**
+ * The shape of a content id is decided in `utils/ids.ts`, with every other
+ * kind of id in the app — see the long note there for why it changed and
+ * why it is opaque anyway. This file only decides WHEN one is issued.
+ */
+export function freshContentId(typeName?: string): string {
+  const kind = (typeName ?? "") as IdKind;
+  return freshId(kind in ID_PREFIX ? kind : "paragraph");
+}
+
 const EMPTY_DOC: JSONContent = { type: "doc", content: [{ type: "paragraph" }] };
 
 /**
@@ -106,9 +117,12 @@ export function stampContentIds(content: JSONContent | undefined | null): JSONCo
     const attr = idAttrFor(node.type);
     if (attr) {
       const current = next.attrs?.[attr] as string | undefined | null;
-      if (!current || seen.has(current)) {
+      // Three faults, one repair. Missing, already claimed, or written in
+      // the old twenty-one-character shape — see the note on ID_PREFIX for
+      // why the last one is worth rewriting a whole project over.
+      if (!current || seen.has(current) || !isCurrentIdShape(current)) {
         changed = true;
-        const fresh = nanoid();
+        const fresh = freshContentId(node.type);
         next.attrs = { ...(next.attrs ?? {}), [attr]: fresh };
         seen.add(fresh);
       } else {
@@ -158,14 +172,17 @@ export function regenerateContentIds(
     typeof target === "string" && sceneIdMap?.has(target) ? sceneIdMap.get(target)! : target;
 
   const freshIds = (list: unknown): unknown =>
-    ((list as { id: string }[] | undefined) ?? []).map((item) => ({ ...item, id: nanoid() }));
+    ((list as { id: string }[] | undefined) ?? []).map((item) => ({
+      ...item,
+      id: freshId("condition"),
+    }));
 
   function walk(node: JSONContent): JSONContent {
     const attr = idAttrFor(node.type);
     const kids = node.content?.map(walk);
     if (!attr) return kids ? { ...node, content: kids } : node;
 
-    const attrs = { ...(node.attrs ?? {}), [attr]: nanoid() };
+    const attrs = { ...(node.attrs ?? {}), [attr]: freshContentId(node.type) };
 
     // A choice option and a dialogue line both point at a scene and both
     // carry conditions and actions whose own ids have to be distinct — the
@@ -245,9 +262,4 @@ export function findIdFaults(doc: ProseMirrorNode): { pos: number; attr: string 
   });
 
   return faults;
-}
-
-/** A fresh id, so callers never have to reach for nanoid themselves. */
-export function freshContentId(): string {
-  return nanoid();
 }

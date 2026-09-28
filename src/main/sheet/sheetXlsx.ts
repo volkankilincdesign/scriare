@@ -53,64 +53,101 @@ export function columnName(index: number): string {
 
 /**
  * The style indices this workbook uses, in the order styles.xml declares
- * them. Named rather than numbered at the call sites, because an off-by-one
- * in a style index is invisible until somebody opens the file.
+ * them. Named rather than numbered at the call sites, because an
+ * off-by-one in a style index is invisible until somebody opens the file —
+ * and in v0.70.0 exactly that happened in the other direction: the header
+ * was declared bold on a near-black fill and given no font COLOUR, so it
+ * inherited the default black and the headings were black on black. The
+ * spec asserted that the header band existed and that it was frozen; it
+ * never asserted that anybody could read it.
  */
 const STYLE = {
-  /** Locked, wrapped, top-aligned — every read-only cell of the table. */
+  /** Locked, wrapped, top-aligned — the read-only body of the table. */
   cell: 1,
-  /** The header band: bold, filled, locked, frozen above the rest. */
+  /** The same, on the banded row. */
+  cellBand: 6,
+  /** The header band: white on slate, so it can actually be read. */
   header: 2,
-  /** Translation and Notes: UNLOCKED and shaded, so the shading IS the
-   *  invitation — the one place the eye should land. */
+  /** Translation and Notes: UNLOCKED and warm, so the colour IS the
+   *  invitation — the one place the eye should land. Deliberately NOT
+   *  banded: a constant colour down the sheet is what marks the column
+   *  out from the striped ones either side of it. */
   editable: 3,
   /** Key, Scene ID, hash: monospaced, so a mistyped id is visible. */
   mono: 4,
-  /** The Read me's headings. */
+  monoBand: 7,
+  /** Chars: centred, because a number in a narrow column reads as a
+   *  number rather than as a very short word. */
+  chars: 8,
+  /** The Read me's headings and its wrapped body. */
   readmeHead: 5,
+  readmeBody: 9,
 } as const;
 
 const STYLES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <fonts count="4">
-    <font><sz val="11"/><name val="Calibri"/></font>
-    <font><b/><sz val="11"/><name val="Calibri"/></font>
-    <font><sz val="10"/><name val="Consolas"/></font>
-    <font><b/><sz val="13"/><name val="Calibri"/></font>
+  <fonts count="5">
+    <font><sz val="11"/><color rgb="FF1F2933"/><name val="Calibri"/></font>
+    <font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>
+    <font><sz val="10"/><color rgb="FF5B6672"/><name val="Consolas"/></font>
+    <font><b/><sz val="13"/><color rgb="FF1F2933"/><name val="Calibri"/></font>
+    <font><sz val="11"/><color rgb="FF3E4A57"/><name val="Calibri"/></font>
   </fonts>
-  <fills count="4">
+  <fills count="5">
     <fill><patternFill patternType="none"/></fill>
     <fill><patternFill patternType="gray125"/></fill>
     <fill><patternFill patternType="solid"><fgColor rgb="FF1F2933"/><bgColor indexed="64"/></patternFill></fill>
-    <fill><patternFill patternType="solid"><fgColor rgb="FFFFF8E1"/><bgColor indexed="64"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFFFF3D6"/><bgColor indexed="64"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFEFF3F7"/><bgColor indexed="64"/></patternFill></fill>
   </fills>
-  <borders count="2">
+  <borders count="3">
     <border><left/><right/><top/><bottom/><diagonal/></border>
-    <border><left/><right/><top/><bottom style="thin"><color rgb="FFD0D5DB"/></bottom><diagonal/></border>
+    <border><left/><right/><top/><bottom style="thin"><color rgb="FFE1E5EA"/></bottom><diagonal/></border>
+    <border><left style="thin"><color rgb="FFE8C97A"/></left><right/><top/><bottom style="thin"><color rgb="FFEBD9A8"/></bottom><diagonal/></border>
   </borders>
   <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-  <cellXfs count="6">
+  <cellXfs count="10">
     <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
     <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyAlignment="1" applyProtection="1">
       <alignment vertical="top" wrapText="1"/><protection locked="1"/></xf>
     <xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1" applyProtection="1">
-      <alignment vertical="center"/><protection locked="1"/></xf>
-    <xf numFmtId="0" fontId="0" fillId="3" borderId="1" xfId="0" applyFill="1" applyAlignment="1" applyProtection="1">
+      <alignment vertical="center" horizontal="left" indent="1"/><protection locked="1"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="3" borderId="2" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1" applyProtection="1">
       <alignment vertical="top" wrapText="1"/><protection locked="0"/></xf>
     <xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyAlignment="1" applyProtection="1">
       <alignment vertical="top"/><protection locked="1"/></xf>
-    <xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+    <xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1">
+      <alignment vertical="center"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="4" borderId="1" xfId="0" applyFill="1" applyAlignment="1" applyProtection="1">
+      <alignment vertical="top" wrapText="1"/><protection locked="1"/></xf>
+    <xf numFmtId="0" fontId="2" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyAlignment="1" applyProtection="1">
+      <alignment vertical="top"/><protection locked="1"/></xf>
+    <xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyAlignment="1" applyProtection="1">
+      <alignment vertical="top" horizontal="center"/><protection locked="1"/></xf>
+    <xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1">
+      <alignment vertical="top" wrapText="1"/></xf>
   </cellXfs>
   <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>`;
 
-/** Which style a column's body cells take. */
-function styleFor(column: number): number {
+/**
+ * Which style a column's body cells take, on a row of this parity.
+ *
+ * The banding is not decoration. Seventeen columns is wider than a screen,
+ * so reading across one row means tracking it past the edge of the window
+ * and back — and a striped background is the oldest fix there is for
+ * losing your place on the way. The editable pair keeps one constant
+ * colour through it, which is what makes the two of them read as a block
+ * rather than as two more stripes.
+ */
+function styleFor(column: number, banded: boolean): number {
   if (EDITABLE_COLUMNS.includes(column)) return STYLE.editable;
   // Key (0), Scene ID (4) and Source hash (16) are machine strings a human
   // reads back character by character when something has gone wrong.
-  if (column === 0 || column === 4 || column === 16) return STYLE.mono;
-  return STYLE.cell;
+  if (column === 0 || column === 4 || column === 16) {
+    return banded ? STYLE.monoBand : STYLE.mono;
+  }
+  return banded ? STYLE.cellBand : STYLE.cell;
 }
 
 /** An inline-string cell. */
@@ -159,6 +196,7 @@ function linesSheet(sheet: SheetDocument): string {
     .map((row, i) => {
       const r = i + 2;
       const values = valuesOf(row);
+      const banded = i % 2 === 1;
       const cells = values
         .map((value, index) => {
           const ref = `${columnName(index)}${r}`;
@@ -167,8 +205,8 @@ function linesSheet(sheet: SheetDocument): string {
           // whole point of the column: a length budget you can see while
           // you are spending it. No cached <v>, so Excel and LibreOffice
           // both compute it on open — see fullCalcOnLoad in the workbook.
-          if (index === 15) return `<c r="${ref}" s="${STYLE.cell}"><f>LEN(H${r})</f></c>`;
-          return textCell(ref, styleFor(index), value);
+          if (index === 15) return `<c r="${ref}" s="${STYLE.chars}"><f>LEN(H${r})</f></c>`;
+          return textCell(ref, styleFor(index, banded), value);
         })
         .join("");
       // A fixed row height would clip a long line; letting Excel measure it
@@ -183,13 +221,16 @@ function linesSheet(sheet: SheetDocument): string {
   <dimension ref="A1:${lastColumn}${lastRow}"/>
   <sheetViews>
     <sheetView tabSelected="1" workbookViewId="0">
-      <pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>
-      <selection pane="bottomLeft" activeCell="I2" sqref="I2"/>
+      <!-- Both axes. The header alone was not enough: the columns a
+           translator needs in view while typing into I are A and B, and
+           they are the two furthest from it. -->
+      <pane xSplit="2" ySplit="1" topLeftCell="C2" activePane="bottomRight" state="frozen"/>
+      <selection pane="bottomRight" activeCell="I2" sqref="I2"/>
     </sheetView>
   </sheetViews>
   <sheetFormatPr defaultRowHeight="15"/>
   <cols>${cols}</cols>
-  <sheetData><row r="1" ht="22" customHeight="1">${header}</row>${body}</sheetData>
+  <sheetData><row r="1" ht="30" customHeight="1">${header}</row>${body}</sheetData>
   <sheetProtection sheet="1" objects="1" scenarios="1" selectLockedCells="1" selectUnlockedCells="1" sort="0" autoFilter="0" formatColumns="0" formatRows="0"/>
   <autoFilter ref="A1:${lastColumn}${lastRow}"/>
 </worksheet>`;
@@ -217,6 +258,7 @@ function readmeSheet(sheet: SheetDocument): string {
     ["Schema version", String(sheet.schemaVersion)],
     ["Story fingerprint", sheet.fingerprint],
     ["", ""],
+    ["What is in it", ""],
     ["Rows", String(sheet.rows.length)],
     ["Scenes", `${s.scenes}${s.unreachableScenes ? ` (${s.unreachableScenes} unreachable)` : ""}`],
     ["Prose paragraphs", String(s.prose)],
@@ -245,8 +287,15 @@ function readmeSheet(sheet: SheetDocument): string {
   const body = rows
     .map(([name, value], i) => {
       const r = i + 2;
-      const style = value === "" && name !== "" ? STYLE.readmeHead : STYLE.cell;
-      return `<row r="${r}">${textCell(`A${r}`, style, name)}${textCell(`B${r}`, STYLE.cell, value)}</row>`;
+      // A row with a name and no value is a section heading; everything
+      // else is a label and its answer.
+      const heading = value === "" && name !== "";
+      const height = heading ? ' ht="26" customHeight="1"' : "";
+      return `<row r="${r}"${height}>${textCell(`A${r}`, heading ? STYLE.readmeHead : STYLE.readmeBody, name)}${textCell(
+        `B${r}`,
+        STYLE.readmeBody,
+        value,
+      )}</row>`;
     })
     .join("");
 
