@@ -12,6 +12,68 @@ omitting them.
 
 ---
 
+## v0.71.0 — A key is a name
+
+Third attempt at column A, and the first two were wrong in the same way:
+they kept asking what an id should LOOK like instead of who reads it.
+
+**What the audit actually established was narrower than what it
+concluded.** `docs/spreadsheet-export.md` argues that identity and address
+pull apart — "is this the same line I sent you last week" must never
+change, "scene 15, dialogue 2" must change the moment the story does — and
+from that concludes the Key is opaque. But it weighed only the translator.
+Column A is also the CSV's RowName, which is the `FName` an engine looks a
+row up by and the string shown in a DataTable's row list; gibberish there
+is gibberish in the editor and in every reference to a specific line. The
+requirement is only this:
+
+> a key must never change, and must not be positional
+
+`t_indigo-does-not-look` satisfies both. Opacity was never the
+requirement — it was what the only stable option happened to look like.
+
+**So a key is named once and frozen.** A line is born empty and takes a
+provisional random id; the first time it has words it takes its name, and
+after that nothing renames it — not a rewrite, not a move, not a
+reordering. `s_the-blue-hour`, `t_indigo-does-not-look`,
+`c_go-and-find-nesrin`, `d_why-did-you-wait`. The cost, which is the whole
+cost: a key can outlive its words. Rewrite the line and the key still says
+what it used to say. That is correct — the columns beside it carry the
+current truth — but the name is a birthmark, not a description.
+
+**Ordinary English repeats, and that was the hard part.** The sweep walks
+the mounted document and nothing else, which was fine while keys were
+random — two nanoids do not collide — and stopped being fine the moment a
+key was made of words. "Keep working." opens a line in two different scenes
+and both claimed `c_keep-working`. Measured on The Blue Hour: **eleven
+collisions in two hundred and fifty-two rows**, every one a row an engine
+drops on import. Naming now asks the project what is already spoken for,
+through a provider the app installs at startup, and the second line becomes
+`c_keep-working-2`. Ten rows in The Blue Hour take a suffix; none collide.
+
+**A scene's title row carries its own stored key.** Deriving it from the
+title would rename it whenever the scene was renamed — precisely the
+failure the design document warns about one level up, where an engine
+grouping by title decides a rename created a new scene full of new lines.
+
+**Two bugs found by the tests rather than by me.** A scene's own keys were
+counted against it while it was being processed, so every key came back as
+`-2` the second time a project was opened — caught by the idempotency
+check in the choice schema, which exists for exactly that. And the live
+sweep was reshaping legacy ids mid-session, which renamed an option out
+from under the Inspector that was editing it; reshaping belongs to the
+open-time pass, where the whole project is in view and it happens once.
+
+**Five negative controls started green, and three were weak assertions.**
+The strongest lesson: a key's SHAPE proves nothing. `t_tr9tmhw8` is lower
+case, prefixed and hyphen-free, so it satisfies every pattern a name does —
+emptying the slug function left the suite green. The check is now "the key
+is made of THESE words", computed by the spec's own slug so the app cannot
+blind it. One control had to be retired outright and said so in the file:
+since the rule now lives in a two-pass walk, every single-line inversion
+makes the sweep fault one position twice, which kills the spec instead of
+reddening it, and a control that crashes proves nothing.
+
 ## v0.70.1 — Two things he saw the moment he opened the file
 
 **The Keys looked like ciphertext.** `xU40lTnJ8JVN16hgSPB2I`, down the

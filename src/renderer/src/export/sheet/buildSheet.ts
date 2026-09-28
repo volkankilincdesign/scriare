@@ -226,7 +226,11 @@ export function buildSheet(project: Project, options: { language: string }): She
     // page, so it is a string to translate — and it was the first thing
     // found missing when this spec was reviewed against the real export.
     push("Scene", {
-      key: `${scene.id}:title`,
+      // The scene's stored title key, not its id. The id is opaque and
+      // this column is read — see utils/ids.ts. `normalizeProject` fills
+      // the key in on open, so the fallback is only for a project the
+      // session built in memory.
+      key: scene.titleKey || `s_${scene.id}`,
       refSuffix: TYPE_LETTER.Scene,
       wherePhrase: "scene title",
       speaker: "",
@@ -317,9 +321,12 @@ export function buildSheet(project: Project, options: { language: string }): She
           // The reply hangs off the line and has no life of its own: its
           // ref is the line's with an `r`, so deleting the line takes the
           // reply's address with it rather than leaving a stray number.
+          // Its key follows the same rule — the line's key with `-r` —
+          // rather than being named from the reply's own words, because a
+          // reply that is not attached to its line is not anything.
           if (line.reply.trim()) replies += 1;
           push("Reply", {
-            key: `${line.id}:r`,
+            key: `${line.id}-r`,
             refSuffix: `${TYPE_LETTER.Reply}${index}r`,
             wherePhrase: `dialogue ${index}, reply`,
             speaker: speakerOf(line.replySpeaker),

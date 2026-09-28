@@ -98,11 +98,20 @@ export const LineId = Extension.create({
   },
 
   /**
-   * The sweep. A paragraph created while writing gets its id here rather
-   * than at creation: ProseMirror builds nodes from the schema's defaults
-   * and there is no hook that runs per node. So the document is checked
-   * after each change, and only the nodes actually at fault are written —
-   * one transaction, and none at all in the common case.
+   * The sweep, and since v0.71.0 it does two jobs rather than one.
+   *
+   * A paragraph created while writing gets its id here rather than at
+   * creation: ProseMirror builds nodes from the schema's defaults and
+   * there is no hook that runs per node. So the document is checked after
+   * each change, and only the nodes actually at fault are written — one
+   * transaction, and none at all in the common case.
+   *
+   * The second job is NAMING. A line is born empty and takes a provisional
+   * id; the first sweep after it has words replaces that with a key made
+   * of the words themselves, and no sweep after that ever touches it. The
+   * naming is therefore a one-way door that swings exactly once per line,
+   * which is what makes the key an identity rather than a caption that
+   * follows the writer around.
    */
   onUpdate() {
     const { state, view } = this.editor;
@@ -110,10 +119,16 @@ export const LineId = Extension.create({
     if (faults.length === 0) return;
 
     const tr = state.tr;
-    for (const { pos, attr } of faults) {
+    for (const { pos, attr, name } of faults) {
       const node = tr.doc.nodeAt(pos);
       if (!node) continue;
-      tr.setNodeMarkup(pos, undefined, { ...node.attrs, [attr]: freshContentId() });
+      // `name` is the key the line's own words earn it. Null means it has
+      // no words yet, so it takes a provisional id and will be named by a
+      // later sweep — the first one that runs after the writer types.
+      tr.setNodeMarkup(pos, undefined, {
+        ...node.attrs,
+        [attr]: name ?? freshContentId(node.type.name),
+      });
     }
     // Not added to the undo stack and not a reason to mark the project
     // dirty on its own: this is bookkeeping the writer never asked for.

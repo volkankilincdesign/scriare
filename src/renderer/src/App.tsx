@@ -15,6 +15,7 @@ import { useOpenFromDisk } from "./hooks/useOpenFromDisk";
 import { useBoot } from "./hooks/useBoot";
 import { Splash } from "./components/common/Splash";
 import { installFocusModality } from "./utils/focusModality";
+import { collectProjectKeys, setProjectKeyProvider } from "./utils/contentIds";
 import { StoryCheckDialog } from "./components/story/StoryCheckDialog";
 import { ExportDialog } from "./components/export/ExportDialog";
 import { VariableManagerDialog } from "./components/variables/VariableManagerDialog";
@@ -104,6 +105,25 @@ export default function App() {
 
   // Focus rings for keyboards, not for mice — see utils/focusModality.ts.
   useEffect(() => installFocusModality(), []);
+
+  /**
+   * Naming a line asks the project what keys are already spoken for
+   * (v0.71.0). Installed once, here, because this is the only place that
+   * both outlives every editor and can see the store — the sweep that
+   * needs the answer lives in a Tiptap extension, which by design knows
+   * about documents and nothing else.
+   *
+   * The open scene is excluded because the sweep is already looking at it,
+   * in its live form; the stored copy lags a keystroke behind and would
+   * make a line collide with its own older self.
+   */
+  useEffect(() => {
+    setProjectKeyProvider(() => {
+      const { project, selectedSceneId } = useProjectStore.getState();
+      return project ? collectProjectKeys(project.scenes, selectedSceneId ?? undefined) : new Set();
+    });
+    return () => setProjectKeyProvider(null);
+  }, []);
 
   useKeyboardSave();
   useKeyboardHistory();

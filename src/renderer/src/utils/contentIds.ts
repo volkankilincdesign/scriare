@@ -1,4 +1,4 @@
-import { ID_PREFIX, freshId, isCurrentIdShape } from "./ids";
+import { ID_PREFIX, freshId, isCurrentIdShape, isProvisional, nameId } from "./ids";
 import type { IdKind } from "./ids";
 import type { JSONContent } from "@tiptap/react";
 import { Fragment } from "@tiptap/pm/model";
@@ -104,11 +104,76 @@ const EMPTY_DOC: JSONContent = { type: "doc", content: [{ type: "paragraph" }] }
  * Returns `content` itself when nothing changed, so a project that is
  * already correct is not rewritten into a new object on every open.
  */
-export function stampContentIds(content: JSONContent | undefined | null): JSONContent {
+/**
+ * Every key the PROJECT already holds, not just the open scene (v0.71.0).
+ *
+ * The sweep walks the mounted document and nothing else. That was fine
+ * while keys were random — two nanoids do not collide — and stops being
+ * fine the moment a key is made of the line's own words, because ordinary
+ * English repeats: "Keep working." opens a line in two different scenes
+ * and both would claim `c_keep-working`. Measured on The Blue Hour before
+ * this existed: eleven collisions in two hundred and fifty-two rows, every
+ * one of them a row an engine would drop on import.
+ *
+ * So the naming asks the project, through a function the app installs at
+ * startup. A function rather than a value because the project changes
+ * under it, and it is only called when a line actually needs a name —
+ * once per new line, not once per keystroke — so walking the scenes is
+ * cheap enough to be the honest answer rather than a cache to keep in step.
+ *
+ * Unset — in a test, or before the app has booted — it answers with
+ * nothing and naming falls back to document-wide uniqueness, which is what
+ * every pure caller of `stampContentIds` wants anyway.
+ */
+let takenElsewhere: (() => ReadonlySet<string>) | null = null;
+
+export function setProjectKeyProvider(provider: (() => ReadonlySet<string>) | null): void {
+  takenElsewhere = provider;
+}
+
+/** Every content key in a project's scenes — what the provider returns. */
+export function collectProjectKeys(
+  scenes: { id: string; titleKey?: string; content?: JSONContent }[],
+  exceptSceneId?: string,
+): Set<string> {
+  const keys = new Set<string>();
+  for (const scene of scenes) {
+    if (scene.titleKey) keys.add(scene.titleKey);
+    if (scene.id === exceptSceneId) continue;
+    const walk = (node: JSONContent): void => {
+      const attr = idAttrFor(node.type);
+      const id = attr ? (node.attrs?.[attr] as string | undefined) : undefined;
+      if (id) keys.add(id);
+      (node.content ?? []).forEach(walk);
+    };
+    if (scene.content) walk(scene.content);
+  }
+  return keys;
+}
+
+/** The words a node is named after: its own text, replies excluded. */
+function wordsOf(node: JSONContent): string {
+  if (node.type === "text") return node.text ?? "";
+  if (node.type === "mention") return (node.attrs?.label as string) ?? "";
+  // A block has no words of its own, so it borrows its first child's —
+  // `b_work-the-cloth-does` beside the option it opens with reads better
+  // in a debugger than a random string, and blocks never reach the sheet.
+  return (node.content ?? []).map(wordsOf).join(" ");
+}
+
+function reissue(node: JSONContent, type: string, taken: ReadonlySet<string>): string {
+  const kind = (type in ID_PREFIX ? type : "paragraph") as keyof typeof ID_PREFIX;
+  return nameId(kind, wordsOf(node), taken) ?? freshContentId(type);
+}
+
+export function stampContentIds(
+  content: JSONContent | undefined | null,
+  takenElsewhereInProject?: ReadonlySet<string>,
+): JSONContent {
   if (!content) return EMPTY_DOC;
 
   let changed = false;
-  const seen = new Set<string>();
+  const seen = new Set<string>(takenElsewhereInProject ?? []);
 
   function walk(node: JSONContent): JSONContent {
     const kids = node.content?.map(walk);
@@ -117,15 +182,18 @@ export function stampContentIds(content: JSONContent | undefined | null): JSONCo
     const attr = idAttrFor(node.type);
     if (attr) {
       const current = next.attrs?.[attr] as string | undefined | null;
-      // Three faults, one repair. Missing, already claimed, or written in
-      // the old twenty-one-character shape — see the note on ID_PREFIX for
-      // why the last one is worth rewriting a whole project over.
-      if (!current || seen.has(current) || !isCurrentIdShape(current)) {
+      // Four states, one repair. Missing, already claimed, written in a
+      // shape from before v0.70.1, or still provisional on a line that now
+      // has words — the last is how an existing project gets named keys
+      // without the writer doing anything but opening it.
+      const stale = !current || seen.has(current) || !isCurrentIdShape(current);
+      const nameable = !stale && isProvisional(current);
+      if (stale || nameable) {
         changed = true;
-        const fresh = freshContentId(node.type);
+        const fresh = reissue(node, next.type ?? node.type ?? "paragraph", seen);
         next.attrs = { ...(next.attrs ?? {}), [attr]: fresh };
         seen.add(fresh);
-      } else {
+      } else if (current) {
         seen.add(current);
       }
     }
@@ -248,16 +316,61 @@ export function stripPastedIds(fragment: Fragment): Fragment {
  * `doc.descendants` visits in document order, so "already seen" and
  * "earlier in the document" are the same statement.
  */
-export function findIdFaults(doc: ProseMirrorNode): { pos: number; attr: string }[] {
+export function findIdFaults(
+  doc: ProseMirrorNode,
+): { pos: number; attr: string; name: string | null }[] {
   const seen = new Set<string>();
-  const faults: { pos: number; attr: string }[] = [];
+  const faults: { pos: number; attr: string; name: string | null }[] = [];
+
+  // Two passes, because a name has to be unique against every key in the
+  // document and not merely against the ones before it. A single pass
+  // would let a line typed at the top of a scene take a name the line at
+  // the bottom has held since yesterday.
+  doc.descendants((node) => {
+    const attr = idAttrFor(node.type.name);
+    if (!attr) return true;
+    const current = node.attrs[attr] as string | undefined | null;
+    if (current) seen.add(current);
+    return true;
+  });
+
+  // Seeded with the rest of the project, so a name minted here cannot
+  // collide with one a different scene has held since yesterday.
+  const claimed = new Set(seen);
+  for (const key of takenElsewhere?.() ?? []) claimed.add(key);
+  const used = new Set<string>();
 
   doc.descendants((node, pos) => {
     const attr = idAttrFor(node.type.name);
     if (!attr) return true;
     const current = node.attrs[attr] as string | undefined | null;
-    if (!current || seen.has(current)) faults.push({ pos, attr });
-    else seen.add(current);
+    const kind = (node.type.name in ID_PREFIX ? node.type.name : "paragraph") as keyof typeof ID_PREFIX;
+
+    // A line that has found its words takes its name, once. Everything it
+    // does afterwards — being rewritten, moved, reordered — leaves the
+    // name alone, which is the whole reason it is an identity.
+    //
+    // ANY existing unique id is left alone here, including one in a shape
+    // from before v0.71.0. Reshaping those is the OPEN-TIME pass's job,
+    // where the whole project is in view and it happens once; doing it
+    // live would rename an id out from under whatever is holding it —
+    // which is exactly what happened, and took the Inspector's grip on
+    // the option it was editing with it.
+    if (current && !used.has(current)) {
+      used.add(current);
+      if (!isProvisional(current)) return true;
+      claimed.delete(current);
+      const name = nameId(kind, node.textContent, claimed);
+      claimed.add(current);
+      if (name && name !== current) faults.push({ pos, attr, name });
+      return true;
+    }
+
+    // Missing, duplicated, or from before v0.70.1.
+    const name = nameId(kind, node.textContent, claimed);
+    faults.push({ pos, attr, name });
+    if (name) claimed.add(name);
+    if (current) used.add(current);
     return true;
   });
 

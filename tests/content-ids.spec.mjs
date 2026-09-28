@@ -352,15 +352,15 @@ export default async function run({ page, api, check, seedProject }) {
   // already broken and it breaks silently, in a spreadsheet, weeks later.
   const healed = await api((table) => {
     const { stampContentIds } = window.__scriareContentIds;
-    // Current-shaped ids, so this measures the DUPLICATE rule rather than
-    // the shape rule — v0.70.1 also reissues anything in the old
-    // twenty-one-character shape, and a fixture using one would have both
-    // rules firing at once and prove neither.
+    // NAMED ids, so this measures the DUPLICATE rule on its own. A
+    // provisional id would also be named on sight and a legacy one
+    // reshaped, and a fixture using either would have two rules firing at
+    // once and prove neither.
     const sick = {
       type: "doc",
       content: [
-        { type: "paragraph", attrs: { lineId: "t_aaaaaaaa" }, content: [{ type: "text", text: "One." }] },
-        { type: "paragraph", attrs: { lineId: "t_aaaaaaaa" }, content: [{ type: "text", text: "Two." }] },
+        { type: "paragraph", attrs: { lineId: "t_one" }, content: [{ type: "text", text: "One." }] },
+        { type: "paragraph", attrs: { lineId: "t_one" }, content: [{ type: "text", text: "Two." }] },
         { type: "paragraph", content: [{ type: "text", text: "Three, with no id at all." }] },
       ],
     };
@@ -381,7 +381,7 @@ export default async function run({ page, api, check, seedProject }) {
   );
   check(
     "...keeping the id on the first of the two, so an existing translation stays attached",
-    healed[0] === "t_aaaaaaaa",
+    healed[0] === "t_one",
     `first is ${healed[0]}`,
   );
 
@@ -392,7 +392,7 @@ export default async function run({ page, api, check, seedProject }) {
     const fine = {
       type: "doc",
       content: [
-        { type: "paragraph", attrs: { lineId: "t_bbbbbbbb" }, content: [{ type: "text", text: "x" }] },
+        { type: "paragraph", attrs: { lineId: "t_x" }, content: [{ type: "text", text: "x" }] },
       ],
     };
     return stampContentIds(fine) === fine;
@@ -417,9 +417,53 @@ export default async function run({ page, api, check, seedProject }) {
     return stampContentIds(old).content[0].attrs.lineId;
   });
   check(
-    "AN ID IN THE OLD NANOID SHAPE IS REISSUED on open, so no sheet prints one",
-    /^t_[23456789abcdefghjkmnpqrstvwxyz]{8}$/.test(reshaped),
+    "AN ID IN THE OLD NANOID SHAPE IS RENAMED on open, into the line's own words",
+    reshaped === "t_an-old-line",
     reshaped,
+  );
+
+  // ── the key is a birthmark, not a caption (v0.71.0) ──────────────────
+  // A key is made of the line's own words the first time it has any, and
+  // then never again. If it followed the writer around, every rewrite
+  // would break the translation attached to that line — which is the whole
+  // thing the Key column exists to prevent.
+  await setScene(() => {
+    const editor = window.__scriareEditorStore.getState().editor;
+    editor.commands.setContent(
+      { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Dust on the sill." }] }] },
+      true,
+    );
+  });
+  await wait(800);
+  const born = (await allIds())[0].id;
+
+  // INSIDE the paragraph, not over it. `selectAll()` replaces the node
+  // itself, attributes and all, which is the writer deleting a line and
+  // typing a new one — a new line, correctly, with a new key. The gesture
+  // this rule is about is rewriting the words while the line stays put.
+  await api(() => {
+    const editor = window.__scriareEditorStore.getState().editor;
+    let start = -1;
+    let size = 0;
+    editor.state.doc.descendants((node, at) => {
+      if (start === -1 && node.type.name === "paragraph") {
+        start = at;
+        size = node.content.size;
+      }
+    });
+    editor
+      .chain()
+      .focus()
+      .setTextSelection({ from: start + 1, to: start + 1 + size })
+      .insertContent("Something else entirely now.")
+      .run();
+  });
+  await wait(900);
+  const afterRewrite = (await allIds())[0].id;
+  check(
+    "A KEY IS A BIRTHMARK — rewriting the line does not rename it",
+    born === "t_dust-on-the-sill" && afterRewrite === born,
+    `${born} → ${afterRewrite}`,
   );
 
   await seedProject();

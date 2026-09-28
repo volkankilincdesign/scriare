@@ -124,8 +124,9 @@ lives in.
   choices, dialogue and replies, one row each, in reading order from your
   first scene. A workbook for the translator, with the header frozen, the
   filters on and everything locked except the column they fill; and a CSV
-  for the engine beside it, comma-delimited UTF-8 with the line's own id as
-  the RowName, because "Save As CSV" on a Turkish Windows writes semicolons
+  for the engine beside it, comma-delimited UTF-8 with the line's own name as
+  the RowName — `t_indigo-does-not-look`, readable in a sheet and in an
+  engine's row list — because "Save As CSV" on a Turkish Windows writes semicolons
   and CP1254 and quietly mangles both.
 
 **Everywhere**
@@ -150,7 +151,7 @@ lives in.
 
 ## Status
 
-**v0.70.1 — in active development, and usable.** The editor, graph,
+**v0.71.0 — in active development, and usable.** The editor, graph,
 runtime, entities, notes, variables, validation, search and **export** are
 all real, and the app now builds a Windows installer. See
 [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest list of what
@@ -170,8 +171,8 @@ screen. Clicking it copies the version, your platform and the engine
 underneath — paste that into the report and neither of us has to guess
 which build you were on.
 
-**834 automated tests** run against the real packaged application, and
-**216 negative controls**: each one breaks a specific line of the shipped
+**838 automated tests** run against the real packaged application, and
+**221 negative controls**: each one breaks a specific line of the shipped
 source on purpose and checks that a named assertion fails. A test that has
 never been seen to fail proves nothing, and several times now a control
 has failed to catch its sabotage — each time a finding about the test

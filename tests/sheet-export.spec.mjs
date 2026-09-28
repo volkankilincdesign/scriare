@@ -152,6 +152,17 @@ export default async function run({ page, api, check, seedProject, app }) {
           ]),
           // Nothing leads here. It must still be translated, and it must
           // not be given a number that implies somebody arrives.
+          // Opens on the very words scene 1 opens on. Two scenes phrasing
+          // something the same way is ordinary English, and it is what
+          // broke the first draft of named keys: eleven collisions in The
+          // Blue Hour, every one a row an engine drops on import.
+          scene("sy", "The Echo", [
+            {
+              type: "paragraph",
+              attrs: { lineId: "p-echo" },
+              content: [{ type: "text", text: "Işık söndü, kapı açıldı." }],
+            },
+          ]),
           scene("sz", "The Room Nobody Enters", [
             {
               type: "paragraph",
@@ -160,7 +171,7 @@ export default async function run({ page, api, check, seedProject, app }) {
             },
           ]),
         ],
-        content: [leaf("sa", 0), leaf("sb", 1), leaf("sz", 2)],
+        content: [leaf("sa", 0), leaf("sb", 1), leaf("sy", 2), leaf("sz", 3)],
       }),
       filePath: null,
       selectedSceneId: "sa",
@@ -290,24 +301,58 @@ export default async function run({ page, api, check, seedProject, app }) {
   // A KEY IS READ BY A PERSON. It was `xU40lTnJ8JVN16hgSPB2I` in v0.70.0 —
   // nanoid's default, never a decision — and the first thing a translator
   // saw in the file looked like ciphertext.
-  const calm = /^[a-z]{1,2}_[23456789abcdefghjkmnpqrstvwxyz]{8}$/;
-  // A scene title's key is its SCENE's id, and scene ids are deliberately
-  // not touched by this version — they are pointed at by choices, by the
-  // content tree and by the start scene, and rewriting them is a
-  // project-wide remap nobody asked for. So those rows are checked for
-  // what they are rather than for the shape the others take.
-  const contentKeys = keys.filter((k) => !k.endsWith(":title"));
-  const titleKeys = keys.filter((k) => k.endsWith(":title"));
-  const noisy = contentKeys.filter((k) => !calm.test(k.replace(/:r$/, "")));
+  const calm = /^[a-z]{1,2}_[a-z0-9]+(?:-[a-z0-9]+)*$/;
+  // Scene titles included. A scene carries its own stored `titleKey`
+  // since v0.71.0, named from the title and frozen, so the whole column
+  // is one consistent thing rather than one shape for most rows and the
+  // scene's raw id for the rest.
+  const titleKeys = keys.filter((_, i) => types[i] === "Scene");
+  const contentKeys = keys.filter((_, i) => types[i] !== "Scene");
+  const noisy = keys.filter((k) => !calm.test(k));
+
+  /** The spec's own slug, so it cannot be blinded by the app's. */
+  const slug = (t) =>
+    t
+      .replace(/ı/g, "i").replace(/İ/g, "i").replace(/ş/g, "s").replace(/Ş/g, "s")
+      .replace(/ğ/g, "g").replace(/Ğ/g, "g").replace(/ç/g, "c").replace(/Ç/g, "c")
+      .replace(/ö/g, "o").replace(/Ö/g, "o").replace(/ü/g, "u").replace(/Ü/g, "u")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+      .split(/[^a-z0-9]+/).filter(Boolean).slice(0, 4).join("-").slice(0, 22).replace(/-+$/, "");
+  // Shape alone proves nothing: `t_tr9tmhw8` is lower case, prefixed and
+  // hyphen-free, so it satisfies every pattern a name does. A control that
+  // emptied the slug left this green until the check became "the key is
+  // made of THESE words".
+  const mismatched = keys
+    .map((k, i) => ({ k, want: slug(texts[i] ?? ""), type: types[i] }))
+    .filter(({ k, want, type }) => type !== "Scene" && want && !k.endsWith("-r") && k.slice(2) !== want && !new RegExp(`^${want}-\\d+$`).test(k.slice(2)));
   check(
-    "A KEY LOOKS LIKE A NAME, NOT A HASH — prefixed by kind, eight calm characters",
-    noisy.length === 0 && contentKeys.length > 0,
-    noisy.length ? `${noisy.length} still noisy, e.g. ${noisy.slice(0, 2).join(", ")}` : contentKeys.slice(0, 3).join(", "),
+    "A KEY IS THE LINE'S OWN WORDS — readable in a sheet and in an engine's row list",
+    noisy.length === 0 && mismatched.length === 0 && contentKeys.length > 0,
+    noisy.length
+      ? `${noisy.length} not name-shaped, e.g. ${noisy.slice(0, 2).join(", ")}`
+      : mismatched.length
+        ? `${mismatched.length} not made of their words, e.g. ${mismatched[0].k} for "${mismatched[0].want}"`
+        : contentKeys.slice(0, 3).join(", "),
   );
   check(
-    "...and a scene title's key is plainly its scene's own id",
-    titleKeys.length > 0 && titleKeys.every((k) => k === `${cells[`E${keys.indexOf(k) + 2}`]}:title`),
+    "...scene titles included, from a key the scene stores rather than its raw id",
+    titleKeys.length > 0 && titleKeys.every((k) => k.startsWith("s_")),
     titleKeys.slice(0, 2).join(", "),
+  );
+  check(
+    "TWO SCENES THAT OPEN THE SAME WAY get different keys — ordinary English repeats",
+    (() => {
+      const same = keys.filter((_, i) => texts[i] === "Işık söndü, kapı açıldı.");
+      return same.length === 2 && new Set(same).size === 2;
+    })(),
+    keys.filter((_, i) => texts[i] === "Işık söndü, kapı açıldı.").join(" / "),
+  );
+
+  check(
+    "...and the key really says what the line says",
+    keys[texts.indexOf("Go through")] === "c_go-through" &&
+      keys[texts.indexOf("Why did you wait?")] === "d_why-did-you-wait",
+    `${keys[texts.indexOf("Go through")]} / ${keys[texts.indexOf("Why did you wait?")]}`,
   );
   check(
     "...and its prefix says what the row is before the Type column repeats it",
@@ -317,9 +362,9 @@ export default async function run({ page, api, check, seedProject, app }) {
     [...new Set(contentKeys.map((k) => k.slice(0, 2)))].join(" "),
   );
   check(
-    "...with nothing a person can mistype into another key — no 0/O, no 1/l/I",
-    !contentKeys.some((k) => /[01OolI]/.test(k.replace(/:r$/, ""))),
-    `${contentKeys.length} keys checked`,
+    "...and Turkish folds to its Latin skeleton rather than vanishing",
+    keys[texts.indexOf("Işık söndü, kapı açıldı.")] === "t_isik-sondu-kapi-acildi",
+    keys[texts.indexOf("Işık söndü, kapı açıldı.")] ?? "missing",
   );
 
   check(
@@ -348,8 +393,9 @@ export default async function run({ page, api, check, seedProject, app }) {
 
   check(
     "A SCENE NOTHING LEADS TO GETS A U, not a number that implies somebody arrives",
-    refs[texts.indexOf("The Room Nobody Enters")] === "U1.S",
-    refs[texts.indexOf("The Room Nobody Enters")] ?? "missing",
+    /^U\d+\.S$/.test(refs[texts.indexOf("The Room Nobody Enters")] ?? "") &&
+      /^U\d+\.S$/.test(refs[texts.indexOf("The Echo")] ?? ""),
+    `${refs[texts.indexOf("The Echo")]} and ${refs[texts.indexOf("The Room Nobody Enters")]}`,
   );
 
   check(
@@ -581,6 +627,27 @@ export default async function run({ page, api, check, seedProject, app }) {
     "...and the KEY does not move with it — identity and address are different columns",
     renumbered.key === keys[refs.indexOf("2.S")],
     `${renumbered.key} then and now`,
+  );
+
+  // A scene's title key is STORED, not derived. Deriving it would rename
+  // the key whenever the scene was renamed — precisely the failure the
+  // design document warns about one level up, where an engine grouping by
+  // title decides a rename created a new scene full of new lines.
+  const renamed = await api(() => {
+    const store = window.__scriareProjectStore;
+    const { normalizeProject } = window.__scriareProjectTypes;
+    const project = store.getState().project;
+    const before = project.scenes.find((s) => s.id === "sb")?.titleKey;
+    const moved = normalizeProject({
+      ...project,
+      scenes: project.scenes.map((s) => (s.id === "sb" ? { ...s, title: "Something Else Entirely" } : s)),
+    });
+    return { before, after: moved.scenes.find((s) => s.id === "sb")?.titleKey };
+  });
+  check(
+    "RENAMING A SCENE DOES NOT RENAME ITS KEY — the key is stored, not derived",
+    renamed.before !== undefined && renamed.before === renamed.after,
+    `${renamed.before} → ${renamed.after}`,
   );
 
   await app.evaluate(({ dialog }) => {

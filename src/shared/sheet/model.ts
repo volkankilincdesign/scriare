@@ -104,7 +104,7 @@ export interface SheetDocument {
 
 /** The seventeen columns, in order, with the headers the sheet prints. */
 export const SHEET_COLUMNS: { header: string; width: number }[] = [
-  { header: "Key", width: 13 },
+  { header: "Key", width: 27 },
   { header: "Ref", width: 10 },
   { header: "Where", width: 34 },
   { header: "Scene", width: 22 },

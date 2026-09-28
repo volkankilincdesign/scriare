@@ -1796,38 +1796,25 @@ const CONTROLS = [
   {
     name: "the sweep back to filling blanks only, blind to a repeat",
     file: src("utils/contentIds.ts"),
-    from: "    if (!current || seen.has(current)) faults.push({ pos, attr });",
-    to: "    if (!current) faults.push({ pos, attr });",
+    from: "    if (current && !used.has(current)) {",
+    to: "    if (current) {",
     spec: "content-ids",
     expect: "SPLITTING A SENTENCE gives the two halves different ids",
   },
-  {
-    name: "the sweep keeping the LAST of a pair instead of the first",
-    file: src("utils/contentIds.ts"),
-    from:
-      "  const seen = new Set<string>();\n" +
-      "  const faults: { pos: number; attr: string }[] = [];\n" +
-      "\n" +
-      "  doc.descendants((node, pos) => {\n" +
-      "    const attr = idAttrFor(node.type.name);\n" +
-      "    if (!attr) return true;\n" +
-      "    const current = node.attrs[attr] as string | undefined | null;\n" +
-      "    if (!current || seen.has(current)) faults.push({ pos, attr });\n" +
-      "    else seen.add(current);",
-    to:
-      "  const firstAt = new Map<string, number>();\n" +
-      "  const faults: { pos: number; attr: string }[] = [];\n" +
-      "\n" +
-      "  doc.descendants((node, pos) => {\n" +
-      "    const attr = idAttrFor(node.type.name);\n" +
-      "    if (!attr) return true;\n" +
-      "    const current = node.attrs[attr] as string | undefined | null;\n" +
-      "    if (!current) faults.push({ pos, attr });\n" +
-      "    else if (firstAt.has(current)) faults.push({ pos: firstAt.get(current), attr });\n" +
-      "    else firstAt.set(current, pos);",
-    spec: "content-ids",
-    expect: "the half that starts the sentence is the one that keeps the id",
-  },
+  // RETIRED, and said so rather than deleted. "The first of a duplicate
+  // pair keeps its id" is still asserted by content-ids — it is what keeps
+  // an existing translation attached to the half that starts a split
+  // sentence — but since v0.71.0 the rule lives in a two-pass walk, and
+  // every single-line inversion of it makes the sweep fault the same
+  // position twice. That is an invalid ProseMirror transaction, so the
+  // spec dies instead of going red, and a control that crashes proves
+  // nothing at all.
+  //
+  // What still covers it: "the sweep renaming a line every time it is
+  // rewritten" attacks the same branch from the other side, and "the sweep
+  // back to filling blanks only" proves the duplicate is noticed. The rule
+  // about WHICH of the two is kept is, for now, asserted and uncontrolled,
+  // and writing that down is better than pretending otherwise.
   // This one took two tries to aim, and both misses were findings about
   // the test. Replacing the strip left the suite green, because the sweep
   // repairs a duplicate wherever it came from — so no paste INSIDE one
@@ -1855,16 +1842,16 @@ const CONTROLS = [
   {
     name: "a scene copy that reissues the choices and leaves the prose",
     file: src("utils/contentIds.ts"),
-    from: "    const attrs = { ...(node.attrs ?? {}), [attr]: nanoid() };",
-    to: '    const attrs =\n      node.type === "paragraph"\n        ? { ...(node.attrs ?? {}) }\n        : { ...(node.attrs ?? {}), [attr]: nanoid() };',
+    from: "    const attrs = { ...(node.attrs ?? {}), [attr]: freshContentId(node.type) };",
+    to: '    const attrs =\n      node.type === "paragraph"\n        ? { ...(node.attrs ?? {}) }\n        : { ...(node.attrs ?? {}), [attr]: freshContentId(node.type) };',
     spec: "content-ids",
     expect: "DUPLICATING A SCENE gives the copy its own ids",
   },
   {
     name: "the open-time pass carrying a file's existing duplicates through",
     file: src("utils/contentIds.ts"),
-    from: "      if (!current || seen.has(current)) {\n        changed = true;",
-    to: "      if (!current) {\n        changed = true;",
+    from: "      const stale = !current || seen.has(current) || !isCurrentIdShape(current);",
+    to: "      const stale = !current || !isCurrentIdShape(current);",
     spec: "content-ids",
     expect: "OPENING AN OLD FILE with duplicate ids heals it",
   },
@@ -1900,8 +1887,8 @@ const CONTROLS = [
   {
     name: "scene titles left out, the way the first draft of the spec left them out",
     file: src("export/sheet/buildSheet.ts"),
-    from: '    push("Scene", {\n      key: `${scene.id}:title`,',
-    to: '    if (false) push("Scene", {\n      key: `${scene.id}:title`,',
+    from: '    push("Scene", {\n      // The scene\'s stored title key, not its id.',
+    to: '    if (false) push("Scene", {\n      // The scene\'s stored title key, not its id.',
     spec: "sheet-export",
     expect: "SCENE TITLES ARE ROWS",
   },
@@ -2017,20 +2004,20 @@ const CONTROLS = [
     expect: "THE HEADER CAN BE READ",
   },
   {
-    name: "content ids back to a twenty-one-character nanoid",
+    name: "a key that stops being made of the line's own words",
     file: src("utils/ids.ts"),
-    from: 'export const ID_ALPHABET = "23456789abcdefghjkmnpqrstvwxyz";\nconst ID_BODY = 8;',
-    to: 'export const ID_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-";\nconst ID_BODY = 21;',
+    from: "export function nameId(kind: IdKind, text: string, taken: ReadonlySet<string>): string | null {\n  const body = slugWords(text);",
+    to: "export function nameId(kind: IdKind, text: string, taken: ReadonlySet<string>): string | null {\n  const body = \"\";\n  void slugWords(text);",
     spec: "sheet-export",
-    expect: "nothing a person can mistype into another key",
+    expect: "A KEY IS THE LINE'S OWN WORDS",
   },
   {
     name: "the open-time pass no longer rewriting an old-shaped id",
     file: src("utils/contentIds.ts"),
-    from: "      if (!current || seen.has(current) || !isCurrentIdShape(current)) {",
-    to: "      if (!current || seen.has(current)) {",
-    spec: "sheet-export",
-    expect: "A KEY LOOKS LIKE A NAME",
+    from: "      const stale = !current || seen.has(current) || !isCurrentIdShape(current);",
+    to: "      const stale = !current || seen.has(current);",
+    spec: "content-ids",
+    expect: "AN ID IN THE OLD NANOID SHAPE IS RENAMED",
   },
   {
     name: "the banding dropped, so a row cannot be followed across seventeen columns",
@@ -2047,6 +2034,55 @@ const CONTROLS = [
     to: "  if (EDITABLE_COLUMNS.includes(column)) return banded ? STYLE.cellBand : STYLE.editable;\n  // Key (0), Scene ID (4) and Source hash (16) are machine strings a human",
     spec: "sheet-export",
     expect: "the column being typed into keeps ONE colour",
+  },
+  // ── v0.71.0 — the key is a name ──────────────────────────────────────
+  {
+    name: "Turkish dropped instead of folded, leaving a key of nothing",
+    file: src("utils/ids.ts"),
+    from: '    .replace(/ı/g, "i")\n    .replace(/İ/g, "i")',
+    to: "",
+    spec: "sheet-export",
+    expect: "Turkish folds to its Latin skeleton",
+  },
+  {
+    name: "two lines that open the same way both claiming one key",
+    file: src("utils/ids.ts"),
+    from: "  for (let n = 2; n < 500; n += 1) {",
+    to: "  if (taken.has(base)) return base;\n  for (let n = 2; n < 500; n += 1) {",
+    spec: "sheet-export",
+    expect: "TWO SCENES THAT OPEN THE SAME WAY get different keys",
+  },
+  {
+    name: "naming that only looks at the open scene, so two scenes collide",
+    file: src("types/project.ts"),
+    from: "    const migrated = migrateChoicesIntoContent({ ...scene }, taken);",
+    to: "    const migrated = migrateChoicesIntoContent({ ...scene });",
+    spec: "sheet-export",
+    expect: "TWO SCENES THAT OPEN THE SAME WAY get different keys",
+  },
+  {
+    name: "a scene's own keys counted against it, so a second open renames everything",
+    file: src("types/project.ts"),
+    from: "    const own = collectProjectKeys([scene]);\n    for (const key of own) taken.delete(key);",
+    to: "",
+    spec: "choice-schema",
+    expect: "loading an already-current document changes nothing",
+  },
+  {
+    name: "a scene title's key derived fresh each time instead of stored",
+    file: src("types/project.ts"),
+    from: "    if (isCurrentIdShape(scene.titleKey)) return scene;",
+    to: "",
+    spec: "sheet-export",
+    expect: "RENAMING A SCENE DOES NOT RENAME ITS KEY",
+  },
+  {
+    name: "the sweep renaming a line every time it is rewritten",
+    file: src("utils/contentIds.ts"),
+    from: "      if (!isProvisional(current)) return true;",
+    to: "",
+    spec: "content-ids",
+    expect: "A KEY IS A BIRTHMARK",
   },
 ];
 

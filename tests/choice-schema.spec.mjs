@@ -78,14 +78,14 @@ export default async function ({ api, check, seedProject }) {
     r.legacyAttrGone && JSON.stringify(r.childTypes) === '["choiceOption","choiceOption"]' &&
       r.labelIsTextNode,
     `attrs.options gone: ${r.legacyAttrGone}, children: ${JSON.stringify(r.childTypes)}, label is text: ${r.labelIsTextNode}`);
-  // The id is NOT asserted to survive. v0.70.1 reshapes an old-format id
-  // on open — a legacy `o1`, like a twenty-one-character nanoid, becomes
-  // `c_xxxxxxxx` — because the id is what the spreadsheet export prints in
-  // column A and a person has to be able to read it. Everything the writer
-  // typed still survives, which is what this check is actually about.
+  // The id is not asserted to SURVIVE — it is asserted to be renamed into
+  // the line's own words. v0.71.0 reshapes an old-format id on open, and a
+  // legacy `o1` becomes `c_unlock-the-door`, because the id is what the
+  // spreadsheet export prints in column A and both a translator and an
+  // engine's row list have to be able to read it.
   check("migration keeps every option's label, destination, conditions and actions",
     r.options.length === 2 &&
-      /^c_[23456789abcdefghjkmnpqrstvwxyz]{8}$/.test(r.options[0].id) &&
+      r.options[0].id === "c_unlock-the-door" &&
       r.options[0].text === "Unlock the door" &&
       r.options[0].targetSceneId === "s2" &&
       r.options[0].conditions.length === 1 &&

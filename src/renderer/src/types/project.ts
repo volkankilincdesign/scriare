@@ -1,7 +1,8 @@
 import { nanoid } from "nanoid";
 import type { JSONContent } from "@tiptap/react";
 import { extractChoices, buildChoiceBlockNode, migrateLegacyChoiceBlocks } from "../utils/choiceBlocks";
-import { stampContentIds } from "../utils/contentIds";
+import { collectProjectKeys, stampContentIds } from "../utils/contentIds";
+import { freshId, isCurrentIdShape, nameId } from "../utils/ids";
 import { normalizeChoiceStyles } from "./choiceStyles";
 import type { Entity, EntityKind } from "./entities";
 import type { ChoiceStyle } from "./choiceStyles";
@@ -16,6 +17,23 @@ export interface Choice {
 export interface Scene {
   id: string;
   title: string;
+  /**
+   * The key the scene's TITLE takes in the spreadsheet export (v0.71.0).
+   *
+   * Stored rather than derived, and that is the whole point. A reader sees
+   * the title as an `<h1>`, so it is a string to translate and needs a row
+   * of its own — and that row needs an identity like any other. Deriving
+   * it from the title would rename the key whenever the scene was renamed,
+   * which is exactly the failure `docs/spreadsheet-export.md` warns about
+   * one level up: an engine that groups by title decides that renaming
+   * "Deniz In The Yard" to "The Yard" created a new scene full of new
+   * lines.
+   *
+   * Named once from the title it had when the key was first needed, then
+   * frozen. Optional so that every project written before this still
+   * loads; `normalizeProject` fills it in on open.
+   */
+  titleKey?: string;
   content: JSONContent;
   summary?: string;
   tags?: string[];
@@ -266,17 +284,44 @@ export function buildProject(name: string): Project {
  * project files saved by older versions keep opening correctly.
  */
 export function normalizeProject(raw: Project): Project {
-  const scenes = raw.scenes.map((scene) => migrateChoicesIntoContent({ ...scene }));
+  // Every key the project ALREADY holds, before a single one is minted,
+  // so the first scene's naming knows about the last scene's keys rather
+  // than only about the scenes ahead of it.
+  //
+  // A SCENE'S OWN KEYS ARE LIFTED OUT WHILE IT IS PROCESSED. Leaving them
+  // in makes every key look like a duplicate of itself, and the second
+  // time a project was opened every line came back as `-2`. Found by the
+  // idempotency check in choice-schema, which is the assertion that exists
+  // precisely to catch a migration that will not sit still.
+  const taken = collectProjectKeys(raw.scenes ?? []);
+  const scenes = (raw.scenes ?? []).map((scene) => {
+    const own = collectProjectKeys([scene]);
+    for (const key of own) taken.delete(key);
+    const migrated = migrateChoicesIntoContent({ ...scene }, taken);
+    for (const key of collectProjectKeys([migrated])) taken.add(key);
+    return migrated;
+  });
+
+  // Every scene's title row gets a key, named from the title and kept
+  // even when the title changes. Uniqueness is across the project, so two
+  // scenes called "The Yard" become `s_the-yard` and `s_the-yard-2`.
+  const titleKeys = new Set(taken);
+  const named = scenes.map((scene) => {
+    if (isCurrentIdShape(scene.titleKey)) return scene;
+    const key = nameId("scene", scene.title, titleKeys) ?? freshId("scene");
+    titleKeys.add(key);
+    return { ...scene, titleKey: key };
+  });
 
   const content = migrateFramesIntoFolders(
-    migrateContentTree(raw.content, scenes),
+    migrateContentTree(raw.content, named),
     raw.frames ?? [],
-    scenes,
+    named,
   );
 
   // Every scene's group is now its folder, so the old per-scene pointer is
   // dropped rather than left to rot alongside the truth.
-  const cleanedScenes = scenes.map(({ frameId: _dropped, ...scene }) => scene);
+  const cleanedScenes = named.map(({ frameId: _dropped, ...scene }) => scene);
 
   const { frames: _legacyFrames, ...rest } = raw;
   return {
@@ -395,11 +440,16 @@ function migrateContentTree(rawContent: ContentNode[] | undefined, scenes: Scene
  * `migrateLegacyChoiceBlocks` so both migrations always leave the same,
  * current shape behind.
  */
-function migrateChoicesIntoContent(scene: Scene): Scene {
+function migrateChoicesIntoContent(scene: Scene, taken?: Set<string>): Scene {
   const { choices: legacyChoices, ...rest } = scene;
-  // v0.66.0 — and every paragraph gets the id it will keep, in the same
+  // v0.66.0 — and every paragraph gets the key it will keep, in the same
   // pass, so a project is stamped exactly once however old it is.
-  let content = stampContentIds(migrateLegacyChoiceBlocks(scene.content ?? EMPTY_DOC));
+  //
+  // `taken` carries the keys every OTHER scene already holds (v0.71.0).
+  // Without it each scene would be named in isolation and two scenes
+  // opening on the same sentence would both claim `c_keep-working` —
+  // measured at eleven collisions in The Blue Hour.
+  let content = stampContentIds(migrateLegacyChoiceBlocks(scene.content ?? EMPTY_DOC), taken);
 
   if (legacyChoices && legacyChoices.length > 0 && extractChoices(content).length === 0) {
     content = {
