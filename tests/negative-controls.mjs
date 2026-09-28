@@ -1712,6 +1712,30 @@ const CONTROLS = [
     spec: "dialogue-parity",
     expect: "A DIALOGUE ROW HAS A FILL OF ITS OWN",
   },
+  {
+    name: "the panel title back in mixed case at text weight",
+    file: src("components/layout/DialoguePanel.tsx"),
+    from: '        <h3 className="scriare-section-label text-[var(--text-3)]">\n          Dialogue\n        </h3>',
+    to: '        <h3 className="font-medium text-[var(--text)]">Dialogue</h3>',
+    spec: "dialogue-parity",
+    expect: "THE PANEL HEADER IS THE SAME HEADER",
+  },
+  {
+    name: "an open line row with the choice panel's padding dropped",
+    file: src("components/layout/DialoguePanel.tsx"),
+    from: '<div className="space-y-3 border-t border-[var(--border-soft)] px-2 py-2.5">',
+    to: '<div className="space-y-3 border-t border-[var(--border-soft)] px-3 py-3">',
+    spec: "dialogue-parity",
+    expect: "AN OPEN ROW IS THE SAME CARD TOO",
+  },
+  {
+    name: "the line's Style row taken back out of the panel",
+    file: src("components/layout/DialoguePanel.tsx"),
+    from: '            {FieldRow({\n              label: "Style",',
+    to: '            {false && FieldRow({\n              label: "Style",',
+    spec: "dialogue-parity",
+    expect: "BOTH PANELS USE THE SAME SPEAKER AND STYLE CONTROLS",
+  },
 ];
 
 

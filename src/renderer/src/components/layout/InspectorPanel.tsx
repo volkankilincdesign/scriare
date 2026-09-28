@@ -10,18 +10,9 @@ import { extractChoices, findChoiceBlockOptions } from "../../utils/choiceBlocks
 import { mentionResolver } from "../../utils/mentions";
 import { countWords } from "../../utils/storyCheck";
 import type { ChoiceOption } from "../../utils/choiceBlocks";
-import { PLAYER_SPEAKER, PLAYER_SPEAKER_LABEL, canSpeak } from "../../types/speaker";
-import type { Entity } from "../../types/entities";
-import {
-  DEFAULT_CHOICE_STYLE_ID,
-  choiceBoxCss,
-  hasOverrides,
-  resolveChoiceBox,
-} from "../../types/choiceStyles";
-import type { ChoiceBox } from "../../types/choiceStyles";
-import { BoxControls } from "../choices/ChoiceStylesDialog";
 import { DockGlyph, DockToggle } from "../common/DockToggle";
 import { useReorderableList } from "./useReorderableList";
+import { AppearanceControl, CREATE_SCENE_VALUE, SpeakerSelect } from "./choiceControls";
 import {
   appendChoiceOption,
   applyChoiceOptionAttrs,
@@ -54,7 +45,6 @@ interface InspectorPanelProps {
 /** Sentinel `<option>` values for the Inspector's inline "create instead of
  * leaving the editor" affordances (Sprint 9C) — distinguishable from any
  * real scene/variable id (which come from nanoid and never look like this). */
-const CREATE_SCENE_VALUE = "__create_scene__";
 const CREATE_VARIABLE_VALUE = "__create_variable__";
 
 /**
@@ -564,7 +554,7 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-panel="choices">
       <div className="flex items-center justify-between">
         <h3 className="scriare-section-label text-[var(--text-3)]">
           Choices
@@ -693,7 +683,10 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
                 // the light theme. Matching the card's own 6px radius keeps
                 // the ring and shadow on the card's actual silhouette rather
                 // than boxing a rounded card in a rectangle.
-                borderRadius: 6,
+                // The card's own radius. It was 6 against an 8px card, so
+                // the ring and shadow traced a silhouette the card does not
+                // have (v0.67.2).
+                borderRadius: 8,
                 // The token, not the dark theme's two layers written out by
                 // hand: on a light ground a black shadow at that strength
                 // reads as dirt on paper, which is the exact thing
@@ -774,125 +767,8 @@ interface ChoiceAccordionProps {
  * player picks, and demanding a Character page for someone the writer is
  * deliberately leaving unnamed would be the app arguing with the story.
  */
-/** A stable empty list, so the selector above doesn't rerender on every store tick. */
-const EMPTY_ENTITIES: Entity[] = [];
 
-function ChoiceSpeaker({
-  option,
-  onPatch,
-}: {
-  option: ChoiceOption;
-  onPatch: (patch: Partial<ChoiceOption>) => void;
-}) {
-  const entities = useProjectStore((s) => s.project?.entities ?? EMPTY_ENTITIES);
-  return (
-    <div>
-      <select
-        data-choice-speaker
-        value={option.speaker ?? ""}
-        onChange={(e) => onPatch({ speaker: e.target.value || null })}
-        className="w-full rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
-      >
-        <option value="">— Nobody —</option>
-        <option value={PLAYER_SPEAKER}>{PLAYER_SPEAKER_LABEL} (the player)</option>
-        {/* Characters only — a Location can be named in a choice but can't
-            speak one. See canSpeak in types/speaker.ts. */}
-        {entities.filter(canSpeak).map((entity) => (
-          <option key={entity.id} value={entity.id}>
-            {entity.name || "Unnamed"}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
 
-function ChoiceAppearance({
-  option,
-  onPatch,
-}: {
-  option: ChoiceOption;
-  onPatch: (patch: Partial<ChoiceOption>) => void;
-}) {
-  const styles = useProjectStore((s) => s.project?.choiceStyles) ?? [];
-  const openChoiceStyles = useUIStore((s) => s.openChoiceStyles);
-  const ref = option.style ?? null;
-  const styleId = ref?.styleId ?? DEFAULT_CHOICE_STYLE_ID;
-  const overridden = hasOverrides(ref);
-  const resolved = resolveChoiceBox(styles, ref);
-
-  function setStyle(nextId: string): void {
-    onPatch({
-      style: nextId === DEFAULT_CHOICE_STYLE_ID && !overridden
-        ? null // back to "inherit", not "explicitly the default"
-        : { ...ref, styleId: nextId },
-    });
-  }
-
-  function setOverride(patch: Partial<ChoiceBox>): void {
-    onPatch({ style: { ...ref, overrides: { ...(ref?.overrides ?? {}), ...patch } } });
-  }
-
-  function clearOverrides(): void {
-    const styleId = ref?.styleId ?? null;
-    onPatch({ style: styleId ? { styleId } : null });
-  }
-
-  return (
-    <div data-appearance-for={option.id}>
-      <div className="flex items-center gap-1.5">
-        <select
-          value={styleId}
-          onChange={(e) => setStyle(e.target.value)}
-          className="min-w-0 flex-1 rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
-        >
-          {styles.map((style) => (
-            <option key={style.id} value={style.id}>
-              {style.name || "Untitled style"}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          // No origin: this route came from the Inspector, not from
-          // Settings, so the dialog must not offer a way "back" to a
-          // Settings dialog the writer was never in (v0.55.0).
-          onClick={() => openChoiceStyles()}
-          title="Edit the project's Choice Styles"
-          className="shrink-0 rounded px-1.5 py-1 text-xs text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
-        >
-          Edit…
-        </button>
-      </div>
-
-      {/* What this choice will actually look like, resolved — including any
-          override. Small, but it's the only place the two levels are
-          visible as one answer. */}
-      <div
-        style={choiceBoxCss(resolved)}
-        className="mt-2 px-2.5 py-1.5 text-xs text-[var(--text-2)]"
-      >
-        {option.text || "Untitled choice"}
-      </div>
-
-      <details className="mt-2 [&[open]>summary]:mb-2">
-        <summary className="cursor-pointer select-none text-[11px] text-[var(--text-3)] hover:text-[var(--text-2)]">
-          {overridden ? "Custom for this choice" : "Customise just this one"}
-        </summary>
-        <BoxControls box={resolved} onChange={setOverride} subject="choice" />
-        {overridden && (
-          <button
-            type="button"
-            onClick={clearOverrides}
-            className="mt-2 rounded px-1.5 py-0.5 text-[11px] font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
-          >
-            Back to the style
-          </button>
-        )}
-      </details>
-    </div>
-  );
-}
 
 /**
  * One Choice's accordion — collapsed, it's a single summary row (per the
@@ -1110,11 +986,17 @@ function ChoiceAccordion({
                 label-over-control pairs cost six rows of height in a
                 column this narrow; three rows say the same thing. */}
             <FieldRow label="Speaker">
-              <ChoiceSpeaker option={option} onPatch={onPatch} />
+              <SpeakerSelect value={option.speaker ?? null} onChange={(speaker) => onPatch({ speaker })} />
             </FieldRow>
 
             <FieldRow label="Style">
-              <ChoiceAppearance option={option} onPatch={onPatch} />
+              <AppearanceControl
+                id={option.id}
+                value={option.style ?? null}
+                onChange={(style) => onPatch({ style })}
+                preview={option.text || "Untitled choice"}
+                subject="choice"
+              />
             </FieldRow>
 
             <FieldRow label="Goes to">

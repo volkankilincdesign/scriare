@@ -12,6 +12,56 @@ omitting them.
 
 ---
 
+## v0.67.2 — The whole panel, compared corner to corner
+
+v0.67.0 matched the editor's rows. v0.67.1 matched the Inspector's rows.
+Both times he found the next difference within the hour, because both
+times I fixed what he pointed at instead of comparing the component. This
+one went through the panel end to end first and fixed everything the
+comparison turned up.
+
+**The header.** `Dialogue` in mixed case at text weight, with a line count
+where the choices panel keeps its add button, and **+ Add Line** parked at
+the foot of the list. Three differences in a header of two elements. It is
+the section label now, the add button sits beside it, and the count is
+gone — a conversation's size is already on the block in the editor and on
+its badge in the graph, and the choices panel does not count itself.
+
+**Two controls that had been copied by hand.** The speaker select and the
+appearance control were written for the choice panel and then written
+again, slightly differently, inside the Dialogue's. That is how two panels
+meant to be one component drift: not in a decision, but in a `<select>`
+copied with a different class string. They are one component each now,
+in `choiceControls.tsx`, and neither takes a choice or a line — only the
+value it edits, because neither ever needed more.
+
+**Things the Dialogue simply did not have**, all of which the choice had:
+a **Style** row (a line has carried a style since v0.66.0 and both the
+editor and Play Mode paint it — the panel was the one place a writer could
+not reach it), **+ Create New Scene** in the destination select (a line
+that leaves usually leaves for a scene that does not exist yet), and the
+disabled state on **+ Add Condition / + Add Action** when the story has no
+variables.
+
+**And one thing it had twice.** An open line offered two ways to remove
+itself — the ✕ in the header and a "Remove line" button at the foot. The
+choice offers one.
+
+**Two fixes that touch the Choice panel**, which the sibling rule allows
+when the choice is the one that is wrong: the dragged card's ring and
+shadow traced a 6px silhouette around an 8px card, and the Dialogue's
+landing zone was 6px against its own 8px row. Both are 8 now.
+
+**The spec compares the panels rather than a list of colours.** Header
+metrics, the open card's padding, rule, heading style and label column,
+how many remove controls a row has, and that both panels contain the same
+two shared controls — asked of each panel in turn, because the Inspector
+only ever shows one at a time. Three new controls, all caught: put the
+mixed-case title back, change the open row's padding, take the Style row
+out.
+
+---
+
 ## v0.67.1 — The Inspector's rows, which is where he was looking
 
 v0.67.0 made the two blocks match **inside the scene editor** and left the

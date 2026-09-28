@@ -390,8 +390,8 @@ cheaper than confidence.
 ---
 
 *Scriare is built with Electron, React, TypeScript, Tiptap/ProseMirror and
-React Flow. 752 automated tests run against the real packaged application,
-with 180 negative controls — each one breaks a specific line of the shipped
+React Flow. 755 automated tests run against the real packaged application,
+with 183 negative controls — each one breaks a specific line of the shipped
 source and checks that a named assertion fails. Every load-bearing
 assertion has been seen to fail on a deliberately broken build. The full
 release history is in [CHANGELOG.md](CHANGELOG.md).*

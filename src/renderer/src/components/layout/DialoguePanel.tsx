@@ -14,9 +14,9 @@ import {
 import type { DialogueLine } from "../../utils/dialogueBlocks";
 import type { DialogueAfter } from "../../types/nodeTypes";
 import { mentionResolver } from "../../utils/mentions";
-import { PLAYER_SPEAKER, PLAYER_SPEAKER_LABEL, canSpeak } from "../../types/speaker";
 import { buildVariableAction, buildVariableCondition } from "../../types/variables";
 import { useReorderableList } from "./useReorderableList";
+import { AppearanceControl, CREATE_SCENE_VALUE, SpeakerSelect } from "./choiceControls";
 import type { VariableAction, VariableCondition } from "../../types/variables";
 
 /**
@@ -79,7 +79,6 @@ export function DialogueProperties({
     ? findDialogueBlockLines(scene.content, blockId, mentionResolver(project?.entities ?? []))
     : null;
   const variables = project?.variables ?? [];
-  const entities = project?.entities ?? [];
   const otherScenes = project?.scenes.filter((s) => s.id !== sceneId) ?? [];
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -144,23 +143,41 @@ export function DialogueProperties({
   }
 
   const closes = dialogueCanClose(lines);
-  const exits = lines.filter((l) => l.after === "leave").length;
 
   return (
-    <div>
-      <div className="mb-3 flex items-baseline justify-between gap-2">
-        <h3 className="font-medium text-[var(--text)]">Dialogue</h3>
-        <span className="text-xs text-[var(--text-3)]">
-          {lines.length} {lines.length === 1 ? "line" : "lines"}
-          {exits > 0 && ` · ${exits} ${exits === 1 ? "exit" : "exits"}`}
-        </span>
+    /**
+     * v0.67.2 — THE PANEL'S OWN HEADER, which v0.67.1 left alone while
+     * fixing the rows under it. Same three facts as Choice Properties: the
+     * section label in the label style, the add button beside it, and the
+     * list spaced the same way. It read "Dialogue" in mixed case at text
+     * weight with a count where the choices panel puts its button, and the
+     * add button sat at the foot of the list instead — three differences in
+     * a header of two elements.
+     *
+     * The count went with it. A conversation's size is already on the block
+     * in the editor and on its badge in the Story Graph, and the choices
+     * panel does not count itself; a number kept here only for this panel
+     * is the kind of small difference that adds up to two components.
+     */
+    <div className="space-y-3" data-panel="dialogue">
+      <div className="flex items-center justify-between">
+        <h3 className="scriare-section-label text-[var(--text-3)]">
+          Dialogue
+        </h3>
+        <button
+          type="button"
+          onClick={() => editor && appendDialogueLine(editor, blockId)}
+          className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+        >
+          + Add Line
+        </button>
       </div>
 
       {/* The one warning that belongs on the block rather than on a line:
           it is a property of the whole conversation. Check Story says the
           same thing later; this says it while it is still being made. */}
       {!closes && (
-        <p className="mb-3 rounded-md border border-[var(--warning)] px-2.5 py-2 text-xs leading-relaxed text-[var(--warning)]">
+        <p className="rounded-md border border-[var(--warning)] px-2.5 py-2 text-xs leading-relaxed text-[var(--warning)]">
           Nothing ends this conversation. Every line can be said again and none of them ends it or
           leaves — a reader would be held here, and anything written below never appears.
         </p>
@@ -178,7 +195,7 @@ export function DialogueProperties({
                 key={line.id}
                 ref={reorder.registerItem(line.id)}
                 style={{ height: reorder.layout?.height ?? 0, position: "relative", zIndex: 0 }}
-                className="rounded-md border-2 border-dashed border-[var(--accent)] bg-[var(--accent-soft-2)]"
+                className="rounded-lg border-2 border-dashed border-[var(--accent)] bg-[var(--accent-soft-2)]"
                 aria-hidden
               />
             );
@@ -201,7 +218,6 @@ export function DialogueProperties({
                 return next;
               })
             }
-            entities={entities}
             variables={variables}
             otherScenes={otherScenes}
             onPatch={(attrs) => patch(line.id, attrs)}
@@ -233,7 +249,7 @@ export function DialogueProperties({
                 width: info.width,
                 zIndex: 50,
                 pointerEvents: "none",
-                borderRadius: 6,
+                borderRadius: 8,
                 boxShadow: "0 0 0 1px var(--border-faint), var(--shadow-floating)",
                 marginTop: 0,
               }}
@@ -243,7 +259,6 @@ export function DialogueProperties({
                 onDragHandleDown={() => {}}
                 expanded={expanded.has(held.id)}
                 onToggle={() => {}}
-                entities={entities}
                 variables={variables}
                 otherScenes={otherScenes}
                 onPatch={() => {}}
@@ -258,13 +273,6 @@ export function DialogueProperties({
           );
         })()}
 
-      <button
-        type="button"
-        onClick={() => editor && appendDialogueLine(editor, blockId)}
-        className="mt-3 rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
-      >
-        + Add Line
-      </button>
     </div>
   );
 }
@@ -274,7 +282,6 @@ function LineRow({
   onDragHandleDown,
   expanded,
   onToggle,
-  entities,
   variables,
   otherScenes,
   onPatch,
@@ -289,7 +296,6 @@ function LineRow({
   onDragHandleDown: (e: ReactPointerEvent) => void;
   expanded: boolean;
   onToggle: () => void;
-  entities: { id: string; kind: string; name: string }[];
   variables: { id: string; name: string }[];
   otherScenes: { id: string; title: string }[];
   onPatch: (attrs: Record<string, unknown>) => void;
@@ -314,7 +320,6 @@ function LineRow({
   }) => ReactNode;
 }) {
   const after = line.after;
-  const speakers = entities.filter((e) => canSpeak(e as never));
 
   function addCondition(): void {
     const condition = buildVariableCondition(variables as never);
@@ -441,19 +446,27 @@ function LineRow({
             {FieldRow({
               label: "Speaker",
               children: (
-                <select
-                  value={line.speaker ?? ""}
-                  onChange={(e) => onPatch({ speaker: e.target.value || null })}
-                  className={select}
-                >
-                  <option value="">— Nobody —</option>
-                  <option value={PLAYER_SPEAKER}>{PLAYER_SPEAKER_LABEL} (the player)</option>
-                  {speakers.map((entity) => (
-                    <option key={entity.id} value={entity.id}>
-                      {entity.name || "Unnamed"}
-                    </option>
-                  ))}
-                </select>
+                <SpeakerSelect
+                  value={line.speaker ?? null}
+                  onChange={(speaker) => onPatch({ speaker })}
+                />
+              ),
+            })}
+
+            {/* v0.67.2 — the Style row the choice panel has had since
+                v0.34.0. A line already carries a style and the editor and
+                Play Mode both paint it; the panel was the one place a
+                writer could not reach it. */}
+            {FieldRow({
+              label: "Style",
+              children: (
+                <AppearanceControl
+                  id={line.id}
+                  value={line.style ?? null}
+                  onChange={(style) => onPatch({ style })}
+                  preview={line.text || "Untitled line"}
+                  subject="line"
+                />
               ),
             })}
 
@@ -477,19 +490,10 @@ function LineRow({
                 {FieldRow({
                   label: "Said by",
                   children: (
-                    <select
-                      value={line.replySpeaker ?? ""}
-                      onChange={(e) => onPatch({ replySpeaker: e.target.value || null })}
-                      className={select}
-                    >
-                      <option value="">— Nobody —</option>
-                      <option value={PLAYER_SPEAKER}>{PLAYER_SPEAKER_LABEL} (the player)</option>
-                      {speakers.map((entity) => (
-                        <option key={entity.id} value={entity.id}>
-                          {entity.name || "Unnamed"}
-                        </option>
-                      ))}
-                    </select>
+                    <SpeakerSelect
+                      value={line.replySpeaker ?? null}
+                      onChange={(replySpeaker) => onPatch({ replySpeaker })}
+                    />
                   ),
                 })}
               </>
@@ -519,7 +523,18 @@ function LineRow({
                 children: (
                   <select
                     value={line.targetSceneId ?? ""}
-                    onChange={(e) => onPatch({ targetSceneId: e.target.value || null })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // The same inline create the choice's destination
+                      // offers: a line that leaves usually leaves for a
+                      // scene that does not exist yet.
+                      if (value === CREATE_SCENE_VALUE) {
+                        const newSceneId = useProjectStore.getState().createUnlinkedScene();
+                        if (newSceneId) onPatch({ targetSceneId: newSceneId });
+                        return;
+                      }
+                      onPatch({ targetSceneId: value || null });
+                    }}
                     className={select}
                   >
                     <option value="">— Not linked —</option>
@@ -528,6 +543,7 @@ function LineRow({
                         → {sc.title || "Untitled scene"}
                       </option>
                     ))}
+                    <option value={CREATE_SCENE_VALUE}>+ Create New Scene</option>
                   </select>
                 ),
               })}
@@ -590,7 +606,8 @@ function LineRow({
                   <button
                     type="button"
                     onClick={addCondition}
-                    className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+                    disabled={variables.length === 0}
+                    className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)] disabled:opacity-50"
                   >
                     + Add Condition
                   </button>
@@ -622,20 +639,14 @@ function LineRow({
                   <button
                     type="button"
                     onClick={addAction}
-                    className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+                    disabled={variables.length === 0}
+                    className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)] disabled:opacity-50"
                   >
                     + Add Action
                   </button>
                 </div>
               )}
 
-          <button
-            type="button"
-            onClick={onRemove}
-            className="rounded px-1.5 py-0.5 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
-          >
-            Remove line
-          </button>
         </div>
       )}
     </div>

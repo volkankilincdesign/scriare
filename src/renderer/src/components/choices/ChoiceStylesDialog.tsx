@@ -195,8 +195,10 @@ export function BoxControls({
 }: {
   box: ChoiceBox;
   onChange: (patch: Partial<ChoiceBox>) => void;
-  /** What the writer is editing, for the notice when a colour gets pinned. */
-  subject?: "style" | "choice";
+  /** What the writer is editing, for the notice when a colour gets pinned.
+   *  v0.67.2 — "line" joined the list when the Dialogue's panel started
+   *  using this control instead of a copy of it. */
+  subject?: "style" | "choice" | "line";
 }) {
   // Coalesced to one commit per frame, for the reason EditorToolbar.tsx
   // documents at length: a native colour input fires on every pixel of
@@ -295,7 +297,7 @@ function ColorField({
 }: {
   value: string | null;
   fallback: string;
-  subject: "style" | "choice";
+  subject: "style" | "choice" | "line";
   /** Throttled to one commit per frame — the ordinary path. */
   onChange: (value: string | null) => void;
   /**

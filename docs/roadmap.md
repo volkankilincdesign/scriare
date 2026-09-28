@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.67.1.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.67.2.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -364,12 +364,29 @@ than gaps.
   three options in all eight themes went first this time, and he chose from
   it before any code was written.
 
+- **v0.67.2 The whole panel, compared corner to corner** — the third pass
+  at the same rule, and the first one that started from a comparison
+  instead of from something he pointed at. Fixed: the panel header (section
+  label, add button beside it, line count deleted), the speaker and
+  appearance controls now one shared component each instead of two
+  hand-copies, a Style row the Dialogue never had, + Create New Scene in
+  its destination select, the disabled state on its add buttons, and one
+  remove control per row instead of two. Two of the fixes were in the
+  Choice panel, which the rule allows when the choice is the one that is
+  wrong. The parity spec now compares headers, open cards and control
+  counts, not only colours.
+
+  **Still to do under this heading:** the same sweep across the rest of the
+  app, against the set we have settled — section labels, the accent text
+  button, the row card, v0.65.0's I2 grammar, FieldRow and QuietRule. Not
+  started, at his instruction.
+
 **Next, agreed 27 Sep:** the **spreadsheet export** (.xlsx) for
 localisation and VO, now unblocked — `lineId` rode in with the Dialogue,
 so every line in the story has something a translator can key against.
 Then the elective list: Custom CSS for the export (G2), Twine import.
 
-752 tests, 180 negative controls. Two bugs were found by the new spec and
+755 tests, 183 negative controls. Two bugs were found by the new spec and
 one control came back green — the green one was a gap in the tests (the
 graph badge had no assertion), and the assertion is what got written.
 

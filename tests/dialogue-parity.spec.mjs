@@ -186,14 +186,145 @@ export default async function run({ api, check, seedProject }) {
     }
   }
 
+  // v0.67.2 — and the panel's own header, which is two elements and had
+  // three differences: a mixed-case title at text weight instead of the
+  // section label, a count where the choices panel puts its add button,
+  // and the add button itself at the foot of the list.
+  const showPanel = async (kind, blockId) => {
+    await api(({ kind, blockId }) => {
+      const store = window.__scriareProjectStore;
+      window.__scriareInspectorStore.getState().selectTarget({
+        kind,
+        sceneId: store.getState().selectedSceneId,
+        blockId,
+      });
+    }, { kind, blockId });
+    await wait(340);
+  };
+
+  const readHeader = (root) =>
+    api((sel) => {
+      const panel = document.querySelector(sel);
+      if (!panel) return { error: `no ${sel}` };
+      const h3 = panel.querySelector("h3");
+      const add = [...panel.querySelectorAll("button")].find((b) =>
+        b.textContent.trim().startsWith("+ Add"),
+      );
+      if (!h3 || !add) return { error: `${root}: h3 ${Boolean(h3)}, add ${Boolean(add)}` };
+      const cs = getComputedStyle(h3);
+      return {
+        size: cs.fontSize,
+        weight: cs.fontWeight,
+        transform: cs.textTransform,
+        tracking: cs.letterSpacing,
+        colour: cs.color,
+        // The add button is beside the title, not at the foot of the list.
+        addBesideTitle: Math.abs(add.getBoundingClientRect().top - h3.getBoundingClientRect().top) < 12,
+      };
+    }, root);
+
+  await showPanel("choice", "blk-c");
+  const choiceHeader = await readHeader("[data-panel='choices']");
+  await showPanel("dialogue", "blk-d");
+  const lineHeader = await readHeader("[data-panel='dialogue']");
+  const headerGap = { choice: choiceHeader, line: lineHeader };
+
+  check(
+    "THE PANEL HEADER IS THE SAME HEADER — label, weight, and the add button beside it",
+    !headerGap.choice.error &&
+      !headerGap.line.error &&
+      JSON.stringify(headerGap.choice) === JSON.stringify(headerGap.line) &&
+      headerGap.line.addBesideTitle === true,
+    JSON.stringify(headerGap),
+  );
+
   check(
     "THE INSPECTOR'S FOLDED ROWS ARE THE SAME ROW, in every theme",
     panelGaps.length === 0,
     panelGaps.slice(0, 4).join(" | ") || `${themes.length} themes agree`,
   );
 
-  // The card's fill is what makes a lifted row opaque. Asserted as its own
-  // check, in the words of the complaint: you can see through it.
+  // ── the expanded body ────────────────────────────────────────────────
+  // The rows are the same shut; this asks whether they are the same open.
+  // Everything compared here is chrome — the panel's own furniture — and
+  // not the fields, which differ because a conversation has facts a choice
+  // does not.
+  const openBody = async (panel, rowSelector) => {
+    await api(({ panel, rowSelector }) => {
+      const row = document.querySelector(`[data-panel='${panel}'] ${rowSelector}`);
+      row.querySelector("button").click();
+    }, { panel, rowSelector });
+    await wait(320);
+    return api(({ panel, rowSelector }) => {
+      const row = document.querySelector(`[data-panel='${panel}'] ${rowSelector}`);
+      const body = row.lastElementChild;
+      const cs = getComputedStyle(body);
+      const heading = body.querySelector("h4");
+      const hs = heading ? getComputedStyle(heading) : null;
+      const note = body.querySelector(".border-dashed");
+      const ns = note ? getComputedStyle(note) : null;
+      return {
+        padding: `${cs.paddingTop} ${cs.paddingLeft}`,
+        rule: `${cs.borderTopWidth} ${cs.borderTopColor}`,
+        headingSize: hs ? hs.fontSize : null,
+        headingWeight: hs ? hs.fontWeight : null,
+        headingTracking: hs ? hs.letterSpacing : null,
+        headingColour: hs ? hs.color : null,
+        noteBorder: ns ? `${ns.borderTopWidth} ${ns.borderTopStyle}` : null,
+        // The label column both panels lay their fields out in.
+        labelWidth: (() => {
+          const label = body.querySelector("span, label");
+          return label ? getComputedStyle(label).width : null;
+        })(),
+        // Counted, not measured: an open choice has one remove control and
+        // the line had two — the ✕ in the header plus a "Remove line"
+        // button at the foot. That is the kind of extra that makes two
+        // panels read as two components even when every colour matches.
+        removes: [...row.querySelectorAll("button")].filter((b) => {
+          const t = b.textContent.trim().toLowerCase();
+          return t === "✕" || t.startsWith("remove");
+        }).length,
+      };
+    }, { panel, rowSelector });
+  };
+
+  await showPanel("choice", "blk-c");
+  const choiceBody = await openBody("choices", "[data-option-id]");
+
+  await showPanel("dialogue", "blk-d");
+  const lineBody = await openBody("dialogue", "[data-dialogue-line-id]");
+
+  check(
+    "AN OPEN ROW IS THE SAME CARD TOO — padding, rule, headings, label column",
+    JSON.stringify(choiceBody) === JSON.stringify(lineBody),
+    `choice ${JSON.stringify(choiceBody)} | line ${JSON.stringify(lineBody)}`,
+  );
+
+  // The two controls that were copied by hand and drifted: one component
+  // each now, so the assertion is that the same element is on screen.
+  const has = (panel) =>
+    api((sel) => ({
+      speaker: Boolean(document.querySelector(`[data-panel='${sel}'] [data-choice-speaker]`)),
+      style: Boolean(document.querySelector(`[data-panel='${sel}'] [data-appearance-for]`)),
+    }), panel);
+
+  const lineControls = await has("dialogue");
+  await showPanel("choice", "blk-c");
+  await api(() => document.querySelector("[data-panel='choices'] [data-option-id] button").click());
+  await wait(320);
+  const choiceControls = await has("choices");
+
+  check(
+    "BOTH PANELS USE THE SAME SPEAKER AND STYLE CONTROLS",
+    lineControls.speaker && lineControls.style && choiceControls.speaker && choiceControls.style,
+    `line ${JSON.stringify(lineControls)} | choice ${JSON.stringify(choiceControls)}`,
+  );
+
+  // The card's fill is what makes a lifted row opaque. Back to the
+  // Dialogue's panel first — the check above left the choices' on screen.
+  // Asserted as its own check, in the words of the complaint: you can see
+  // through it.
+  await showPanel("dialogue", "blk-d");
   const opacity = await api(() => {
     const row = document.querySelector("aside [data-dialogue-line-id]");
     if (!row) return { error: "no row" };
