@@ -12,6 +12,33 @@ omitting them.
 
 ---
 
+## v0.71.2 — Nothing in the file fences its reader
+
+**The dark rule between Ref and Where was a frozen-pane split.** v0.70.1
+froze both axes so Key and Ref stayed in view while scrolling right to
+Translation; a spreadsheet draws that split as a solid rule down the
+sheet, and the file does not get to opt out of it. He measured it before I
+did — a column of pixels a quarter darker than any gridline, running the
+full height of the table. The header row is still frozen. The columns are
+not. A rule through the middle of the table is a worse price than
+scrolling.
+
+**And every cell of the Lines sheet is writable, with nothing drawn to
+suggest otherwise.** The last lock flags are gone, and so is the rule that
+outlined the editable pair. His argument, and it is the right one: the
+sheet says plainly which two columns are the ones to write in, and a
+person who types over a generated column has only overwritten something
+the next export puts back. A file that fences its own reader is solving a
+problem it does not have.
+
+What marks those two columns now is colour and only colour — two warm
+columns in a sheet of white and pale grey — which was doing most of the
+work from the start. The Read me stays protected: reference, not a
+surface.
+
+Three new controls, one for each thing that could come back: the vertical
+split, a lock flag, a rule down a column's side.
+
 ## v0.71.1 — Unlocking the sheet everyone works on
 
 **The Lines sheet shipped protected, and he could not type in his own

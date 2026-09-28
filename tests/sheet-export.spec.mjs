@@ -456,8 +456,8 @@ export default async function run({ page, api, check, seedProject, app }) {
 
   // ── what makes it usable rather than merely correct ──────────────────
   check(
-    "THE HEADER AND THE KEY COLUMNS ARE FROZEN — both axes, not just the top",
-    /<pane xSplit="2" ySplit="1"[^>]*state="frozen"/.test(lines),
+    "THE HEADER IS FROZEN, AND ONLY THE HEADER — a vertical split draws a rule through the table",
+    /<pane ySplit="1"[^>]*state="frozen"/.test(lines) && !/xSplit/.test(lines),
     /<pane[^>]*>/.exec(lines)?.[0] ?? "no pane",
   );
   check(
@@ -471,8 +471,7 @@ export default async function run({ page, api, check, seedProject, app }) {
     /<c r="P2"[\s\S]{0,40}/.exec(lines)?.[0].replace(/\s+/g, " ") ?? "no P2",
   );
 
-  // Locking is the guard rail against the one accident that silently
-  // ruins a whole file: a sort that moves one column and not the rest.
+  // Every lock flag in the workbook, which since v0.71.2 should be none.
   // The cellXfs block only. A first attempt matched every <xf> in the
   // file, which swept up the one cellStyleXfs entry as well and shifted
   // every index by one — so the assertion was reading a different style
@@ -504,9 +503,22 @@ export default async function run({ page, api, check, seedProject, app }) {
     /<sheetProtection[^>]*>/.exec(readme)?.[0] ?? "unprotected",
   );
   check(
-    "...and the two columns to fill in stay marked, by colour rather than by a lock",
-    styleOf("I") === styleOf("J") && styleOf("I") !== styleOf("H") && unlocked.includes(styleOf("I")),
-    `I→${styleOf("I")} J→${styleOf("J")} H→${styleOf("H")}`,
+    "...and NOT ONE CELL carries a lock flag, so nothing can refuse a keystroke",
+    unlocked.length === 0 && !/<protection/.test(styles),
+    /<protection[^>]*>/.exec(styles)?.[0] ?? "no protection attributes at all",
+  );
+  check(
+    "...while the two columns to fill in are still marked — by colour, and only by colour",
+    styleOf("I") === styleOf("J") && styleOf("I") !== styleOf("H") && styleOf("I") !== styleOf("A"),
+    `I→${styleOf("I")} J→${styleOf("J")} H→${styleOf("H")} A→${styleOf("A")}`,
+  );
+  check(
+    "...and nothing is fenced off with a rule of its own",
+    (() => {
+      const borders = /<borders[^>]*>([\s\S]*?)<\/borders>/.exec(styles)?.[1] ?? "";
+      return !/<left style=/.test(borders) && !/<right style=/.test(borders);
+    })(),
+    "no left or right rules declared anywhere",
   );
 
   // THE HEADER CAN BE READ. v0.70.0 declared it bold on a near-black fill

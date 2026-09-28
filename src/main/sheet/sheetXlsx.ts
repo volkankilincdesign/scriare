@@ -97,15 +97,26 @@ const STYLE = {
  * what was left was three columns in a different face for no reason a
  * person opening the file could see. Calibri throughout.
  *
- * THE LINES SHEET IS NOT LOCKED, either (v0.71.1). It used to ship
- * protected, with only Translation and Notes writable, guarding against
- * the accident that silently ruins a localisation file: a sort that moves
- * one column and not the rest. That guard was aimed at the translator and
- * it landed on the writer, who owns the story and could not type in their
- * own export. It was never security — Excel's sheet protection comes off
- * in two clicks — so all it really bought was friction for the one person
- * guaranteed to hit it. The Read me stays protected, because it is
- * reference rather than a surface anyone works on.
+ * EVERY CELL OF THE LINES SHEET IS WRITABLE (v0.71.2), and nothing is
+ * outlined to say otherwise. It shipped protected, with only Translation
+ * and Notes writable, guarding against the accident that silently ruins a
+ * localisation file: a sort that moves one column and not the rest. That
+ * guard was aimed at the translator and it landed on the writer, who owns
+ * the story and could not type in their own export. It was never security
+ * either — Excel's protection comes off in two clicks — so all it bought
+ * was friction for the one person guaranteed to hit it.
+ *
+ * The lock flags went with it, and so did the rule drawn down the side of
+ * the editable pair. His argument, and it is the right one: the sheet says
+ * plainly which columns are the ones to write in, and a person who types
+ * over a generated column has only overwritten something the next export
+ * puts back. A file that fences its own reader is solving a problem it
+ * does not have.
+ *
+ * What is left to mark them is COLOUR, which was doing most of the work
+ * anyway: two warm columns in a sheet of white and pale grey. The Read me
+ * stays protected, because it is reference rather than a surface anyone
+ * works on.
  *
  * The shading still says where to type, which was always doing most of the
  * work. `locked="0"` stays on those two columns so that anyone who DOES
@@ -127,10 +138,9 @@ const STYLES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <fill><patternFill patternType="solid"><fgColor rgb="FFFFF3D6"/><bgColor indexed="64"/></patternFill></fill>
     <fill><patternFill patternType="solid"><fgColor rgb="FFEFF3F7"/><bgColor indexed="64"/></patternFill></fill>
   </fills>
-  <borders count="3">
+  <borders count="2">
     <border><left/><right/><top/><bottom/><diagonal/></border>
     <border><left/><right/><top/><bottom style="thin"><color rgb="FFE1E5EA"/></bottom><diagonal/></border>
-    <border><left style="thin"><color rgb="FFE8C97A"/></left><right/><top/><bottom style="thin"><color rgb="FFEBD9A8"/></bottom><diagonal/></border>
   </borders>
   <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
   <cellXfs count="9">
@@ -139,8 +149,8 @@ const STYLES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
       <alignment vertical="top" wrapText="1"/></xf>
     <xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1">
       <alignment vertical="center" horizontal="left" indent="1"/></xf>
-    <xf numFmtId="0" fontId="0" fillId="3" borderId="2" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1" applyProtection="1">
-      <alignment vertical="top" wrapText="1"/><protection locked="0"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="3" borderId="1" xfId="0" applyFill="1" applyAlignment="1">
+      <alignment vertical="top" wrapText="1"/></xf>
     <xf numFmtId="0" fontId="0" fillId="4" borderId="1" xfId="0" applyFill="1" applyAlignment="1">
       <alignment vertical="top" wrapText="1"/></xf>
     <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyAlignment="1">
@@ -242,11 +252,14 @@ function linesSheet(sheet: SheetDocument): string {
   <dimension ref="A1:${lastColumn}${lastRow}"/>
   <sheetViews>
     <sheetView tabSelected="1" workbookViewId="0">
-      <!-- Both axes. The header alone was not enough: the columns a
-           translator needs in view while typing into I are A and B, and
-           they are the two furthest from it. -->
-      <pane xSplit="2" ySplit="1" topLeftCell="C2" activePane="bottomRight" state="frozen"/>
-      <selection pane="bottomRight" activeCell="I2" sqref="I2"/>
+      <!-- The header row only. Freezing the first two columns as well
+           kept Key and Ref in view while scrolling right, and cost a
+           solid dark rule down the sheet between Ref and Where — which is
+           how a spreadsheet draws a pane split, and is not something the
+           file gets to opt out of. A rule through the middle of the table
+           is a worse price than scrolling. -->
+      <pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>
+      <selection pane="bottomLeft" activeCell="I2" sqref="I2"/>
     </sheetView>
   </sheetViews>
   <sheetFormatPr defaultRowHeight="15"/>

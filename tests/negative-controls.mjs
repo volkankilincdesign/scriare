@@ -1946,15 +1946,15 @@ const CONTROLS = [
     from: "export const EDITABLE_COLUMNS = [8, 9];",
     to: "export const EDITABLE_COLUMNS: number[] = [];",
     spec: "sheet-export",
-    expect: "the two columns to fill in stay marked",
+    expect: "the two columns to fill in are still marked",
   },
   {
     name: "the header band unfrozen, leaving row 400 of a flat sheet unreadable",
     file: main("sheet/sheetXlsx.ts"),
-    from: '      <pane xSplit="2" ySplit="1" topLeftCell="C2" activePane="bottomRight" state="frozen"/>',
+    from: '      <pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>',
     to: "",
     spec: "sheet-export",
-    expect: "THE HEADER AND THE KEY COLUMNS ARE FROZEN",
+    expect: "THE HEADER IS FROZEN, AND ONLY THE HEADER",
   },
   {
     name: "Chars baked as a number instead of written as a formula",
@@ -2100,6 +2100,31 @@ const CONTROLS = [
     to: '    <font><sz val="11"/><color rgb="FF3E4A57"/><name val="Consolas"/></font>',
     spec: "sheet-export",
     expect: "ONE TYPEFACE THROUGHOUT",
+  },
+  // ── v0.71.2 — a file that does not fence its own reader ──────────────
+  {
+    name: "the vertical split back, drawing a rule between Ref and Where",
+    file: main("sheet/sheetXlsx.ts"),
+    from: '      <pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>',
+    to: '      <pane xSplit="2" ySplit="1" topLeftCell="C2" activePane="bottomRight" state="frozen"/>',
+    spec: "sheet-export",
+    expect: "THE HEADER IS FROZEN, AND ONLY THE HEADER",
+  },
+  {
+    name: "a lock flag back on a cell, so the sheet can refuse a keystroke again",
+    file: main("sheet/sheetXlsx.ts"),
+    from: '    <xf numFmtId="0" fontId="0" fillId="3" borderId="1" xfId="0" applyFill="1" applyAlignment="1">\n      <alignment vertical="top" wrapText="1"/></xf>',
+    to: '    <xf numFmtId="0" fontId="0" fillId="3" borderId="1" xfId="0" applyFill="1" applyAlignment="1" applyProtection="1">\n      <alignment vertical="top" wrapText="1"/><protection locked="0"/></xf>',
+    spec: "sheet-export",
+    expect: "NOT ONE CELL carries a lock flag",
+  },
+  {
+    name: "the editable pair fenced off with a rule down its side",
+    file: main("sheet/sheetXlsx.ts"),
+    from: '    <border><left/><right/><top/><bottom style="thin"><color rgb="FFE1E5EA"/></bottom><diagonal/></border>',
+    to: '    <border><left style="thin"><color rgb="FFE8C97A"/></left><right/><top/><bottom style="thin"><color rgb="FFE1E5EA"/></bottom><diagonal/></border>',
+    spec: "sheet-export",
+    expect: "nothing is fenced off with a rule of its own",
   },
 ];
 
