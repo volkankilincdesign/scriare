@@ -12,6 +12,38 @@ omitting them.
 
 ---
 
+## v0.67.3 — The Inspector follows a click into a reply
+
+Reported with a screenshot: editing line 2's reply while the Inspector sat
+open on line 3.
+
+**The Inspector follows the ProseMirror caret**, and three quarters of a
+Dialogue line is not content. The reply is a flat attribute — the
+compromise argued in the block's own notes — so the node view draws it as a
+textarea inside `contentEditable={false}`, and the after-mark, the ✕ and
+the destination label are chrome. Clicking any of them moves DOM focus and
+leaves the PM selection exactly where it was, so no selection event fires
+and the panel goes on showing whichever line the caret was last really in.
+Nothing failed to notice; nothing was asked to.
+
+**One `pointerdown` on the line's node view** aims the Inspector at that
+line, which covers all four. `pointerdown` rather than `focus` because
+three of the four are not focusable, and the block id is read by resolving
+the node's own position rather than passed down, the way the row's number
+already is.
+
+**The guard is not an optimisation.** Without it, every click inside an
+already-targeted reply writes a new object to the store and the panel
+re-renders under the writer's hands while they are typing in the field it
+is re-rendering. The spec clicks the same reply three times and asserts
+**zero** store writes; the control that removes the guard turns that red.
+
+The block level never had this problem: `ChoiceBlockView` and
+`DialogueBlockView` have carried a header handler for the same reason since
+v0.34.1. The per-line chrome is what never got one.
+
+---
+
 ## v0.67.2 — The whole panel, compared corner to corner
 
 v0.67.0 matched the editor's rows. v0.67.1 matched the Inspector's rows.

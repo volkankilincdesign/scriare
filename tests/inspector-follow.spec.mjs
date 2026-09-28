@@ -337,5 +337,135 @@ export default async function ({ api, check, seedProject }) {
     Object.entries(shiftBelow).some(([id, px]) => id !== "c1" && px > 20),
     JSON.stringify(shiftBelow));
 
+  // ── v0.67.3 — a line's chrome aims the Inspector too ─────────────────
+  //
+  // The Inspector follows the ProseMirror caret, and three quarters of a
+  // Dialogue line is not content: the reply is a flat attribute in a
+  // textarea, and the after-mark, the ✕ and the destination label are
+  // chrome, all inside `contentEditable={false}`. Clicking any of them
+  // moved DOM focus and left the PM selection where it was, so the panel
+  // went on showing whichever line the caret was last really in.
+  await seedProject();
+  await new Promise((r) => setTimeout(r, 250));
+
+  await api(() => {
+    const store = window.__scriareProjectStore;
+    store.getState().selectScene(store.getState().project.scenes[0].id);
+  });
+  await new Promise((r) => setTimeout(r, 350));
+
+  await api(() => {
+    const editor = window.__scriareEditorStore.getState().editor;
+    const { buildDialogueBlockNode } = window.__scriareDialogue;
+    editor.commands.setContent(
+      {
+        type: "doc",
+        content: [
+          buildDialogueBlockNode(
+            [
+              { id: "ln-1", text: "First line", reply: "First reply." },
+              { id: "ln-2", text: "Second line", reply: "Second reply." },
+              { id: "ln-3", text: "Third line", reply: "Third reply." },
+            ],
+            "blk-follow",
+          ),
+        ],
+      },
+      true,
+    );
+  });
+  await new Promise((r) => setTimeout(r, 600));
+
+  // Put the caret in the THIRD line's text the ordinary way, so the panel
+  // is showing a line that is not the one clicked next.
+  await api(() => {
+    const editor = window.__scriareEditorStore.getState().editor;
+    let pos = -1;
+    editor.state.doc.descendants((node, at) => {
+      if (pos !== -1) return false;
+      if (node.type.name === "dialogueLine" && node.attrs.lineId === "ln-3") pos = at + 1;
+      return true;
+    });
+    editor.chain().focus().setTextSelection(pos).run();
+  });
+  await new Promise((r) => setTimeout(r, 350));
+  let follow = await target();
+  check(
+    "the caret in a line's text opens that line",
+    follow.kind === "dialogue" && follow.lineId === "ln-3",
+    JSON.stringify(follow),
+  );
+
+  // Now click into the SECOND line's reply — the reported case.
+  const clicked = await api(() => {
+    const field = document.querySelector('.ProseMirror [data-reply-for="ln-2"]');
+    if (!field) return "no reply field";
+    const box = field.getBoundingClientRect();
+    field.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        clientX: box.left + 4,
+        clientY: box.top + 4,
+        bubbles: true,
+        cancelable: true,
+        pointerId: 1,
+      }),
+    );
+    field.focus();
+    return "clicked";
+  });
+  await new Promise((r) => setTimeout(r, 350));
+  follow = await target();
+  check(
+    "CLICKING A REPLY OPENS ITS OWN LINE, not the one the caret was in",
+    clicked === "clicked" && follow.kind === "dialogue" && follow.lineId === "ln-2",
+    `${clicked} → ${JSON.stringify(follow)}`,
+  );
+
+  // The same for the after-mark, which is a button and not focusable text.
+  await api(() => {
+    const mark = document.querySelector('.ProseMirror [data-line-id="ln-1"] [data-after-toggle]');
+    const box = mark.getBoundingClientRect();
+    mark.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        clientX: box.left + 2,
+        clientY: box.top + 2,
+        bubbles: true,
+        cancelable: true,
+        pointerId: 1,
+      }),
+    );
+  });
+  await new Promise((r) => setTimeout(r, 350));
+  follow = await target();
+  check(
+    "...and so does the after-mark",
+    follow.kind === "dialogue" && follow.lineId === "ln-1",
+    JSON.stringify(follow),
+  );
+
+  // The guard: clicking inside the line already targeted must not write to
+  // the store again, or the panel re-renders under the writer's hands
+  // while they are typing in the very field it is re-rendering.
+  const rewrites = await api(() => {
+    const store = window.__scriareInspectorStore;
+    let writes = 0;
+    const stop = store.subscribe(() => {
+      writes += 1;
+    });
+    const field = document.querySelector('.ProseMirror [data-reply-for="ln-1"]');
+    for (let i = 0; i < 3; i += 1) {
+      field.dispatchEvent(
+        new PointerEvent("pointerdown", { bubbles: true, cancelable: true, pointerId: 1 }),
+      );
+    }
+    stop();
+    return writes;
+  });
+  check(
+    "clicking again inside the line already open changes nothing",
+    rewrites === 0,
+    `${rewrites} store writes`,
+  );
+
   await seedProject();
 }

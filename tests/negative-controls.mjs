@@ -1736,6 +1736,23 @@ const CONTROLS = [
     spec: "dialogue-parity",
     expect: "BOTH PANELS USE THE SAME SPEAKER AND STYLE CONTROLS",
   },
+  // ── v0.67.3, the Inspector following a click into a line's chrome ─────
+  {
+    name: "a line's chrome that does not aim the Inspector",
+    file: src("components/editor/DialogueLineView.tsx"),
+    from: "      onPointerDown={aimInspector}",
+    to: "",
+    spec: "inspector-follow",
+    expect: "CLICKING A REPLY OPENS ITS OWN LINE",
+  },
+  {
+    name: "a re-aim with no guard on the line already open",
+    file: src("components/editor/DialogueLineView.tsx"),
+    from: "    if (\n      already.kind === \"dialogue\" &&\n      already.blockId === blockId &&\n      already.lineId === lineId\n    ) {\n      return;\n    }",
+    to: "",
+    spec: "inspector-follow",
+    expect: "clicking again inside the line already open changes nothing",
+  },
 ];
 
 

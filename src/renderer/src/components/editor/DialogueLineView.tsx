@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { NodeViewContent, NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
 import { useProjectStore } from "../../state/projectStore";
+import { useInspectorStore } from "../../state/inspectorStore";
 import { choiceBoxCss, resolveChoiceBox } from "../../types/choiceStyles";
 import type { ChoiceStyleRef } from "../../types/choiceStyles";
 import { applyDialogueLineAttrs, removeDialogueLine } from "../../utils/dialogueBlocks";
@@ -132,6 +133,51 @@ export function DialogueLineView({ node, editor, getPos }: NodeViewProps) {
     return () => observer.disconnect();
   }, []);
 
+  /**
+   * Clicking anything in this row aims the Inspector at THIS line
+   * (v0.67.3).
+   *
+   * The Inspector follows the ProseMirror caret: land in a line's text and
+   * SceneEditor's `onSelectionUpdate` walks up to the block and targets it,
+   * carrying the line id so the right accordion opens. The rest of this row
+   * is not content — the reply is a flat attribute in a textarea, and the
+   * after-mark, the ✕ and the destination label are chrome — all of it
+   * inside `contentEditable={false}`. Clicking there moves DOM focus and
+   * leaves the PM selection exactly where it was, so no selection event
+   * fires and the panel keeps showing whichever line the caret was last
+   * really in. Reported against a reply: editing line 2's reply with line
+   * 3 open in the Inspector.
+   *
+   * `pointerdown` rather than `focus`, because three of the four things
+   * this covers are not focusable.
+   *
+   * THE GUARD IS NOT AN OPTIMISATION. Without it every pointerdown inside
+   * an already-targeted reply writes a new object into the store, and the
+   * Inspector re-renders under the writer's hands while they are typing in
+   * the field it is re-rendering.
+   */
+  function aimInspector(): void {
+    const sceneId = useProjectStore.getState().selectedSceneId;
+    if (!sceneId || typeof getPos !== "function") return;
+    const pos = getPos();
+    if (typeof pos !== "number") return;
+
+    const parent = editor.state.doc.resolve(pos).parent;
+    const blockId = (parent.attrs?.blockId as string) ?? null;
+    if (!blockId) return;
+
+    const inspector = useInspectorStore.getState();
+    const already = inspector.target;
+    if (
+      already.kind === "dialogue" &&
+      already.blockId === blockId &&
+      already.lineId === lineId
+    ) {
+      return;
+    }
+    inspector.selectTarget({ kind: "dialogue", sceneId, blockId, lineId });
+  }
+
   function cycleAfter(): void {
     const next = AFTER_ORDER[(AFTER_ORDER.indexOf(after) + 1) % AFTER_ORDER.length];
     applyDialogueLineAttrs(editor, lineId, { after: next });
@@ -143,6 +189,7 @@ export function DialogueLineView({ node, editor, getPos }: NodeViewProps) {
       data-line-id={lineId || undefined}
       data-after={after}
       style={choiceBoxCss(box)}
+      onPointerDown={aimInspector}
     >
       <div className="flex items-baseline gap-2">
         <span contentEditable={false} className="shrink-0 select-none text-xs text-[var(--text-3)]">

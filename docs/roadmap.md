@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.67.2.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.67.3.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -376,6 +376,14 @@ than gaps.
   wrong. The parity spec now compares headers, open cards and control
   counts, not only colours.
 
+- **v0.67.3 The Inspector follows a click into a reply** — it follows the
+  caret, and a line's reply is a textarea in a non-editable wrapper, so
+  clicking it never moved the caret and the panel kept the last line the
+  writer was really in. One pointerdown handler on the line covers the
+  reply, the after-mark, the ✕ and the destination label; a guard keeps a
+  second click in the same line from re-rendering the panel while it is
+  being typed into.
+
   **Still to do under this heading:** the same sweep across the rest of the
   app, against the set we have settled — section labels, the accent text
   button, the row card, v0.65.0's I2 grammar, FieldRow and QuietRule. Not
@@ -386,7 +394,7 @@ localisation and VO, now unblocked — `lineId` rode in with the Dialogue,
 so every line in the story has something a translator can key against.
 Then the elective list: Custom CSS for the export (G2), Twine import.
 
-755 tests, 183 negative controls. Two bugs were found by the new spec and
+759 tests, 185 negative controls. Two bugs were found by the new spec and
 one control came back green — the green one was a gap in the tests (the
 graph badge had no assertion), and the assertion is what got written.
 
