@@ -1753,6 +1753,14 @@ const CONTROLS = [
     spec: "inspector-follow",
     expect: "clicking again inside the line already open changes nothing",
   },
+  {
+    name: "the Dialogue button drawn as the quieter half again",
+    file: src("components/editor/EditorToolbar.tsx"),
+    from: 'className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] bg-[var(--accent-fill-strong)] px-2.5 text-xs font-semibold text-[var(--accent-text-on)] transition-colors hover:bg-[var(--accent)]"\n        >\n          <Icon name="dialogue"',
+    to: 'className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] border border-[var(--border)] bg-[var(--surface-2)] px-2.5 text-xs font-semibold text-[var(--text-2)] transition-colors hover:border-[var(--accent)]"\n        >\n          <Icon name="dialogue"',
+    spec: "dialogue-parity",
+    expect: "THE TWO TOOLBAR BUTTONS ARE THE SAME BUTTON",
+  },
 ];
 
 

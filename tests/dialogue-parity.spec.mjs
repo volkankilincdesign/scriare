@@ -147,6 +147,52 @@ export default async function run({ api, check, seedProject }) {
     JSON.stringify(afterRestyle),
   );
 
+  // ── the two toolbar buttons ──────────────────────────────────────────
+  // They insert the two block types and are reached for equally, so they
+  // are one button with two labels. v0.66.1 drew the Dialogue as the
+  // quieter half on a "one primary per bar" argument — which is a rule
+  // about bars in general, not about these two, and it said the same thing
+  // about the Dialogue that having no button at all had said.
+  const buttonGaps = [];
+  for (const theme of themes) {
+    await api((id) => window.__scriareThemes.useThemeStore.getState().setTheme(id), theme);
+    await wait(200);
+    const pair = await api(() => {
+      const read = (sel) => {
+        const el = document.querySelector(sel);
+        if (!el) return { error: `no ${sel}` };
+        const cs = getComputedStyle(el);
+        const box = el.getBoundingClientRect();
+        return {
+          background: cs.backgroundColor,
+          colour: cs.color,
+          border: `${cs.borderTopWidth} ${cs.borderTopColor}`,
+          radius: cs.borderTopLeftRadius,
+          size: cs.fontSize,
+          weight: cs.fontWeight,
+          padding: `${cs.paddingTop} ${cs.paddingLeft}`,
+          height: Math.round(box.height),
+          gap: cs.gap,
+        };
+      };
+      return { choice: read("[data-insert-choice]"), dialogue: read("[data-insert-dialogue]") };
+    });
+    if (pair.choice.error || pair.dialogue.error) {
+      buttonGaps.push(`${theme}: ${pair.choice.error ?? pair.dialogue.error}`);
+      continue;
+    }
+    for (const key of Object.keys(pair.choice)) {
+      if (pair.choice[key] !== pair.dialogue[key]) {
+        buttonGaps.push(`${theme} ${key}: choice ${pair.choice[key]} vs dialogue ${pair.dialogue[key]}`);
+      }
+    }
+  }
+  check(
+    "THE TWO TOOLBAR BUTTONS ARE THE SAME BUTTON, in every theme",
+    buttonGaps.length === 0,
+    buttonGaps.slice(0, 4).join(" | ") || `${themes.length} themes agree`,
+  );
+
   // Now the same question, one panel to the right.
   const panelGaps = [];
   for (const theme of themes) {

@@ -626,6 +626,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => editor.chain().focus().insertChoiceBlock().run()}
         title="Insert a Choice Block"
+        data-insert-choice
         className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] bg-[var(--accent-fill-strong)] px-2.5 text-xs font-semibold text-[var(--accent-text-on)] transition-colors hover:bg-[var(--accent)]"
       >
         <Icon name="branch" className="h-[15px] w-[15px]" />
@@ -637,9 +638,13 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           button while the other was only a slash command said the wrong
           thing about which was real. Same schema guard, same reason.
 
-          Not a second accent-filled button: one primary per bar. It is
-          the pair's quieter half by weight, not by importance — the
-          Choice is what most scenes end with. */}
+          v0.67.4 — AND THE SAME BUTTON. It shipped as the quieter half of
+          the pair on a "one primary per bar" argument, which is a rule
+          about bars in general and not about these two: they are the two
+          block types, they are reached for equally, and drawing one of
+          them as the lesser control says the thing about the Dialogue that
+          having no button at all said. Every value below is the Choice
+          button's; only the icon and the word differ. */}
       {editor.schema.nodes.dialogueBlock && (
         <button
           type="button"
@@ -647,7 +652,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           onClick={() => editor.chain().focus().insertDialogueBlock().run()}
           title="Insert a Dialogue — a conversation that stays on this page"
           data-insert-dialogue
-          className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] border border-[var(--border)] bg-[var(--surface-2)] px-2.5 text-xs font-semibold text-[var(--text-2)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] bg-[var(--accent-fill-strong)] px-2.5 text-xs font-semibold text-[var(--accent-text-on)] transition-colors hover:bg-[var(--accent)]"
         >
           <Icon name="dialogue" className="h-[15px] w-[15px]" />
           Dialogue

@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.67.3.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.67.4.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -384,6 +384,11 @@ than gaps.
   second click in the same line from re-rendering the panel while it is
   being typed into.
 
+- **v0.67.4 The two toolbar buttons are one button** — the Dialogue's
+  insert button was the outlined half of the pair; it is the Choice button
+  now, down to the fill, the text colour and the padding, with only the
+  icon and the word different. Checked in all eight themes.
+
   **Still to do under this heading:** the same sweep across the rest of the
   app, against the set we have settled — section labels, the accent text
   button, the row card, v0.65.0's I2 grammar, FieldRow and QuietRule. Not
@@ -394,7 +399,7 @@ localisation and VO, now unblocked — `lineId` rode in with the Dialogue,
 so every line in the story has something a translator can key against.
 Then the elective list: Custom CSS for the export (G2), Twine import.
 
-759 tests, 185 negative controls. Two bugs were found by the new spec and
+760 tests, 186 negative controls. Two bugs were found by the new spec and
 one control came back green — the green one was a gap in the tests (the
 graph badge had no assertion), and the assertion is what got written.
 

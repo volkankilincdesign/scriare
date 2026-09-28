@@ -12,6 +12,25 @@ omitting them.
 
 ---
 
+## v0.67.4 — The two toolbar buttons are one button
+
+The Dialogue shipped in v0.66.1 as the outlined half of the pair, on a
+"one primary per bar" argument. That is a rule about bars in general and
+not about these two: they insert the two block types, a writer reaches for
+them equally, and drawing one as the lesser control said the same thing
+about the Dialogue that having no button at all had said.
+
+Every value is the Choice button's now — the accent fill, the text colour
+on it, the height, the radius, the padding, the type, the gap. The icon
+and the word are the difference, and they are the only difference.
+
+The parity spec reads both buttons' computed styles in all eight themes
+and compares them field by field, which is the same shape as the rows and
+the panels: not "this is the right colour" but "these two are the same
+thing, whatever the theme makes of it."
+
+---
+
 ## v0.67.3 — The Inspector follows a click into a reply
 
 Reported with a screenshot: editing line 2's reply while the Inspector sat
