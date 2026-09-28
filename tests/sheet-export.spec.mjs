@@ -487,14 +487,26 @@ export default async function run({ page, api, check, seedProject, app }) {
     const match = new RegExp(`<c r="${letter}2" s="(\\d+)"`).exec(lines);
     return match ? Number(match[1]) : -1;
   };
+  // NOTHING IS LOCKED (v0.71.1). The sheet used to ship protected, with
+  // only Translation and Notes writable. That guard was aimed at a
+  // translator and it landed on the writer, who owns the story and could
+  // not type in their own export — and it was never security anyway, since
+  // Excel's protection comes off in two clicks. The shading says where to
+  // type, which was always doing most of the work.
   check(
-    "THE SHEET IS PROTECTED and exactly the two editable columns are unlocked",
-    /<sheetProtection sheet="1"/.test(lines) &&
-      unlocked.includes(styleOf("I")) &&
-      unlocked.includes(styleOf("J")) &&
-      !unlocked.includes(styleOf("H")) &&
-      !unlocked.includes(styleOf("A")),
-    `I→${styleOf("I")} J→${styleOf("J")} unlocked=${JSON.stringify(unlocked)}, H→${styleOf("H")} A→${styleOf("A")}`,
+    "THE LINES SHEET IS NOT PROTECTED — it is the surface everyone works on",
+    !/<sheetProtection/.test(lines),
+    /<sheetProtection[^>]*>/.exec(lines)?.[0] ?? "open",
+  );
+  check(
+    "...while the Read me is, because it is reference rather than a surface",
+    /<sheetProtection/.test(readme),
+    /<sheetProtection[^>]*>/.exec(readme)?.[0] ?? "unprotected",
+  );
+  check(
+    "...and the two columns to fill in stay marked, by colour rather than by a lock",
+    styleOf("I") === styleOf("J") && styleOf("I") !== styleOf("H") && unlocked.includes(styleOf("I")),
+    `I→${styleOf("I")} J→${styleOf("J")} H→${styleOf("H")}`,
   );
 
   // THE HEADER CAN BE READ. v0.70.0 declared it bold on a near-black fill
@@ -525,6 +537,24 @@ export default async function run({ page, api, check, seedProject, app }) {
       ? (Math.max(luminance(ink), luminance(ground)) + 0.05) /
         (Math.min(luminance(ink), luminance(ground)) + 0.05)
       : 0;
+  // ONE TYPEFACE. Three columns were set in Consolas, on the argument that
+  // a monospaced id makes a mistyped character visible — true while a key
+  // was `xU40lTnJ8JVN16hgSPB2I`, meaningless once it became words.
+  // Asserted over the FONT TABLE rather than by sampling columns. With one
+  // family declared there is no single edit that can give one column a
+  // different face, so sampling columns is a check nothing can fail —
+  // which the negative control said out loud by staying green.
+  const faces = [
+    ...new Set(
+      [...styles.matchAll(/<name val="([^"]+)"/g)].map((m) => m[1]),
+    ),
+  ];
+  check(
+    "ONE TYPEFACE THROUGHOUT — the whole workbook declares a single family",
+    faces.length === 1,
+    faces.join(", "),
+  );
+
   check(
     "THE HEADER CAN BE READ — its ink and its ground are not the same colour",
     ink !== null && ground !== null && ratio >= 4.5,

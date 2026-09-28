@@ -1941,12 +1941,12 @@ const CONTROLS = [
     expect: "a newline inside a cell becomes an escaped one",
   },
   {
-    name: "the two editable columns locked along with everything else",
+    name: "the two columns to fill in losing the colour that marks them",
     file: shared("sheet/model.ts"),
     from: "export const EDITABLE_COLUMNS = [8, 9];",
     to: "export const EDITABLE_COLUMNS: number[] = [];",
     spec: "sheet-export",
-    expect: "THE SHEET IS PROTECTED and exactly the two editable columns are unlocked",
+    expect: "the two columns to fill in stay marked",
   },
   {
     name: "the header band unfrozen, leaving row 400 of a flat sheet unreadable",
@@ -1959,8 +1959,8 @@ const CONTROLS = [
   {
     name: "Chars baked as a number instead of written as a formula",
     file: main("sheet/sheetXlsx.ts"),
-    from: '          if (index === 15) return `<c r="${ref}" s="${STYLE.chars}"><f>LEN(H${r})</f></c>`;',
-    to: '          if (index === 15) return `<c r="${ref}" s="${STYLE.chars}"><v>${row.text.length}</v></c>`;',
+    from: "            return `<c r=\"${ref}\" s=\"${banded ? STYLE.charsBand : STYLE.chars}\"><f>LEN(H${r})</f></c>`;",
+    to: "            return `<c r=\"${ref}\" s=\"${banded ? STYLE.charsBand : STYLE.chars}\"><v>${row.text.length}</v></c>`;",
     spec: "sheet-export",
     expect: "CHARS IS A REAL FORMULA",
   },
@@ -2030,8 +2030,8 @@ const CONTROLS = [
   {
     name: "the column being typed into striped along with the rest",
     file: main("sheet/sheetXlsx.ts"),
-    from: "  if (EDITABLE_COLUMNS.includes(column)) return STYLE.editable;\n  // Key (0), Scene ID (4) and Source hash (16) are machine strings a human",
-    to: "  if (EDITABLE_COLUMNS.includes(column)) return banded ? STYLE.cellBand : STYLE.editable;\n  // Key (0), Scene ID (4) and Source hash (16) are machine strings a human",
+    from: "  if (EDITABLE_COLUMNS.includes(column)) return STYLE.editable;\n  return banded ? STYLE.cellBand : STYLE.cell;",
+    to: "  if (EDITABLE_COLUMNS.includes(column)) return banded ? STYLE.cellBand : STYLE.editable;\n  return banded ? STYLE.cellBand : STYLE.cell;",
     spec: "sheet-export",
     expect: "the column being typed into keeps ONE colour",
   },
@@ -2083,6 +2083,23 @@ const CONTROLS = [
     to: "",
     spec: "content-ids",
     expect: "A KEY IS A BIRTHMARK",
+  },
+  // ── v0.71.1 — the two things he hit opening his own export ───────────
+  {
+    name: "the Lines sheet shipped protected again, so its owner cannot type in it",
+    file: main("sheet/sheetXlsx.ts"),
+    from: "  <autoFilter ref=\"A1:${lastColumn}${lastRow}\"/>",
+    to: '  <sheetProtection sheet="1" objects="1" scenarios="1"/>\n  <autoFilter ref="A1:${lastColumn}${lastRow}"/>',
+    spec: "sheet-export",
+    expect: "THE LINES SHEET IS NOT PROTECTED",
+  },
+  {
+    name: "a second typeface declared alongside the first",
+    file: main("sheet/sheetXlsx.ts"),
+    from: '    <font><sz val="11"/><color rgb="FF3E4A57"/><name val="Calibri"/></font>',
+    to: '    <font><sz val="11"/><color rgb="FF3E4A57"/><name val="Consolas"/></font>',
+    spec: "sheet-export",
+    expect: "ONE TYPEFACE THROUGHOUT",
   },
 ];
 

@@ -12,6 +12,41 @@ omitting them.
 
 ---
 
+## v0.71.1 — Unlocking the sheet everyone works on
+
+**The Lines sheet shipped protected, and he could not type in his own
+export.** The protection was there to guard a translator against the one
+accident that silently ruins a localisation file — a sort that moves one
+column and not the rest — and it was aimed at entirely the wrong person.
+The writer owns the story. The Lines sheet is the working surface, for the
+writer as much as for anyone it is sent to, and locking the surface people
+work on is not a guard rail, it is a door with no handle. It was never
+security either: Excel's sheet protection comes off in two clicks, so all
+it really bought was friction for the one person guaranteed to hit it.
+
+Lines is open. The **Read me stays protected**, which is his split and the
+right one — it is reference text, the schema version and the fingerprint
+and what each column is for, not a surface anyone works on.
+
+The shading still says where to type, which was always doing most of the
+work, and `locked="0"` stays on Translation and Notes so that a studio
+protecting the sheet before sending it out gets the right two columns open
+without setting it up.
+
+**And one typeface.** The Key, the Scene ID and the hash were set in
+Consolas, on the argument that a monospaced id makes a mistyped character
+visible. That was true while a key was `xU40lTnJ8JVN16hgSPB2I`. It stopped
+being true the moment a key became `t_indigo-does-not-look` — you do not
+need a grid to read words — and what was left was three columns in a
+different face for no reason anyone opening the file could see.
+
+The typeface check had to be rewritten before it meant anything. Sampling
+each column's font was a test nothing could fail, because with one family
+declared there is no single edit that gives one column a different face;
+the negative control said so by staying green. It asserts over the font
+table now — the workbook declares one family — which is the property that
+can actually break.
+
 ## v0.71.0 — A key is a name
 
 Third attempt at column A, and the first two were wrong in the same way:

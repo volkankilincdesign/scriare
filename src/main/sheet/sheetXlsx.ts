@@ -62,34 +62,61 @@ export function columnName(index: number): string {
  * never asserted that anybody could read it.
  */
 const STYLE = {
-  /** Locked, wrapped, top-aligned — the read-only body of the table. */
+  /** The read-only body of the table: wrapped, top-aligned. */
   cell: 1,
   /** The same, on the banded row. */
-  cellBand: 6,
+  cellBand: 4,
   /** The header band: white on slate, so it can actually be read. */
   header: 2,
-  /** Translation and Notes: UNLOCKED and warm, so the colour IS the
-   *  invitation — the one place the eye should land. Deliberately NOT
-   *  banded: a constant colour down the sheet is what marks the column
-   *  out from the striped ones either side of it. */
+  /**
+   * Translation and Notes: warm, so the COLOUR is the invitation — the one
+   * place the eye should land. Deliberately not banded: a constant stripe
+   * down the sheet is what marks the pair out from the striped columns
+   * either side of them.
+   */
   editable: 3,
-  /** Key, Scene ID, hash: monospaced, so a mistyped id is visible. */
-  mono: 4,
-  monoBand: 7,
-  /** Chars: centred, because a number in a narrow column reads as a
-   *  number rather than as a very short word. */
-  chars: 8,
+  /**
+   * Chars: centred, because a number in a narrow column reads as a number
+   * rather than as a very short word.
+   */
+  chars: 5,
+  charsBand: 6,
   /** The Read me's headings and its wrapped body. */
-  readmeHead: 5,
-  readmeBody: 9,
+  readmeHead: 7,
+  readmeBody: 8,
 } as const;
 
+/**
+ * ONE TYPEFACE (v0.71.1).
+ *
+ * The Key, the Scene ID and the hash were set in Consolas, on the argument
+ * that a monospaced id makes a mistyped character visible. That argument
+ * was real when a key was `xU40lTnJ8JVN16hgSPB2I` and nobody could read it
+ * anyway. It stopped being real the moment a key became
+ * `t_indigo-does-not-look` — you do not need a grid to read words — and
+ * what was left was three columns in a different face for no reason a
+ * person opening the file could see. Calibri throughout.
+ *
+ * THE LINES SHEET IS NOT LOCKED, either (v0.71.1). It used to ship
+ * protected, with only Translation and Notes writable, guarding against
+ * the accident that silently ruins a localisation file: a sort that moves
+ * one column and not the rest. That guard was aimed at the translator and
+ * it landed on the writer, who owns the story and could not type in their
+ * own export. It was never security — Excel's sheet protection comes off
+ * in two clicks — so all it really bought was friction for the one person
+ * guaranteed to hit it. The Read me stays protected, because it is
+ * reference rather than a surface anyone works on.
+ *
+ * The shading still says where to type, which was always doing most of the
+ * work. `locked="0"` stays on those two columns so that anyone who DOES
+ * protect the sheet — a studio sending it out — gets the right two columns
+ * open without having to set it up.
+ */
 const STYLES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <fonts count="5">
+  <fonts count="4">
     <font><sz val="11"/><color rgb="FF1F2933"/><name val="Calibri"/></font>
     <font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>
-    <font><sz val="10"/><color rgb="FF5B6672"/><name val="Consolas"/></font>
     <font><b/><sz val="13"/><color rgb="FF1F2933"/><name val="Calibri"/></font>
     <font><sz val="11"/><color rgb="FF3E4A57"/><name val="Calibri"/></font>
   </fonts>
@@ -106,25 +133,23 @@ const STYLES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <border><left style="thin"><color rgb="FFE8C97A"/></left><right/><top/><bottom style="thin"><color rgb="FFEBD9A8"/></bottom><diagonal/></border>
   </borders>
   <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-  <cellXfs count="10">
+  <cellXfs count="9">
     <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
-    <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyAlignment="1" applyProtection="1">
-      <alignment vertical="top" wrapText="1"/><protection locked="1"/></xf>
-    <xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1" applyProtection="1">
-      <alignment vertical="center" horizontal="left" indent="1"/><protection locked="1"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyAlignment="1">
+      <alignment vertical="top" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1">
+      <alignment vertical="center" horizontal="left" indent="1"/></xf>
     <xf numFmtId="0" fontId="0" fillId="3" borderId="2" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1" applyProtection="1">
       <alignment vertical="top" wrapText="1"/><protection locked="0"/></xf>
-    <xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyAlignment="1" applyProtection="1">
-      <alignment vertical="top"/><protection locked="1"/></xf>
-    <xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1">
+    <xf numFmtId="0" fontId="0" fillId="4" borderId="1" xfId="0" applyFill="1" applyAlignment="1">
+      <alignment vertical="top" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyAlignment="1">
+      <alignment vertical="top" horizontal="center"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="4" borderId="1" xfId="0" applyFill="1" applyAlignment="1">
+      <alignment vertical="top" horizontal="center"/></xf>
+    <xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1">
       <alignment vertical="center"/></xf>
-    <xf numFmtId="0" fontId="0" fillId="4" borderId="1" xfId="0" applyFill="1" applyAlignment="1" applyProtection="1">
-      <alignment vertical="top" wrapText="1"/><protection locked="1"/></xf>
-    <xf numFmtId="0" fontId="2" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyAlignment="1" applyProtection="1">
-      <alignment vertical="top"/><protection locked="1"/></xf>
-    <xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyAlignment="1" applyProtection="1">
-      <alignment vertical="top" horizontal="center"/><protection locked="1"/></xf>
-    <xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1">
+    <xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1">
       <alignment vertical="top" wrapText="1"/></xf>
   </cellXfs>
   <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
@@ -142,11 +167,6 @@ const STYLES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
  */
 function styleFor(column: number, banded: boolean): number {
   if (EDITABLE_COLUMNS.includes(column)) return STYLE.editable;
-  // Key (0), Scene ID (4) and Source hash (16) are machine strings a human
-  // reads back character by character when something has gone wrong.
-  if (column === 0 || column === 4 || column === 16) {
-    return banded ? STYLE.monoBand : STYLE.mono;
-  }
   return banded ? STYLE.cellBand : STYLE.cell;
 }
 
@@ -205,7 +225,8 @@ function linesSheet(sheet: SheetDocument): string {
           // whole point of the column: a length budget you can see while
           // you are spending it. No cached <v>, so Excel and LibreOffice
           // both compute it on open — see fullCalcOnLoad in the workbook.
-          if (index === 15) return `<c r="${ref}" s="${STYLE.chars}"><f>LEN(H${r})</f></c>`;
+          if (index === 15)
+            return `<c r="${ref}" s="${banded ? STYLE.charsBand : STYLE.chars}"><f>LEN(H${r})</f></c>`;
           return textCell(ref, styleFor(index, banded), value);
         })
         .join("");
@@ -231,7 +252,6 @@ function linesSheet(sheet: SheetDocument): string {
   <sheetFormatPr defaultRowHeight="15"/>
   <cols>${cols}</cols>
   <sheetData><row r="1" ht="30" customHeight="1">${header}</row>${body}</sheetData>
-  <sheetProtection sheet="1" objects="1" scenarios="1" selectLockedCells="1" selectUnlockedCells="1" sort="0" autoFilter="0" formatColumns="0" formatRows="0"/>
   <autoFilter ref="A1:${lastColumn}${lastRow}"/>
 </worksheet>`;
 }
@@ -309,6 +329,12 @@ function readmeSheet(sheet: SheetDocument): string {
     <row r="1" ht="22" customHeight="1">${textCell("A1", STYLE.header, "Read me")}${textCell("B1", STYLE.header, "")}</row>
     ${body}
   </sheetData>
+  <!-- The Read me IS protected, and only the Read me. It is reference
+       text — the schema version, the fingerprint, what each column is for —
+       and nothing good comes of someone editing it in place. The Lines
+       sheet is the opposite: it is the working surface, for the writer as
+       much as for the translator, and locking the surface people work on
+       was the whole mistake of v0.71.0. -->
   <sheetProtection sheet="1" objects="1" scenarios="1"/>
 </worksheet>`;
 }
