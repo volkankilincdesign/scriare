@@ -141,7 +141,7 @@ lives in.
 
 ## Status
 
-**v0.68.0 — in active development, and usable.** The editor, graph,
+**v0.69.0 — in active development, and usable.** The editor, graph,
 runtime, entities, notes, variables, validation, search and **export** are
 all real, and the app now builds a Windows installer. See
 [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest list of what
@@ -161,12 +161,15 @@ screen. Clicking it copies the version, your platform and the engine
 underneath — paste that into the report and neither of us has to guess
 which build you were on.
 
-**768 automated tests** run against the real packaged application, and
-**189 negative controls**: each one breaks a specific line of the shipped
+**784 automated tests** run against the real packaged application, and
+**196 negative controls**: each one breaks a specific line of the shipped
 source on purpose and checks that a named assertion fails. A test that has
-never been seen to fail proves nothing — and twice in the last week a
-control failed to catch its sabotage, which was a finding about the test
-rather than the app, and the test is what got rewritten.
+never been seen to fail proves nothing, and several times now a control
+has failed to catch its sabotage — each time a finding about the test
+rather than about the app, and each time the test is what got rewritten.
+The sharpest of them: a spec that asked the code under test which
+attributes to check, so deleting one made the code stop maintaining it and
+the test stop looking for it, both at once, in silence.
 
 ## Running it
 

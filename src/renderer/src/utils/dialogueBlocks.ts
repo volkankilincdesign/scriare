@@ -316,35 +316,9 @@ export function removeDialogueLine(editor: Editor, lineId: string): void {
 }
 
 /**
- * Stamping every paragraph with an id it keeps (v0.66.0).
- *
- * Prose paragraphs carried no identity at all: a line was "the third
- * paragraph of scene 19", which is a name that changes the moment somebody
- * inserts a sentence above it. That is survivable for a script somebody
- * reads once and fatal for a translation memory, which is why the
- * spreadsheet export was queued behind this and not in front of it.
- *
- * Run once per scene on open, alongside the choice-block migrations, and a
- * no-op on anything already stamped. Deliberately additive: a paragraph
- * that already has a `lineId` keeps it, so ids survive every later open.
+ * Stamping paragraphs with the ids they keep used to live here as
+ * `stampParagraphIds`. It moved to `utils/contentIds.ts` in v0.69.0 and
+ * became `stampContentIds`: the same open-time pass, widened to all five
+ * id-bearing node types and taught to reissue a REPEATED id as well as
+ * fill in a missing one. See that file for why the second half matters.
  */
-export function stampParagraphIds(content: JSONContent | undefined | null): JSONContent {
-  const EMPTY: JSONContent = { type: "doc", content: [{ type: "paragraph" }] };
-  if (!content) return EMPTY;
-
-  let changed = false;
-
-  function walk(node: JSONContent): JSONContent {
-    const kids = node.content?.map(walk);
-    const next: JSONContent = kids ? { ...node, content: kids } : { ...node };
-
-    if (node.type === "paragraph" && !next.attrs?.lineId) {
-      changed = true;
-      next.attrs = { ...(next.attrs ?? {}), lineId: nanoid() };
-    }
-    return next;
-  }
-
-  const out = walk(content);
-  return changed ? out : content;
-}

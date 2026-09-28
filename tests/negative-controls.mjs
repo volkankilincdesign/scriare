@@ -1786,6 +1786,96 @@ const CONTROLS = [
     spec: "brand-mark",
     expect: "THE DISC DOES NOT REACH THE EDGE",
   },
+
+  // ── v0.69.0 — the ids under column A ─────────────────────────────────
+  // The audit that produced this version found three routes to a duplicate
+  // id and, beneath them, one reason all three survived to v0.68.0: every
+  // piece of id bookkeeping only ever filled in a MISSING id, and none
+  // could see a repeated one. So most of the sabotages below are "take the
+  // duplicate half back out" — the state the app was actually in.
+  {
+    name: "the sweep back to filling blanks only, blind to a repeat",
+    file: src("utils/contentIds.ts"),
+    from: "    if (!current || seen.has(current)) faults.push({ pos, attr });",
+    to: "    if (!current) faults.push({ pos, attr });",
+    spec: "content-ids",
+    expect: "SPLITTING A SENTENCE gives the two halves different ids",
+  },
+  {
+    name: "the sweep keeping the LAST of a pair instead of the first",
+    file: src("utils/contentIds.ts"),
+    from:
+      "  const seen = new Set<string>();\n" +
+      "  const faults: { pos: number; attr: string }[] = [];\n" +
+      "\n" +
+      "  doc.descendants((node, pos) => {\n" +
+      "    const attr = idAttrFor(node.type.name);\n" +
+      "    if (!attr) return true;\n" +
+      "    const current = node.attrs[attr] as string | undefined | null;\n" +
+      "    if (!current || seen.has(current)) faults.push({ pos, attr });\n" +
+      "    else seen.add(current);",
+    to:
+      "  const firstAt = new Map<string, number>();\n" +
+      "  const faults: { pos: number; attr: string }[] = [];\n" +
+      "\n" +
+      "  doc.descendants((node, pos) => {\n" +
+      "    const attr = idAttrFor(node.type.name);\n" +
+      "    if (!attr) return true;\n" +
+      "    const current = node.attrs[attr] as string | undefined | null;\n" +
+      "    if (!current) faults.push({ pos, attr });\n" +
+      "    else if (firstAt.has(current)) faults.push({ pos: firstAt.get(current), attr });\n" +
+      "    else firstAt.set(current, pos);",
+    spec: "content-ids",
+    expect: "the half that starts the sentence is the one that keeps the id",
+  },
+  // This one took two tries to aim, and both misses were findings about
+  // the test. Replacing the strip left the suite green, because the sweep
+  // repairs a duplicate wherever it came from — so no paste INSIDE one
+  // scene can tell the two designs apart. Pasting the copy above its
+  // original did not help either. What the sweep cannot do is look at a
+  // scene that is not open: it makes a document internally consistent and
+  // says nothing about the project. So the case is a paste into a DIFFERENT
+  // scene, and the strip is the only thing in the app that holds it.
+  {
+    name: "the paste keeping the ids it arrived with",
+    file: src("extensions/LineId.ts"),
+    from: "            new Slice(stripPastedIds(slice.content), slice.openStart, slice.openEnd),",
+    to: "            slice,",
+    spec: "content-ids",
+    expect: "PASTING INTO ANOTHER SCENE leaves no id claimed by two scenes",
+  },
+  {
+    name: "the paste stripping paragraphs but not the Dialogue's lines",
+    file: src("utils/contentIds.ts"),
+    from: '  paragraph: "lineId",\n  [DIALOGUE_LINE_TYPE]: "lineId",',
+    to: '  paragraph: "lineId",',
+    spec: "content-ids",
+    expect: "PASTING INTO ANOTHER SCENE leaves no id claimed by two scenes",
+  },
+  {
+    name: "a scene copy that reissues the choices and leaves the prose",
+    file: src("utils/contentIds.ts"),
+    from: "    const attrs = { ...(node.attrs ?? {}), [attr]: nanoid() };",
+    to: '    const attrs =\n      node.type === "paragraph"\n        ? { ...(node.attrs ?? {}) }\n        : { ...(node.attrs ?? {}), [attr]: nanoid() };',
+    spec: "content-ids",
+    expect: "DUPLICATING A SCENE gives the copy its own ids",
+  },
+  {
+    name: "the open-time pass carrying a file's existing duplicates through",
+    file: src("utils/contentIds.ts"),
+    from: "      if (!current || seen.has(current)) {\n        changed = true;",
+    to: "      if (!current) {\n        changed = true;",
+    spec: "content-ids",
+    expect: "OPENING AN OLD FILE with duplicate ids heals it",
+  },
+  {
+    name: "the open-time pass rewriting a document that was already correct",
+    file: src("utils/contentIds.ts"),
+    from: "  const out = walk(content);\n  return changed ? out : content;",
+    to: "  const out = walk(content);\n  return out;",
+    spec: "content-ids",
+    expect: "a document with nothing wrong with it is not rewritten",
+  },
 ];
 
 

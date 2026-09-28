@@ -14,7 +14,7 @@ import { buildProject, buildScene, buildStoryFolder, normalizeProject } from "..
 import { ENTITY_CATEGORY, ENTITY_LABEL, buildEntity } from "../types/entities";
 import type { EntityKind } from "../types/entities";
 import { computeGraphLayout } from "../utils/autoLayoutGraph";
-import { regenerateChoiceIds } from "../utils/choiceBlocks";
+import { regenerateContentIds } from "../utils/contentIds";
 import { snapPoint, snapRect } from "../utils/graphConstants";
 import {
   DEFAULT_CHOICE_STYLE_ID,
@@ -820,7 +820,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       ...original,
       id: newId,
       title: `${original.title} Copy`,
-      content: regenerateChoiceIds(original.content),
+      content: regenerateContentIds(original.content),
       position: { x: original.position.x + 40, y: original.position.y + 40 },
     };
     const newLeaf: ContentLeaf = {
@@ -883,7 +883,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         ...original,
         id: newId,
         title: `${original.title} Copy`,
-        content: regenerateChoiceIds(original.content, idMap),
+        content: regenerateContentIds(original.content, idMap),
         position: { x: original.position.x + 40, y: original.position.y + 40 },
       });
       newLeaves.push({
@@ -1314,12 +1314,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }
 
     // Scene ids are remapped through the same map, so choices pointing
-    // inside the copied set follow the copies — see regenerateChoiceIds.
+    // inside the copied set follow the copies — see regenerateContentIds.
     const newScenes: Scene[] = clipboard.scenes.map((scene) => ({
       ...scene,
       id: idMap.get(scene.id)!,
       title: rootIdSet.has(idMap.get(scene.id)!) ? uniqueName(scene.title) : scene.title,
-      content: regenerateChoiceIds(scene.content, idMap),
+      content: regenerateContentIds(scene.content, idMap),
       position: { x: scene.position.x + 40, y: scene.position.y + 40 },
       // Frames aren't part of the payload, so inheriting a frameId would
       // point at a group the pasted scene isn't visually inside — or, after

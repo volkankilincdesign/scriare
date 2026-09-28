@@ -59,6 +59,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./export/script/buildScript"),
     import("../../shared/script/scriptHtml"),
     import("./utils/dialogueBlocks"),
+    import("./utils/contentIds"),
   ]).then(
     ([
       projectStore,
@@ -96,6 +97,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       scriptBuilder,
       scriptHtml,
       dialogueBlocks,
+      contentIds,
     ]) => {
       Object.assign(window, {
         __scriareProjectStore: projectStore.useProjectStore,
@@ -126,6 +128,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         __scriareBuildScript: scriptBuilder.buildScript,
         __scriareScriptHtml: scriptHtml.buildScriptHtml,
         __scriareDialogue: dialogueBlocks,
+        __scriareContentIds: contentIds,
         __scriareReuse: reuseBySignature,
         __scriareUIStore: uiStore.useUIStore,
         // v0.43.0 — the layout rules are pure arithmetic, so the specs that

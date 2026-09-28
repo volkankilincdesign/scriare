@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import type { JSONContent } from "@tiptap/react";
 import { extractChoices, buildChoiceBlockNode, migrateLegacyChoiceBlocks } from "../utils/choiceBlocks";
-import { stampParagraphIds } from "../utils/dialogueBlocks";
+import { stampContentIds } from "../utils/contentIds";
 import { normalizeChoiceStyles } from "./choiceStyles";
 import type { Entity, EntityKind } from "./entities";
 import type { ChoiceStyle } from "./choiceStyles";
@@ -399,7 +399,7 @@ function migrateChoicesIntoContent(scene: Scene): Scene {
   const { choices: legacyChoices, ...rest } = scene;
   // v0.66.0 — and every paragraph gets the id it will keep, in the same
   // pass, so a project is stamped exactly once however old it is.
-  let content = stampParagraphIds(migrateLegacyChoiceBlocks(scene.content ?? EMPTY_DOC));
+  let content = stampContentIds(migrateLegacyChoiceBlocks(scene.content ?? EMPTY_DOC));
 
   if (legacyChoices && legacyChoices.length > 0 && extractChoices(content).length === 0) {
     content = {

@@ -316,8 +316,11 @@ export default async function ({ api, check, seedProject }) {
   // labels intact. This is the same guarantee clipboard.spec.mjs makes for
   // whole projects, checked here at the level the new schema rewrote.
   r = await api(() => {
-    const { buildChoiceBlockNode, regenerateChoiceIds, readChoiceBlockOptions } =
-      window.__scriareChoiceUtils;
+    const { buildChoiceBlockNode, readChoiceBlockOptions } = window.__scriareChoiceUtils;
+    // v0.69.0: reissuing ids on a copy moved out of choiceBlocks and
+    // widened to all five id-bearing kinds — see utils/contentIds.ts. The
+    // guarantee this check makes about choices did not change.
+    const { regenerateContentIds } = window.__scriareContentIds;
     const doc = {
       type: "doc",
       content: [
@@ -330,7 +333,7 @@ export default async function ({ api, check, seedProject }) {
         ),
       ],
     };
-    const copy = regenerateChoiceIds(doc, new Map([["inside", "inside-copy"]]));
+    const copy = regenerateContentIds(doc, new Map([["inside", "inside-copy"]]));
     const before = readChoiceBlockOptions(doc.content[0]);
     const after = readChoiceBlockOptions(copy.content[0]);
     return {

@@ -215,60 +215,13 @@ export function findChoiceBlockOptions(
 
 
 /**
- * Returns a deep copy of `content` with every choiceBlock's `blockId` and
- * every option's `id` replaced with a fresh id — used whenever a Scene is
- * copied, so the copy's choices are distinct nodes rather than two scenes
- * claiming the same block ids.
- *
- * `sceneIdMap` handles the case where a WHOLE SET of scenes is copied at
- * once (a multi-scene duplicate, or a paste). Any choice pointing at a
- * scene inside that set is rewritten to point at that scene's copy, so
- * copying a two-scene branch gives you a branch — the copies link to each
- * other, not back to the originals. A choice pointing at a scene *outside*
- * the set is left alone, which is equally deliberate: copying a scene that
- * leads to Chapter Three should still lead to Chapter Three.
- *
- * Omit the map (a single-scene duplicate) and every destination is left
- * untouched, which is the behaviour this function has always had.
+ * Reissuing ids when a scene is copied used to live here as
+ * `regenerateChoiceIds`. It moved to `utils/contentIds.ts` in v0.69.0 and
+ * became `regenerateContentIds`, because the audit found it was only half
+ * a rule: it reissued the choices and left the prose and the Dialogue
+ * carrying the original scene's ids. The five id-bearing node types are
+ * now looked after by one file that can see all of them at once.
  */
-export function regenerateChoiceIds(
-  content: JSONContent | undefined | null,
-  sceneIdMap?: ReadonlyMap<string, string>,
-): JSONContent {
-  const EMPTY: JSONContent = { type: "doc", content: [{ type: "paragraph" }] };
-  if (!content) return EMPTY;
-
-  function walk(node: JSONContent): JSONContent {
-    if (node.type === CHOICE_OPTION_TYPE) {
-      const attrs = node.attrs ?? {};
-      const target = attrs.targetSceneId as string | null;
-      return {
-        ...node,
-        attrs: {
-          ...attrs,
-          optionId: nanoid(),
-          targetSceneId: target && sceneIdMap?.has(target) ? sceneIdMap.get(target)! : target,
-          actions: ((attrs.actions as { id: string }[]) ?? []).map((a) => ({ ...a, id: nanoid() })),
-          conditions: ((attrs.conditions as { id: string }[]) ?? []).map((c) => ({
-            ...c,
-            id: nanoid(),
-          })),
-        },
-      };
-    }
-    if (node.type === CHOICE_BLOCK_TYPE) {
-      return {
-        ...node,
-        attrs: { ...node.attrs, blockId: nanoid() },
-        content: node.content?.map(walk),
-      };
-    }
-    if (!node.content) return node;
-    return { ...node, content: node.content.map(walk) };
-  }
-
-  return walk(content);
-}
 
 /** The shape `buildChoiceOptionNode` takes — everything but the label's formatting. */
 export interface ChoiceOptionSeed {
