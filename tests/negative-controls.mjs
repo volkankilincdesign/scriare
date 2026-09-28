@@ -1761,6 +1761,31 @@ const CONTROLS = [
     spec: "dialogue-parity",
     expect: "THE TWO TOOLBAR BUTTONS ARE THE SAME BUTTON",
   },
+  // ── v0.68.0, the mark in the top bar ─────────────────────────────────
+  {
+    name: "a mark painted in its own colour again",
+    file: src("components/layout/TopBar.tsx"),
+    from: 'className="h-6 w-6 shrink-0 -translate-y-[2px] text-[var(--accent)]"',
+    to: 'className="h-6 w-6 shrink-0 -translate-y-[2px] text-[var(--text)]"',
+    spec: "brand-mark",
+    expect: "THE MARK IS THE THEME'S ACCENT",
+  },
+  {
+    name: "the mark centred on its own box again",
+    file: src("components/layout/TopBar.tsx"),
+    from: 'className="h-6 w-6 shrink-0 -translate-y-[2px] text-[var(--accent)]"',
+    to: 'className="h-6 w-6 shrink-0 text-[var(--accent)]"',
+    spec: "brand-mark",
+    expect: "IT SITS ON THE LINE OF THE WORD",
+  },
+  {
+    name: "the disc back tangent to the edge of its element",
+    file: src("components/common/BrandMark.tsx"),
+    from: '      viewBox="-28 -28 956 956"',
+    to: '      viewBox="0 0 900 900"',
+    spec: "brand-mark",
+    expect: "THE DISC DOES NOT REACH THE EDGE",
+  },
 ];
 
 

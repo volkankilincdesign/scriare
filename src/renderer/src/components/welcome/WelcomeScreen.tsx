@@ -110,7 +110,7 @@ export function WelcomeScreen() {
           screens stacked (v0.53.1).
         */}
         <div className="mx-auto flex w-full max-w-[var(--welcome-column)] items-center gap-3">
-        <BrandMark className="h-7 w-7 flex-shrink-0" />
+        <BrandMark className="h-7 w-7 flex-shrink-0 -translate-y-[2px] text-[var(--accent)]" />
         <span className="font-serif-narrative text-xl italic text-[var(--text)]">Scriare</span>
         {/* Attached to the wordmark, not floating in the header: it is the
             version OF that name, and it reads as one thing (v0.63.0). */}

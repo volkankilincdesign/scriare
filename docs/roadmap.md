@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.67.4; two items added 28 Sep.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.68.0.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -399,7 +399,7 @@ localisation and VO, now unblocked — `lineId` rode in with the Dialogue,
 so every line in the story has something a translator can key against.
 Then the elective list: Custom CSS for the export (G2), Twine import.
 
-760 tests, 186 negative controls. Two bugs were found by the new spec and
+768 tests, 189 negative controls. Two bugs were found by the new spec and
 one control came back green — the green one was a gap in the tests (the
 graph badge had no assertion), and the assertion is what got written.
 
@@ -764,18 +764,14 @@ Nothing here blocks the launch, and nothing here gets started before it.
   (v0.18.0, the oldest version note in the codebase), the slash-command
   menu and `GroupNode` (v0.28.0). None of them has a defect underneath
   it, so none of them is in front of the installer.
-- **The wordmark in the top bar** — raised 28 Sep, with the assets
-  already in `other_materials/logos/`: `logo_primary_light.svg`,
-  `logo_primary_dark.svg` and the two icon-only variants. Two faults in
-  one control: it does not follow the theme (it is drawn in its own colour
-  against eight different grounds, and on Overcast it reads as a sticker),
-  and it does not sit on the baseline of the story title beside it. The
-  shape of the fix is the one the speaker chip needed in v0.66.1 — align
-  the mark's optical centre to the text's cap band rather than trusting a
-  box — plus picking the light or dark file from the theme's ground, or
-  inlining the SVG and painting it with `currentColor` so there is one file
-  and no picking at all. Small, visible on every screenshot of the app,
-  and therefore worth doing before the case-study images are taken.
+- ~~**The wordmark in the top bar**~~ — **done in v0.68.0.** Drawn inline
+  and filled with `currentColor` so it takes the theme's accent, the
+  letterform cut through as a hole, aligned to the cap band of the word
+  beside it (it sat 2.5px low), and the viewBox padded by 6% because the
+  artwork's circle was tangent to its own element's edge — which at 24px
+  is what read as "the top and bottom are cut off". The two baked SVG
+  variants are gone from the renderer; the OS icon is still a fixed asset,
+  as it must be.
 - **Crash-recovery drafts** — the autosave journal deliberately left out of
   the save-safety work. Only worth it if he ever loses something to a power
   cut that the atomic write couldn't catch.

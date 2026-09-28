@@ -1164,11 +1164,18 @@ export default async function run({ page, api, check, seedProject, app }) {
   // ------------------------------------------------- the mark on a page
 
   /**
-   * The logo is the one thing on this screen that is a fixed IMAGE rather
-   * than a token, so it is the one thing a theme cannot repaint. Three of
-   * the eight themes have light grounds, and until this version the swap
-   * asked `theme === "light"` — so daylight and overcast got the mark drawn
-   * for dark rooms, pale on pale, on the app's first screen.
+   * The logo used to be the one thing on this screen that a theme could
+   * not repaint: a fixed image, swapped between two baked files by the
+   * theme's ground. v0.53.0's bug was that the swap asked
+   * `theme === "light"`, so daylight and overcast got the mark drawn for
+   * dark rooms, pale on pale, on the app's first screen.
+   *
+   * v0.68.0 removed the category of bug rather than the bug: the mark is
+   * drawn inline and filled with `currentColor`, so it takes the accent
+   * from the theme like everything else, and there is no file to choose
+   * wrongly. The question this asks is therefore no longer "which file"
+   * but "does it move with the palette at all" — measured on its pixels,
+   * on a light ground and a dark one.
    */
   const marks = await api(async () => {
     const themes = window.__scriareThemes;
@@ -1176,24 +1183,30 @@ export default async function run({ page, api, check, seedProject, app }) {
     for (const t of themes.THEMES) {
       themes.useThemeStore.getState().setTheme(t.id);
       await new Promise((r) => setTimeout(r, 60));
-      const img = document.querySelector("header img");
-      seen[t.id] = { ground: t.ground, src: img ? img.getAttribute("src") : null };
+      const el = document.querySelector("header [data-brand-mark]");
+      const probe = document.createElement("div");
+      document.body.appendChild(probe);
+      probe.style.backgroundColor = "var(--accent)";
+      const accent = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      seen[t.id] = {
+        ground: t.ground,
+        colour: el ? getComputedStyle(el).color : null,
+        accent,
+      };
     }
     themes.useThemeStore.getState().setTheme("dark");
     return seen;
   });
-  const lightSrcs = new Set(
-    Object.values(marks).filter((m) => m.ground === "light").map((m) => m.src),
-  );
-  const darkSrcs = new Set(
-    Object.values(marks).filter((m) => m.ground === "dark").map((m) => m.src),
-  );
+  const values = Object.values(marks);
+  const lightColours = new Set(values.filter((m) => m.ground === "light").map((m) => m.colour));
+  const darkColours = new Set(values.filter((m) => m.ground === "dark").map((m) => m.colour));
   check(
-    "the wordmark follows the theme's GROUND, not the theme called 'light'",
-    lightSrcs.size === 1 &&
-      darkSrcs.size === 1 &&
-      [...lightSrcs][0] !== [...darkSrcs][0],
-    `${lightSrcs.size} mark across the three light grounds, ${darkSrcs.size} across the five dark`,
+    "the wordmark is repainted by the theme rather than swapped between two files",
+    values.every((m) => m.colour && m.colour === m.accent) &&
+      lightColours.size > 1 &&
+      darkColours.size > 1,
+    `${lightColours.size} colours across the three light grounds, ${darkColours.size} across the five dark`,
   );
 
   // --------------------------------------------------------- searching

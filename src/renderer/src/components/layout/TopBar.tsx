@@ -63,7 +63,14 @@ export function TopBar() {
           className="flex items-center gap-2 text-sm font-semibold tracking-wide text-[var(--text)] hover:text-[var(--accent)]"
           title="Back to Welcome screen"
         >
-          <BrandMark className="h-6 w-6 shrink-0" />
+          {/* v0.68.0 — the mark takes the theme's accent, and sits on the
+              LINE of the word rather than on the centre of its own box. A
+              24px disc beside an 11px cap band cannot be centred as boxes
+              and look level: measured, it sat 2.5px low. The nudge is a
+              whole pixel, because a half-pixel offset smears the disc
+              across two rows at 100% zoom, which is the thing it was
+              supposed to fix. */}
+          <BrandMark className="h-6 w-6 shrink-0 -translate-y-[2px] text-[var(--accent)]" />
           <span className="font-serif-narrative italic">Scriare</span>
         </button>
         <span className="text-[var(--text-3)]">/</span>

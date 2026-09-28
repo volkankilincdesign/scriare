@@ -12,6 +12,46 @@ omitting them.
 
 ---
 
+## v0.68.0 — The mark takes the theme
+
+The logo in the top bar was the one coloured object in the app that could
+not follow the palette: two baked SVG files, chosen by whether the theme's
+ground was light or dark. It is drawn inline now and filled with
+`currentColor`, so it takes the accent the way every other coloured thing
+does — and a ninth theme would cost nothing rather than a ninth decision.
+
+**The letterform is a hole, not a shape in a second colour.** Cut with a
+mask, so whatever is behind the mark shows through it: the bar's surface,
+the Welcome screen's page, anything later. Painting the letter would be a
+guess about what is behind it, and it would be wrong on exactly the
+surfaces it was not guessed for.
+
+**It sat 2.5px low, measured.** A 24px disc beside an 11px cap band cannot
+be centred as boxes and look level — the row was aligned on boxes, so the
+mark's box centre met the text's line-box centre instead of the letters.
+It is on the cap band now, 0.5px out.
+
+**And the thing he actually saw: "the top and bottom look cut off."** The
+artwork inscribes its circle exactly in a 900×900 box, so the disc was
+tangent to the edge of its own element. At 24px the top row of that circle
+is a flat run about 6px wide, pressed against the boundary — and a tangent
+reads as a cut. The viewBox carries 6% of air now; the same flat row reads
+as curvature. **The nudge is a whole pixel for the same reason:** −2.5px
+lands the disc on a half-pixel grid and smears it across two rows at 100%
+zoom, which is the thing the nudge was supposed to fix.
+
+**The assertions are the three complaints, not the three fixes:** the
+mark's pixels are the accent in all eight themes; its optical centre is on
+the cap band; and the disc does not reach the edge of its element. All
+three controls caught.
+
+**One test was rewritten rather than repaired.** v0.53.0's welcome-screen
+check asked *which file* the mark loaded, and there is no file now. It
+asks whether the mark moves with the palette at all, measured on its
+pixels — eight themes, eight colours.
+
+---
+
 ## v0.67.4 — The two toolbar buttons are one button
 
 The Dialogue shipped in v0.66.1 as the outlined half of the pair, on a
