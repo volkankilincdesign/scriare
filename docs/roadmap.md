@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.67.4.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.67.4; two items added 28 Sep.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -652,11 +652,23 @@ before a story exists that needs it.
   pulled down from 15:1 deliberately, to stop halation on a phone), and
   whether the accent doing double duty as the speaker-name colour is enough
   of a signal or whether speaker names want weight instead.
-- **Auto Layout, round two.** His words: "we will need to investigate the
-  behaviour of the Auto Layout further." v0.43.0 fixed the ranking; what to
-  look at next is how it handles merges, loops, and chapter boxes whose
-  contents are laid out before the box is sized. Best done once the demo
-  story is big enough to judge it on.
+- **Auto Layout, round two.** His words in September: "we will need to
+  investigate the behaviour of the Auto Layout further." v0.43.0 fixed the
+  ranking; what to look at next is how it handles merges, loops, and
+  chapter boxes whose contents are laid out before the box is sized.
+  **Now confirmed at scale, 28 Sep:** it holds on small stories and
+  "started to shatter" on The Blue Hour's 32 scenes, five groups and 70
+  choice options — which is the story that was built to judge it on, so
+  the condition for doing this work is met. The likely suspects, in the
+  order worth measuring: dagre ranks a merge (several scenes leading to
+  one) by its longest path, which drags the merge point far right and
+  stretches every wire into it; loops back to an earlier scene have no
+  rank at all and get placed as if they were forward edges; and a group's
+  rectangle is sized after its contents are placed, so a chapter box can
+  end up overlapping its neighbour. **A rewrite is not the first move** —
+  the first move is a measurement: lay the demo story out, record edge
+  crossings, total wire length, and how many nodes land inside a box they
+  do not belong to, so "better" has a number rather than an impression.
 - **The page-corner alignment** parked in v0.40.0.
 
 ### Launch — the list that decides when it ships
@@ -752,6 +764,18 @@ Nothing here blocks the launch, and nothing here gets started before it.
   (v0.18.0, the oldest version note in the codebase), the slash-command
   menu and `GroupNode` (v0.28.0). None of them has a defect underneath
   it, so none of them is in front of the installer.
+- **The wordmark in the top bar** — raised 28 Sep, with the assets
+  already in `other_materials/logos/`: `logo_primary_light.svg`,
+  `logo_primary_dark.svg` and the two icon-only variants. Two faults in
+  one control: it does not follow the theme (it is drawn in its own colour
+  against eight different grounds, and on Overcast it reads as a sticker),
+  and it does not sit on the baseline of the story title beside it. The
+  shape of the fix is the one the speaker chip needed in v0.66.1 — align
+  the mark's optical centre to the text's cap band rather than trusting a
+  box — plus picking the light or dark file from the theme's ground, or
+  inlining the SVG and painting it with `currentColor` so there is one file
+  and no picking at all. Small, visible on every screenshot of the app,
+  and therefore worth doing before the case-study images are taken.
 - **Crash-recovery drafts** — the autosave journal deliberately left out of
   the save-safety work. Only worth it if he ever loses something to a power
   cut that the atomic write couldn't catch.
