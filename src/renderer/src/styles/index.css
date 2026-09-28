@@ -545,14 +545,20 @@ input[type="number"],
    boxes, just enough of a hit area that hovering one feels like a thing.
    The caret and selection behave here exactly as they do in a paragraph,
    because it IS a paragraph as far as ProseMirror is concerned. */
-.ProseMirror .scriare-choice-option {
+/* v0.67.0 — a Dialogue line is the same kind of row as a choice, so it is
+   under the same rule rather than a copy of it. The two blocks are
+   siblings: one palette, one set of principles, and only their behaviour
+   differs. */
+.ProseMirror .scriare-choice-option,
+.ProseMirror .scriare-dialogue-line {
   transition: filter .12s;
 }
 /* v0.34.0: the row now paints its own Choice Style (fill, border, radius)
    as an inline style, so hover can no longer be a background swap — it
    would override whatever style the writer chose. Brightness leaves their
    colours theirs and still says "this row is under the pointer". */
-.ProseMirror .scriare-choice-option:hover {
+.ProseMirror .scriare-choice-option:hover,
+.ProseMirror .scriare-dialogue-line:hover {
   filter: brightness(1.12);
 }
 /* The Story Graph's minimap (v0.36.1). Even when it's needed, what sits

@@ -1662,6 +1662,56 @@ const CONTROLS = [
     spec: "speaker-alignment",
     expect: "TALL ENOUGH TO READ ALL OF IT",
   },
+  // ── v0.67.0, the two blocks as siblings ───────────────────────────────
+  {
+    name: "a Dialogue row painted on its own colours again",
+    file: src("components/editor/DialogueLineView.tsx"),
+    from: "      style={choiceBoxCss(box)}",
+    to: '      style={{ background: "var(--surface)", borderColor: "var(--border-soft)", borderWidth: 1, borderStyle: "solid", borderRadius: 4 }}',
+    spec: "dialogue-parity",
+    expect: "THE SAME BOX",
+  },
+  {
+    name: "a reply that keeps the height it was first measured at",
+    file: src("components/editor/DialogueLineView.tsx"),
+    from: "      last = width;\n      fit(el);",
+    to: "      last = width;",
+    spec: "speaker-alignment",
+    expect: "RE-MEASURES THE REPLY",
+  },
+  {
+    name: "a line reorder keyed on the wrong attribute",
+    file: src("utils/dialogueBlocks.ts"),
+    from: "  const byId = new Map(children.map((c) => [c.attrs.lineId as string, c]));",
+    to: "  const byId = new Map(children.map((c) => [c.attrs.optionId as string, c]));",
+    spec: "reorder",
+    expect: "A DIALOGUE LINE CAN BE DRAGGED TOO",
+  },
+  {
+    name: "a drop that lands at the end wherever it was released",
+    file: src("components/layout/useReorderableList.ts"),
+    from: "        finalOrder.splice(targetIdx, 0, droppedId as string);",
+    to: "        finalOrder.push(droppedId as string);",
+    spec: "reorder",
+    expect: "moves it in the DOCUMENT",
+  },
+  // ── v0.67.1, the Inspector's own rows ─────────────────────────────────
+  {
+    name: "the line row given back its filled header strip",
+    file: src("components/layout/DialoguePanel.tsx"),
+    from: '      <div className="flex items-center gap-1">\n        <span\n          onPointerDown={onDragHandleDown}',
+    to: '      <div className="flex items-center gap-1 rounded-t-md bg-[var(--surface-2)]">\n        <span\n          onPointerDown={onDragHandleDown}',
+    spec: "dialogue-parity",
+    expect: "THE INSPECTOR'S FOLDED ROWS ARE THE SAME ROW",
+  },
+  {
+    name: "a line row with no fill of its own — the see-through drag",
+    file: src("components/layout/DialoguePanel.tsx"),
+    from: 'className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg)]"',
+    to: 'className="rounded-lg border border-[var(--border-soft)]"',
+    spec: "dialogue-parity",
+    expect: "A DIALOGUE ROW HAS A FILL OF ITS OWN",
+  },
 ];
 
 

@@ -48,7 +48,8 @@ lives in.
 - **Choice Blocks** typed straight through with `/choice`. Each option's
   label is ordinary text, so everything the toolbar does to a sentence it
   does to a choice.
-- **The Dialogue** (`/dialogue`) is a conversation that happens on the page
+- **The Dialogue** (`/dialogue`, or the button beside Choice) is a
+  conversation that happens on the page
   rather than turning it. A line said is spent unless it's marked as one
   that can be asked again, each line ends by staying, closing the
   conversation, or leaving for another scene — and whatever is written below
@@ -140,7 +141,7 @@ lives in.
 
 ## Status
 
-**v0.66.1 — in active development, and usable.** The editor, graph,
+**v0.67.1 — in active development, and usable.** The editor, graph,
 runtime, entities, notes, variables, validation, search and **export** are
 all real, and the app now builds a Windows installer. See
 [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest list of what
@@ -160,8 +161,8 @@ screen. Clicking it copies the version, your platform and the engine
 underneath — paste that into the report and neither of us has to guess
 which build you were on.
 
-**737 automated tests** run against the real packaged application, and
-**174 negative controls**: each one breaks a specific line of the shipped
+**752 automated tests** run against the real packaged application, and
+**180 negative controls**: each one breaks a specific line of the shipped
 source on purpose and checks that a named assertion fails. A test that has
 never been seen to fail proves nothing — and twice in the last week a
 control failed to catch its sabotage, which was a finding about the test

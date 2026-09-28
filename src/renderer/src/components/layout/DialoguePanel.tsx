@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useProjectStore } from "../../state/projectStore";
 import { useEditorRefStore } from "../../state/editorStore";
 import { useUIStore } from "../../state/uiStore";
@@ -9,12 +9,14 @@ import {
   dialogueCanClose,
   findDialogueBlockLines,
   removeDialogueLine,
+  reorderDialogueLines,
 } from "../../utils/dialogueBlocks";
 import type { DialogueLine } from "../../utils/dialogueBlocks";
 import type { DialogueAfter } from "../../types/nodeTypes";
 import { mentionResolver } from "../../utils/mentions";
 import { PLAYER_SPEAKER, PLAYER_SPEAKER_LABEL, canSpeak } from "../../types/speaker";
 import { buildVariableAction, buildVariableCondition } from "../../types/variables";
+import { useReorderableList } from "./useReorderableList";
 import type { VariableAction, VariableCondition } from "../../types/variables";
 
 /**
@@ -88,6 +90,32 @@ export function DialogueProperties({
    * remembers which one was opened FOR them, so moving on closes that one
    * and leaves anything they opened by hand alone.
    */
+  /**
+   * v0.67.0 — REORDERING, the one thing the Choice had that this did not.
+   *
+   * The order of a conversation's lines is the order the reader is offered
+   * them, so it is editorial: the line you want asked first belongs first.
+   * Before this the only way to move one was to retype it somewhere else.
+   *
+   * The gesture is not a second implementation — it is the choice panel's
+   * own, lifted into `useReorderableList` and used by both. That is the
+   * sibling rule applied to behaviour rather than to colour: if the two
+   * lists drag differently, one of them is wrong.
+   *
+   * ABOVE THE EARLY RETURN, and that is not a style preference. Put below
+   * it, this hook runs on some renders and not others, and React tears the
+   * whole tree down the first time the block goes away — which it does
+   * every time the writer presses Play. The app went blank, silently, and
+   * the spec that caught it was the Dialogue's own, one file later.
+   */
+  const reorder = useReorderableList({
+    ids: (lines ?? []).map((l) => l.id),
+    expanded,
+    onCommit: (order) => {
+      if (editor) reorderDialogueLines(editor, blockId, order);
+    },
+  });
+
   const autoOpenedRef = useRef<string | null>(null);
   useEffect(() => {
     if (!lineId) return;
@@ -138,12 +166,32 @@ export function DialogueProperties({
         </p>
       )}
 
-      <div className="space-y-2">
-        {lines.map((line, index) => (
+      <div className="space-y-2" ref={reorder.containerRef}>
+        {lines.map((line) => {
+          if (reorder.dragId === line.id) {
+            // The held line's slot: an outline the size of the row it
+            // left, moved by the hook to whichever position it would land
+            // in if released now. Same object, same reasoning, as the
+            // choices' landing zone.
+            return (
+              <div
+                key={line.id}
+                ref={reorder.registerItem(line.id)}
+                style={{ height: reorder.layout?.height ?? 0, position: "relative", zIndex: 0 }}
+                className="rounded-md border-2 border-dashed border-[var(--accent)] bg-[var(--accent-soft-2)]"
+                aria-hidden
+              />
+            );
+          }
+          return (
+            <div
+              key={line.id}
+              ref={reorder.registerItem(line.id)}
+              style={{ position: "relative", zIndex: line.id === reorder.settlingId ? 2 : 1 }}
+            >
           <LineRow
-            key={line.id}
             line={line}
-            index={index}
+            onDragHandleDown={(e) => reorder.onDragHandleDown(e, line.id)}
             expanded={expanded.has(line.id)}
             onToggle={() =>
               setExpanded((prev) => {
@@ -164,8 +212,51 @@ export function DialogueProperties({
             FieldRow={FieldRow}
             QuietRule={QuietRule}
           />
-        ))}
+            </div>
+          );
+        })}
       </div>
+
+      {/* The line itself, following the pointer. */}
+      {reorder.dragId &&
+        reorder.layout &&
+        (() => {
+          const held = lines.find((l) => l.id === reorder.dragId);
+          if (!held) return null;
+          const info = reorder.layout;
+          return (
+            <div
+              style={{
+                position: "fixed",
+                top: reorder.dragTop,
+                left: info.left,
+                width: info.width,
+                zIndex: 50,
+                pointerEvents: "none",
+                borderRadius: 6,
+                boxShadow: "0 0 0 1px var(--border-faint), var(--shadow-floating)",
+                marginTop: 0,
+              }}
+            >
+              <LineRow
+                line={held}
+                onDragHandleDown={() => {}}
+                expanded={expanded.has(held.id)}
+                onToggle={() => {}}
+                entities={entities}
+                variables={variables}
+                otherScenes={otherScenes}
+                onPatch={() => {}}
+                onRemove={() => {}}
+                onOpenVariableManager={openVariableManager}
+                renderConditionRow={renderConditionRow}
+                renderActionRow={renderActionRow}
+                FieldRow={FieldRow}
+                QuietRule={QuietRule}
+              />
+            </div>
+          );
+        })()}
 
       <button
         type="button"
@@ -180,7 +271,7 @@ export function DialogueProperties({
 
 function LineRow({
   line,
-  index,
+  onDragHandleDown,
   expanded,
   onToggle,
   entities,
@@ -195,7 +286,7 @@ function LineRow({
   QuietRule,
 }: {
   line: DialogueLine;
-  index: number;
+  onDragHandleDown: (e: ReactPointerEvent) => void;
   expanded: boolean;
   onToggle: () => void;
   entities: { id: string; kind: string; name: string }[];
@@ -237,31 +328,91 @@ function LineRow({
   const select =
     "w-full rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]";
 
+  /**
+   * v0.67.1 — THE CHOICE ROW, wearing a conversation's facts.
+   *
+   * Every value below is the one `ChoiceAccordion` uses, not one chosen to
+   * look similar: the card's own fill, the 8px radius, the 14px title, the
+   * handle's padding, the ✕ in the header. v0.67.0 matched the two blocks
+   * inside the scene editor and left this panel alone — which is the half
+   * Volkan was looking at, and in all eight themes it read as a different
+   * component: a 6px card with no fill of its own and a filled strip
+   * across its top.
+   *
+   * THE FILL IS ALSO THE DRAG BUG. A card with no background is see-through
+   * everywhere below its header strip; against the panel that nearly
+   * passes, and the moment the row lifts out of flow it is obviously
+   * transparent. Nothing about the gesture was wrong — it was this.
+   *
+   * The second line carries what a choice's carries in the same slot: a
+   * choice says where it goes, a line says what happens after it, in the
+   * accent when it leads somewhere and quiet when it stays.
+   */
+  const target = line.targetSceneId
+    ? otherScenes.find((sc) => sc.id === line.targetSceneId)
+    : undefined;
+  const afterPhrase =
+    after === "leave"
+      ? `↪ ${target ? target.title || "Untitled scene" : "not linked yet"}`
+      : after === "end"
+        ? "Ends the conversation"
+        : line.repeatable
+          ? "Stays, can be said again"
+          : "Stays in the conversation";
+
   return (
     <div
-      className="rounded-md border border-[var(--border-soft)]"
+      className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg)]"
       data-dialogue-line-id={line.id}
       data-expanded={expanded ? "true" : "false"}
     >
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex w-full items-center gap-2 rounded-t-md bg-[var(--surface-2)] px-2 py-1.5 text-left"
-      >
-        <span className="shrink-0 text-xs text-[var(--text-3)]">{expanded ? "▾" : "▸"}</span>
-        <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--text)]">
-          {line.text || "Untitled line"}
+      <div className="flex items-center gap-1">
+        <span
+          onPointerDown={onDragHandleDown}
+          title="Drag to reorder"
+          className="shrink-0 cursor-grab select-none px-1.5 py-2 text-[var(--text-3)] hover:text-[var(--text)] active:cursor-grabbing"
+          style={{ touchAction: "none" }}
+          data-dialogue-drag-handle={line.id}
+        >
+          ⠿
         </span>
-        {/* The chips, same call as v0.65.0: the only way to read a
-            conversation of eight lines without opening eight. */}
-        <span className="shrink-0 text-[10px] text-[var(--text-3)]">
-          {after === "leave" ? "↪ exit" : after === "end" ? "✓ ends" : line.repeatable ? "↻" : "·"}
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex min-w-0 flex-1 items-center gap-1.5 py-2 pr-1 text-left"
+        >
+          <span aria-hidden className="shrink-0 text-[10px] text-[var(--text-3)]">
+            {expanded ? "▾" : "▸"}
+          </span>
+          <span
+            className={`min-w-0 flex-1 truncate text-sm ${
+              line.text ? "text-[var(--text)]" : "italic text-[var(--text-3)]"
+            }`}
+          >
+            {line.text || "Untitled line"}
+          </span>
+        </button>
+        {/* The after-mark keeps the place a choice leaves empty: it is the
+            one fact a conversation has and a choice does not. */}
+        <span
+          className="shrink-0 select-none text-[10px] text-[var(--text-3)]"
+          title={AFTER_LABEL[after]}
+        >
+          {after === "leave" ? "↪" : after === "end" ? "✓" : line.repeatable ? "↻" : "·"}
         </span>
-      </button>
+        <button
+          type="button"
+          onClick={onRemove}
+          title="Remove this line"
+          className="shrink-0 rounded px-1.5 py-1 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
+        >
+          ✕
+        </button>
+      </div>
 
       {!expanded && (
-        <div className="flex flex-wrap items-center gap-x-2 px-2 pb-2 text-xs text-[var(--text-3)]">
-          <span>{index + 1}.</span>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 px-2 pb-2 text-xs text-[var(--text-3)]">
+          <span className={after === "leave" ? "text-[var(--accent)]" : ""}>{afterPhrase}</span>
           <span>·</span>
           <span>
             {line.conditions.length} {line.conditions.length === 1 ? "condition" : "conditions"}

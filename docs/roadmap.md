@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.66.1.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.67.1.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -337,12 +337,39 @@ than gaps.
   ProseMirror calls before the node view is in the document, so it
   measured zero and wrote it.
 
+- **v0.67.0 The Dialogue and the Choice are siblings** — his rule, stated
+  on 28 Sep and now the standing one for these two blocks: **same palette,
+  same principles; only the behaviour differs.** The Dialogue's row takes
+  the writer's Choice Style exactly as a choice row does (it was on
+  hard-coded surface tokens, so the two disagreed in all eight themes and
+  a restyle of the choices left the conversations behind). Lines can be
+  dragged into order, using the choice panel's own gesture lifted into
+  `useReorderableList` rather than a second copy — and that gesture, which
+  had never had a test above the document level, now has one that performs
+  a real drag in both panels. Replies re-measure when the column changes
+  width, which is the "two-line gap on a one-line reply" he spotted (33px
+  drawn against 17px needed).
+
+  **The standing rule for future work:** anything drawn for one of these
+  two blocks is drawn for both, unless the difference is behavioural —
+  **and "both" includes the Inspector**, which v0.67.0 missed.
+
+- **v0.67.1 The Inspector's rows** — the half v0.67.0 left out, and the one
+  he was actually looking at. The Dialogue's folded row was a different
+  component from a choice's: 6px against 8px, a filled header strip, a
+  smaller title, no ✕, a row number where the choice names its
+  destination — and **no fill on the card at all**, which is also why a row
+  being dragged was see-through. It is the choice row now, value for value,
+  with the conversation's own facts in the second line. A mockup of the
+  three options in all eight themes went first this time, and he chose from
+  it before any code was written.
+
 **Next, agreed 27 Sep:** the **spreadsheet export** (.xlsx) for
 localisation and VO, now unblocked — `lineId` rode in with the Dialogue,
 so every line in the story has something a translator can key against.
 Then the elective list: Custom CSS for the export (G2), Twine import.
 
-737 tests, 174 negative controls. Two bugs were found by the new spec and
+752 tests, 180 negative controls. Two bugs were found by the new spec and
 one control came back green — the green one was a gap in the tests (the
 graph badge had no assertion), and the assertion is what got written.
 

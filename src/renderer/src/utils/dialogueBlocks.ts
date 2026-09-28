@@ -1,6 +1,7 @@
 import { nanoid } from "nanoid";
 import type { JSONContent } from "@tiptap/react";
 import type { Editor } from "@tiptap/react";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import type { VariableAction, VariableCondition } from "../types/variables";
 import type { Speaker } from "../types/speaker";
 import { DIALOGUE_BLOCK_TYPE, DIALOGUE_LINE_TYPE } from "../types/nodeTypes";
@@ -215,6 +216,47 @@ export function applyDialogueLineAttrs(
   const node = state.doc.nodeAt(at);
   if (!node) return;
   view.dispatch(state.tr.setNodeMarkup(at, undefined, { ...node.attrs, ...attrs }));
+}
+
+/**
+ * Puts one block's lines in a given order (v0.67.0).
+ *
+ * The twin of `reorderChoiceOptions`, deliberately written the same way
+ * down to the safeguard: a line the caller did not mention keeps its place
+ * at the end rather than being dropped, and a reorder that would not come
+ * back with every line it started with does nothing at all. **A reorder
+ * must never lose a line** — it is one transaction, and a transaction that
+ * silently drops a row is how a writer loses a conversation.
+ */
+export function reorderDialogueLines(editor: Editor, blockId: string, order: string[]): boolean {
+  let at = -1;
+  let block: ProseMirrorNode | null = null;
+  editor.state.doc.descendants((node, pos) => {
+    if (at !== -1) return false;
+    if (node.type.name === DIALOGUE_BLOCK_TYPE && node.attrs.blockId === blockId) {
+      at = pos;
+      block = node;
+      return false;
+    }
+    return true;
+  });
+  if (at === -1 || !block) return false;
+
+  const found: ProseMirrorNode = block;
+  const children: ProseMirrorNode[] = [];
+  found.forEach((child) => children.push(child));
+
+  const byId = new Map(children.map((c) => [c.attrs.lineId as string, c]));
+  const reordered = order.map((id) => byId.get(id)).filter((c): c is ProseMirrorNode => Boolean(c));
+  for (const child of children) {
+    if (!order.includes(child.attrs.lineId as string)) reordered.push(child);
+  }
+  if (reordered.length !== children.length) return false;
+
+  const { tr } = editor.state;
+  tr.replaceWith(at + 1, at + found.nodeSize - 1, reordered);
+  editor.view.dispatch(tr);
+  return true;
 }
 
 /** Adds an empty line to the end of one block. */

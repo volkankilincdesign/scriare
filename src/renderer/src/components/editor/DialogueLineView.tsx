@@ -2,6 +2,8 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { NodeViewContent, NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
 import { useProjectStore } from "../../state/projectStore";
+import { choiceBoxCss, resolveChoiceBox } from "../../types/choiceStyles";
+import type { ChoiceStyleRef } from "../../types/choiceStyles";
 import { applyDialogueLineAttrs, removeDialogueLine } from "../../utils/dialogueBlocks";
 import { speakerName } from "../../types/speaker";
 import type { DialogueAfter } from "../../types/nodeTypes";
@@ -65,6 +67,20 @@ export function DialogueLineView({ node, editor, getPos }: NodeViewProps) {
   const who = speakerName(replySpeaker, entities);
 
   /**
+   * v0.67.0 — THE SAME BOX A CHOICE WEARS.
+   *
+   * A Dialogue and a Choice are siblings: same palette, same principles,
+   * and only their behaviour differs. v0.66.0 drew this row on hard-coded
+   * `--surface` and `--border-soft` while a choice row painted the writer's
+   * own Choice Style — so the two blocks disagreed about what a row looks
+   * like in every one of the eight themes, and worse, a writer who had
+   * restyled their choices found their conversations had not moved with
+   * them. The line already carries a `style` attribute and Play Mode has
+   * always honoured it; the editor simply was not asking.
+   */
+  const box = resolveChoiceBox(project?.choiceStyles, node.attrs.style as ChoiceStyleRef | null);
+
+  /**
    * The reply grows with what is typed rather than scrolling inside two
    * lines — the difference between a field and a place to write.
    *
@@ -88,6 +104,34 @@ export function DialogueLineView({ node, editor, getPos }: NodeViewProps) {
     return () => cancelAnimationFrame(id);
   }, [reply]);
 
+  /**
+   * v0.67.0 — AND AGAIN WHENEVER THE COLUMN CHANGES WIDTH.
+   *
+   * A height in pixels is an answer to "how many lines does this wrap to",
+   * and that answer expires the moment the column is resized. Collapse a
+   * dock, widen the window, and a reply that now fits on one line kept the
+   * two lines' worth of height it was measured at — the gap Volkan saw
+   * under one-line replies, measured at 33px drawn against 17px needed.
+   *
+   * A ResizeObserver rather than a window listener: the editor column
+   * changes width when the docks move, which the window never hears about.
+   */
+  useEffect(() => {
+    const el = replyRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    let last = el.getBoundingClientRect().width;
+    const observer = new ResizeObserver(() => {
+      const width = el.getBoundingClientRect().width;
+      // Only width matters. Reacting to height would mean reacting to the
+      // change this very callback just made.
+      if (Math.abs(width - last) < 0.5) return;
+      last = width;
+      fit(el);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   function cycleAfter(): void {
     const next = AFTER_ORDER[(AFTER_ORDER.indexOf(after) + 1) % AFTER_ORDER.length];
     applyDialogueLineAttrs(editor, lineId, { after: next });
@@ -95,9 +139,10 @@ export function DialogueLineView({ node, editor, getPos }: NodeViewProps) {
 
   return (
     <NodeViewWrapper
-      className="scriare-dialogue-line group relative rounded border border-[var(--border-soft)] bg-[var(--surface)] px-2 py-1.5"
+      className="scriare-dialogue-line group relative px-2 py-1.5"
       data-line-id={lineId || undefined}
       data-after={after}
+      style={choiceBoxCss(box)}
     >
       <div className="flex items-baseline gap-2">
         <span contentEditable={false} className="shrink-0 select-none text-xs text-[var(--text-3)]">

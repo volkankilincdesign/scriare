@@ -23,7 +23,7 @@
  * element boxes: an element box includes leading, and leading is exactly
  * the thing that was hiding the error.
  */
-export default async function run({ api, check, seedProject }) {
+export default async function run({ page, api, check, seedProject }) {
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
   await api(() => {
@@ -61,6 +61,15 @@ export default async function run({ api, check, seedProject }) {
         },
         buildDialogueBlockNode(
           [
+            {
+              id: "l-wrap",
+              text: '"Who are the six?"',
+              // Chosen to WRAP at the narrow width and not at the wide one:
+              // the resize check below is only worth having if the number
+              // of lines actually changes.
+              reply: "People who will do what you do, once you have done it. That is all six of them.",
+              replySpeaker: "e-align",
+            },
             {
               id: "l-align",
               text: '"How short are you, exactly?"',
@@ -124,7 +133,7 @@ export default async function run({ api, check, seedProject }) {
 
   // ── the reply's name against the reply ───────────────────────────────
   const reply = await api(() => {
-    const field = document.querySelector("[data-reply-for]");
+    const field = document.querySelector('[data-reply-for="l-align"]');
     if (!field) return { error: "no reply field" };
     const name = field.parentElement.querySelector("span");
     if (!name) return { error: "no attribution" };
@@ -162,7 +171,7 @@ export default async function run({ api, check, seedProject }) {
   // height rather than the value for exactly that reason — the value was
   // never wrong.
   const field = await api(() => {
-    const el = document.querySelector("[data-reply-for]");
+    const el = document.querySelector('[data-reply-for="l-align"]');
     return { value: el?.value ?? null, height: el?.getBoundingClientRect().height ?? 0 };
   });
   // The reply seeded above is long enough to wrap, so a field that has
@@ -177,6 +186,49 @@ export default async function run({ api, check, seedProject }) {
     "THE REPLY'S NAME SHARES A BASELINE with the reply's first line",
     Math.abs(reply.delta) < 1,
     `${reply.delta?.toFixed(2)}px apart (${reply.nameSize}px name, ${reply.replySize}px reply)`,
+  );
+
+  // v0.67.0 — a height in pixels is an answer to "how many lines does
+  // this wrap to", and that answer expires when the column is resized.
+  // Collapse a dock or widen the window and a reply that now fits on one
+  // line kept two lines' worth of height: measured at 33px drawn against
+  // 17px needed, which is the gap Volkan saw under the one-line replies.
+  // The column is squeezed and let go again rather than the window being
+  // resized: a dock opening does this to the editor and the window never
+  // hears about it, which is the case a window listener would miss.
+  const squeeze = (px) =>
+    api((width) => {
+      let el = document.getElementById("tmp-width");
+      if (!el) {
+        el = document.createElement("style");
+        el.id = "tmp-width";
+        document.head.appendChild(el);
+      }
+      el.textContent = width ? `.ProseMirror { max-width: ${width}px !important; }` : "";
+    }, px);
+
+  const replyHeight = () =>
+    api(() => {
+      const el = document.querySelector('[data-reply-for="l-align"]');
+      const drawn = el.getBoundingClientRect().height;
+      const saved = el.style.height;
+      el.style.height = "auto";
+      const needed = el.scrollHeight;
+      el.style.height = saved;
+      return { drawn: +drawn.toFixed(1), needed, width: Math.round(el.getBoundingClientRect().width) };
+    });
+
+  await squeeze(280);
+  await wait(500);
+  const narrow = await replyHeight();
+  await squeeze(0);
+  await wait(500);
+  const wide = await replyHeight();
+
+  check(
+    "A COLUMN THAT CHANGES WIDTH RE-MEASURES THE REPLY — no reserved lines left over",
+    narrow.drawn > wide.drawn + 4 && Math.abs(wide.drawn - wide.needed) < 2,
+    `${narrow.drawn}px at ${narrow.width}px wide → ${wide.drawn}px at ${wide.width}px (needs ${wide.needed})`,
   );
 
   // ── the button that puts one in ──────────────────────────────────────

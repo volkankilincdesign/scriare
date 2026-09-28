@@ -12,6 +12,105 @@ omitting them.
 
 ---
 
+## v0.67.1 — The Inspector's rows, which is where he was looking
+
+v0.67.0 made the two blocks match **inside the scene editor** and left the
+Inspector alone. The Inspector is the panel he was pointing at, and there
+the Dialogue row was not a choice row with different words in it — it was a
+different component: a 6px card with **no fill of its own** and a filled
+strip across its top, beside the choice's 8px card filled with `--bg`.
+Seven differences, in eight themes.
+
+**The missing fill was also the "transparency" during a drag.** A card
+with no background has nothing to hide what is behind it; against the
+panel that nearly passes, and the moment the row lifts out of flow it is
+obviously see-through. Nothing about the gesture was wrong — the gesture
+was the part that worked.
+
+**The row is now the choice row**, value for value rather than by
+resemblance: the card's fill, the 8px radius, the 14px title, the handle's
+padding, the ✕ in the header. Its second line carries what a choice's
+carries in the same slot — a choice says where it goes, a line says what
+happens after it: *Stays in the conversation*, *Ends the conversation*,
+*↪ The Tea Runs Out* in the accent when it leads somewhere. The row number
+went with it; a choice does not number itself either, and that number was
+half of what made the two lists look unrelated.
+
+**The after-mark stays in the header**, in the place a choice leaves empty,
+because it is the one fact a conversation has and a choice does not.
+
+**The mockup came before the code**, which is the rule for anything
+contested in this project and was skipped last time. Three columns — the
+choice row as shipped, the Dialogue row as it was, the Dialogue row as
+proposed — in all eight themes, switchable, with the drag state as its own
+view. He picked the third column and the build followed it.
+
+**The parity spec now asks the same question one panel to the right**, in
+all eight themes, and separately that a row has a fill of its own — the
+complaint stated as an assertion rather than the fix stated as one.
+
+---
+
+## v0.67.0 — The Dialogue and the Choice are siblings
+
+Volkan's rule, in his words: the two blocks are related, like brothers.
+Same palette, same principles, and only the behaviour is allowed to
+differ. Three things followed from it.
+
+**The row is the same box now.** v0.66.0 drew a Dialogue line on
+hard-coded `--surface` and `--border-soft` while a choice row painted the
+writer's own **Choice Style** — so the two blocks disagreed in every one of
+the eight themes, and worse, a writer who restyled their choices found
+their conversations had not moved with them. The line already carried a
+`style` attribute and Play Mode had always honoured it; the editor simply
+was not asking. It asks now, through exactly the call a choice row makes.
+
+**The test for it does not name a colour.** A colour is a thing a theme
+decides and a writer can override, so `dialogue-parity.spec` walks all
+eight themes and asserts only that the two rows ARE THE SAME — fill,
+border, width, radius, padding — whatever that same happens to be. Then it
+restyles the choices and checks the conversation moved with them. A
+hard-coded expectation would have passed on the day it was written and
+said nothing afterwards.
+
+**Lines can be dragged into order.** The gesture is not a second
+implementation: the Choices panel's own drag — the one rebuilt around
+"the list's layout does not change while a drag is in progress", with its
+frozen geometry, its landing zone and its drop glide — moved into
+`useReorderableList` and both panels use it. That is the sibling rule
+applied to behaviour: if the two lists drag differently, one of them is
+wrong. `reorderDialogueLines` is the twin of `reorderChoiceOptions`, down
+to the safeguard that a reorder which cannot return every line it started
+with does nothing at all.
+
+**That gesture had never had a test.** It was covered at the document
+level — `reorderChoiceOptions` with an array — and by eye above that. A
+shared implementation with no test is one that breaks both lists at once,
+so `reorder.spec` now performs a real drag with real pointer events, in
+both panels, and asks the DOCUMENT what happened rather than the panel,
+which is a picture of the document and could agree with itself while being
+wrong.
+
+**The replies stopped reserving a line they do not use.** His third
+report, and the measurement is the whole story: a reply's height is
+written in pixels, which is an answer to "how many lines does this wrap
+to", and that answer expires the moment the column changes width.
+Collapse a dock or widen the window and a reply that now fits on one line
+kept two lines' worth of height — **33px drawn against 17px needed**. A
+ResizeObserver re-measures it; a window listener would not have, because
+the editor column changes width when the docks move and the window never
+hears about it.
+
+**One bug of my own, found by the suite.** The reorder hook went in below
+Dialogue Properties' early return, which makes it a hook that runs on some
+renders and not others — so the first time the block went away, which is
+every time the writer presses Play, React tore the whole tree down and the
+app went blank with no error in the console. The Dialogue's own spec
+caught it one file later: `isPlaying: true`, and `#root` empty. Hooks
+above the return, and a note saying why.
+
+---
+
 ## v0.66.1 — Where a speaker's name sits, and a button for the Dialogue
 
 Two things Volkan found within an hour of opening v0.66.0, plus one the

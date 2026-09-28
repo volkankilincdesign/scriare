@@ -50,6 +50,23 @@ export default async function run({ page, api, check, seedProject, openExported 
       "blk-talk",
     );
 
+    // v0.67.0 — the scene's own selection first, so the editor is mounted
+    // on the scene this spec is about before anything writes to it.
+    store.getState().selectScene(talk.id);
+
+    window.__dialogueSeedDoc = {
+      type: "doc",
+      content: [
+        para("Nesrin does not look up when you sit down."),
+        block,
+        para("The urn gives out at half past nine."),
+        buildChoiceBlockNode(
+          [{ id: "after-1", text: "Go down to the floor.", targetSceneId: after.id }],
+          "blk-after",
+        ),
+      ],
+    };
+
     store.setState({
       project: {
         ...project,
@@ -79,9 +96,39 @@ export default async function run({ page, api, check, seedProject, openExported 
   });
   await wait(300);
 
+  // v0.67.0 — and THROUGH THE EDITOR, which is the scene content's only
+  // writer in this app.
+  //
+  // A store-only seed is a second writer. It survived for as long as this
+  // spec happened to follow one that left the editor empty; the moment
+  // dialogue-parity.spec landed alphabetically in front of it, the editor
+  // was still holding that spec's document and its next update wrote the
+  // conversation straight back out of the store. The failure read as
+  // "Play shows nothing" and had nothing to do with Play.
+  //
+  // Rebuilt here rather than copied out of the store, because by now the
+  // store may already have been overwritten by the editor it is racing.
+  await api(() => {
+    const store = window.__scriareProjectStore;
+    const editor = window.__scriareEditorStore.getState().editor;
+    const scene = store.getState().project.scenes.find((s) => s.id === store.getState().project.startSceneId);
+    if (!editor || !scene) return;
+    editor.commands.setContent(window.__dialogueSeedDoc ?? scene.content, true);
+  });
+  await wait(350);
+
   // ── in Play ──────────────────────────────────────────────────────────
   await api(() => window.__scriareProjectStore.getState().startPlay());
-  await wait(450);
+  // Wait for Play to be ON SCREEN rather than for a number of
+  // milliseconds. v0.67.0 — this spec started failing on its first read
+  // with `play` null, and the cause was the spec: 450ms is a guess, and a
+  // guess about how long a mount takes is a guess that gets overtaken by
+  // an unrelated change on a slower machine.
+  for (let i = 0; i < 20; i += 1) {
+    const ready = await api(() => Boolean(document.querySelector("[data-play-root] [data-dialogue]")));
+    if (ready) break;
+    await wait(120);
+  }
 
   const readPlay = () =>
     api(() => {
