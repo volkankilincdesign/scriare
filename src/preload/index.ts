@@ -49,6 +49,11 @@ const api = {
     save: (payload: unknown) => ipcRenderer.invoke("script:save", payload),
     open: (filePath: string) => ipcRenderer.invoke("script:reveal", filePath),
   },
+  /** v0.70.0 — every string a reader sees, as a workbook and a CSV. */
+  sheet: {
+    save: (payload: unknown) => ipcRenderer.invoke("sheet:save", payload),
+    open: (filePath: string) => ipcRenderer.invoke("sheet:reveal", filePath),
+  },
   /**
    * v0.49.0 — the window asks before it closes, so a pending autosave is
    * written rather than discarded. See main/index.ts for the handshake.

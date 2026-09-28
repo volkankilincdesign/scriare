@@ -1,4 +1,4 @@
-# The spreadsheet export — settled, 28 Sep 2026
+# The spreadsheet export — settled 28 Sep 2026, built as v0.70.0
 
 One workbook and one CSV, per language, carrying every string a reader
 sees. Three audiences, and the design answers to all three: a translator
@@ -127,6 +127,54 @@ two editable columns shaded.
 The Ref has to be visible in Scriare or it is useless: a translator's
 question about `15.D2` must be answerable without counting rows. The scene
 shows its number; a Dialogue line shows its full ref in the Inspector.
+
+
+## Built — what changed between the spec and the file (v0.70.0)
+
+The design above shipped as written. Four things the build settled that the
+spec left open, and one it turned out could not be done honestly:
+
+- **The Ref needs no duplicate suffix.** The spec's rule — "duplicate scene
+  15 and it is `15.1`" — was written before numbering came from
+  reachability. Under a breadth-first walk every scene gets its own number
+  and every ref is unique without a suffix, and there is no honest way to
+  tell a duplicate from an original anyway: the file format stores no
+  provenance, so "is this a copy of scene 15" would be a guess off a title
+  ending in "Copy". Dropped rather than faked.
+- **Both files are written from one save dialog.** The dialog asks where
+  the workbook goes and the CSV takes the same name beside it. They are
+  built from one model in one call, which is the only way to guarantee the
+  pair cannot disagree — and the panel says so before the export rather
+  than leaving the second file to be discovered in a folder afterwards.
+- **The target language is one optional field.** It is the only thing the
+  app genuinely cannot know, and it only exists because the answer is one
+  file per language. Blank is allowed and the file is then just
+  `<Story> — Lines.xlsx`.
+- **Exports are byte-identical.** Every zip entry carries a fixed date and
+  no implicit folder entries, so exporting the same story twice produces
+  the same file and a writer can tell a stale sheet by comparing it.
+- **Speaker resolution never prints an id.** A line attributed to a deleted
+  character comes out as narration, which is what the app already shows on
+  screen. A sheet that printed an internal id would be shipping a bug to a
+  translator.
+
+### Measured on the real story
+
+The Blue Hour, with conversations: **252 rows** — 32 scene titles, 122
+paragraphs, 70 choices, 15 dialogue lines, 13 replies, 7 speaking parts, 9
+rows naming a character or place, 2 empty strings skipped and counted. 40 KB
+of workbook, no unreachable scenes.
+
+### Fifteen negative controls
+
+Three started out not catching their sabotage, and each was a finding about
+the test. Removing the XML escaping left the suite green because the
+fixture contained no ampersand. Replacing the fixed zip timestamp with
+`new Date()` left it green because two exports a second apart match byte
+for byte regardless — a zip stores DOS time at two-second resolution — so
+the assertion moved to the entry dates, where the guarantee actually lives.
+And the dialog height fix pinned Playwright's viewport, which silently
+disabled a window resize two specs later.
 
 ## The id audit — run, and what it found (v0.69.0)
 

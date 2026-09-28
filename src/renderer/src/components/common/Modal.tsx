@@ -172,7 +172,23 @@ export function Modal({
         // between the dialog's controls, not park on its frame.
         tabIndex={-1}
         onMouseDown={(e) => e.stopPropagation()}
-        className={`w-full ${widthClassName} rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 text-[var(--text)] shadow-2xl focus:outline-none`}
+        /**
+         * The height cap is load-bearing (v0.70.0).
+         *
+         * A dialog taller than the window was centred on it, which puts
+         * the overflow at BOTH ends: the title goes off the top and the
+         * buttons off the bottom, and neither can be reached because
+         * nothing scrolls. Measured before it was fixed — at a 620px
+         * window the Export dialog's own frame started at −9px.
+         *
+         * It is on the Modal rather than on the panel that exposed it,
+         * because every dialog in the app is one long panel away from the
+         * same fault and none of them can see the window's height. The
+         * 3rem leaves the backdrop visible at both ends, so a capped
+         * dialog still reads as something laid over the app rather than
+         * as a new screen.
+         */
+        className={`max-h-[calc(100vh-3rem)] w-full overflow-y-auto ${widthClassName} rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 text-[var(--text)] shadow-2xl focus:outline-none`}
       >
         {children}
       </div>

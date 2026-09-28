@@ -4,6 +4,7 @@ import { is } from "@electron-toolkit/utils";
 import { registerProjectHandlers } from "./ipc/projectHandlers";
 import { registerExportHandlers } from "./ipc/exportHandlers";
 import { registerScriptHandlers } from "./ipc/scriptHandlers";
+import { registerSheetHandlers } from "./ipc/sheetHandlers";
 import { projectFileFromArgv } from "../shared/fileArgs";
 import { SHELL_GRACE_MS } from "../shared/boot";
 
@@ -299,6 +300,7 @@ app.whenReady().then(() => {
   registerProjectHandlers();
   registerExportHandlers();
   registerScriptHandlers();
+  registerSheetHandlers();
 
   /**
    * PULLED BY THE RENDERER, not pushed at it. A push has to guess when the

@@ -118,6 +118,15 @@ lives in.
 - Colours you pick yourself say how they read on both grounds **at the
   moment you pick them**, measured, rather than at the export dialog weeks
   later.
+- **A script**, as a PDF or a Word file, in two layouts — one to hand a
+  reader, one to hand a studio.
+- **A spreadsheet of every string a reader sees** — scene titles, prose,
+  choices, dialogue and replies, one row each, in reading order from your
+  first scene. A workbook for the translator, with the header frozen, the
+  filters on and everything locked except the column they fill; and a CSV
+  for the engine beside it, comma-delimited UTF-8 with the line's own id as
+  the RowName, because "Save As CSV" on a Turkish Windows writes semicolons
+  and CP1254 and quietly mangles both.
 
 **Everywhere**
 
@@ -141,7 +150,7 @@ lives in.
 
 ## Status
 
-**v0.69.0 — in active development, and usable.** The editor, graph,
+**v0.70.0 — in active development, and usable.** The editor, graph,
 runtime, entities, notes, variables, validation, search and **export** are
 all real, and the app now builds a Windows installer. See
 [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest list of what
@@ -161,8 +170,8 @@ screen. Clicking it copies the version, your platform and the engine
 underneath — paste that into the report and neither of us has to guess
 which build you were on.
 
-**784 automated tests** run against the real packaged application, and
-**196 negative controls**: each one breaks a specific line of the shipped
+**826 automated tests** run against the real packaged application, and
+**211 negative controls**: each one breaks a specific line of the shipped
 source on purpose and checks that a named assertion fails. A test that has
 never been seen to fail proves nothing, and several times now a control
 has failed to catch its sabotage — each time a finding about the test

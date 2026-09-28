@@ -60,6 +60,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("../../shared/script/scriptHtml"),
     import("./utils/dialogueBlocks"),
     import("./utils/contentIds"),
+    import("./export/sheet/buildSheet"),
+    import("../../shared/sheet/model"),
   ]).then(
     ([
       projectStore,
@@ -98,6 +100,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       scriptHtml,
       dialogueBlocks,
       contentIds,
+      sheetBuilder,
+      sheetModel,
     ]) => {
       Object.assign(window, {
         __scriareProjectStore: projectStore.useProjectStore,
@@ -129,6 +133,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         __scriareScriptHtml: scriptHtml.buildScriptHtml,
         __scriareDialogue: dialogueBlocks,
         __scriareContentIds: contentIds,
+        __scriareSheet: { ...sheetBuilder, ...sheetModel },
         __scriareReuse: reuseBySignature,
         __scriareUIStore: uiStore.useUIStore,
         // v0.43.0 — the layout rules are pure arithmetic, so the specs that

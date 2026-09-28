@@ -164,6 +164,24 @@ export interface ScriareAPI {
     }) => Promise<{ filePath: string; bytes: number } | null>;
     open: (filePath: string) => Promise<void>;
   };
+  /**
+   * v0.70.0 — every string a reader sees, as a workbook and a CSV written
+   * side by side. One save dialog, two files: the pair must agree about
+   * what the story says, and the surest way is to write them together.
+   */
+  sheet: {
+    save: (payload: {
+      sheet: unknown;
+      suggestedName: string;
+      nearPath: string | null;
+    }) => Promise<{
+      filePath: string;
+      csvPath: string;
+      bytes: number;
+      rows: number;
+    } | null>;
+    open: (filePath: string) => Promise<void>;
+  };
   /** v0.49.0 — closing the window writes what is pending first. */
   lifecycle: {
     /**

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "../common/Button";
 import { ScriptPanel } from "./ScriptPanel";
+import { SheetPanel } from "./SheetPanel";
 import { Modal } from "../common/Modal";
 import { useProjectStore } from "../../state/projectStore";
 import { useUIStore } from "../../state/uiStore";
@@ -46,7 +47,7 @@ export function ExportDialog() {
    * last time and opens this looking for the web page should find the
    * dialog as they first met it.
    */
-  const [tab, setTab] = useState<"page" | "script">("page");
+  const [tab, setTab] = useState<"page" | "script" | "sheet">("page");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ filePath: string; bytes: number } | null>(null);
 
@@ -122,12 +123,19 @@ export function ExportDialog() {
       {/* One door for "get this story out of the app". A writer looking
           for a script should not have to know it was filed under a
           different menu (v0.64.0). Hidden while a result is showing, so
-          the success screen is not competing with a way to leave it. */}
+          the success screen is not competing with a way to leave it.
+
+          Three answers now (v0.70.0): a page to play, a script to read, a
+          sheet to work from. The third was deferred by the Script panel
+          on purpose — a Word table of nine hundred rows is a worse
+          spreadsheet than a spreadsheet — and it lands here rather than in
+          a menu of its own for the same reason the second did. */}
       {!done && (
         <div className="mb-4 flex gap-1 border-b border-[var(--border-soft)]">
           {([
             ["page", "Web Page"],
             ["script", "Script"],
+            ["sheet", "Spreadsheet"],
           ] as const).map(([id, label]) => (
             <button
               key={id}
@@ -149,6 +157,8 @@ export function ExportDialog() {
 
       {tab === "script" && !done ? (
         <ScriptPanel onClose={close} />
+      ) : tab === "sheet" && !done ? (
+        <SheetPanel onClose={close} />
       ) : done ? (
         <Exported
           result={done}

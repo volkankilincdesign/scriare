@@ -1876,8 +1876,138 @@ const CONTROLS = [
     spec: "content-ids",
     expect: "a document with nothing wrong with it is not rewritten",
   },
+  // ── v0.70.0 — the spreadsheet ────────────────────────────────────────
+  // The sabotages are aimed at the properties a translator or an engine
+  // would notice weeks later, not at the ones a glance at the file finds:
+  // a duplicate RowName, a Ref that does not move with the story, an
+  // encoding that mangles Turkish, prose whose gate went missing.
+  {
+    name: "the Ref numbered from the scene list rather than from the start scene",
+    file: src("export/sheet/buildSheet.ts"),
+    from: "  const declared = project.startSceneId;\n  const startId =\n    (declared && sceneById.has(declared) ? declared : project.scenes[0]?.id) ?? null;",
+    to: "  const startId = project.scenes[0]?.id ?? null;",
+    spec: "sheet-export",
+    expect: "CHANGING THE START SCENE RENUMBERS",
+  },
+  {
+    name: "an unreachable scene given an ordinary number",
+    file: src("export/sheet/buildSheet.ts"),
+    from: '    label.set(scene.id, `U${unreachable}`);',
+    to: "    label.set(scene.id, String(order.length + 1));",
+    spec: "sheet-export",
+    expect: "A SCENE NOTHING LEADS TO GETS A U",
+  },
+  {
+    name: "scene titles left out, the way the first draft of the spec left them out",
+    file: src("export/sheet/buildSheet.ts"),
+    from: '    push("Scene", {\n      key: `${scene.id}:title`,',
+    to: '    if (false) push("Scene", {\n      key: `${scene.id}:title`,',
+    spec: "sheet-export",
+    expect: "SCENE TITLES ARE ROWS",
+  },
+  {
+    name: "a gate that stops being carried down to the paragraphs it gates",
+    file: src("export/sheet/buildSheet.ts"),
+    from: "          if (child.type === \"paragraph\") paragraph(child, gate);",
+    to: "          if (child.type === \"paragraph\") paragraph(child, \"\");",
+    spec: "sheet-export",
+    expect: "GATED PROSE CARRIES ITS CONDITION",
+  },
+  {
+    name: "a soft line break flattened away, joining the words either side of it",
+    file: src("export/sheet/buildSheet.ts"),
+    from: '  if (node.type === "hardBreak") return "\\n";',
+    to: '  if (node.type === "hardBreak") return "";',
+    spec: "sheet-export",
+    expect: "A SOFT LINE BREAK IS A LINE BREAK",
+  },
+  {
+    name: "a reply given a number of its own instead of hanging off its line",
+    file: src("export/sheet/buildSheet.ts"),
+    from: "            refSuffix: `${TYPE_LETTER.Reply}${index}r`,",
+    to: "            refSuffix: `${TYPE_LETTER.Reply}${index + 100}`,",
+    spec: "sheet-export",
+    expect: "a reply hangs off its line",
+  },
+  {
+    name: "the CSV written with a byte order mark, the way a spreadsheet would",
+    file: main("sheet/sheetCsv.ts"),
+    from: '  return Buffer.from(`${lines.join("\\r\\n")}\\r\\n`, "utf-8");',
+    to: '  return Buffer.from(`\\ufeff${lines.join("\\r\\n")}\\r\\n`, "utf-8");',
+    spec: "sheet-export",
+    expect: "NO BYTE ORDER MARK",
+  },
+  {
+    name: "the CSV's first column named Key rather than RowName",
+    file: main("sheet/sheetCsv.ts"),
+    from: 'field(index === 0 ? "RowName" : SHEET_COLUMNS[index].header),',
+    to: "field(SHEET_COLUMNS[index].header),",
+    spec: "sheet-export",
+    expect: "THE FIRST COLUMN IS RowName",
+  },
+  {
+    name: "a newline left real inside a CSV cell, so one row spans two lines",
+    file: main("sheet/sheetCsv.ts"),
+    from: '  return `"${value.replace(/"/g, \'""\').replace(/\\r\\n|\\r|\\n/g, "\\\\n")}"`;',
+    to: '  return `"${value.replace(/"/g, \'""\')}"`;',
+    spec: "sheet-export",
+    expect: "a newline inside a cell becomes an escaped one",
+  },
+  {
+    name: "the two editable columns locked along with everything else",
+    file: shared("sheet/model.ts"),
+    from: "export const EDITABLE_COLUMNS = [8, 9];",
+    to: "export const EDITABLE_COLUMNS: number[] = [];",
+    spec: "sheet-export",
+    expect: "THE SHEET IS PROTECTED and exactly the two editable columns are unlocked",
+  },
+  {
+    name: "the header band unfrozen, leaving row 400 of a flat sheet unreadable",
+    file: main("sheet/sheetXlsx.ts"),
+    from: '      <pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>',
+    to: "",
+    spec: "sheet-export",
+    expect: "THE HEADER IS FROZEN",
+  },
+  {
+    name: "Chars baked as a number instead of written as a formula",
+    file: main("sheet/sheetXlsx.ts"),
+    from: '          if (index === 15) return `<c r="${ref}" s="${STYLE.cell}"><f>LEN(H${r})</f></c>`;',
+    to: '          if (index === 15) return `<c r="${ref}" s="${STYLE.cell}"><v>${row.text.length}</v></c>`;',
+    spec: "sheet-export",
+    expect: "CHARS IS A REAL FORMULA",
+  },
+  {
+    name: "an unescaped ampersand, which is how a hand-written workbook refuses to open",
+    file: main("sheet/sheetXlsx.ts"),
+    from: '    .replace(/&/g, "&amp;")\n    .replace(/</g, "&lt;")',
+    to: '    .replace(/</g, "&lt;")',
+    spec: "sheet-export",
+    expect: "EVERY PART IS WELL-FORMED XML",
+  },
+  // Aimed at the FIXED-DATE assertion rather than at the identical-bytes
+  // one, and that is a finding the controls produced rather than a
+  // preference. Two exports a second apart match byte for byte even with
+  // `new Date()`, because a zip stores DOS time at two-second resolution —
+  // so the bytes check is true today and silent about the guarantee. The
+  // date on the entries is where the guarantee actually lives.
+  {
+    name: "a fresh timestamp in every zip entry, so two exports never match",
+    file: main("sheet/sheetXlsx.ts"),
+    from: '  const at = new Date("2000-01-01T00:00:00Z");',
+    to: "  const at = new Date();",
+    spec: "sheet-export",
+    expect: "every entry carries a fixed date",
+  },
+  {
+    name: "the dialog uncapped again, running off both ends of a short window",
+    file: src("components/common/Modal.tsx"),
+    from: "className={`max-h-[calc(100vh-3rem)] w-full overflow-y-auto ${widthClassName}",
+    to: "className={`w-full ${widthClassName}",
+    spec: "kit",
+    expect: "A DIALOG FITS THE WINDOW at 520px",
+  },
 ];
-
 
 
 

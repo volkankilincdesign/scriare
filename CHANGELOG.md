@@ -12,6 +12,87 @@ omitting them.
 
 ---
 
+## v0.70.0 — The third door: every string a reader sees
+
+Export has a third tab. A page to play, a script to read, and now a
+spreadsheet to work from — the one the Script panel deferred on purpose
+two versions ago, with its own comment saying why: a Word table of nine
+hundred rows is a worse spreadsheet than a spreadsheet.
+
+**Every string, not only the spoken ones.** Scene titles, prose, choices,
+dialogue and replies, one row each. A sheet without prose cannot localise a
+story, and adding prose later would renumber rows a translator has already
+worked in. The Blue Hour comes out as 252 rows: 32 titles, 122 paragraphs,
+70 choices, 15 dialogue lines, 13 replies.
+
+**Three identifiers, because an id does two jobs that pull apart.**
+Identity — "this is the same line I sent you last week" — requires it never
+to change. Address — "scene 15, dialogue 2" — requires it to change the
+moment the story does. So the Key is the app's own opaque id, the Ref is
+`15.D2` and is recomputed on every export, and neither pretends to be the
+other. Changing the Start Scene renumbers the whole sheet, and it should:
+the initial passage really is the initial passage.
+
+**Scene numbers come from reachability**, outward from the start along the
+choices in the order a reader meets them. A scene nothing leads to gets a
+U block — `U1`, `U2` — after the numbered ones, because Check Story already
+reports those scenes and the sheet must not quietly imply an orphan is part
+of the flow. It is still translated.
+
+**Two files, from one save dialog, side by side.** The workbook is the
+translator's document: seventeen columns, header frozen, filters on, a live
+`LEN` formula so a character budget can be watched while it is spent, and
+everything locked except Translation and Notes. That locking is not
+security — it is removable in two clicks and meant to be — it is a guard
+rail against the one accident that silently ruins a whole file, which is a
+sort that shifts one column out of step with the rest.
+
+**The CSV is written by hand, and that is the whole point of it.** On a
+Turkish Windows, "Save As CSV" gives semicolons and CP1254: Unreal reads
+commas and UTF-8, and the İ and the ş arrive as mojibake in a file that
+opens perfectly in the application that broke it. This one is
+comma-delimited, quoted, UTF-8, with no byte order mark — Unreal takes a
+BOM as part of the first column's name — and newlines escaped as `\n`,
+because a DataTable row cannot span lines. Six columns rather than
+seventeen: every column is a struct field somebody has to declare.
+
+**An .xlsx is a zip of XML, and this writes the XML.** A spreadsheet
+library would have brought a megabyte of code and its own opinions about
+types and dates to produce two sheets and one formula. The risk it trades
+for is real and is the one the tests are pointed at: a hand-written
+workbook does not fail by putting a wrong number in a cell, it fails by
+Excel refusing to open the file — and the commonest cause is one unescaped
+ampersand in a story that mentions Dogs & Daughters.
+
+**Exporting the same story twice gives the same bytes**, so a writer can
+tell a stale sheet by comparing it rather than by remembering.
+
+**Found on the way: dialogs ran off the top of a short window.** Every one
+of them is centred, so a dialog taller than the window overflows at both
+ends and nothing scrolls — at a 620px window the Export dialog's own frame
+started at −9px and its buttons could not be reached. Fixed on the Modal
+rather than on the panel that exposed it: every dialog in the app was one
+long panel away from the same fault, and none of them can see the window's
+height.
+
+**Fifteen negative controls, and three of them started out not catching
+their sabotage.** Removing the XML escaping left the suite green, because
+the test fixture contained no ampersand — a fixture with nothing hostile in
+it cannot notice that hostility stopped being handled. Replacing the fixed
+zip timestamp with `new Date()` left it green too, and that one was more
+interesting: two exports a second apart match byte for byte anyway, because
+a zip stores DOS time at two-second resolution. The identical-bytes check
+was true and silent about the guarantee; the assertion moved to where the
+guarantee lives, which is the date on the entries. And capping the dialog's
+height pinned Playwright's viewport, which stopped the Welcome spec's
+window resize from doing anything two specs later — a trap whose own
+comment, written a dozen versions ago, warns about exactly that.
+
+Known and unchanged: a locked choice still prints `Requires ` plus the
+variable's internal name, so an identifier can reach a reader. Variables
+gain an optional display name in their own small version, and the sheet
+then grows a row type rather than a column.
+
 ## v0.69.0 — The ids under column A
 
 The spreadsheet export makes a line's id the CSV's RowName. Before writing

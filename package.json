@@ -1,6 +1,6 @@
 {
   "name": "scriare",
-  "version": "0.69.0",
+  "version": "0.70.0",
   "description": "A writing-first workspace for branching narratives.",
   "main": "./out/main/index.js",
   "author": {
@@ -37,6 +37,7 @@
     "@tiptap/suggestion": "^2.27.3",
     "@xyflow/react": "^12.3.5",
     "docx": "^9.7.2",
+    "jszip": "^3.10.2",
     "nanoid": "^5.0.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
