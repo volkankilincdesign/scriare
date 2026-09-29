@@ -1,7 +1,7 @@
 import type { JSONContent } from "@tiptap/react";
 import type { Project, Scene } from "../../types/project";
 import { mentionLabel } from "../../types/entities";
-import { PLAYER_SPEAKER_LABEL, isPlayerSpeaker } from "../../types/speaker";
+import { isPlayerSpeaker, playerLabel } from "../../types/speaker";
 import {
   CHOICE_BLOCK_TYPE,
   CHOICE_OPTION_TYPE,
@@ -87,7 +87,7 @@ export function buildSheet(project: Project, options: { language: string }): She
 
   const speakerOf = (raw: unknown): string => {
     if (typeof raw !== "string" || !raw) return "";
-    if (isPlayerSpeaker(raw)) return PLAYER_SPEAKER_LABEL;
+    if (isPlayerSpeaker(raw)) return playerLabel(project.playerName);
     const entity = entityById.get(raw);
     // Never the raw id. A line attributed to a deleted character is
     // narration, which is what the app shows on screen — a sheet that

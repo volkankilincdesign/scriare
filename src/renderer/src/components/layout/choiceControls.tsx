@@ -1,6 +1,6 @@
 import { useProjectStore } from "../../state/projectStore";
 import { useUIStore } from "../../state/uiStore";
-import { PLAYER_SPEAKER, PLAYER_SPEAKER_LABEL, canSpeak } from "../../types/speaker";
+import { PLAYER_SPEAKER, canSpeak, playerLabel } from "../../types/speaker";
 import type { Entity } from "../../types/entities";
 import {
   DEFAULT_CHOICE_STYLE_ID,
@@ -39,6 +39,7 @@ export function SpeakerSelect({
   onChange: (speaker: string | null) => void;
 }) {
   const entities = useProjectStore((s) => s.project?.entities ?? EMPTY_ENTITIES);
+  const playerName = useProjectStore((s) => playerLabel(s.project?.playerName));
   return (
     <div>
       <select
@@ -48,7 +49,7 @@ export function SpeakerSelect({
         className="w-full rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
       >
         <option value="">— Nobody —</option>
-        <option value={PLAYER_SPEAKER}>{PLAYER_SPEAKER_LABEL} (the player)</option>
+        <option value={PLAYER_SPEAKER}>{playerName} (the player)</option>
         {/* Characters only — a Location can be named in a choice but can't
             speak one. See canSpeak in types/speaker.ts. */}
         {entities.filter(canSpeak).map((entity) => (

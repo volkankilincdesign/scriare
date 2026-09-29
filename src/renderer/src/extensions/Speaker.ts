@@ -177,7 +177,9 @@ export const Speaker = Extension.create({
 });
 
 function buildSpeakerChips(state: EditorState): DecorationSet {
-  const entities = useProjectStore.getState().project?.entities ?? [];
+  const project = useProjectStore.getState().project;
+  const entities = project?.entities ?? [];
+  const playerName = project?.playerName;
   const decorations: Decoration[] = [];
   const run = speakerRun();
 
@@ -196,7 +198,7 @@ function buildSpeakerChips(state: EditorState): DecorationSet {
     const fresh = isOption ? true : run.line(speaker);
     if (!speaker) return false;
 
-    const name = speakerName(speaker, entities);
+    const name = speakerName(speaker, entities, playerName);
     if (!name) return false;
 
     decorations.push(

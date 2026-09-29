@@ -73,6 +73,8 @@ export function speakerRun(): {
 export function applySpeakerPrefixes(
   content: JSONContent | undefined | null,
   entities: Entity[],
+  /** What this story calls its player; "You" when it has not said (v0.75.0). */
+  playerName?: string | null,
 ): JSONContent {
   const EMPTY: JSONContent = { type: "doc", content: [{ type: "paragraph" }] };
   if (!content) return EMPTY;
@@ -138,7 +140,7 @@ export function applySpeakerPrefixes(
       if (!hasVisibleText(node)) return node;
 
       const speaker = nodeSpeaker(node.attrs);
-      const name = run.line(speaker) ? speakerName(speaker, entities) : null;
+      const name = run.line(speaker) ? speakerName(speaker, entities, playerName) : null;
       if (!name) return node;
       return prefixed(node, name);
     }
@@ -148,7 +150,7 @@ export function applySpeakerPrefixes(
       // moment when the player is choosing rather than reading — so it
       // always names its speaker if it has one. Suppressing it to match a
       // neighbouring line would be answering a question nobody asked.
-      const name = speakerName(nodeSpeaker(node.attrs), entities);
+      const name = speakerName(nodeSpeaker(node.attrs), entities, playerName);
       if (!name || !hasVisibleText(node)) return node;
       return prefixed(node, name);
     }

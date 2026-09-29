@@ -3,6 +3,7 @@ import { Button } from "../common/Button";
 import { confirmDialog } from "../../state/confirmDialogStore";
 import { useUIStore } from "../../state/uiStore";
 import { ProjectSettingsDialog } from "./ProjectSettingsDialog";
+import { PreferencesDialog } from "./PreferencesDialog";
 import { BrandMark } from "../common/BrandMark";
 import { Icon } from "../common/Icon";
 
@@ -23,6 +24,8 @@ export function TopBar() {
   const settingsOpen = useUIStore((s) => s.settingsOpen);
   const openSettings = useUIStore((s) => s.openSettings);
   const closeSettings = useUIStore((s) => s.closeSettings);
+  const preferencesOpen = useUIStore((s) => s.preferencesOpen);
+  const closePreferences = useUIStore((s) => s.closePreferences);
   const openVariableManager = useUIStore((s) => s.openVariableManager);
   const undo = useProjectStore((s) => s.undo);
   const redo = useProjectStore((s) => s.redo);
@@ -183,6 +186,7 @@ export function TopBar() {
       </div>
 
       {settingsOpen && <ProjectSettingsDialog onClose={closeSettings} />}
+      {preferencesOpen && <PreferencesDialog onClose={closePreferences} />}
     </header>
   );
 }

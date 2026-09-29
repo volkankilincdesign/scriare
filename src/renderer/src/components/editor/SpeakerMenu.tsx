@@ -4,7 +4,7 @@ import { Icon } from "../common/Icon";
 import { useProjectStore } from "../../state/projectStore";
 import { SPEAKER_CLICK_EVENT } from "../../extensions/Speaker";
 import type { SpeakerClickDetail } from "../../extensions/Speaker";
-import { PLAYER_SPEAKER, PLAYER_SPEAKER_LABEL, canSpeak } from "../../types/speaker";
+import { PLAYER_SPEAKER, canSpeak, playerLabel } from "../../types/speaker";
 import type { Speaker } from "../../types/speaker";
 
 interface SpeakerMenuProps {
@@ -87,7 +87,7 @@ export function SpeakerMenu({ editor }: SpeakerMenuProps) {
         data-speaker-option="none"
       />
       <Row
-        label={`${PLAYER_SPEAKER_LABEL} — the player`}
+        label={`${playerLabel(project?.playerName)} — the player`}
         icon="character"
         active={open.speaker === PLAYER_SPEAKER}
         onSelect={() => choose(PLAYER_SPEAKER)}

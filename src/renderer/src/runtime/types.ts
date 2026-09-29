@@ -47,6 +47,12 @@ export interface RuntimeContext {
    * conversation state it has no use for.
    */
   entities?: Entity[];
+  /**
+   * What this story calls its player (v0.75.0), or absent for "You".
+   * Handed in for the same reason `entities` is: a runtime block renders
+   * from what it is given, so the same renderer runs outside the app.
+   */
+  playerName?: string;
   /** Line ids said in this visit to the scene. */
   saidLines?: Record<string, boolean>;
   /** The same ids in the order they were said — the transcript. */

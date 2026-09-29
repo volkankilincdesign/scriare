@@ -46,6 +46,7 @@ export function DialogueLineView({ node, editor, getPos }: NodeViewProps) {
   const project = useProjectStore((s) => s.project);
   const replyRef = useRef<HTMLTextAreaElement | null>(null);
   const entities = project?.entities ?? [];
+  const playerName = project?.playerName;
 
   const lineId = (node.attrs.lineId as string) ?? "";
   const after = ((node.attrs.after as DialogueAfter) ?? "stay") as DialogueAfter;
@@ -65,7 +66,7 @@ export function DialogueLineView({ node, editor, getPos }: NodeViewProps) {
     if (typeof pos === "number") index = editor.state.doc.resolve(pos).index();
   }
 
-  const who = speakerName(replySpeaker, entities);
+  const who = speakerName(replySpeaker, entities, playerName);
 
   /**
    * v0.67.0 — THE SAME BOX A CHOICE WEARS.

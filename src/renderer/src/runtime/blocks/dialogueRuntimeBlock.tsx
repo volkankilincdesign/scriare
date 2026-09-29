@@ -102,9 +102,9 @@ function RuntimeDialogue({
     <div className="scriare-dialogue my-6" data-dialogue={blockId} data-closed={closed ? "true" : "false"}>
       {spoken.map((line, i) => (
         <div key={`${line.id}-${i}`}>
-          <Said who={speakerName(line.speaker, context.entities ?? [])} line={line.text} isPlayer />
+          <Said who={speakerName(line.speaker, context.entities ?? [], context.playerName)} line={line.text} isPlayer />
           {line.after !== "leave" && line.reply && (
-            <Said who={speakerName(line.replySpeaker, context.entities ?? [])} line={line.reply} />
+            <Said who={speakerName(line.replySpeaker, context.entities ?? [], context.playerName)} line={line.reply} />
           )}
         </div>
       ))}

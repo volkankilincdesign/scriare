@@ -12,6 +12,68 @@ omitting them.
 
 ---
 
+## v0.75.0 — The story says what it is
+
+Three of the five gaps the v0.63.0 audit found were one gap wearing three
+hats. Project Settings held a theme, a start scene and a list of choice
+styles, so there was nowhere to put a **title**, an **author**, a
+**language** or the **protagonist's name** — and the two visible
+consequences had each been living in a comment for a year.
+
+**The player was hard-coded "You".** The constant's own note said a
+project-level setting "is the obvious next step and deliberately isn't
+here yet". It was the obvious next step for fifteen versions. A story can
+name its protagonist now, and the name reaches every place the old label
+did: the `@` menu, the speaker picker, the choice editor, the editor's own
+decoration, Play Mode, the exported page, the script and the spreadsheet.
+Blank still means "You", which is what a second-person story wants.
+
+**The exported page shipped with no `lang` attribute,** and the comment
+there was right about why: `lang="en"` on a Turkish story is worse than
+nothing, because a screen reader reads the whole thing in English rather
+than falling back to the reader's own setting. The fix was never a default,
+it was a field. **A story that has not said still ships no `lang`** — that
+has a negative control of its own, because the tempting mistake here is to
+guess.
+
+**The author reaches the page as metadata, not as furniture.** It belongs
+to the file — a browser's Reader view, a bookmark, a share card — and
+printing a byline over somebody's first paragraph is a decision about their
+story that this app does not get to make.
+
+**And Appearance moved out.** It had been in Project Settings since
+v0.12.0 and was never a project setting: the theme is remembered in this
+machine's storage and never written to the file, so a story opened on
+another computer keeps its title and its author and loses its theme. Every
+other setting in that dialog travels with the story and several of them
+reach the reader. Filing the two together said they were the same kind of
+thing — the same confusion between the writer's room and the reader's page
+that the app has argued against since v0.48.0. There is a **Preferences**
+dialog now, reached from a row at the foot of Project Settings, which is
+where a writer will look for it out of habit; it remembers where it came
+from and offers the way back, the arrangement Choice Styles has had since
+v0.55.0.
+
+Three small things that are only obvious once written down. An emptied
+field is stored **absent, not as an empty string**, so no reader of these
+fields ever has to know two spellings of "unset". A **title cannot be
+emptied** — the other three are facts a story may simply not have, but the
+title is what the top bar, the shelf and the page's `<title>` all print,
+and "Untitled story" chosen by the app beats an empty bar chosen by a
+stray Backspace. And opening the dialog and changing nothing **is not an
+edit**: no step on the undo stack, no dirty file.
+
+Two findings from the tests, both of them about the tests. A check that the
+author is never printed over the first paragraph searched the whole page
+body — which contains the story as embedded JSON, author included, so it
+would have passed a build that printed a byline in 48-point type. It
+measures the markup with the data stripped out now. And this spec passed
+alone and failed in the full run, because specs share one application and
+a dialog left open by the spec before renders its own scrim over this one;
+it closes every dialog first and then checks that it did.
+
+---
+
 ## v0.74.0 — The shelf draws the story you actually arranged
 
 The Welcome screen carries a picture of every recent story, because a

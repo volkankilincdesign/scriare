@@ -2,7 +2,7 @@ import type { JSONContent } from "@tiptap/react";
 import type { ContentNode, Project, Scene } from "../../types/project";
 import { childrenOf } from "../../utils/contentTree";
 import { mentionLabel } from "../../types/entities";
-import { PLAYER_SPEAKER_LABEL, isPlayerSpeaker } from "../../types/speaker";
+import { isPlayerSpeaker, playerLabel } from "../../types/speaker";
 import { CHOICE_BLOCK_TYPE, CHOICE_OPTION_TYPE } from "../../types/nodeTypes";
 import { CONDITIONAL_BLOCK_TYPE } from "../../utils/choiceBlockEditing";
 import { extractDialogueLines } from "../../utils/dialogueBlocks";
@@ -74,7 +74,7 @@ export function buildScript(
   const speakerOf = (attrs: Record<string, unknown> | undefined): string | null => {
     const raw = attrs?.speaker;
     if (typeof raw !== "string" || !raw) return null;
-    if (isPlayerSpeaker(raw)) return PLAYER_SPEAKER_LABEL;
+    if (isPlayerSpeaker(raw)) return playerLabel(project.playerName);
     const entity = entityById.get(raw);
     // Deliberately NOT falling back to the raw id: a line attributed to a
     // deleted character is narration, which is what the app already does

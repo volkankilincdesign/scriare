@@ -44,17 +44,30 @@ function embedJson(value: unknown): string {
 export function buildExportHtml(story: ExportStory): string {
   const title = escapeHtml(story.name || "Untitled story");
 
-  // No `lang` attribute. The obvious thing to write is `lang="en"`, and it
-  // would be wrong for a story written in any other language — a wrong
-  // `lang` is worse than none, because a screen reader will pronounce the
-  // whole story with it. Scriare has nowhere for a writer to say what
-  // language they are writing in yet; when it does, this is where it goes.
+  // `lang` only when the story says so (v0.75.0).
+  //
+  // This block said for twenty-seven versions that `lang="en"` would be
+  // wrong for a story written in anything else — a screen reader given the
+  // wrong tag reads the whole story in the wrong language, where no tag at
+  // all falls back to the reader's own setting — and that the app had
+  // nowhere for a writer to say. It does now, and absent still means
+  // absent: a writer who has not chosen ships a page with no `lang`,
+  // exactly as before.
+  const lang = story.language ? ` lang="${escapeHtml(story.language)}"` : "";
+  // The author reaches the page as metadata rather than as furniture. It
+  // belongs to the file — a browser's Reader view, a bookmark, a share
+  // card — and putting a byline on top of somebody's first paragraph is a
+  // decision about their story that this app does not get to make.
+  const author = story.author
+    ? `\n<meta name="author" content="${escapeHtml(story.author)}">`
+    : "";
+
   return `<!doctype html>
-<html>
+<html${lang}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="generator" content="Scriare">
+<meta name="generator" content="Scriare">${author}
 <title>${title}</title>
 <style>${pageStyles()}</style>
 </head>

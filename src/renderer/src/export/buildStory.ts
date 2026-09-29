@@ -111,6 +111,17 @@ export interface ExportStory {
    * the same folder, do not overwrite each other's progress.
    */
   key: string;
+  /** Who wrote it, when the story says (v0.75.0). */
+  author?: string;
+  /**
+   * The story's own BCP-47 language tag (v0.75.0), when it has one.
+   *
+   * Carried so the exported page can put it on `<html lang>`. The export
+   * has shipped without one since v0.48.0 because a wrong tag is worse
+   * than none — a screen reader given `lang="en"` will read a Turkish
+   * story in English rather than fall back to the reader's own setting.
+   */
+  language?: string;
   start: string | null;
   scenes: ExportScene[];
   variables: Variable[];
@@ -165,12 +176,13 @@ function escapeText(value: string): string {
  */
 export function buildExportStory(project: Project): ExportStory {
   const entities = project.entities ?? [];
+  const playerName = project.playerName;
   const variables = project.variables ?? [];
   const styles = project.choiceStyles ?? [];
 
   const scenes: ExportScene[] = project.scenes.map((scene) => {
     const resolved = resolveMentions(scene.content ?? EMPTY_DOC, entities);
-    const spoken = applySpeakerPrefixes(resolved, entities);
+    const spoken = applySpeakerPrefixes(resolved, entities, playerName);
 
     const seg: ExportSegment[] = [];
     for (const segment of splitDocumentIntoSegments(spoken)) {
@@ -198,9 +210,9 @@ export function buildExportStory(project: Project): ExportStory {
         const lines = extractDialogueLines(node).map<ExportDialogueLine>((line) => ({
           i: line.id,
           l: renderLabel(line.node, line.text),
-          s: speakerName(line.speaker, entities) ?? "",
+          s: speakerName(line.speaker, entities, playerName) ?? "",
           y: line.reply,
-          ys: speakerName(line.replySpeaker, entities) ?? "",
+          ys: speakerName(line.replySpeaker, entities, playerName) ?? "",
           f: line.after,
           // A leaving line with nowhere to go is shipped with an empty
           // destination rather than dropped: unlike a choice, it still has
@@ -245,6 +257,8 @@ export function buildExportStory(project: Project): ExportStory {
 
   return {
     name: project.name,
+    author: project.author,
+    language: project.language,
     key: project.id,
     start: project.startSceneId ?? (scenes[0]?.id ?? null),
     scenes,

@@ -86,6 +86,7 @@ export function PlayRuntime() {
       values: playVariableValues,
       choiceStyles: project?.choiceStyles ?? [],
       entities: project?.entities ?? [],
+      playerName: project?.playerName,
       saidLines,
       transcript,
       closedDialogues,
@@ -121,7 +122,7 @@ export function PlayRuntime() {
     // rendered once. Names first, speakers second — a speaker's name is
     // read from the entity list directly, so the order only matters in
     // that both must happen before the document becomes HTML.
-    const spoken = applySpeakerPrefixes(resolved, project?.entities ?? []);
+    const spoken = applySpeakerPrefixes(resolved, project?.entities ?? [], project?.playerName);
     return splitDocumentIntoSegments(spoken).map((segment) => {
       if (segment.kind === "block") return segment;
       try {

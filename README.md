@@ -90,6 +90,20 @@ lives in.
   story; the story can never mention a note, and none of it reaches the
   reader or the word count.
 
+**What the story says it is**
+
+- **Title, author and the language it is written in**, in Project Settings.
+  The exported page carries the language on `<html lang>` so a screen
+  reader reads Turkish as Turkish — and a story that has not said carries
+  none, because a wrong tag is worse than no tag. The author reaches the
+  page as metadata rather than as a byline over your first paragraph.
+- **A named protagonist.** The player is printed as "You" until you say
+  otherwise; call them Detective and every line they speak says so, in the
+  editor, in Play Mode, on the exported page, in the script and in the
+  translator's spreadsheet.
+- **Preferences is a separate dialog**, because the theme is not part of
+  your story: it lives on this computer and never travels with the file.
+
 **Logic, with no syntax**
 
 - **Variables** (number, boolean, text), set or toggled by choices.
@@ -175,7 +189,7 @@ lives in.
 
 ## Status
 
-**v0.74.0 — in active development, and usable.** The editor, graph,
+**v0.75.0 — in active development, and usable.** The editor, graph,
 runtime, entities, notes, variables, validation, search and **export** are
 all real, and the app now builds a Windows installer. See
 [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest list of what
@@ -195,8 +209,8 @@ screen. Clicking it copies the version, your platform and the engine
 underneath — paste that into the report and neither of us has to guess
 which build you were on.
 
-**901 automated tests** run against the real packaged application, and
-**250 negative controls**: each one breaks a specific line of the shipped
+**919 automated tests** run against the real packaged application, and
+**257 negative controls**: each one breaks a specific line of the shipped
 source on purpose and checks that a named assertion fails. A test that has
 never been seen to fail proves nothing, and several times now a control
 has failed to catch its sabotage — each time a finding about the test

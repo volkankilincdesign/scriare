@@ -2330,6 +2330,81 @@ const CONTROLS = [
     spec: "graph-wires",
     expect: "followed the card rather than staying where it was",
   },
+  // ─── v0.75.0 — the story's own facts ────────────────────────────────
+  {
+    // The player, hard-coded again. Gap 2 of the v0.63.0 audit, restored.
+    name: "a protagonist who cannot be named",
+    file: src("types/speaker.ts"),
+    from: "  if (isPlayerSpeaker(speaker)) return playerLabel(playerName);",
+    to: "  if (isPlayerSpeaker(speaker)) return PLAYER_SPEAKER_LABEL;",
+    spec: "story-details",
+    expect: "a named protagonist is named in front of their line",
+  },
+  {
+    // The name never reaches the prose pass, so Play Mode and the export
+    // both print "You" while the Inspector and the menus say otherwise.
+    name: "a player name the prose never hears about",
+    file: src("utils/speakerLines.ts"),
+    from: "      const name = run.line(speaker) ? speakerName(speaker, entities, playerName) : null;",
+    to: "      const name = run.line(speaker) ? speakerName(speaker, entities) : null;",
+    spec: "story-details",
+    expect: "a named protagonist is named in front of their line",
+  },
+  {
+    // `lang` written whether or not the story said. The wrong tag is the
+    // failure the export deliberately avoided for twenty-seven versions:
+    // a screen reader given `lang="en"` reads a Turkish story in English,
+    // where no tag falls back to the reader's own setting.
+    name: "an exported page that guesses at the story's language",
+    file: src("export/pageTemplate.ts"),
+    from: '  const lang = story.language ? ` lang="${escapeHtml(story.language)}"` : "";',
+    to: '  const lang = ` lang="${escapeHtml(story.language ?? "en")}"`;',
+    spec: "story-details",
+    expect: "ships no lang at all",
+  },
+  {
+    // An emptied field stored as "" rather than dropped. Two spellings of
+    // unset in one file, and every reader of these fields then has to know
+    // about both.
+    name: "an emptied field stored as an empty string",
+    file: src("state/projectStore.ts"),
+    from: "      const text = value.trim();\n      return text.length > 0 ? text : undefined;",
+    to: "      return value.trim();",
+    spec: "story-details",
+    expect: "an emptied field is absent, not an empty string",
+  },
+  {
+    // The title allowed to become nothing, which empties the top bar, the
+    // shelf and the exported page's <title> in one keystroke.
+    name: "a story title a stray Backspace can empty",
+    file: src("state/projectStore.ts"),
+    from: "      const title = details.name.trim();\n      if (title.length > 0) next.name = title;",
+    to: "      next.name = details.name.trim();",
+    spec: "story-details",
+    expect: "a title cannot be emptied by a stray Backspace",
+  },
+  {
+    // Save with nothing changed putting a step on the undo stack and
+    // marking the file dirty.
+    name: "opening a dialog and closing it counted as an edit",
+    file: src("state/projectStore.ts"),
+    from: "    if (unchanged) return;",
+    to: "    if (false) return;",
+    spec: "story-details",
+    expect: "saving a dialog you changed nothing in does not dirty the file",
+  },
+  {
+    // Appearance back in Project Settings, where it says the theme is part
+    // of the story. It is not: it is remembered per machine and never
+    // written to the file.
+    name: "the theme picker filed as a project setting again",
+    file: src("components/layout/ProjectSettingsDialog.tsx"),
+    from: "            useUIStore.getState().openPreferences(\"settings\");",
+    to: "            useUIStore.getState().openSettings();",
+    spec: "story-details",
+    expect: "Preferences is where the themes went",
+  },
+
   // ─── v0.74.0 — the Welcome screen's maps ────────────────────────────
   {
     // Back to a sample. A card drawn from twenty of a writer's thirty-two

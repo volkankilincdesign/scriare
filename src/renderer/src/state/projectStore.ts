@@ -244,6 +244,18 @@ interface ProjectState {
   /** Pass a scene id to make it the Start Scene, or null to clear it (Play
    * Mode then falls back to the first Story scene, same as an unset project). */
   setStartScene: (sceneId: string | null) => void;
+  /**
+   * The story's own facts — title, author, language, the player's name
+   * (v0.75.0). One action rather than four because they are edited in one
+   * dialog and saved with one button, so four would put four entries in
+   * the undo stack for a gesture the writer made once.
+   */
+  setStoryDetails: (details: {
+    name?: string;
+    author?: string;
+    language?: string;
+    playerName?: string;
+  }) => void;
 
   /**
    * Creates a Story group placed on the canvas, empty — the graph's
@@ -1464,6 +1476,49 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     scheduleAutosave(get);
   },
 
+
+  setStoryDetails: (details) => {
+    const { project } = get();
+    if (!project) return;
+
+    // Trimmed here as well as in `normalizeProject`, because this is the
+    // door the writer uses: normalize runs on OPEN, so without this a
+    // blank author typed today would sit in the file as "" until the next
+    // time the story was loaded, and every reader of the field would meet
+    // both spellings of "unset" in the same session.
+    const clean = (value: string | undefined): string | undefined => {
+      if (value === undefined) return undefined;
+      const text = value.trim();
+      return text.length > 0 ? text : undefined;
+    };
+
+    const next: Project = { ...project, updatedAt: new Date().toISOString() };
+    // A TITLE IS NOT ALLOWED TO BECOME NOTHING. The other three are
+    // optional facts a story may simply not have; the title is what the
+    // top bar, the shelf and the exported page's <title> all print, and
+    // "Untitled story" chosen by the app reads better than an empty bar
+    // chosen by a stray Backspace.
+    if (details.name !== undefined) {
+      const title = details.name.trim();
+      if (title.length > 0) next.name = title;
+    }
+    if (details.author !== undefined) next.author = clean(details.author);
+    if (details.language !== undefined) next.language = clean(details.language);
+    if (details.playerName !== undefined) next.playerName = clean(details.playerName);
+
+    const unchanged =
+      next.name === project.name &&
+      next.author === project.author &&
+      next.language === project.language &&
+      next.playerName === project.playerName;
+    // Saving a dialog you opened and changed nothing in is not an edit,
+    // and must not put a step on the undo stack or mark the file dirty.
+    if (unchanged) return;
+
+    pushHistory(set, get, "Story details");
+    set({ project: next, saveStatus: "unsaved" });
+    scheduleAutosave(get);
+  },
 
   setStartScene: (sceneId) => {
     const { project } = get();

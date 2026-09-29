@@ -8,7 +8,7 @@ import { MentionMenu } from "../components/editor/MentionMenu";
 import type { MentionMenuHandle, MentionMenuItem } from "../components/editor/MentionMenu";
 import { useProjectStore } from "../state/projectStore";
 import { MENTION_TYPE, bestNameFor, isMentionable, matchEntities } from "../types/entities";
-import { PLAYER_SPEAKER, PLAYER_SPEAKER_LABEL, SPEAKER_HOSTS, canSpeak } from "../types/speaker";
+import { PLAYER_SPEAKER, SPEAKER_HOSTS, canSpeak, playerLabel } from "../types/speaker";
 import type { EditorState } from "@tiptap/pm/state";
 
 /** Re-exported so existing importers keep working; defined in types/entities. */
@@ -135,7 +135,7 @@ export const Mention = Node.create({
         // fiction, and Scriare shouldn't make a writer invent a Character
         // page for someone they're leaving blank on purpose.
         if (attributing && (!trimmed || fitsPlayer(trimmed))) {
-          matches.unshift({ kind: "player", label: PLAYER_SPEAKER_LABEL, attributing, speaks: true });
+          matches.unshift({ kind: "player", label: playerLabel(project?.playerName), attributing, speaks: true });
         }
 
         // Create-on-the-spot. The writer is mid-sentence: the point is that

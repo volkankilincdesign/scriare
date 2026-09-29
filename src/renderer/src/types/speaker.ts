@@ -62,12 +62,21 @@ export const PLAYER_SPEAKER = "@player";
  * What the player is CALLED when their lines are attributed.
  *
  * "You" rather than "Player" because it's printed in front of a line of
- * dialogue in a story, not in a debug panel. A project-level setting for
- * this ("Detective", "Ben", the protagonist's actual name) is the obvious
- * next step and deliberately isn't here yet — it belongs with the other
- * story settings rather than as a one-off.
+ * dialogue in a story, not in a debug panel.
+ *
+ * v0.75.0 — this is the DEFAULT now, not the answer. A story can name its
+ * protagonist (`project.playerName`), and every function that prints this
+ * label takes the story's own answer with this as its fallback. The note
+ * that used to stand here said a project-level setting was "the obvious
+ * next step"; it was, for fifteen versions.
  */
 export const PLAYER_SPEAKER_LABEL = "You";
+
+/** What this story calls its player, or "You" when it has not said. */
+export function playerLabel(playerName?: string | null): string {
+  const named = typeof playerName === "string" ? playerName.trim() : "";
+  return named.length > 0 ? named : PLAYER_SPEAKER_LABEL;
+}
 
 export function isPlayerSpeaker(speaker: Speaker): boolean {
   return speaker === PLAYER_SPEAKER;
@@ -110,9 +119,13 @@ export function canSpeak(entity: Entity | undefined | null): boolean {
  * writer will have meant, and the name disappearing from in front of it is
  * how they find out.
  */
-export function speakerName(speaker: Speaker, entities: Entity[]): string | null {
+export function speakerName(
+  speaker: Speaker,
+  entities: Entity[],
+  playerName?: string | null,
+): string | null {
   if (!speaker) return null;
-  if (isPlayerSpeaker(speaker)) return PLAYER_SPEAKER_LABEL;
+  if (isPlayerSpeaker(speaker)) return playerLabel(playerName);
   const entity = entities.find((e) => e.id === speaker);
   if (!canSpeak(entity)) return null;
   return entity!.name.trim() || null;

@@ -175,7 +175,36 @@ export interface Favorite {
 
 export interface Project {
   id: string;
+  /** The story's title. Shown in the top bar and on the exported page. */
   name: string;
+  /**
+   * Who wrote it (v0.75.0). Absent rather than empty when unset: a story
+   * with no author named should carry no author line at all, not a blank
+   * one, and an empty string in the file would be indistinguishable from a
+   * writer who deliberately typed nothing.
+   */
+  author?: string;
+  /**
+   * The language the story is WRITTEN IN, as a BCP-47 tag (v0.75.0).
+   *
+   * The exported page has shipped without a `lang` attribute since
+   * v0.48.0, and the comment there explains why: `lang="en"` on a Turkish
+   * story is worse than no `lang` at all, because a screen reader will
+   * pronounce the whole thing in the wrong language rather than fall back
+   * to the reader's own. There was nowhere for a writer to say. There is
+   * now, and absent still means absent.
+   */
+  language?: string;
+  /**
+   * What the player is called when their own lines are attributed
+   * (v0.75.0). Absent means "You", which is what it has always printed.
+   *
+   * A story setting rather than a constant because the protagonist of a
+   * story is a fact about that story: a detective story wants "Detective",
+   * a story with a named lead wants their name, and a second-person story
+   * wants the default.
+   */
+  playerName?: string;
   createdAt: string;
   updatedAt: string;
   startSceneId: string | null;
@@ -324,8 +353,22 @@ export function normalizeProject(raw: Project): Project {
   const cleanedScenes = named.map(({ frameId: _dropped, ...scene }) => scene);
 
   const { frames: _legacyFrames, ...rest } = raw;
+
+  // The three story facts added in v0.75.0. Trimmed and DROPPED when
+  // empty, rather than stored as "": a key that is present and blank says
+  // the writer set it to nothing, and every reader of these fields would
+  // then need to know that `""` and absent mean the same thing. They mean
+  // the same thing here, once, and nowhere else.
+  const trimmed = (value: unknown): string | undefined => {
+    const text = typeof value === "string" ? value.trim() : "";
+    return text.length > 0 ? text : undefined;
+  };
+
   return {
     ...rest,
+    author: trimmed(raw.author),
+    language: trimmed(raw.language),
+    playerName: trimmed(raw.playerName),
     scenes: cleanedScenes,
     content,
     favorites: raw.favorites ?? [],

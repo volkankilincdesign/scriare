@@ -43,6 +43,17 @@ interface UIState {
   settingsOpen: boolean;
   openSettings: () => void;
   closeSettings: () => void;
+  /**
+   * v0.75.0 — Preferences: how the app looks on THIS computer, which is
+   * the one setting that was never a project setting. Same arrangement as
+   * Choice Styles and for the same reason: it is a place you go, it closes
+   * Settings on its way open, and it remembers where it came from so it
+   * can offer the way back.
+   */
+  preferencesOpen: boolean;
+  preferencesFrom: DialogOrigin | null;
+  openPreferences: (from?: DialogOrigin | null) => void;
+  closePreferences: () => void;
   /** v0.36.0 — Check Story. */
   storyCheckOpen: boolean;
   openStoryCheck: () => void;
@@ -119,6 +130,14 @@ export const useUIStore = create<UIState>((set) => ({
   // came back green, because the open path had already covered the case.
   openChoiceStyles: (from = null) => set({ choiceStylesOpen: true, choiceStylesFrom: from }),
   closeChoiceStyles: () => set({ choiceStylesOpen: false }),
+  preferencesOpen: false,
+  preferencesFrom: null,
+  openPreferences: (from = null) => set({ preferencesOpen: true, preferencesFrom: from }),
+  // The origin is cleared with the dialog, so a later visit from the top
+  // bar is not offered a way "back" to a Settings dialog it was never in —
+  // the same bug the Choice Styles origin had and the same fix.
+  closePreferences: () => set({ preferencesOpen: false, preferencesFrom: null }),
+
   settingsOpen: false,
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
