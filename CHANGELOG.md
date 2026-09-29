@@ -12,6 +12,69 @@ omitting them.
 
 ---
 
+## v0.72.0 — What a locked choice is allowed to say
+
+A locked option is shown to the player on purpose. The runtime's own
+comment has argued since v0.36.0 that a crossed-out row with no reason is
+worse than no row at all — and that decision quietly made the variable's
+name into prose. A player met this, in the middle of a story:
+
+> Requires knows_roster is true
+
+An internal identifier, an English comparator and a raw value, none of
+which anybody wrote.
+
+**A variable gains a display name.** Optional, because most variables are
+never seen: only one gating an option whose `whenUnmet` is "lock" ever
+surfaces. `resolve` becomes **Courage**, `knows_roster` becomes **The
+Roster**.
+
+**The value never reaches the reader.** "Requires Courage is at least 3"
+hands a player an integer out of the design document; what they can act on
+is which thing they lack, and the threshold only says how the machine is
+built. Dropping it also rescues every boolean, which cannot be phrased with
+its value at all.
+
+**Which meant getting negatives right, or saying the opposite.** Drop the
+comparator from `lamp_lit is false` and you get "Requires The Dark", which
+is not clumsy, it is wrong. A boolean carries its polarity in its value as
+well as its comparator, so `eq false` and `neq true` are both negative and
+`negate` flips whatever the rest worked out to. Those read "Requires not
+The Dark" — still not a sentence anybody would write, which is what the
+next part is for.
+
+**A choice can carry its own sentence,** and it replaces ours entirely with
+no "Requires" bolted onto the front, because a sentence somebody wrote is a
+whole sentence rather than the tail of one of ours. That also took the last
+hard-coded English out of the exported page's runtime: the reason is
+finished at export time now, so a writer's Turkish sentence never arrives
+with an English word in front of it.
+
+**Check Story reports the gap rather than the app hiding it.** A variable
+with no display name still falls back to its internal name, exactly as
+before, so nothing regresses — but every place a reader can see one is now
+a findable warning, beside unreachable scenes and dead gates. It fires only
+where it can actually be read: never on a hidden option, never on one whose
+reason the writer has written.
+
+**And the sheet gains two row types, no new column.** A `Variable` row per
+display name, in a V block after the scenes because they belong to no
+scene; a `Reason` row per written sentence, hanging off its option the way
+a reply hangs off its line — `1.C3w`, keyed `c_force-the-lock-why`, so
+deleting the choice takes the reason with it. An UNNAMED variable gets no
+row at all: asking a translator to localise `hikmet_offer` is worse than
+asking them nothing.
+
+Both panels got the field, under the siblings rule — a locked dialogue line
+reads to a player exactly as a locked choice does.
+
+**Ten negative controls, one of them aimed at the wrong thing twice.** The
+"an unnamed variable reaches a translator" sabotage kept passing, because
+it attacked the label rather than the filter — and the filter is the whole
+guard. Two existing specs had to change: the export spec asserted the old
+phrasing verbatim, and the Variable Manager's "the four things a variable
+is" is five things now.
+
 ## v0.71.2 — Nothing in the file fences its reader
 
 **The dark rule between Ref and Where was a frozen-pane split.** v0.70.1

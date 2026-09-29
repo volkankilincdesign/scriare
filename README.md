@@ -83,6 +83,10 @@ lives in.
 
 - **Variables** (number, boolean, text), set or toggled by choices.
 - **Conditions** on any choice — hide it, or lock it with the reason shown.
+  A variable can be given the name a **reader** sees, so a locked choice
+  says "Requires The Roster" rather than `knows_roster is true`, and a
+  choice can carry its own sentence instead. Check Story reports any
+  variable a reader can see that nobody has named.
 - Everything is a dropdown or a toggle. There is no expression field
   anywhere in the app.
 
@@ -151,7 +155,7 @@ lives in.
 
 ## Status
 
-**v0.71.2 — in active development, and usable.** The editor, graph,
+**v0.72.0 — in active development, and usable.** The editor, graph,
 runtime, entities, notes, variables, validation, search and **export** are
 all real, and the app now builds a Windows installer. See
 [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest list of what
@@ -171,8 +175,8 @@ screen. Clicking it copies the version, your platform and the engine
 underneath — paste that into the report and neither of us has to guess
 which build you were on.
 
-**843 automated tests** run against the real packaged application, and
-**226 negative controls**: each one breaks a specific line of the shipped
+**860 automated tests** run against the real packaged application, and
+**236 negative controls**: each one breaks a specific line of the shipped
 source on purpose and checks that a named assertion fails. A test that has
 never been seen to fail proves nothing, and several times now a control
 has failed to catch its sabotage — each time a finding about the test

@@ -304,7 +304,10 @@ export default async function run({ api, check, openExported }) {
       count: buttons.length,
       hiddenAbsent: !text.includes("A door that is not there yet"),
       lockedDisabled: Boolean(buttons[2] && buttons[2].disabled),
-      lockedReason: Boolean(buttons[2] && buttons[2].textContent.includes("Requires Trust is at least 3")),
+      // v0.72.0 — the threshold is a design quantity and never reaches a
+      // reader; what they can act on is which thing they lack.
+      lockedReason: Boolean(buttons[2] && buttons[2].textContent.includes("Requires Trust")),
+      lockedHidesTheNumber: Boolean(buttons[2] && !buttons[2].textContent.includes("at least 3")),
       defaultFollowsGround: buttons[0].style.background.includes("var(--surface-2-translucent)"),
       customRadius: buttons[1].style.borderRadius,
       customFill: buttons[1].style.background,
@@ -316,6 +319,10 @@ export default async function run({ api, check, openExported }) {
   check("a hidden choice is absent, not greyed out", choices.hiddenAbsent === true);
   check("a locked choice is disabled", choices.lockedDisabled === true);
   check("a locked choice says what it needs", choices.lockedReason === true);
+  check(
+    "...and NOT the number behind it — a threshold is the machine, not the story",
+    choices.lockedHidesTheNumber === true,
+  );
   check(
     "an untouched choice still follows the reader's ground",
     choices.defaultFollowsGround === true,

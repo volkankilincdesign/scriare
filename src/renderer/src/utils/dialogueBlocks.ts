@@ -45,6 +45,11 @@ export interface DialogueLine {
   conditions: VariableCondition[];
   actions: VariableAction[];
   whenUnmet: "hide" | "lock";
+  /**
+   * The sentence a reader is given when this is locked (v0.72.0). Empty
+   * means the app builds one from the conditions.
+   */
+  lockReason: string;
   style: Record<string, unknown> | null;
   /** The line's own node, so a renderer can draw its formatting. */
   node?: JSONContent;
@@ -62,6 +67,7 @@ export interface DialogueLineSeed {
   conditions?: VariableCondition[];
   actions?: VariableAction[];
   whenUnmet?: "hide" | "lock";
+  lockReason?: string;
   style?: Record<string, unknown> | null;
 }
 
@@ -80,6 +86,7 @@ export function buildDialogueLineNode(seed: DialogueLineSeed = {}): JSONContent 
       conditions: seed.conditions ?? [],
       actions: seed.actions ?? [],
       whenUnmet: seed.whenUnmet ?? "hide",
+      lockReason: seed.lockReason ?? "",
       style: seed.style ?? null,
     },
     // Empty label is an empty node, never a zero-length text node —
@@ -123,6 +130,7 @@ function readLine(node: JSONContent, resolve?: (id: string | null, stored: strin
     conditions: Array.isArray(attrs.conditions) ? (attrs.conditions as VariableCondition[]) : [],
     actions: Array.isArray(attrs.actions) ? (attrs.actions as VariableAction[]) : [],
     whenUnmet: attrs.whenUnmet === "lock" ? "lock" : "hide",
+    lockReason: (attrs.lockReason as string) ?? "",
     style: (attrs.style as Record<string, unknown> | null) ?? null,
     node,
   };

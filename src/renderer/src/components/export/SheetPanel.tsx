@@ -160,6 +160,10 @@ export function SheetPanel({ onClose }: { onClose: () => void }) {
           <span>{sheet.stats.dialogue} dialogue</span>
           <span>{sheet.stats.replies} replies</span>
           <span>{sheet.stats.speakers} speaking parts</span>
+          {sheet.stats.reasons > 0 && <span>{sheet.stats.reasons} locked reasons</span>}
+          {sheet.stats.variableNames > 0 && (
+            <span>{sheet.stats.variableNames} variable names</span>
+          )}
         </div>
         {/* Two things worth knowing BEFORE the file goes out, because both
             are invisible in the sheet itself and both are questions the

@@ -46,6 +46,11 @@ export interface ChoiceOption {
    */
   whenUnmet: "hide" | "lock";
   /**
+   * The sentence a reader is given when this is locked (v0.72.0). Empty
+   * means the app builds one from the conditions.
+   */
+  lockReason: string;
+  /**
    * The option's own document node, carrying its label as inline content.
    * Present whenever the option was read out of a document (which is every
    * real case); the runtime uses it to render a styled label, while
@@ -146,6 +151,7 @@ function readOptions(node: JSONContent | undefined, resolve?: MentionLabelResolv
         ? (child.attrs.conditions as VariableCondition[])
         : [],
       whenUnmet: child.attrs?.whenUnmet === "lock" ? "lock" : "hide",
+      lockReason: (child.attrs?.lockReason as string) ?? "",
       style: (child.attrs?.style as ChoiceStyleRef | null) ?? null,
       speaker: nodeSpeaker(child.attrs),
       /** The node itself, for anything that needs the label's formatting. */
@@ -231,6 +237,7 @@ export interface ChoiceOptionSeed {
   actions?: VariableAction[];
   conditions?: VariableCondition[];
   whenUnmet?: "hide" | "lock";
+  lockReason?: string;
   style?: Record<string, unknown> | null;
   speaker?: Speaker;
 }
@@ -246,6 +253,7 @@ export function buildChoiceOptionNode(seed: ChoiceOptionSeed = {}): JSONContent 
       actions: seed.actions ?? [],
       conditions: seed.conditions ?? [],
       whenUnmet: seed.whenUnmet ?? "hide",
+      lockReason: seed.lockReason ?? "",
       style: seed.style ?? null,
       speaker: seed.speaker ?? null,
     },

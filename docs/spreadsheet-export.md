@@ -252,13 +252,17 @@ Nine, each checked in the source rather than assumed. Four mattered.
 - **`hardBreak`.** Shift+Enter is a node, and a naive flatten joins the
   words either side of it. It becomes a real newline in the cell and `\n`
   in the CSV.
-- **Variable names leak to the reader.** A locked choice prints
-  `"Requires " + the condition phrase`, so a player sees **"Requires
-  resolve is at least 3"** — an internal identifier, in English, in the
-  story. **Settled: a variable gains an optional display name**, separate
-  from its id, in its own small version AFTER this one. The sheet then
-  grows a `Variable` row type and no new columns. Until then the leak
-  stands and is a known gap.
+- **Variable names leak to the reader.** A locked choice printed
+  `"Requires " + the condition phrase`, so a player saw **"Requires resolve
+  is at least 3"** — an internal identifier, in English, in the story.
+  **CLOSED in v0.72.0**, and it took more than the display name the note
+  predicted: the VALUE is dropped too (a threshold is the machine, not the
+  story, and no boolean can be phrased with its value at all), negatives
+  are detected so that dropping the comparator cannot state the opposite,
+  and a choice can carry its own sentence which replaces ours outright.
+  Check Story reports any variable a reader can see that nobody has named.
+  The sheet grew the predicted `Variable` row type and a `Reason` row
+  beside it, with **no new columns** — see below.
 
 **The exported page's own chrome stays out** — "The End", "Continue",
 "Start over", the ground names, the word "Requires" itself. His call, and
@@ -277,9 +281,36 @@ omission is visible; and **entity pages and notes are excluded** — they
 are the writer's working material, not the reader's, and they would
 roughly double the sheet.
 
+## The two row types added in v0.72.0
+
+Both are strings a reader meets that are not part of a scene's prose, which
+made "every string a reader sees" not quite true until they existed.
+
+- **`Variable`** — a variable's reader-facing name, one row each, in a V
+  block after the scenes because they belong to no scene. The same argument
+  that puts an unreachable scene after the numbered ones rather than
+  inventing a place for it in reading order. Ref `V1`, key `v_courage`.
+  **Only variables that have a display name.** One without has nothing a
+  reader sees, and putting `hikmet_offer` in front of a translator would be
+  asking them to localise an identifier.
+  Its key is its display name, which means renaming the display name
+  changes the key — right here and wrong everywhere else in this file. For
+  a line, the words are what it SAYS and the key is who it IS; for a
+  variable's display name the words ARE the whole thing, so renaming it is
+  not moving a string, it is writing a new one.
+- **`Reason`** — a locked option's own sentence. Ref `15.C2w`, key the
+  option's key plus `-why`, so it hangs off its option exactly as a reply
+  hangs off its line and deleting the choice takes it with it. Only when
+  the option is SHOWN locked: a hidden one tells the reader nothing, so a
+  reason on one is a string nobody can reach.
+
 ## Not in scope
 
-Import. The exported page's own UI strings. Inline formatting as markup. Variables interpolated into text (the
-app has none yet; if it gains them, the sheet must preserve them
-verbatim). A named player — the printed name is hard-coded "You", which
-is on the standing list and is a project setting when it lands.
+Import. The exported page's own UI strings — with one fewer of them than
+there was: "Requires" is now built at export time rather than hard-coded in
+the page's runtime, because a writer's own sentence must not arrive with an
+English word in front of it. Inline formatting as markup. Variables
+interpolated into text (the app has none yet; if it gains them, the sheet
+must preserve them verbatim). A named player — the printed name is
+hard-coded "You", which is on the standing list and is a project setting
+when it lands.

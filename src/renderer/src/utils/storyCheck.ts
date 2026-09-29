@@ -39,6 +39,8 @@ export type StoryIssueKind =
   | "dialogue-dead-gate"
   | "missing-variable-condition"
   | "missing-variable-action"
+  /** v0.72.0 — a locked option naming a variable the writer never named. */
+  | "unnamed-variable-shown"
   | "empty-scene";
 
 export type StorySeverity = "problem" | "warning" | "note";
@@ -152,6 +154,34 @@ function isEmptyScene(scene: Scene): boolean {
   return countWords(scene.content) === 0 && sceneChoices(scene.content).length === 0;
 }
 
+/**
+ * A locked option tells the reader why (v0.72.0).
+ *
+ * That is deliberate — the runtime's comment argues a crossed-out option
+ * with no reason is worse than no option at all — and it means the
+ * variable's name is prose. A writer who has not given that variable a
+ * display name is publishing an identifier: "Requires knows_roster".
+ *
+ * Reported rather than prevented, and only where it can actually be seen:
+ * a HIDDEN option shows the reader nothing, and an option carrying the
+ * writer's own sentence never names the variable at all. So this fires on
+ * exactly the strings a player can read, which is the difference between a
+ * warning worth having and a list everybody learns to ignore.
+ */
+function unnamedShownVariablesFor(
+  gated: { conditions: { variableId: string }[]; whenUnmet: string; lockReason?: string },
+  byId: Map<string, { displayName?: string; name: string }>,
+): string[] {
+  if (gated.whenUnmet !== "lock") return [];
+  if (gated.lockReason?.trim()) return [];
+  const unnamed: string[] = [];
+  for (const condition of gated.conditions) {
+    const variable = byId.get(condition.variableId);
+    if (variable && !variable.displayName?.trim()) unnamed.push(variable.name || "a variable");
+  }
+  return [...new Set(unnamed)];
+}
+
 export function checkStory(project: Project | null): StoryCheck {
   const empty: StoryCheck = {
     issues: [],
@@ -166,6 +196,34 @@ export function checkStory(project: Project | null): StoryCheck {
   const scenes = project.scenes;
   const byId = new Map(scenes.map((s) => [s.id, s]));
   const variableIds = new Set(project.variables.map((v) => v.id));
+  const variableById = new Map(project.variables.map((v) => [v.id, v]));
+
+  /** Push one issue per gated thing whose reader-visible variables are unnamed. */
+  const reportUnnamed = (
+    gated: { conditions: { variableId: string }[]; whenUnmet: string; lockReason?: string },
+    id: string,
+    where: string,
+    label: string,
+    sceneId: string,
+    blockId: string,
+  ): void => {
+    const unnamed = unnamedShownVariablesFor(gated, variableById);
+    if (unnamed.length === 0) return;
+    issues.push({
+      id: `unnamed:${id}`,
+      kind: "unnamed-variable-shown",
+      severity: "warning",
+      title: where,
+      detail:
+        unnamed.length === 1
+          ? `This option is shown locked, so the reader is told why — and is shown the variable's own name, "${unnamed[0]}". Give it a display name, or write this option a reason of its own.`
+          : `This option is shown locked, so the reader is told why — and is shown ${unnamed.length} variables by their own names: ${unnamed.map((n) => `"${n}"`).join(", ")}. Give them display names, or write this option a reason of its own.`,
+      label,
+      what: "unnamed variable",
+      sceneId,
+      blockId,
+    });
+  };
   const issues: StoryIssue[] = [];
   const title = (scene: Scene): string => scene.title || "Untitled scene";
 
@@ -251,6 +309,8 @@ export function checkStory(project: Project | null): StoryCheck {
           });
         }
       });
+
+      reportUnnamed(option, option.id, where, label, scene.id, blockId);
     });
 
     // ── the Dialogue (v0.66.0) ──────────────────────────────────────
@@ -323,6 +383,8 @@ export function checkStory(project: Project | null): StoryCheck {
             targets.push(line.targetSceneId);
           }
         }
+
+        reportUnnamed(line, line.id, where, label, scene.id, blockId);
 
         line.conditions.forEach((condition) => {
           if (!variableIds.has(condition.variableId)) {

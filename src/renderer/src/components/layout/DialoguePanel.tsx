@@ -603,6 +603,19 @@ function LineRow({
                       <option value="lock">Show it locked</option>
                     </select>
                   </div>
+                  {/* The siblings rule: anything drawn for one of these two
+                      blocks is drawn for both unless the difference is
+                      behavioural, and a locked line reads to a player
+                      exactly as a locked choice does. */}
+                  {line.whenUnmet === "lock" && (
+                    <input
+                      value={line.lockReason ?? ""}
+                      onChange={(e) => onPatch({ lockReason: e.target.value })}
+                      placeholder="Why, in your words — optional"
+                      data-lock-reason
+                      className="w-full rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none placeholder:text-[var(--text-3)] focus:border-[var(--accent)]"
+                    />
+                  )}
                   <button
                     type="button"
                     onClick={addCondition}

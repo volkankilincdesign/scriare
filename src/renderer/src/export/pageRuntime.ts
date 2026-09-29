@@ -235,7 +235,9 @@ export function pageRuntime(): string {
     button.appendChild(line);
     if (choice.r) {
       var why = element("span", "scriare-lock-why");
-      why.textContent = "Requires " + choice.r;
+      // Verbatim: the sentence was finished at export time, and may be
+      // the writer's own rather than one the app built.
+      why.textContent = choice.r;
       button.appendChild(why);
     }
     return button;

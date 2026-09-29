@@ -220,6 +220,18 @@ function VariableRow({
               onChange={(defaultValue) => onChange({ defaultValue })}
             />
           </Field>
+          {/* The one field here a READER can end up looking at. Placed
+              above "What it is for" because that one is a note to yourself
+              and this one is prose in the story. */}
+          <Field label="Called, to the reader">
+            <input
+              value={variable.displayName ?? ""}
+              onChange={(e) => onChange({ displayName: e.target.value })}
+              placeholder={variable.name ? `Optional — otherwise "${variable.name}"` : "Optional"}
+              data-variable-display-name
+              className={INPUT_CLASS_SM}
+            />
+          </Field>
           <Field label="What it is for">
             <input
               value={variable.description ?? ""}

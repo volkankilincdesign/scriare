@@ -115,9 +115,12 @@ export default async function run({ api, check, seedProject }) {
       othersStayClosed: others.every((r) => r.querySelectorAll("input, select").length === 0),
     };
   });
+  // Five since v0.72.0. "Called, to the reader" sits above "What it is
+  // for" on purpose: the second is a note to yourself, the first is prose
+  // a player can end up reading off a locked choice.
   check(
-    "opening a row shows the four things a variable is",
-    opened.fields.join(", ") === "Name, Type, Starts at, What it is for",
+    "opening a row shows the five things a variable is",
+    opened.fields.join(", ") === "Name, Type, Starts at, Called, to the reader, What it is for",
     opened.fields.join(", "),
   );
   check(

@@ -170,6 +170,10 @@ export function buildSheet(project: Project, options: { language: string }): She
   let dialogue = 0;
   let replies = 0;
   let mentionRows = 0;
+  let reasons = 0;
+  let variableNames = 0;
+  /** Every key already spoken for, so a variable row cannot collide. */
+  const taken = new Set<string>();
 
   for (const scene of order) {
     const n = label.get(scene.id)!;
@@ -195,6 +199,7 @@ export function buildSheet(project: Project, options: { language: string }): She
         skippedEmpty += 1;
         return;
       }
+      taken.add(opts.key);
       const named = [...opts.mentions];
       if (named.length) mentionRows += 1;
       if (opts.speaker) speakers.add(opts.speaker);
@@ -219,6 +224,34 @@ export function buildSheet(project: Project, options: { language: string }): She
             ? ""
             : `s${slug(n)}_${opts.refSuffix.toLowerCase()}_${slug(opts.speaker || "narration")}.wav`,
         hash: shortHash(text),
+      });
+    };
+
+    /**
+     * A locked option's own sentence (v0.72.0).
+     *
+     * Only when the option is SHOWN locked: a hidden one tells the reader
+     * nothing, so a reason on one is a string nobody reaches. Its key and
+     * its ref both hang off the option's, the way a reply's do, so
+     * deleting the choice takes the reason with it rather than leaving an
+     * orphan a translator has to guess at.
+     */
+    const pushReason = (
+      ownerKey: string,
+      ownerRef: string,
+      ownerPhrase: string,
+      whenUnmet: string | undefined,
+      reason: string | undefined,
+    ): void => {
+      if (whenUnmet !== "lock" || !reason?.trim()) return;
+      reasons += 1;
+      push("Reason", {
+        key: `${ownerKey}-why`,
+        refSuffix: `${ownerRef}w`,
+        wherePhrase: `${ownerPhrase}, why it is locked`,
+        speaker: "",
+        text: reason,
+        mentions: new Set(),
       });
     };
 
@@ -274,8 +307,9 @@ export function buildSheet(project: Project, options: { language: string }): She
           }
           counters.C += 1;
           choices += 1;
+          const optionKey = (option.attrs?.optionId as string) || `${scene.id}:c${counters.C}`;
           push("Choice", {
-            key: (option.attrs?.optionId as string) || `${scene.id}:c${counters.C}`,
+            key: optionKey,
             refSuffix: `${TYPE_LETTER.Choice}${counters.C}`,
             wherePhrase: `choice ${counters.C}`,
             speaker: speakerOf(option.attrs?.speaker),
@@ -284,6 +318,13 @@ export function buildSheet(project: Project, options: { language: string }): She
             shownWhen: conditionWords(option.attrs?.conditions),
             changes: actionWords(option.attrs?.actions),
           });
+          pushReason(
+            optionKey,
+            `${TYPE_LETTER.Choice}${counters.C}`,
+            `choice ${counters.C}`,
+            option.attrs?.whenUnmet as string,
+            option.attrs?.lockReason as string,
+          );
         }
       } else if (node.type === DIALOGUE_BLOCK_TYPE) {
         for (const line of extractDialogueLines(node, resolve)) {
@@ -333,6 +374,13 @@ export function buildSheet(project: Project, options: { language: string }): She
             text: line.reply,
             mentions: new Set(),
           });
+          pushReason(
+            line.id,
+            `${TYPE_LETTER.Dialogue}${index}`,
+            `dialogue ${index}`,
+            line.whenUnmet,
+            line.lockReason,
+          );
         }
       } else if (node.type === CONDITIONAL_BLOCK_TYPE) {
         // The condition lives on the BLOCK. Carried down to every
@@ -348,6 +396,49 @@ export function buildSheet(project: Project, options: { language: string }): She
       }
     }
   }
+
+  /**
+   * The variables a reader can end up reading (v0.72.0).
+   *
+   * At the END, in a V block of their own, because they belong to no
+   * scene — the same reasoning that puts an unreachable scene after the
+   * numbered ones rather than inventing a place for it in reading order.
+   *
+   * Only the ones with a display name. A variable without one has nothing
+   * a reader sees — the locked line falls back to its internal name, which
+   * is a bug Check Story reports rather than a string to translate — and
+   * putting `knows_roster` in front of a translator would be asking them
+   * to localise an identifier.
+   *
+   * THE KEY IS THE DISPLAY NAME, which means changing the display name
+   * changes the key. That is right here and wrong everywhere else in this
+   * file: for a line, the words are what the line SAYS and the key is who
+   * it IS; for a variable's display name, the words ARE the whole thing.
+   * Rename it and you have not moved a string, you have written a new one.
+   */
+  const named = project.variables.filter((v) => v.displayName?.trim());
+  named.forEach((variable, index) => {
+    const label = variable.displayName?.trim() || variable.name || "untitled";
+    variableNames += 1;
+    const slugged = `v_${slug(label)}`;
+    rows.push({
+      key: taken.has(slugged) ? `${slugged}-${index + 1}` : slugged,
+      ref: `V${index + 1}`,
+      where: `Variables · ${variable.name || "untitled"}`,
+      scene: "",
+      sceneId: "",
+      type: "Variable",
+      speaker: "",
+      text: label,
+      mentions: "",
+      shownWhen: "",
+      changes: "",
+      after: "",
+      voFile: "",
+      hash: shortHash(label),
+    });
+    taken.add(slugged);
+  });
 
   return {
     title: project.name || "Untitled Story",
@@ -369,6 +460,8 @@ export function buildSheet(project: Project, options: { language: string }): She
       replies,
       speakers: speakers.size,
       mentions: mentionRows,
+      reasons,
+      variableNames,
     },
   };
 }

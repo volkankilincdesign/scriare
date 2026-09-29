@@ -2126,6 +2126,91 @@ const CONTROLS = [
     spec: "sheet-export",
     expect: "nothing is fenced off with a rule of its own",
   },
+  // ── v0.72.0 — what a locked option is allowed to tell a reader ───────
+  {
+    name: "the threshold printed to the reader again",
+    file: src("types/variables.ts"),
+    from: "  return isNegativeCondition(condition, variable) ? `not ${name}` : name;",
+    to: "  return `${name} ${condition.comparator} ${String(condition.value)}`;",
+    spec: "variable-names",
+    expect: "A NUMBER'S THRESHOLD NEVER REACHES THE READER",
+  },
+  {
+    name: "the display name ignored, so the identifier is back in the prose",
+    file: src("types/variables.ts"),
+    from: '  return variable.displayName?.trim() || variable.name || "Untitled variable";',
+    to: '  return variable.name || "Untitled variable";',
+    spec: "variable-names",
+    expect: "no internal name survives anywhere on the page",
+  },
+  {
+    name: "a negative condition read as a positive one, stating the opposite",
+    file: src("types/variables.ts"),
+    from: '  let negative = condition.comparator === "neq";\n  if (variable?.type === "boolean" && !condition.value) negative = !negative;',
+    to: '  let negative = condition.comparator === "neq";',
+    spec: "variable-names",
+    expect: "A NEGATIVE CONDITION SAYS SO",
+  },
+  {
+    name: "the writer's own sentence overruled by the app's",
+    file: src("types/variables.ts"),
+    from: "  const own = written?.trim();\n  if (own) return own;\n  if (!conditions?.length) return \"\";",
+    to: "  void written;\n  if (!conditions?.length) return \"\";",
+    spec: "variable-names",
+    expect: "THE WRITER'S OWN SENTENCE REPLACES OURS",
+  },
+  {
+    name: "the exported page phrasing its own reasons, so the rehearsal and the file disagree",
+    file: src("export/buildStory.ts"),
+    from: "            r: lockSentence(option.lockReason, option.conditions, variables),",
+    to: '            r: option.conditions?.length ? `Requires ${option.conditions.length} things` : "",',
+    spec: "variable-names",
+    expect: "THE EXPORTED PAGE SAYS THE SAME THINGS",
+  },
+  {
+    name: "Check Story warning on a HIDDEN option, which shows a reader nothing",
+    file: src("utils/storyCheck.ts"),
+    from: '  if (gated.whenUnmet !== "lock") return [];',
+    to: "",
+    spec: "variable-names",
+    expect: "NOT for the option carrying the writer's own sentence",
+  },
+  {
+    name: "Check Story warning on an option whose reason was written, which names nothing",
+    file: src("utils/storyCheck.ts"),
+    from: "  if (gated.lockReason?.trim()) return [];",
+    to: "",
+    spec: "variable-names",
+    expect: "NOT for the option carrying the writer's own sentence",
+  },
+  {
+    name: "a locked reason left out of the spreadsheet",
+    file: src("export/sheet/buildSheet.ts"),
+    from: '      if (whenUnmet !== "lock" || !reason?.trim()) return;',
+    to: "      return;",
+    spec: "sheet-export",
+    expect: "A LOCKED OPTION'S REASON IS A ROW",
+  },
+  {
+    name: "variable names left out of the spreadsheet",
+    file: src("export/sheet/buildSheet.ts"),
+    from: "  const named = project.variables.filter((v) => v.displayName?.trim());",
+    to: "  const named: typeof project.variables = [];",
+    spec: "sheet-export",
+    expect: "A VARIABLE'S READER-FACING NAME IS A ROW",
+  },
+  {
+    // Aimed at the FILTER, because the filter is the whole guard — the
+    // label below it falls back safely, so sabotaging that changed
+    // nothing and the suite stayed green. What decides whether an
+    // identifier reaches a translator is which variables get a row at all.
+    name: "an UNNAMED variable handed to a translator as an identifier",
+    file: src("export/sheet/buildSheet.ts"),
+    from: "  const named = project.variables.filter((v) => v.displayName?.trim());",
+    to: "  const named = project.variables;",
+    spec: "sheet-export",
+    expect: "an UNNAMED variable is not handed to a translator",
+  },
 ];
 
 

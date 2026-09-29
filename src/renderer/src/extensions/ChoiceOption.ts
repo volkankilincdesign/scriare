@@ -74,6 +74,25 @@ export const ChoiceOption = Node.create({
         renderHTML: (attrs) => ({ "data-unmet": attrs.whenUnmet ?? "hide" }),
       },
       /**
+       * The sentence a reader is given when this is locked (v0.72.0).
+       *
+       * Empty means the app builds one from the conditions — "Requires The
+       * Roster" — which is correct and general and will never be as good
+       * as a sentence the writer meant. Set, it replaces that entirely,
+       * with no "Requires" in front of it, because the writer's line is a
+       * whole sentence rather than the tail of one of ours.
+       *
+       * Only ever read when `whenUnmet` is "lock": a hidden option shows a
+       * reader nothing at all, so a reason on one would be a string nobody
+       * can reach and a row in the spreadsheet nobody can translate for.
+       */
+      lockReason: {
+        default: "",
+        parseHTML: (el) => el.getAttribute("data-lock-reason") ?? "",
+        renderHTML: (attrs) =>
+          attrs.lockReason ? { "data-lock-reason": attrs.lockReason as string } : {},
+      },
+      /**
        * Per-option appearance overrides (v0.33.0's Choice Style). Absent
        * means "inherit the project's Choice Style" — an empty object here
        * would be indistinguishable from "explicitly the same as the

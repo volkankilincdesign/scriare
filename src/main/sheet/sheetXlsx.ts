@@ -299,6 +299,8 @@ function readmeSheet(sheet: SheetDocument): string {
     ["Dialogue lines", String(s.dialogue)],
     ["Replies", String(s.replies)],
     ["Speaking parts", String(s.speakers)],
+    ["Locked reasons", String(s.reasons)],
+    ["Variable names", String(s.variableNames)],
     ["Rows naming a character or place", String(s.mentions)],
     ["Empty strings skipped", String(sheet.skippedEmpty)],
     ["", ""],
@@ -315,6 +317,8 @@ function readmeSheet(sheet: SheetDocument): string {
       "If the English changes after this sheet went out, the hash changes with it.",
     ],
     ["Rows named U1, U2…", "Scenes nothing currently leads to. Still translated."],
+    ["Rows named V1, V2…", "What a locked choice calls a thing the player is missing."],
+    ["Refs ending in w", "Why a choice is locked, in the writer's own words."],
   ];
 
   const body = rows

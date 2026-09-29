@@ -3,7 +3,7 @@ import type { JSONContent } from "@tiptap/react";
 import type { ChoiceOption } from "../../utils/choiceBlocks";
 import { readChoiceBlockOptions } from "../../utils/choiceBlocks";
 import { RUNTIME_EXTENSIONS } from "../extensions";
-import { describeCondition, evaluateConditions } from "../../types/variables";
+import { evaluateConditions, lockSentence } from "../../types/variables";
 import { choiceBoxCss, resolveChoiceBox } from "../../types/choiceStyles";
 import type { RuntimeBlockDefinition, RuntimeContext } from "../types";
 
@@ -76,12 +76,9 @@ function RuntimeChoiceOptions({ options, context }: RuntimeChoiceOptionsProps) {
             {/* The reason is the entire point of showing a locked option.
                 Without it the player learns only that they failed at
                 something unnamed, which is worse than not seeing it. */}
-            {option.conditions.length > 0 && (
+            {lockSentence(option.lockReason, option.conditions, context.variables) && (
               <span className="mt-0.5 block pl-5 text-xs text-[var(--text-3)]">
-                Requires{" "}
-                {option.conditions
-                  .map((condition) => describeCondition(condition, context.variables))
-                  .join(", and ")}
+                {lockSentence(option.lockReason, option.conditions, context.variables)}
               </span>
             )}
           </button>

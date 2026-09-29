@@ -1,7 +1,7 @@
 import type { JSONContent } from "@tiptap/react";
 import { extractDialogueLines } from "../../utils/dialogueBlocks";
 import type { DialogueLine } from "../../utils/dialogueBlocks";
-import { describeCondition, evaluateConditions } from "../../types/variables";
+import { evaluateConditions, lockSentence } from "../../types/variables";
 import { choiceBoxCss, resolveChoiceBox } from "../../types/choiceStyles";
 import { speakerName } from "../../types/speaker";
 import type { RuntimeBlockDefinition, RuntimeContext } from "../types";
@@ -134,9 +134,7 @@ function RuntimeDialogue({
               >
                 <span>{line.text || "…"}</span>
                 <span className="mt-1 block text-xs text-[var(--text-3)]">
-                  {line.conditions
-                    .map((condition) => describeCondition(condition, context.variables))
-                    .join(" · ")}
+                  {lockSentence(line.lockReason, line.conditions, context.variables)}
                 </span>
               </div>
             ),

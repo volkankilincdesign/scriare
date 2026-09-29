@@ -517,6 +517,7 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
     if ("conditions" in patch) attrs.conditions = patch.conditions ?? [];
     if ("actions" in patch) attrs.actions = patch.actions ?? [];
     if ("whenUnmet" in patch) attrs.whenUnmet = patch.whenUnmet ?? "hide";
+    if ("lockReason" in patch) attrs.lockReason = patch.lockReason ?? "";
     // v0.34.0. `null` is meaningful here — it is "inherit the project
     // default" — so this passes it through rather than falling back to
     // something, unlike every line above it.
@@ -1064,6 +1065,18 @@ function ChoiceAccordion({
                   <option value="lock">Show it locked</option>
                 </select>
               </div>
+              {/* Only when it is SHOWN. A hidden option tells the reader
+                  nothing, so a reason on one is a string nobody can reach
+                  and a row in the spreadsheet nobody can translate for. */}
+              {option.whenUnmet === "lock" && (
+                <input
+                  value={option.lockReason ?? ""}
+                  onChange={(e) => onPatch({ lockReason: e.target.value })}
+                  placeholder="Why, in your words — optional"
+                  data-lock-reason
+                  className="w-full rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none placeholder:text-[var(--text-3)] focus:border-[var(--accent)]"
+                />
+              )}
               <button
                 type="button"
                 onClick={addCondition}

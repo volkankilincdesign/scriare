@@ -60,7 +60,14 @@ export default async function run({ page, api, check, seedProject, app }) {
         name: "Sheet Fixture",
         createdAt: now,
         updatedAt: now,
-        variables: [{ id: "v1", name: "resolve", kind: "number", initial: 0 }],
+        variables: [
+          { id: "v1", name: "resolve", displayName: "Courage", type: "number", defaultValue: 0 },
+          // No display name, so it has nothing a reader sees and nothing
+          // to translate. Present so that "the internal name is nowhere in
+          // the sheet" is a claim with something to catch — without it the
+          // check passed whatever the code did.
+          { id: "v2", name: "hikmet_offer", type: "boolean", defaultValue: false },
+        ],
         entities: [
           { id: "e1", kind: "character", name: "Nesrin", aliases: [], content: null },
           { id: "e2", kind: "location", name: "The Yard", aliases: [], content: null },
@@ -113,6 +120,14 @@ export default async function run({ page, api, check, seedProject, app }) {
               [
                 { id: "o-go", text: "Go through", targetSceneId: "sb" },
                 { id: "o-wait", text: "Wait a moment" },
+                {
+                  id: "o-locked",
+                  text: "Force the lock",
+                  targetSceneId: "sb",
+                  whenUnmet: "lock",
+                  lockReason: "Not until you have found the key.",
+                  conditions: [{ id: "q1", variableId: "v1", comparator: "gte", value: 9 }],
+                },
               ],
               "blk-c",
             ),
@@ -324,7 +339,19 @@ export default async function run({ page, api, check, seedProject, app }) {
   // made of THESE words".
   const mismatched = keys
     .map((k, i) => ({ k, want: slug(texts[i] ?? ""), type: types[i] }))
-    .filter(({ k, want, type }) => type !== "Scene" && want && !k.endsWith("-r") && k.slice(2) !== want && !new RegExp(`^${want}-\\d+$`).test(k.slice(2)));
+    // A reply and a locked reason are both named after the thing they
+    // hang off rather than after their own words — `d_why-did-you-wait-r`,
+    // `c_force-the-lock-why` — which is the point: delete the line and its
+    // reply's key goes with it instead of surviving as an orphan.
+    .filter(
+      ({ k, want, type }) =>
+        type !== "Scene" &&
+        want &&
+        !k.endsWith("-r") &&
+        !k.endsWith("-why") &&
+        k.slice(2) !== want &&
+        !new RegExp(`^${want}-\\d+$`).test(k.slice(2)),
+    );
   check(
     "A KEY IS THE LINE'S OWN WORDS — readable in a sheet and in an engine's row list",
     noisy.length === 0 && mismatched.length === 0 && contentKeys.length > 0,
@@ -375,8 +402,33 @@ export default async function run({ page, api, check, seedProject, app }) {
 
   check(
     "EVERY KIND A READER SEES HAS ROWS — a sheet without prose cannot localise a story",
-    ["Scene", "Text", "Choice", "Dialogue", "Reply"].every((kind) => types.includes(kind)),
+    ["Scene", "Text", "Choice", "Dialogue", "Reply", "Reason", "Variable"].every((kind) =>
+      types.includes(kind),
+    ),
     [...new Set(types)].join(", "),
+  );
+
+  // v0.72.0 — the two strings a reader meets that are not part of a scene's
+  // prose: why a locked option is locked, and what the thing they lack is
+  // called. Both were invisible to a translator until this version, which
+  // made "every string a reader sees" not quite true.
+  check(
+    "A LOCKED OPTION'S REASON IS A ROW, hanging off the option like a reply off its line",
+    refs[texts.indexOf("Not until you have found the key.")] === "1.C3w" &&
+      keys[texts.indexOf("Not until you have found the key.")] ===
+        `${keys[texts.indexOf("Force the lock")]}-why`,
+    `${refs[texts.indexOf("Not until you have found the key.")]} / ${keys[texts.indexOf("Not until you have found the key.")]}`,
+  );
+  check(
+    "A VARIABLE'S READER-FACING NAME IS A ROW, in a V block of its own after the scenes",
+    refs[texts.indexOf("Courage")] === "V1" && keys[texts.indexOf("Courage")] === "v_courage",
+    `${refs[texts.indexOf("Courage")]} / ${keys[texts.indexOf("Courage")]}`,
+  );
+  check(
+    "...and an UNNAMED variable is not handed to a translator at all",
+    !texts.includes("resolve") && !texts.includes("hikmet_offer") &&
+      types.filter((t) => t === "Variable").length === 1,
+    `${types.filter((t) => t === "Variable").length} variable rows for 2 variables, 1 of them named`,
   );
 
   check(

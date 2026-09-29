@@ -3,7 +3,7 @@ import type { JSONContent } from "@tiptap/react";
 import type { Project } from "../types/project";
 import { EMPTY_DOC } from "../types/project";
 import type { Variable, VariableAction, VariableCondition } from "../types/variables";
-import { describeCondition } from "../types/variables";
+import { lockSentence } from "../types/variables";
 import { resolveChoiceBox } from "../types/choiceStyles";
 import type { ChoiceBox } from "../types/choiceStyles";
 import { readChoiceBlockOptions } from "../utils/choiceBlocks";
@@ -53,7 +53,11 @@ export interface ExportChoice {
   c: VariableCondition[];
   /** "lock" shows it disabled with the reason; "hide" removes it. */
   u: "hide" | "lock";
-  /** The reason, already in words — built with the app's own describeCondition. */
+  /**
+   * The reason, already a WHOLE SENTENCE (v0.72.0). It used to be the tail
+   * of one, with the page prepending "Requires " — which stopped working
+   * the moment a writer could supply their own sentence instead.
+   */
   r: string;
   a: VariableAction[];
   /** Resolved box. Styles are looked up here so the export carries values,
@@ -206,9 +210,7 @@ export function buildExportStory(project: Project): ExportStory {
           rp: line.repeatable,
           c: line.conditions ?? [],
           u: line.whenUnmet,
-          r: line.conditions?.length
-            ? line.conditions.map((condition) => describeCondition(condition, variables)).join(", and ")
-            : "",
+          r: lockSentence(line.lockReason, line.conditions, variables),
           a: line.actions ?? [],
           b: resolveChoiceBox(styles, line.style),
         }));
@@ -229,12 +231,7 @@ export function buildExportStory(project: Project): ExportStory {
             t: option.targetSceneId as string,
             c: option.conditions ?? [],
             u: option.whenUnmet,
-            r:
-              option.conditions?.length
-                ? option.conditions
-                    .map((condition) => describeCondition(condition, variables))
-                    .join(", and ")
-                : "",
+            r: lockSentence(option.lockReason, option.conditions, variables),
             a: option.actions ?? [],
             b: resolveChoiceBox(styles, option.style),
           }));

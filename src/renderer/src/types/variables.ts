@@ -39,7 +39,28 @@ export type VariableValue = number | boolean | string;
  */
 export interface VariableBase {
   id: string;
+  /**
+   * The name the WRITER uses. Short, typed once, and the thing every
+   * condition and action in the Inspector is chosen by — `resolve`,
+   * `knows_roster`. It is an identifier in everything but name, and it was
+   * never meant to be read by anybody playing the story.
+   */
   name: string;
+  /**
+   * The name a READER sees, when one is set (v0.72.0).
+   *
+   * A locked choice is shown to the player on purpose — the runtime's own
+   * comment argues that hiding the reason is worse than hiding the option —
+   * and until now the reason was built from `name`, so a player met
+   * "Requires knows_roster is true" in the middle of a story. An internal
+   * identifier, in English, in the prose.
+   *
+   * Optional, because most variables are never visible to a reader: only
+   * one that gates a choice whose `whenUnmet` is "lock" ever surfaces, and
+   * Check Story reports exactly those when this is missing rather than
+   * asking every writer to name every variable twice.
+   */
+  displayName?: string;
   /** Optional author-facing note — shown in the Variable Manager only, never at runtime. */
   description?: string;
 }
@@ -315,21 +336,80 @@ export function evaluateConditions(
   );
 }
 
-/** Human-readable summary of one condition — the Inspector's collapsed row, and a locked choice's reason. */
+/** What a reader should be told this variable is called. */
+export function readerName(variable: Variable | undefined): string {
+  if (!variable) return "something";
+  return variable.displayName?.trim() || variable.name || "Untitled variable";
+}
+
+/**
+ * Whether a condition is asking for the ABSENCE of something (v0.72.0).
+ *
+ * Needed because the reader's phrasing drops the comparator and the value,
+ * and dropping them from a negative test would say the opposite of what
+ * the story means: `knows_roster is false` would come out as "Requires The
+ * Roster", which is not merely clumsy, it is wrong.
+ *
+ * A boolean carries its polarity in its VALUE as well as its comparator,
+ * so `eq false` and `neq true` are both negative; `negate` flips whatever
+ * the rest of it worked out to.
+ */
+export function isNegativeCondition(
+  condition: VariableCondition,
+  variable: Variable | undefined,
+): boolean {
+  let negative = condition.comparator === "neq";
+  if (variable?.type === "boolean" && !condition.value) negative = !negative;
+  return condition.negate ? !negative : negative;
+}
+
+/**
+ * One condition, phrased for THE READER (v0.72.0).
+ *
+ * Its only callers are the two that a player can see: Play Mode's locked
+ * rows and the exported page's. (Its comment used to claim the Inspector
+ * used it too — the Inspector has its own, fuller phrasing, and the stale
+ * claim is exactly why a change here looked riskier than it was.)
+ *
+ * THE VALUE IS DELIBERATELY DROPPED. "Requires Courage is at least 3"
+ * hands a player an integer out of the design document; what they can act
+ * on is which thing they lack, and the threshold only tells them how the
+ * machine is put together. It also rescues every boolean, which cannot be
+ * phrased with its value at all — "Requires The Roster is true" is not a
+ * sentence anybody would write.
+ *
+ * A writer who wants a real sentence writes one on the choice itself, and
+ * it replaces this entirely.
+ */
 export function describeCondition(
   condition: VariableCondition,
   variables: Variable[],
 ): string {
   const variable = variables.find((v) => v.id === condition.variableId);
-  if (!variable) return "an unknown variable";
-  const comparator =
-    COMPARATORS_BY_TYPE[variable.type].find((c) => c.value === condition.comparator)?.label ?? "is";
-  const value =
-    variable.type === "boolean"
-      ? condition.value
-        ? "true"
-        : "false"
-      : String(condition.value ?? "");
-  const name = variable.name || "Untitled variable";
-  return condition.negate ? `not (${name} ${comparator} ${value})` : `${name} ${comparator} ${value}`;
+  if (!variable) return "something";
+  const name = readerName(variable);
+  return isNegativeCondition(condition, variable) ? `not ${name}` : name;
+}
+
+/**
+ * The whole sentence a locked option shows a reader (v0.72.0).
+ *
+ * Shared by Play Mode's two blocks and — through `buildStory` — by the
+ * exported page, for the same reason the script's two renderers share one
+ * phrasing: a rehearsal that says something different from the finished
+ * file is worse than no rehearsal.
+ *
+ * The writer's own sentence wins outright and is printed as written, with
+ * no "Requires" in front of it, because a sentence somebody wrote is a
+ * whole sentence rather than the tail of one of ours.
+ */
+export function lockSentence(
+  written: string | undefined,
+  conditions: VariableCondition[] | undefined,
+  variables: Variable[],
+): string {
+  const own = written?.trim();
+  if (own) return own;
+  if (!conditions?.length) return "";
+  return `Requires ${conditions.map((c) => describeCondition(c, variables)).join(", and ")}`;
 }

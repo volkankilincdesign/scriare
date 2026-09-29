@@ -18,7 +18,20 @@
  */
 
 /** The kinds of string a reader can see. One letter each in a Ref. */
-export type SheetRowType = "Scene" | "Text" | "Choice" | "Dialogue" | "Reply";
+export type SheetRowType =
+  | "Scene"
+  | "Text"
+  | "Choice"
+  | "Dialogue"
+  | "Reply"
+  /**
+   * v0.72.0 — a variable's reader-facing name. It reaches a player through
+   * a locked option's "Requires The Roster", so it is a string somebody
+   * reads and therefore a string somebody translates.
+   */
+  | "Variable"
+  /** v0.72.0 — a locked option's own sentence, written by the writer. */
+  | "Reason";
 
 /** The letter each kind takes inside a Ref: `15.D2`, `15.T4`. */
 export const TYPE_LETTER: Record<SheetRowType, string> = {
@@ -27,6 +40,11 @@ export const TYPE_LETTER: Record<SheetRowType, string> = {
   Choice: "C",
   Dialogue: "D",
   Reply: "D",
+  // A Reason has no letter of its own: its ref hangs off the option it
+  // belongs to, the way a reply's does — `15.C2w`. Deleting the choice
+  // takes the reason's address with it rather than leaving a stray number.
+  Reason: "",
+  Variable: "V",
 };
 
 export interface SheetRow {
@@ -99,6 +117,10 @@ export interface SheetDocument {
     replies: number;
     speakers: number;
     mentions: number;
+    /** v0.72.0 — locked options carrying a sentence the writer wrote. */
+    reasons: number;
+    /** v0.72.0 — variables with a name a reader is allowed to see. */
+    variableNames: number;
   };
 }
 
