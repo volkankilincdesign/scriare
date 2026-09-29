@@ -154,13 +154,17 @@ export default async function run({ page, api, check, seedProject, app }) {
     const { normalizeChoiceStyles } = window.__scriareChoiceStyles;
 
     // A real branching story, wide enough that the sample has to choose:
-    // a spine of 30 scenes where each of the first few offers two choices.
+    // a spine of 70 scenes where each of the first few offers two choices.
+    // Seventy rather than thirty since v0.74.0, because the cap that has
+    // to be exercised moved from twenty to fifty — a thirty-scene fixture
+    // now fits whole, and a check that a cap is applied cannot be made by
+    // a story that never reaches it.
     const scenes = [];
     const content = [];
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 70; i++) {
       const next = [];
-      if (i < 29) next.push(`s${i + 1}`);
-      if (i < 6 && i + 7 < 30) next.push(`s${i + 7}`);
+      if (i < 69) next.push(`s${i + 1}`);
+      if (i < 6 && i + 7 < 70) next.push(`s${i + 7}`);
       scenes.push({
         id: `s${i}`,
         title: `Scene ${i}`,
@@ -242,17 +246,21 @@ export default async function run({ page, api, check, seedProject, app }) {
       nodeAspect: shape.node.w / shape.node.h,
       flatNodes: buildStoryShape(flat).nodes,
       orphanFirst: (() => {
-        // Forty scenes whose CREATION order and whose STORY order disagree
-        // completely: the story runs s0 → s20 → s21 → … → s38, and s1–s19
-        // are scenes the writer made and never wired up. Taking the first
-        // twenty in array order gets twenty scenes with nothing between
-        // them — a map of twenty loose boxes, which says the story has no
-        // shape. This is the fixture that tells a breadth-first sample
-        // from a slice.
+        // Eighty scenes whose CREATION order and whose STORY order
+        // disagree completely: the story runs s0 → s60 → s61 → … → s79,
+        // and s1–s59 are scenes the writer made and never wired up.
+        // Taking the first fifty in array order gets fifty scenes with
+        // nothing between them — a map of fifty loose boxes, which says
+        // the story has no shape. This is the fixture that tells a
+        // breadth-first sample from a slice.
+        //
+        // The connected run sits at the END of the array and is smaller
+        // than the cap, so "the sample took it" is a fact about the walk
+        // rather than about there being room for everything.
         const sc = [];
         const co = [];
-        for (let i = 0; i < 40; i++) {
-          const next = i === 0 ? ["s20"] : i >= 20 && i < 38 ? [`s${i + 1}`] : [];
+        for (let i = 0; i < 80; i++) {
+          const next = i === 0 ? ["s60"] : i >= 60 && i < 79 ? [`s${i + 1}`] : [];
           sc.push({
             id: `s${i}`,
             title: `S${i}`,
@@ -275,12 +283,12 @@ export default async function run({ page, api, check, seedProject, app }) {
         }
         const wide = { ...project, scenes: sc, content: co, startSceneId: "s0" };
         const built = buildStoryShape(wide);
-        const firstTwenty = new Set(sc.slice(0, 20).map((x) => x.id));
+        const firstFifty = new Set(sc.slice(0, 50).map((x) => x.id));
         let naive = 0;
-        for (let i = 0; i < 40; i++) {
-          const next = i === 0 ? ["s20"] : i >= 20 && i < 38 ? [`s${i + 1}`] : [];
-          if (!firstTwenty.has(`s${i}`)) continue;
-          naive += next.filter((t) => firstTwenty.has(t)).length;
+        for (let i = 0; i < 80; i++) {
+          const next = i === 0 ? ["s60"] : i >= 60 && i < 79 ? [`s${i + 1}`] : [];
+          if (!firstFifty.has(`s${i}`)) continue;
+          naive += next.filter((t) => firstFifty.has(t)).length;
         }
         return { nodes: built.nodes.length, edges: built.edges.length, naiveEdges: naive };
       })(),
@@ -299,17 +307,98 @@ export default async function run({ page, api, check, seedProject, app }) {
     };
   });
 
+  // ── v0.74.0 — the shape is the writer's, exactly ──────────────────────
+  //
+  // Asked for as "I want the map's 100% exact shape that the user
+  // decided". Under the cap that means every scene and every connection,
+  // each connection carrying the route the real router worked out for it,
+  // so the card is the story the writer arranged rather than a sample of
+  // it that happens to resemble one.
+  const exact = await api(() => {
+    const { buildStoryShape } = window.__scriareRecentShape;
+    const { normalizeChoiceStyles } = window.__scriareChoiceStyles;
+    const sc = [];
+    const co = [];
+    // A chapter running down the page with a branch and a skip, which is
+    // the shape that forces a route to leave the column and come back.
+    for (let i = 0; i < 12; i += 1) {
+      const next = [];
+      if (i < 11) next.push(`s${i + 1}`);
+      if (i === 0) next.push("s5");
+      sc.push({
+        id: `s${i}`,
+        title: `S${i}`,
+        position: { x: 0, y: i * 146 },
+        content: {
+          type: "doc",
+          content: next.map((t) => ({
+            type: "choiceBlock",
+            content: [
+              {
+                type: "choiceOption",
+                attrs: { id: `k${i}${t}`, targetSceneId: t },
+                content: [{ type: "paragraph", content: [{ type: "text", text: "on" }] }],
+              },
+            ],
+          })),
+        },
+      });
+      co.push({ id: `s${i}`, kind: "leaf", category: "story", parentId: null, order: i, refType: "scene" });
+    }
+    const built = buildStoryShape({
+      id: "p", name: "Exact", createdAt: "", updatedAt: "", startSceneId: "s0",
+      scenes: sc, content: co, favorites: [], variables: [], entities: [],
+      choiceStyles: normalizeChoiceStyles(undefined),
+    });
+    // Does any route travel outside the box the CARDS sit in? A skip down
+    // a column has to, and the drawing has to know it did.
+    const cardRight = Math.max(...built.nodes.map((n) => n.x)) + built.node.w;
+    const cardBottom = Math.max(...built.nodes.map((n) => n.y)) + built.node.h;
+    let outside = false;
+    for (const flat of built.wires) {
+      for (let k = 0; k < flat.length; k += 2) {
+        if (flat[k] < 0 || flat[k] > cardRight + 1e-6) outside = true;
+        if (flat[k + 1] < 0 || flat[k + 1] > cardBottom + 1e-6) outside = true;
+      }
+    }
+    return {
+      nodes: built.nodes.length,
+      total: built.total,
+      edges: built.edges.length,
+      routed: built.wires.filter((w) => w.length >= 4).length,
+      corners: built.wires.map((w) => w.length / 2),
+      outside,
+      w: built.w,
+      h: built.h,
+      cardRight,
+      cardBottom,
+    };
+  });
+
+  check("every scene of a story under the cap is in its shape",
+    exact.nodes === exact.total && exact.total === 12, `${exact.nodes} of ${exact.total}`);
+  check("...and every connection carries a route",
+    exact.routed === exact.edges && exact.edges === 12, `${exact.routed} of ${exact.edges}`);
+  check("a route is corner points, not a curve",
+    exact.corners.every((n) => n >= 2), `points per route: ${exact.corners.join(",")}`);
+  check("a route that skips down a column leaves the column — the control",
+    exact.outside === true,
+    `cards end at ${exact.cardRight} × ${exact.cardBottom}`);
+  check("...and the drawing's extent covers where it went",
+    exact.w >= exact.cardRight - 1e-6 && exact.h >= exact.cardBottom - 1e-6,
+    `extent ${exact.w} × ${exact.h} against cards ${exact.cardRight} × ${exact.cardBottom}`);
+
   check(
     "a story's shape is sampled, not stored whole",
-    shapeFacts.sampled === shapeFacts.max && shapeFacts.total === 30,
+    shapeFacts.sampled === shapeFacts.max && shapeFacts.total === 70,
     `${shapeFacts.sampled} of ${shapeFacts.total} scenes`,
   );
 
   check(
     "the sample follows the STORY, not the order the scenes were made in",
-    shapeFacts.orphanFirst.edges >= shapeFacts.orphanFirst.nodes - 1,
+    shapeFacts.orphanFirst.edges >= 19,
     `${shapeFacts.orphanFirst.edges} edges between ${shapeFacts.orphanFirst.nodes} nodes ` +
-      `(taking the first twenty in array order would give ${shapeFacts.orphanFirst.naiveEdges})`,
+      `(taking the first fifty in array order would give ${shapeFacts.orphanFirst.naiveEdges})`,
   );
 
   check(
@@ -1038,6 +1127,44 @@ export default async function run({ page, api, check, seedProject, app }) {
       cardAspect: rects[0].w / rects[0].h,
     };
   }, fixtures.widePositions);
+
+  // v0.74.0 — what the drawing looks like, as drawn. The checks above are
+  // about the arithmetic; these two are about the picture, and both were
+  // reported rather than predicted.
+  const drawn = await api(() => {
+    const svg = document.querySelector("main ul li button [data-story-map]");
+    if (!svg) return null;
+    const box = svg.viewBox.baseVal;
+    const paths = [...svg.querySelectorAll("path")];
+    const shapes = [...paths, ...svg.querySelectorAll("rect")];
+    let closest = Infinity;
+    for (const el of shapes) {
+      const b = el.getBBox();
+      closest = Math.min(
+        closest,
+        b.x - box.x,
+        b.y - box.y,
+        box.x + box.width - (b.x + b.width),
+        box.y + box.height - (b.y + b.height),
+      );
+    }
+    return {
+      paths: paths.length,
+      curved: paths.filter((el) => (el.getAttribute("d") || "").includes("C")).length,
+      closest: Math.round(closest * 10) / 10,
+    };
+  });
+
+  check("the map draws the routes, not curves",
+    drawn !== null && drawn.paths > 0 && drawn.curved === 0,
+    `${drawn?.paths} wires, ${drawn?.curved} of them curved`);
+
+  // Reported: "please give a small margin to the borders of the drawn
+  // map, it does not look premium". The drawing used to be scaled to fill
+  // the panel exactly, so the outermost card sat flush against the edge.
+  check("...and keeps its distance from the panel's edge",
+    drawn !== null && drawn.closest >= 6,
+    `closest anything comes to the edge: ${drawn?.closest}px`);
 
   check(
     "every scene is in the drawing",

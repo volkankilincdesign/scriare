@@ -91,6 +91,18 @@ export interface RouteResult {
    * one lands off the wire entirely whenever the route detours.
    */
   labels: Map<string, { x: number; y: number }>;
+  /**
+   * The same routes as their corner points, before they were turned into
+   * a path string (v0.74.0).
+   *
+   * The Welcome screen's story maps need this: a cached map is the drawing
+   * scaled by one number, and you cannot scale an SVG path string without
+   * re-emitting it. Points scale by multiplication, and the corner radius
+   * is then chosen at the size the thing is actually drawn rather than
+   * shrunk along with everything else into a corner that is no longer
+   * round.
+   */
+  polylines: Map<string, { x: number; y: number }[]>;
   stats: RouteStats;
 }
 
@@ -456,10 +468,15 @@ export function orthoPath(points: { x: number; y: number }[], radius = 10): stri
 function boardRoute(
   boxes: AnchorBox[],
   wires: WireEnds[],
-): { paths: Map<string, string>; labels: Map<string, { x: number; y: number }> } {
+): {
+  paths: Map<string, string>;
+  labels: Map<string, { x: number; y: number }>;
+  polylines: Map<string, { x: number; y: number }[]>;
+} {
   const taken: { vertical: boolean; at: number; lo: number; hi: number }[] = [];
   const paths = new Map<string, string>();
   const labels = new Map<string, { x: number; y: number }>();
+  const polylines = new Map<string, { x: number; y: number }[]>();
 
   const crosses = (pts: { x: number; y: number }[], w: WireEnds): boolean =>
     boxes.some((b) => {
@@ -509,6 +526,7 @@ function boardRoute(
       if (!crosses(straight, w)) {
         paths.set(w.link.id, orthoPath(straight));
         labels.set(w.link.id, midpointOf(straight));
+        polylines.set(w.link.id, straight);
         continue;
       }
     }
@@ -553,8 +571,9 @@ function boardRoute(
     taken.push({ vertical, at, lo: span[0], hi: span[1] });
     paths.set(w.link.id, orthoPath(found));
     labels.set(w.link.id, midpointOf(found));
+    polylines.set(w.link.id, found);
   }
-  return { paths, labels };
+  return { paths, labels, polylines };
 }
 
 const now = (): number =>
@@ -646,15 +665,17 @@ export function routeWires(
     return {
       paths: new Map(),
       labels: new Map(),
+      polylines: new Map(),
       stats: { ms: 0, routed: 0, failed: 0, passes: 0, mode: "aware" },
     };
   }
 
   if (boxes.length > boardAbove) {
-    const { paths, labels } = boardRoute(boxes, wires);
+    const { paths, labels, polylines } = boardRoute(boxes, wires);
     return {
       paths,
       labels,
+      polylines,
       stats: {
         ms: +(now() - t0).toFixed(1),
         routed: paths.size,
@@ -742,17 +763,20 @@ export function routeWires(
 
   const paths = new Map<string, string>();
   const labels = new Map<string, { x: number; y: number }>();
+  const polylines = new Map<string, { x: number; y: number }[]>();
   for (const w of wires) {
     const nodes = laid.get(w);
     if (!nodes) continue;
     const points = toPoints(grid, nodes, w);
     paths.set(w.link.id, orthoPath(points));
     labels.set(w.link.id, midpointOf(points));
+    polylines.set(w.link.id, points);
   }
 
   return {
     paths,
     labels,
+    polylines,
     stats: {
       ms: +(now() - t0).toFixed(1),
       routed: paths.size,

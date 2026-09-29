@@ -2,6 +2,7 @@ import type { JSONContent } from "@tiptap/react";
 import type { Project } from "../types/project";
 import { extractChoices } from "./choiceBlocks";
 import { SCENE_NODE_HEIGHT, SCENE_NODE_WIDTH } from "./graphConstants";
+import { routeWires } from "./wireRouter";
 
 /**
  * The cached story shape (v0.53.0).
@@ -16,11 +17,17 @@ import { SCENE_NODE_HEIGHT, SCENE_NODE_WIDTH } from "./graphConstants";
  * So the shape is written at a moment the app is already writing to disk —
  * a save — and stored beside the project's entry in recent-projects.json.
  * What is stored is deliberately not the story: it is up to
- * MAX_SHAPE_NODES node positions normalised into the unit square, plus the
- * edges between them as index pairs. No titles, no prose, no ids. That
- * matters twice over — it is under a kilobyte (see SHAPE_BUDGET_BYTES and
- * the test that measures a real one), and recent-projects.json lives in
- * userData, where a writer has no reason to expect their prose to be.
+ * MAX_SHAPE_NODES node positions normalised into the unit square, the
+ * edges between them as index pairs, and since v0.74.0 the ROUTE of each
+ * of those edges, as its corner points. No titles, no prose, no ids —
+ * recent-projects.json lives in userData, where a writer has no reason to
+ * expect their prose to be.
+ *
+ * The routes are cached rather than worked out on the Welcome screen
+ * because routing a fifty-scene map costs 64ms, and a shelf of eight would
+ * have been half a second added to every launch for a picture that does
+ * not change between launches. The story is already in memory at a save
+ * and the app is already writing; that is the moment to pay.
  *
  * A story saved by an older version has no shape yet. That is a state the
  * UI draws, not an error: the card shows the graph's own dot field — an
@@ -35,7 +42,7 @@ export interface StoryShape {
    * backfill redraws it. Migrating those would mean guessing at an aspect
    * ratio that was thrown away; redrawing takes one file read.
    */
-  v: 2;
+  v: 3;
   /**
    * Node TOP-LEFT positions, in units where 1.0 is the longer side of the
    * story's own bounding box. Both axes share that one scale, so the
@@ -45,11 +52,34 @@ export interface StoryShape {
   nodes: { x: number; y: number }[];
   /** Edges as [fromIndex, toIndex] into `nodes`. */
   edges: [number, number][];
+  /**
+   * Each edge's route, as a flat list of corner coordinates in the same
+   * units as `nodes` — x, y, x, y (v0.74.0). Same order as `edges`.
+   *
+   * Routed at save time, where the story is already in memory and the app
+   * is already writing to disk, rather than on the Welcome screen. Routing
+   * a fifty-scene map costs 64ms; a shelf of eight would have been half a
+   * second added to every launch, for a picture that does not change
+   * between launches.
+   *
+   * Stored as points rather than as SVG path strings because a map is the
+   * drawing multiplied by one number, and points multiply. A path string
+   * would have to be re-emitted, and its rounded corners would shrink with
+   * the drawing until they were not round.
+   */
+  wires: number[][];
   /** Index of the start scene in `nodes`, or -1 when it was not sampled. */
   start: number;
   /** How many scenes the story actually has — `nodes.length` is the sample. */
   total: number;
-  /** The graph's extent in the same units. One of these is always 1. */
+  /**
+   * The DRAWING's extent in the same units. One of these is always 1.
+   *
+   * v0.74.0 — the drawing, not the cards. A routed wire that goes around
+   * the outermost scene travels outside the box the cards sit in, and a
+   * card sized to the cards alone clips it against the panel edge. The
+   * extent now covers every corner of every route as well.
+   */
   w: number;
   h: number;
   /** A scene card's size in the same units, so the drawing is a miniature. */
@@ -81,7 +111,7 @@ export interface StoryShape {
  * which is what it actually is, and why the panel draws the graph's own
  * dot field behind the drawing rather than leaving a void.
  */
-export const SHAPE_FORMAT = 2;
+export const SHAPE_FORMAT = 3;
 
 /**
  * Is this stored shape one this version knows how to draw?
@@ -100,6 +130,7 @@ export function isDrawableShape(shape: unknown): shape is StoryShape {
       s.v === SHAPE_FORMAT &&
       Array.isArray(s.nodes) &&
       s.nodes.length > 0 &&
+      Array.isArray(s.wires) &&
       s.node &&
       typeof s.w === "number" &&
       typeof s.h === "number",
@@ -107,15 +138,36 @@ export function isDrawableShape(shape: unknown): shape is StoryShape {
 }
 
 /**
- * Twenty is the number of nodes a 372×104 card can draw and a person can
- * still read as a shape. Forty fits geometrically and reads as static;
- * ten stops distinguishing a spine from a fan, which is the only thing the
- * picture is for.
+ * Fifty (v0.74.0, asked for: "I want the map's 100% exact shape that the
+ * user decided").
+ *
+ * It was twenty, and the reasoning written here was about legibility —
+ * that forty "reads as static". That was the wrong thing to optimise and
+ * the wrong call. A card drawn from twenty of a writer's thirty-two scenes
+ * is not a less detailed picture of their story, it is a picture of a
+ * different story: twelve scenes missing, and whichever connections went
+ * with them. The whole reason the Welcome screen carries a picture is that
+ * a writer recognises a story by its shape, and a shape that is not theirs
+ * cannot do that job however clean it looks.
+ *
+ * Fifty is where it stops being exact and starts being the opening of the
+ * story — see sampleSceneIds, which walks out from the start scene, so
+ * what a long story shows is the part it begins with, connected, rather
+ * than fifty scenes scattered across the canvas.
  */
-export const MAX_SHAPE_NODES = 20;
+export const MAX_SHAPE_NODES = 50;
 
-/** What one cached shape may cost. Asserted against a real story in tests. */
-export const SHAPE_BUDGET_BYTES = 1024;
+/**
+ * What one cached shape may cost. Asserted against a real story in tests.
+ *
+ * Was 1024, when a shape was twenty positions and their edge pairs. It now
+ * carries up to fifty positions and the corner points of every route
+ * between them, which is the whole point of it. Eight of these is around
+ * 60KB of JSON read once at launch and parsed in under a millisecond; the
+ * budget exists so the file cannot quietly become the story, not because
+ * bytes there are expensive.
+ */
+export const SHAPE_BUDGET_BYTES = 12288;
 
 function round3(n: number): number {
   return Math.round(n * 1000) / 1000;
@@ -213,26 +265,6 @@ export function buildStoryShape(project: Project): StoryShape | null {
     return { x: scene?.position?.x ?? 0, y: scene?.position?.y ?? 0 };
   });
 
-  // The bounding box includes the cards themselves, not just their
-  // top-left corners — otherwise the rightmost card hangs off the edge of
-  // its own drawing by a whole card width.
-  const minX = Math.min(...positions.map((p) => p.x));
-  const minY = Math.min(...positions.map((p) => p.y));
-  const maxX = Math.max(...positions.map((p) => p.x)) + SCENE_NODE_WIDTH;
-  const maxY = Math.max(...positions.map((p) => p.y)) + SCENE_NODE_HEIGHT;
-  const spanX = maxX - minX;
-  const spanY = maxY - minY;
-
-  // One scale, the longer side. See SHAPE_FORMAT for why this is the
-  // whole difference between a scale model and a different graph.
-  const longest = Math.max(spanX, spanY);
-  const scale = longest > 0 ? 1 / longest : 0;
-
-  const nodes = positions.map((p) => ({
-    x: round3((p.x - minX) * scale),
-    y: round3((p.y - minY) * scale),
-  }));
-
   const edges: [number, number][] = [];
   const written = new Set<string>();
   for (const [sourceId, targets] of edgesBySource) {
@@ -252,17 +284,112 @@ export function buildStoryShape(project: Project): StoryShape | null {
   }
 
   const startId = project.startSceneId;
+  return layoutToShape(
+    positions,
+    edges,
+    startId && index.has(startId) ? (index.get(startId) as number) : -1,
+    project.scenes.length,
+  );
+}
+
+/**
+ * Canvas positions and edges in, a cached shape out.
+ *
+ * Its own function (v0.74.0) so the Welcome screen's illustration goes
+ * through exactly the same machinery as a real story — routed by the real
+ * router, normalised by the same arithmetic. Its comment has claimed since
+ * v0.53.0 that it is "drawn by exactly the code that draws a real story";
+ * hand-written route points would have made that false the moment the maps
+ * started carrying routes.
+ */
+export function layoutToShape(
+  positions: { x: number; y: number }[],
+  edges: [number, number][],
+  start: number,
+  total: number,
+): StoryShape {
+  // The bounding box includes the cards themselves, not just their
+  // top-left corners — otherwise the rightmost card hangs off the edge of
+  // its own drawing by a whole card width.
+  const minX = Math.min(...positions.map((p) => p.x));
+  const minY = Math.min(...positions.map((p) => p.y));
+  const maxX = Math.max(...positions.map((p) => p.x)) + SCENE_NODE_WIDTH;
+  const maxY = Math.max(...positions.map((p) => p.y)) + SCENE_NODE_HEIGHT;
+  const spanX = maxX - minX;
+  const spanY = maxY - minY;
+
+  // ── the routes ────────────────────────────────────────────────────────
+  //
+  // Routed in CANVAS coordinates, where a scene card is 180×56 and a lane
+  // is 18px, and then scaled down with everything else. Routing in the
+  // card's own pixels was measured and is wrong twice over: a scene there
+  // is about twenty pixels by six, so the margin the router keeps around
+  // an obstacle is three times the height of the obstacle — it costs three
+  // times as long and cannot place a third of the wires at all.
+  const routeBoxes = positions.map((p, i) => ({
+    id: String(i),
+    x: p.x - minX,
+    y: p.y - minY,
+    width: SCENE_NODE_WIDTH,
+    height: SCENE_NODE_HEIGHT,
+  }));
+  const routeLinks = edges.map(([from, to], i) => ({
+    id: `e${i}`,
+    source: String(from),
+    target: String(to),
+    ordinal: i,
+  }));
+  const routed = routeWires(routeBoxes, routeLinks);
+
+  // A wire that had to go around the outermost card travels outside the
+  // box the cards sit in. The drawing is therefore bigger than the cards,
+  // and the card it is drawn in has to know that or it clips it.
+  let drawMinX = 0;
+  let drawMinY = 0;
+  let drawMaxX = spanX;
+  let drawMaxY = spanY;
+  const wires: number[][] = edges.map((_, i) => {
+    const points = routed.polylines.get(`e${i}`);
+    if (!points) return [];
+    const flat: number[] = [];
+    for (const point of points) {
+      if (point.x < drawMinX) drawMinX = point.x;
+      if (point.y < drawMinY) drawMinY = point.y;
+      if (point.x > drawMaxX) drawMaxX = point.x;
+      if (point.y > drawMaxY) drawMaxY = point.y;
+      flat.push(point.x, point.y);
+    }
+    return flat;
+  });
+
+  const drawW = drawMaxX - drawMinX;
+  const drawH = drawMaxY - drawMinY;
+  const longestDrawn = Math.max(drawW, drawH);
+  const s2 = longestDrawn > 0 ? 1 / longestDrawn : 0;
+
   return {
     v: SHAPE_FORMAT,
-    nodes,
+    // Re-based and re-scaled against the DRAWING's box rather than the
+    // cards', so one multiplication still puts everything where it goes.
+    nodes: positions.map((p) => ({
+      x: round3((p.x - minX - drawMinX) * s2),
+      y: round3((p.y - minY - drawMinY) * s2),
+    })),
     edges,
-    start: startId && index.has(startId) ? (index.get(startId) as number) : -1,
-    total: project.scenes.length,
-    w: round3(spanX * scale),
-    h: round3(spanY * scale),
+    wires: wires.map((flat) => {
+      const out: number[] = [];
+      for (let i = 0; i < flat.length; i += 2) {
+        out.push(round3((flat[i] - drawMinX) * s2), round3((flat[i + 1] - drawMinY) * s2));
+      }
+      return out;
+    }),
+    start,
+    total,
+    w: round3(drawW * s2),
+    h: round3(drawH * s2),
     node: {
-      w: round5(SCENE_NODE_WIDTH * scale),
-      h: round5(SCENE_NODE_HEIGHT * scale),
+      w: round5(SCENE_NODE_WIDTH * s2),
+      h: round5(SCENE_NODE_HEIGHT * s2),
     },
   };
 }

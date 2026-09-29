@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { isDrawableShape } from "../../utils/recentShape";
+import { orthoPath } from "../../utils/wireRouter";
 import type { StoryShape } from "../../utils/recentShape";
 
 interface StoryMapProps {
@@ -114,24 +115,40 @@ function Graph({ shape, width, height }: { shape: StoryShape; width: number; hei
 
   return (
     <>
-      <g fill="none" stroke="var(--border)" strokeWidth={1.25}>
+      <g fill="none" stroke="var(--border)" strokeWidth={1.25} strokeLinejoin="round" strokeLinecap="round">
         {shape.edges.map(([from, to], i) => {
+          // The route the story's own router worked out, at save time, in
+          // canvas coordinates — replayed here at whatever size this card
+          // happens to be (v0.74.0). It used to be a cubic out of the
+          // right edge into the next card's left, which was the rule the
+          // Story Graph itself used until v0.73.0; leaving it here would
+          // have made the map a picture of a graph the app no longer
+          // draws.
+          const flat = shape.wires?.[i];
+          if (flat && flat.length >= 4) {
+            const points: { x: number; y: number }[] = [];
+            for (let k = 0; k < flat.length; k += 2) {
+              points.push({
+                x: offsetX + flat[k] * scale,
+                y: offsetY + flat[k + 1] * scale,
+              });
+            }
+            // The corner radius is chosen HERE, at the size the thing is
+            // drawn, rather than scaled down with the drawing until it is
+            // no longer a corner. Never more than a third of the shortest
+            // run, so a short jog stays a jog.
+            return <path key={`${from}-${to}-${i}`} d={orthoPath(points, 4)} />;
+          }
+          // A connection the router could not place keeps a straight line
+          // between the two cards rather than disappearing: a map that
+          // silently drops a connection is a map of a different story.
           const a = at(from);
           const b = at(to);
           if (!a || !b) return null;
-          // Out of a card's right edge, into the next card's left edge,
-          // with the control points pulled horizontally — the same cubic
-          // the Story Graph draws, so a map and the canvas it came from
-          // look like the same thing seen from further away.
-          const x1 = a.x + nodeW;
-          const y1 = a.y + nodeH / 2;
-          const x2 = b.x;
-          const y2 = b.y + nodeH / 2;
-          const bend = Math.max(6, Math.abs(x2 - x1) * 0.45);
           return (
             <path
               key={`${from}-${to}-${i}`}
-              d={`M${x1} ${y1} C ${x1 + bend} ${y1}, ${x2 - bend} ${y2}, ${x2} ${y2}`}
+              d={`M${a.x + nodeW / 2} ${a.y + nodeH / 2} L${b.x + nodeW / 2} ${b.y + nodeH / 2}`}
             />
           );
         })}

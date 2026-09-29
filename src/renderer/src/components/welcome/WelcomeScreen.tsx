@@ -6,7 +6,7 @@ import { useShapeBackfill } from "./useShapeBackfill";
 import { BrandMark } from "../common/BrandMark";
 import { Button } from "../common/Button";
 import { VersionTag } from "../common/VersionTag";
-import { RESUME_LABEL, readResume } from "../../utils/recentShape";
+import { RESUME_LABEL, layoutToShape, readResume } from "../../utils/recentShape";
 import type { ResumeKind, StoryShape } from "../../utils/recentShape";
 
 interface RecentEntry {
@@ -216,25 +216,31 @@ export function WelcomeScreen() {
  * drawn by exactly the code that draws a real story, and cannot drift into
  * looking like something the app does not produce.
  */
-const ILLUSTRATION: StoryShape = {
-  v: 2,
+const ILLUSTRATION: StoryShape = layoutToShape(
   // Five columns 280 canvas units apart, rows 120 apart — the spacing a
   // real story gets from Auto Layout, so the illustration is a story
   // somebody could actually have laid out rather than a decoration.
-  // Expressed in the cached format's own units: 1.0 is the longer side of
-  // the bounding box, and the scene cards are in those units too.
-  nodes: [
-    { x: 0, y: 0.154 },
-    { x: 0.215, y: 0.154 },
-    { x: 0.431, y: 0.062 },
-    { x: 0.431, y: 0.246 },
-    { x: 0.646, y: 0.062 },
-    { x: 0.646, y: 0.246 },
-    { x: 0.862, y: 0 },
-    { x: 0.862, y: 0.154 },
-    { x: 0.862, y: 0.308 },
+  //
+  // In CANVAS units (v0.74.0), not in the cached format's own units. It
+  // used to be written out already normalised, with its extent and card
+  // size worked out by hand — which was fine while a shape was only
+  // positions, and became untenable the moment a shape started carrying
+  // the route of every connection. Handing the real function a real
+  // layout keeps the promise this comment has made since v0.53.0: the
+  // illustration is drawn by exactly the code that draws a story, and
+  // cannot drift into looking like something the app does not produce.
+  [
+    { x: 0, y: 240 },
+    { x: 280, y: 240 },
+    { x: 560, y: 120 },
+    { x: 560, y: 360 },
+    { x: 840, y: 120 },
+    { x: 840, y: 360 },
+    { x: 1120, y: 0 },
+    { x: 1120, y: 240 },
+    { x: 1120, y: 480 },
   ],
-  edges: [
+  [
     [0, 1],
     [1, 2],
     [1, 3],
@@ -245,12 +251,9 @@ const ILLUSTRATION: StoryShape = {
     [5, 7],
     [5, 8],
   ],
-  start: 0,
-  total: 9,
-  w: 1,
-  h: 0.351,
-  node: { w: 0.138, h: 0.043 },
-};
+  0,
+  9,
+);
 
 function EmptyShelf({ onStart }: { onStart: () => void }) {
   return (

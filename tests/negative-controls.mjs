@@ -700,10 +700,15 @@ const CONTROLS = [
     // The bug that shipped twice: each axis stretched to fill the panel,
     // which multiplies every vertical distance by panelAspect/graphAspect
     // — 3.2× for a real story — and draws a graph nobody laid out.
+    // v0.74.0 — same sabotage, new line. The normalisation moved when the
+    // shape started carrying routes: it is now against the DRAWING's box
+    // rather than the cards', so both the variable names and the origin
+    // changed. Re-aimed rather than retired, because the property it
+    // defends — one scale for both axes — did not change at all.
     name: "each axis stretched to fill the card",
     file: src("utils/recentShape.ts"),
-    from: "    x: round3((p.x - minX) * scale),\n    y: round3((p.y - minY) * scale),",
-    to: "    x: round3(spanX === 0 ? 0 : (p.x - minX) / spanX),\n    y: round3(spanY === 0 ? 0 : (p.y - minY) / spanY),",
+    from: "      x: round3((p.x - minX - drawMinX) * s2),\n      y: round3((p.y - minY - drawMinY) * s2),",
+    to: "      x: round3(drawW === 0 ? 0 : (p.x - minX - drawMinX) / drawW),\n      y: round3(drawH === 0 ? 0 : (p.y - minY - drawMinY) / drawH),",
     spec: "welcome",
     expect: "SCALE MODEL",
   },
@@ -2324,6 +2329,50 @@ const CONTROLS = [
     to: "    if (true) return empty;",
     spec: "graph-wires",
     expect: "followed the card rather than staying where it was",
+  },
+  // ─── v0.74.0 — the Welcome screen's maps ────────────────────────────
+  {
+    // Back to a sample. A card drawn from twenty of a writer's thirty-two
+    // scenes is not a less detailed picture of their story, it is a
+    // picture of a different one.
+    name: "a story map that draws only some of the story again",
+    file: src("utils/recentShape.ts"),
+    from: "export const MAX_SHAPE_NODES = 50;",
+    to: "export const MAX_SHAPE_NODES = 8;",
+    spec: "welcome",
+    expect: "every scene of a story under the cap is in its shape",
+  },
+  {
+    // The routes stop being cached. The map still draws — it falls back
+    // to a straight line between the two cards — so nothing about the
+    // arithmetic notices; what goes red is the picture.
+    name: "a map whose connections carry no route",
+    file: src("utils/recentShape.ts"),
+    from: "  const routed = routeWires(routeBoxes, routeLinks);",
+    to: "  const routed = { polylines: new Map() } as ReturnType<typeof routeWires>;",
+    spec: "welcome",
+    expect: "every connection carries a route",
+  },
+  {
+    // The drawing measured by the CARDS rather than by what was drawn. A
+    // route that had to go around the outermost scene then falls outside
+    // the box and is clipped against the panel edge.
+    name: "a drawing sized to the cards, so a detour is clipped off it",
+    file: src("utils/recentShape.ts"),
+    from: "  const drawW = drawMaxX - drawMinX;\n  const drawH = drawMaxY - drawMinY;",
+    to: "  const drawW = spanX;\n  const drawH = spanY;",
+    spec: "welcome",
+    expect: "the drawing's extent covers where it went",
+  },
+  {
+    // The margin, gone. Reported as "it does not look premium", which is
+    // a real complaint about a drawing scaled to fill the panel exactly.
+    name: "a map drawn flush against the edge of its panel",
+    file: src("components/welcome/StoryMap.tsx"),
+    from: "const PAD = 10;",
+    to: "const PAD = 0;",
+    spec: "welcome",
+    expect: "keeps its distance from the panel's edge",
   },
   {
     // Dim-on-select, off. The geometry is untouched, so nothing in the

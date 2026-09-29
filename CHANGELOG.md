@@ -12,6 +12,71 @@ omitting them.
 
 ---
 
+## v0.74.0 — The shelf draws the story you actually arranged
+
+The Welcome screen carries a picture of every recent story, because a
+writer with nine of them does not recognise one by its name. Two things
+were wrong with that picture, and the first is worse than it sounds.
+
+**It was not your story.** `buildStoryShape` capped at **twenty scenes**
+and sampled them by walking out from the start. A thirty-two scene story
+was therefore drawn with twelve scenes missing and whichever connections
+went with them — not a less detailed picture of the story, a picture of a
+different one. The comment defending that cap argued about legibility:
+that forty scenes "reads as static". That was the wrong thing to optimise.
+A shape that is not yours cannot do the one job the picture exists for,
+however clean it looks.
+
+**The cap is now fifty**, which for most stories means every scene and
+every connection. Past fifty it stops being exact and becomes the opening
+of the story — the walk still starts at your start scene, so a long story
+shows the part it begins with, connected, rather than fifty scenes
+scattered across the canvas.
+
+**And the wires are routed now,** by the same obstacle-aware router the
+Story Graph uses since v0.73.0, so the card is the picture the canvas
+draws seen from further away rather than a picture of a graph the app no
+longer produces.
+
+**Where that cost is paid took measuring.** Routing in the card's own
+pixels is the obvious thing and it is wrong twice over: a scene card there
+is about **twenty pixels by six**, so the margin the router keeps around an
+obstacle is three times the height of the obstacle. That costs 195ms a card
+and cannot place a third of the wires at all. Routed in canvas coordinates
+and multiplied by one number, the same router costs 32ms and places every
+one — which is also the rule the map has followed since v0.53.2: it is a
+scale model, not a diagram.
+
+**The routes are cached at save time,** not worked out on the Welcome
+screen. A fifty-scene map costs 64ms to route, and a shelf of eight would
+have been half a second added to every launch for a picture that does not
+change between launches. The story is already in memory at a save and the
+app is already writing to disk; that is the moment to pay. A shape is now
+around 5KB instead of 700 bytes, which is a file in userData read once per
+launch and parsed in under a millisecond.
+
+**Two things the drawing did not know about itself.** A routed wire that
+goes around the outermost scene travels outside the box the cards sit in,
+so a drawing measured by its cards clips that wire against the panel edge —
+the extent now covers every corner of every route. And the drawing was
+scaled to fill the panel exactly, which put the outermost card flush
+against the border. Reported as *"it does not look premium"*, which is
+exactly right.
+
+The Welcome screen's own illustration — the story drawn on a first launch,
+before there is anything on the shelf — used to be a hand-written shape
+with its extent and card size worked out by hand. Its comment has claimed
+since v0.53.0 that it is "drawn by exactly the code that draws a real
+story"; that was true while a shape was only positions and would have
+become a lie the moment shapes carried routes. It is now a real layout
+handed to the real builder.
+
+Every cached shape written before this is treated as no shape at all and
+redrawn from the story file — the same migration the v2 format went
+through, using the backfill that already exists for it.
+
+---
+
 ## v0.73.1 — A wire follows the card you are holding
 
 Reported within the hour of v0.73.0: picking a scene up turned its

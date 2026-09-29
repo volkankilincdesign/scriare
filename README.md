@@ -144,6 +144,15 @@ lives in.
   engine's row list — because "Save As CSV" on a Turkish Windows writes semicolons
   and CP1254 and quietly mangles both.
 
+**The shelf**
+
+- The Welcome screen draws every recent story's **map** — the exact
+  arrangement you made, every scene and every connection up to fifty, with
+  the wires routed by the same router the canvas uses. You recognise a
+  story by whether it fans out early, runs as a spine or loops, long before
+  you recognise its file name. Routed once when the story is saved, so the
+  screen whose job is to get out of the way stays as fast as it was.
+
 **Everywhere**
 
 - Project-wide **undo** for every structural action, which never rolls back
@@ -166,7 +175,7 @@ lives in.
 
 ## Status
 
-**v0.73.1 — in active development, and usable.** The editor, graph,
+**v0.74.0 — in active development, and usable.** The editor, graph,
 runtime, entities, notes, variables, validation, search and **export** are
 all real, and the app now builds a Windows installer. See
 [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest list of what
@@ -186,8 +195,8 @@ screen. Clicking it copies the version, your platform and the engine
 underneath — paste that into the report and neither of us has to guess
 which build you were on.
 
-**894 automated tests** run against the real packaged application, and
-**246 negative controls**: each one breaks a specific line of the shipped
+**901 automated tests** run against the real packaged application, and
+**250 negative controls**: each one breaks a specific line of the shipped
 source on purpose and checks that a named assertion fails. A test that has
 never been seen to fail proves nothing, and several times now a control
 has failed to catch its sabotage — each time a finding about the test
