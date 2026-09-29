@@ -223,15 +223,67 @@ export default async function ({ page, api, check, seedProject, app }) {
     return {
       heading: dialog?.querySelector("h2, h3")?.textContent?.trim() ?? null,
       swatches: dialog?.querySelectorAll("[data-theme]").length ?? 0,
-      back: [...(dialog?.querySelectorAll("button") ?? [])]
-        .map((b) => b.textContent.trim())
-        .filter((t) => /back/i.test(t)),
     };
   });
   check("Preferences is where the themes went",
     dom.swatches >= 8, `${dom.swatches} swatches under "${dom.heading}"`);
-  check("...and it offers the way back to where you came from",
-    dom.back.length === 1, dom.back.join(" / "));
+
+  // ── 5. a child dialog says what it is part of, in one place ───────────
+  //
+  // Reported: Choice Styles drew the way back as a line above its heading
+  // and Preferences as a ghost button in the footer, eight versions after
+  // v0.55.0 settled which it should be. The rule had exactly one dialog
+  // obeying it and no check, so the second one drifted.
+  //
+  // Checked on EVERY dialog that has a parent, not on the one that
+  // prompted the report — the whole failure was a rule stated once and
+  // applied once.
+  const backShape = () =>
+    page.evaluate(() => {
+      const dialog = document.querySelector('[role="dialog"]');
+      if (!dialog) return null;
+      const link = dialog.querySelector("[data-dialog-back]");
+      const heading = dialog.querySelector("h2, h3");
+      const buttons = [...dialog.querySelectorAll("button")];
+      // The footer is the last row of buttons in the card. Its job is the
+      // dialog's commitments, and nothing else belongs in it.
+      const footer = dialog.querySelector(".justify-end");
+      return {
+        title: heading?.textContent?.trim() ?? null,
+        hasLink: Boolean(link),
+        // Above the heading, which is what makes it a breadcrumb rather
+        // than one more thing to press.
+        aboveHeading:
+          link && heading
+            ? link.getBoundingClientRect().bottom <= heading.getBoundingClientRect().top + 1
+            : false,
+        footerButtons: footer ? [...footer.querySelectorAll("button")].map((b) => b.textContent.trim()) : [],
+        strayBack: buttons
+          .filter((b) => !b.hasAttribute("data-dialog-back"))
+          .map((b) => b.textContent.trim())
+          .filter((t) => /back/i.test(t)),
+      };
+    });
+
+  let shape = await backShape();
+  check("Preferences names the dialog it came from",
+    shape?.hasLink === true, `link: ${shape?.hasLink}`);
+  check("...above its own heading, not among the buttons",
+    shape?.aboveHeading === true && shape?.strayBack.length === 0,
+    `above: ${shape?.aboveHeading}, stray: ${shape?.strayBack.join(", ") || "none"}`);
+  check("...leaving the footer to say only that you are done",
+    shape?.footerButtons.length === 1, shape?.footerButtons.join(" / "));
+
+  // The same rule, on the dialog that has had it right since v0.55.0 —
+  // so this is a check on the CONVENTION rather than on one screen.
+  await page.keyboard.press("Escape");
+  await wait(300);
+  await api(() => window.__scriareUIStore.getState().openChoiceStyles("settings"));
+  await wait(400);
+  shape = await backShape();
+  check("Choice Styles does the same thing, the same way",
+    shape?.hasLink === true && shape?.aboveHeading === true && shape?.strayBack.length === 0,
+    `${shape?.title}: link ${shape?.hasLink}, above ${shape?.aboveHeading}`);
 
   await page.keyboard.press("Escape");
   await wait(300);

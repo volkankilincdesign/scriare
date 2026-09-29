@@ -2405,6 +2405,30 @@ const CONTROLS = [
     expect: "Preferences is where the themes went",
   },
 
+  {
+    // The way back as a footer button again — the shape v0.75.0 shipped
+    // and v0.75.1 corrected. Both dialogs still offer a route home, so an
+    // assertion that merely counts routes stays green; what goes red is
+    // WHERE it sits.
+    name: "a child dialog offering its way out among the buttons that commit",
+    file: src("components/layout/PreferencesDialog.tsx"),
+    from: "        back={\n          cameFrom === \"settings\"",
+    to: "        back={\n          false",
+    spec: "story-details",
+    expect: "above its own heading, not among the buttons",
+  },
+  {
+    // The rule applied to one dialog and not the other, which is exactly
+    // how it drifted the first time: Choice Styles obeyed it for eight
+    // versions while nothing checked that anything else did.
+    name: "the breadcrumb rule kept for one dialog only",
+    file: src("components/choices/ChoiceStylesDialog.tsx"),
+    from: "  const cameFromSettings = useUIStore((s) => s.choiceStylesFrom) === \"settings\";",
+    to: "  const cameFromSettings = false;",
+    spec: "story-details",
+    expect: "Choice Styles does the same thing, the same way",
+  },
+
   // ─── v0.74.0 — the Welcome screen's maps ────────────────────────────
   {
     // Back to a sample. A card drawn from twenty of a writer's thirty-two

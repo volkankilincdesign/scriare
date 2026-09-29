@@ -12,6 +12,35 @@ omitting them.
 
 ---
 
+## v0.75.1 — The way back, in one place
+
+Preferences shipped with its "Back to Project Settings" drawn as a ghost
+button in the footer, beside Done. Choice Styles — the only other dialog in
+exactly that relationship, opened from Settings and told where it came from
+— has drawn the same link as a line above its own heading since v0.55.0.
+Two answers to one question, twenty versions after the question was
+settled, with the component that settles it one import away.
+
+The header is right on its own merits, not merely because it came first. A
+footer holds a dialog's **commitments** — what becomes of what you changed
+— and this is not one: a theme applies the instant you click a swatch, so
+there is nothing to commit or cancel, and a third button in that row
+invites you to weigh "go back" against "done" as though they were
+alternatives. A breadcrumb is a statement of **where you are**, and that
+has to be legible on arrival rather than after scrolling to the end —
+Project Settings is 713px tall, so a footer link can be off-screen at
+precisely the moment somebody looks for it. A title says what a dialog
+*is*; a breadcrumb says what it is *part of*. `DialogHeader` takes both
+because they are one sentence.
+
+The real defect was that the rule had no enforcement point. It lived in a
+comment, so it drifted the first time a new dialog was written. It is now
+checked on **every** child dialog: the link exists, it sits above the
+heading, no stray back-button hides among the footer's buttons, and that
+footer holds exactly one. Two negative controls hold it there — one moves
+the way out back among the buttons that commit, one keeps the rule for a
+single dialog and lets the other drift.
+
 ## v0.75.0 — The story says what it is
 
 Three of the five gaps the v0.63.0 audit found were one gap wearing three

@@ -13,6 +13,15 @@
  * So the relationship is drawn instead of stacked: one line at the top of
  * the child dialog, naming the parent, above the child's own heading.
  *
+ * ONE MARK, `data-dialog-back`, added v0.75.1. The rule this component
+ * exists to state — a child dialog names its parent ABOVE its own heading,
+ * rather than offering a way out among the buttons that commit — had no
+ * enforcement point, and drifted the first time a second child dialog was
+ * written: Preferences shipped with the way back as a ghost button in the
+ * footer beside Done. The mark is how the spec finds the link on every
+ * dialog that has a parent and checks where it sits, rather than checking
+ * the one dialog somebody remembered.
+ *
  * ESCAPE STILL CLOSES EVERYTHING rather than stepping back one level.
  * Stepping back is the other defensible rule and it was considered — it is
  * what a nested settings screen does elsewhere — but Escape and the
@@ -26,6 +35,7 @@ export function DialogBackLink({ label, onBack }: { label: string; onBack: () =>
     <button
       type="button"
       onClick={onBack}
+      data-dialog-back
       className="-ml-1.5 mb-2 flex items-center gap-1.5 rounded px-1.5 py-1 text-xs text-[var(--text-3)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
     >
       <svg

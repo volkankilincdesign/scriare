@@ -32,6 +32,25 @@ interface PreferencesDialogProps {
  * out of habit, and told where it came from so it can offer the way back —
  * the same arrangement Choice Styles has had since v0.55.0, for the same
  * reason.
+ *
+ * THE WAY BACK IS A BREADCRUMB, NOT A BUTTON (v0.75.1, reported). This
+ * shipped with "Back to Project Settings" as a ghost button in the footer,
+ * beside Done, while Choice Styles — the only other dialog in exactly this
+ * relationship — drew it as a line above its own heading. Two answers to
+ * one question, eight versions after the question was settled, with the
+ * component that settles it one import away.
+ *
+ * The header is the right place on its own merits, not only because it is
+ * the existing one. A footer holds a dialog's COMMITMENTS — what happens
+ * to what you changed — and this is not one: a theme applies the moment
+ * you click a swatch, so there is nothing here to commit or cancel, and a
+ * third button in that row invites the reader to weigh "go back" against
+ * "done" as if they were alternatives. A breadcrumb is a statement of
+ * WHERE YOU ARE, which has to be legible on arrival rather than after
+ * scrolling to the end — Project Settings is 713px tall, so in the footer
+ * the way back can be off-screen at exactly the moment somebody looks for
+ * it. And a title says what a dialog is while a breadcrumb says what it is
+ * part of: one sentence, which is why DialogHeader takes both.
  */
 export function PreferencesDialog({ onClose }: PreferencesDialogProps) {
   const cameFrom = useUIStore((s) => s.preferencesFrom);
@@ -40,14 +59,29 @@ export function PreferencesDialog({ onClose }: PreferencesDialogProps) {
 
   return (
     <Modal onClose={onClose} onEnter={onClose} widthClassName="max-w-md">
-      <DialogHeader title="Preferences" />
+      <DialogHeader
+        title="Preferences"
+        back={
+          cameFrom === "settings"
+            ? {
+                label: "Project Settings",
+                onBack: () => {
+                  // A swap, not a stack — see DialogBackLink.
+                  onClose();
+                  useUIStore.getState().openSettings();
+                },
+              }
+            : undefined
+        }
+      >
+        How the app looks on this computer. None of it is saved in the story.
+      </DialogHeader>
 
       <label className="scriare-section-label mb-1 block text-[var(--text-3)]">
         Appearance
       </label>
       <p className="mb-2.5 text-xs text-[var(--text-3)]">
-        Eight themes. Applies instantly, remembered between sessions, and not
-        saved in the story.
+        Eight themes. Applies instantly, and is remembered between sessions.
       </p>
       {/* Four columns rather than two, now that there are eight (v0.44.0):
           a theme is chosen by looking, so they have to be on screen at once
@@ -65,22 +99,12 @@ export function PreferencesDialog({ onClose }: PreferencesDialogProps) {
         ))}
       </div>
 
+      {/* One button, always. Nothing here is a draft — the theme applied
+          the moment it was clicked — so Done is a dismissal rather than a
+          commitment, and there is nothing for a Cancel to undo. Same shape
+          as Choice Styles' footer, which is the other dialog that changes
+          the project as you touch it. */}
       <div className="flex justify-end gap-2">
-        {/* The way back, when there is one to go back to. A writer who
-            opened this from Project Settings was in the middle of
-            something; sending them to the top bar to start again is the
-            dead end v0.55.0 exists to have closed. */}
-        {cameFrom === "settings" && (
-          <Button
-            intent="ghost"
-            onClick={() => {
-              onClose();
-              useUIStore.getState().openSettings();
-            }}
-          >
-            Back to Project Settings
-          </Button>
-        )}
         <Button intent="primary" onClick={onClose}>
           Done
         </Button>
