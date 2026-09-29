@@ -2313,6 +2313,19 @@ const CONTROLS = [
     expect: "Auto Layout arranges the scenes INSIDE a group",
   },
   {
+    // Dragging falls back to whatever was routed before the drag started —
+    // which is the shape the first release of this actually shipped with,
+    // reported within the hour. The wire stays a LINE, so an assertion
+    // about curves would not have caught it; what goes red is that the
+    // line no longer starts where the card now is.
+    name: "a dragged scene whose wires stay where the scene used to be",
+    file: src("components/graph/FlowPanel.tsx"),
+    from: "    if (!project || !dragging) return empty;",
+    to: "    if (true) return empty;",
+    spec: "graph-wires",
+    expect: "followed the card rather than staying where it was",
+  },
+  {
     // Dim-on-select, off. The geometry is untouched, so nothing in the
     // layout or routing checks notices — which is the point of having it.
     name: "selecting a scene that no longer clears the view around it",

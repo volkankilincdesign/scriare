@@ -28,7 +28,7 @@ import {
   SCENE_NODE_WIDTH,
   snapRect,
 } from "../../utils/graphConstants";
-import { routeWires } from "../../utils/wireRouter";
+import { routeDragged, routeWires } from "../../utils/wireRouter";
 import {
   COLLAPSED_GROUP_SIZE,
   contentIndex,
@@ -528,6 +528,61 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
    */
   const edgeCache = useRef(newSignatureCache<Edge>());
 
+  // Which group (if any) currently encloses a scene, mapped once per
+  // render — a scene inside a group that is being dragged has to ride along
+  // with it, and walking the content tree per scene per drag frame is
+  // exactly the kind of per-pointer-move work the v0.10.3 pitfall is about.
+  const groupOfScene = useMemo(() => {
+    const map = new Map<string, string>();
+    if (!project) return map;
+    // Deepest-first, because innermost wins: a scene two levels down
+    // belongs to the box that directly holds it, and that box is itself
+    // carried by its parent. `graphGroups` returns parents first, so the
+    // walk is reversed.
+    //
+    // This used to do the whole thing TWICE — fill the map parents-first,
+    // then `map.clear()` and redo it reversed — so the first pass's entire
+    // output was unreachable. `graphGroups` is not cheap (it runs
+    // `deriveMissingRects`, a `folderSubtree` per rect-less folder plus a
+    // spread-based min/max per group) and this memo is keyed on `project`,
+    // so both halves ran on every keystroke; one of them for nothing.
+    const groups = graphGroups(project.content, project.scenes).slice().reverse();
+    for (const group of groups) {
+      const subtree = folderSubtree(project.content, group.id);
+      subtree.delete(group.id);
+      for (const id of subtree) if (!map.has(id)) map.set(id, group.id);
+    }
+    return map;
+  }, [project]);
+
+  /**
+   * The group boxes as they are right now.
+   *
+   * Memoized because the two drag handlers below read it on every
+   * pointer-move, to decide which box a dragged scene is hovering over —
+   * and each of them used to call `graphGroups(...)` itself, rebuilding
+   * every group's rectangle from scratch per frame while the `nodes` memo
+   * was doing the same thing in the same frame. Group geometry is a pure
+   * function of `project`, which cannot change mid-drag (v0.49.0).
+   */
+  const groupsNow = useMemo(
+    () => (project ? graphGroups(project.content, project.scenes) : []),
+    [project],
+  );
+
+  /** The live drag offset a scene inherits from whichever group is carrying it. */
+  function groupOffsetFor(sceneId: string): DragOffset | undefined {
+    if (!frameDrag) return undefined;
+    let current = groupOfScene.get(sceneId);
+    let guard = 0;
+    while (current && guard++ < 32) {
+      const offset = frameDrag.get(current);
+      if (offset) return offset;
+      current = project?.content.find((n) => n.id === current)?.parentId ?? undefined;
+    }
+    return undefined;
+  }
+
   /**
    * Every wire's shape, worked out once for the whole canvas (v0.73.0).
    *
@@ -580,8 +635,83 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     return { paths: result.paths, labels: result.labels };
   }, [project, edgesBase]);
 
-  // A wire cannot be routed and dragged at once — see `routes` above.
   const dragging = Boolean(frameDrag || sceneDrag || frameResize);
+
+  /**
+   * The wires of whatever is being dragged, redrawn for this frame.
+   *
+   * The first version of this let a dragged scene's wires fall back to the
+   * bezier for the duration of the drag, on the grounds that the full
+   * router costs a tenth of a second and cannot run sixty times a second.
+   * The first half of that is true and the conclusion was wrong: watching
+   * four connections turn back into curves the moment you pick a card up
+   * says the lines were a decoration rather than what a connection IS.
+   *
+   * So a drag gets the cheap router rather than no router — one turn,
+   * first free lane, still refusing to cross a card — and only for the
+   * handful of wires whose ends actually moved. Every other wire keeps the
+   * path the real router already gave it, because nothing about it changed:
+   * dragging one scene has never been a reason to redraw the other sixty.
+   */
+  const dragRoutes = useMemo(() => {
+    const empty = {
+      paths: new Map<string, string>(),
+      labels: new Map<string, { x: number; y: number }>(),
+      moved: new Set<string>(),
+    };
+    if (!project || !dragging) return empty;
+
+    const hidden = hiddenSceneIds(project);
+    const movedBoxes = new Set<string>();
+    const boxes = [
+      ...project.scenes
+        .filter((scene) => !hidden.has(scene.id))
+        .map((scene) => {
+          // Same precedence the `nodes` memo uses: a scene inside a group
+          // being dragged rides along with the group; one dragged directly
+          // carries its own offset.
+          const offset = groupOffsetFor(scene.id) ?? sceneDrag?.get(scene.id);
+          if (offset) movedBoxes.add(scene.id);
+          return {
+            id: scene.id,
+            x: scene.position.x + (offset?.dx ?? 0),
+            y: scene.position.y + (offset?.dy ?? 0),
+            width: SCENE_NODE_WIDTH,
+            height: SCENE_NODE_HEIGHT,
+          };
+        }),
+      ...graphGroups(project.content, project.scenes)
+        .filter((group) => !group.hidden && group.collapsed)
+        .map((group) => {
+          const offset = frameDrag?.get(group.id);
+          const resizing = frameResize?.frameId === group.id;
+          if (offset || resizing) movedBoxes.add(group.id);
+          return {
+            id: group.id,
+            x: resizing ? frameResize.x : group.rect.x + (offset?.dx ?? 0),
+            y: resizing ? frameResize.y : group.rect.y + (offset?.dy ?? 0),
+            width: COLLAPSED_GROUP_SIZE.width,
+            height: COLLAPSED_GROUP_SIZE.height,
+          };
+        }),
+    ];
+
+    const links = edgesBase.map((edge) => ({
+      id: edge.id,
+      source: edge.source,
+      target: edge.target,
+      ordinal: (edge.data as { ordinal?: number } | undefined)?.ordinal ?? 0,
+    }));
+    const moved = new Set(
+      links
+        .filter((link) => movedBoxes.has(link.source) || movedBoxes.has(link.target))
+        .map((link) => link.id),
+    );
+    const result = routeDragged(boxes, links, moved);
+    return { paths: result.paths, labels: result.labels, moved };
+    // `groupOffsetFor` closes over `frameDrag`, `groupOfScene` and
+    // `project`, all of which are listed.
+  }, [project, edgesBase, dragging, frameDrag, sceneDrag, frameResize, groupOfScene]);
 
   /**
    * What stays lit when something is selected (v0.73.0).
@@ -654,10 +784,13 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       // graph zoomed out is a picture of the shape of the story, and the
       // shape doesn't need the numbering.
       const readable = zoom >= LABEL_MIN_ZOOM;
-      // The routed path, unless a drag is in flight — then nothing, and
-      // RoutedEdge falls back to the bezier that follows the cursor.
-      const path = dragging ? undefined : routes.paths.get(edge.id);
-      const at = path ? routes.labels.get(edge.id) : undefined;
+      // A wire whose ends moved this frame takes the cheap route worked
+      // out for the drag; everything else keeps the one the real router
+      // gave it. Neither is a reason to fall back to a curve.
+      const onTheMove = dragRoutes.moved.has(edge.id);
+      const source = onTheMove ? dragRoutes : routes;
+      const path = source.paths.get(edge.id);
+      const at = path ? source.labels.get(edge.id) : undefined;
       // Lit when either end is part of what is selected; faded when
       // something is selected and this is not part of it.
       const dimmed = Boolean(litIds) && !isConnectedToSelected;
@@ -700,62 +833,8 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       });
       return reuseBySignature(edgeCache.current, edge.id, sig, build);
     });
-  }, [edgesBase, selectedSceneId, selectedGraphIds, zoom, routes, dragging, litIds]);
+  }, [edgesBase, selectedSceneId, selectedGraphIds, zoom, routes, dragRoutes, litIds]);
 
-  // Which group (if any) currently encloses a scene, mapped once per
-  // render — a scene inside a group that is being dragged has to ride along
-  // with it, and walking the content tree per scene per drag frame is
-  // exactly the kind of per-pointer-move work the v0.10.3 pitfall is about.
-  const groupOfScene = useMemo(() => {
-    const map = new Map<string, string>();
-    if (!project) return map;
-    // Deepest-first, because innermost wins: a scene two levels down
-    // belongs to the box that directly holds it, and that box is itself
-    // carried by its parent. `graphGroups` returns parents first, so the
-    // walk is reversed.
-    //
-    // This used to do the whole thing TWICE — fill the map parents-first,
-    // then `map.clear()` and redo it reversed — so the first pass's entire
-    // output was unreachable. `graphGroups` is not cheap (it runs
-    // `deriveMissingRects`, a `folderSubtree` per rect-less folder plus a
-    // spread-based min/max per group) and this memo is keyed on `project`,
-    // so both halves ran on every keystroke; one of them for nothing.
-    const groups = graphGroups(project.content, project.scenes).slice().reverse();
-    for (const group of groups) {
-      const subtree = folderSubtree(project.content, group.id);
-      subtree.delete(group.id);
-      for (const id of subtree) if (!map.has(id)) map.set(id, group.id);
-    }
-    return map;
-  }, [project]);
-
-  /**
-   * The group boxes as they are right now.
-   *
-   * Memoized because the two drag handlers below read it on every
-   * pointer-move, to decide which box a dragged scene is hovering over —
-   * and each of them used to call `graphGroups(...)` itself, rebuilding
-   * every group's rectangle from scratch per frame while the `nodes` memo
-   * was doing the same thing in the same frame. Group geometry is a pure
-   * function of `project`, which cannot change mid-drag (v0.49.0).
-   */
-  const groupsNow = useMemo(
-    () => (project ? graphGroups(project.content, project.scenes) : []),
-    [project],
-  );
-
-  /** The live drag offset a scene inherits from whichever group is carrying it. */
-  function groupOffsetFor(sceneId: string): DragOffset | undefined {
-    if (!frameDrag) return undefined;
-    let current = groupOfScene.get(sceneId);
-    let guard = 0;
-    while (current && guard++ < 32) {
-      const offset = frameDrag.get(current);
-      if (offset) return offset;
-      current = project?.content.find((n) => n.id === current)?.parentId ?? undefined;
-    }
-    return undefined;
-  }
 
   /** True when this scene sits inside one of the groups being dragged. */
   function isInsideDraggedGroup(sceneId: string, draggedGroupIds: Set<string>): boolean {

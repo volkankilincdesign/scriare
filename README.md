@@ -76,7 +76,8 @@ lives in.
   heading for. Nothing is routed through a scene it has nothing to do with;
   crossing another wire at a right angle is cheap and reads as a plus,
   while running alongside one costs enough that a wire takes the next track
-  over instead. A connection carries its choice's number. Select a scene and
+  over instead — and a wire stays a line while you drag the card it is
+  attached to. A connection carries its choice's number. Select a scene and
   everything more than one step away fades out of the way — not to nothing,
   so the lit path still reads as a path through something. The splitter
   hands the graph as much of the window as you want, up to all of it.
@@ -165,7 +166,7 @@ lives in.
 
 ## Status
 
-**v0.73.0 — in active development, and usable.** The editor, graph,
+**v0.73.1 — in active development, and usable.** The editor, graph,
 runtime, entities, notes, variables, validation, search and **export** are
 all real, and the app now builds a Windows installer. See
 [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest list of what
@@ -185,8 +186,8 @@ screen. Clicking it copies the version, your platform and the engine
 underneath — paste that into the report and neither of us has to guess
 which build you were on.
 
-**890 automated tests** run against the real packaged application, and
-**245 negative controls**: each one breaks a specific line of the shipped
+**894 automated tests** run against the real packaged application, and
+**246 negative controls**: each one breaks a specific line of the shipped
 source on purpose and checks that a named assertion fails. A test that has
 never been seen to fail proves nothing, and several times now a control
 has failed to catch its sabotage — each time a finding about the test

@@ -197,10 +197,30 @@ with the whole story.
 | `components/graph/FlowPanel.tsx` | runs the router once per committed edit; dim-on-select |
 
 Routing is keyed on the *committed* geometry and deliberately not on the
-drag overlays beside it. A tenth of a second is nothing once per edit and
-impossible sixty times a second, so a wire whose scene is mid-drag has no
-current path and falls back to the bezier, which follows the cursor for
-free. That is the arrangement, not a gap in it.
+drag overlays beside it: a tenth of a second is nothing once per edit and
+impossible sixty times a second.
+
+**v0.73.1 — what a drag gets instead.** The first release concluded from
+that "no router during a drag", and a scene's wires fell back to the bezier
+until you let go. Reported within the hour, and rightly: watching four
+connections turn back into curves the moment you pick a card up says the
+lines were a decoration rather than what a connection is. The right
+conclusion was "the *cheap* router during a drag" — one turn, first free
+lane, still refusing to cross a card, and only for the wires whose ends
+moved. Everything else keeps the path it already had, because dragging one
+scene has never been a reason to redraw the other sixty. Measured at
+**0.28ms a frame**.
+
+One wire in that path is drawn without checking what is under it: the
+mid-drag fallback for a wire the cheap router cannot place. It is the only
+such line in the file and it is narrow — mid-drag the cards are being
+pulled over each other on purpose, so "no legal route" is common and says
+nothing about an arrangement anybody will keep. Nothing from it is ever
+saved or shown at rest.
+
+The check asserts that the wire's start point **moved with the card**,
+rather than that it is not a curve: a stale path is a straight line too,
+and just as wrong.
 
 ## The two controls that failed first
 

@@ -293,5 +293,77 @@ export default async function ({ page, api, check, seedProject }) {
   check("...without hiding it — the rest of the story is still there",
     after.Far > 0, `Far at ${after.Far}`);
 
+  // ── 7. a wire follows the card you are holding ────────────────────────
+  //
+  // Reported the day this shipped: picking a scene up turned its wires
+  // back into curves for the duration of the drag, because the full router
+  // costs a tenth of a second and cannot run sixty times a second. True,
+  // and the wrong conclusion — a drag gets the CHEAP router rather than no
+  // router at all.
+  //
+  // Asserted as "the start point moved with the card" rather than as "it
+  // is not a curve", because a STALE path is a straight line too and is
+  // just as wrong. This catches the curve, the stale path, and no path.
+  const firstPoint = () =>
+    page.evaluate(() => {
+      const path = [...document.querySelectorAll(".react-flow__edge-path")][0];
+      if (!path) return null;
+      const d = path.getAttribute("d") || "";
+      const m = d.match(/M\s*(-?[\d.]+)[,\s]+(-?[\d.]+)/);
+      return m ? { x: Number(m[1]), y: Number(m[2]), curved: d.includes("C") } : null;
+    });
+
+  const atRest = await firstPoint();
+  check("the one wire is drawn as a line to begin with — the control",
+    atRest !== null && atRest.curved === false, JSON.stringify(atRest));
+
+  const grab = await page.evaluate(() => {
+    const card = [...document.querySelectorAll(".scriare-scene-card")].find((c) =>
+      c.textContent.startsWith("Near"),
+    );
+    const r = card.getBoundingClientRect();
+    return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+  });
+  await page.mouse.move(grab.x, grab.y);
+  await page.mouse.down();
+  for (let i = 1; i <= 8; i += 1) {
+    await page.mouse.move(grab.x - i * 10, grab.y + i * 6);
+    await page.waitForTimeout(16);
+  }
+  const held = await firstPoint();
+  await page.mouse.up();
+  await page.waitForTimeout(400);
+
+  check("while the card is held, its wire is still a line",
+    held !== null && held.curved === false, JSON.stringify(held));
+  check("...and it followed the card rather than staying where it was",
+    held !== null && atRest !== null && held.x < atRest.x - 20 && held.y > atRest.y + 10,
+    `${JSON.stringify(atRest)} → ${JSON.stringify(held)}`);
+
+  // And it is affordable, which is the reason the first version did not
+  // do it at all: the cheap router over one busy card's wires, sixty
+  // times, on a story the size of a real one.
+  const cost = await api(() => {
+    const boxes = [];
+    const links = [];
+    for (let i = 0; i < 32; i += 1) {
+      boxes.push({ id: `s${i}`, x: (i % 6) * 280, y: Math.floor(i / 6) * 150, width: 180, height: 56 });
+    }
+    for (let i = 0; i < 32; i += 1) {
+      for (let k = 1; k <= 2; k += 1) {
+        const t = (i + k) % 32;
+        if (t !== i) links.push({ id: `l${i}-${k}`, source: `s${i}`, target: `s${t}`, ordinal: k });
+      }
+    }
+    const affected = new Set(
+      links.filter((l) => l.source === "s7" || l.target === "s7").map((l) => l.id),
+    );
+    const t0 = performance.now();
+    for (let i = 0; i < 60; i += 1) window.__scriareWires.routeDragged(boxes, links, affected);
+    return { wires: affected.size, perFrame: +((performance.now() - t0) / 60).toFixed(2) };
+  });
+  check("a drag frame costs a fraction of one",
+    cost.perFrame < 8, `${cost.wires} wires moving, ${cost.perFrame}ms per frame`);
+
   await seedProject();
 }

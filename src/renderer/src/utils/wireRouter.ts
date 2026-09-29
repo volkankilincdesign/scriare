@@ -566,6 +566,71 @@ export interface RouteOptions {
   boardAbove?: number;
 }
 
+/**
+ * The wires of a scene being dragged, redrawn for this frame (v0.73.0).
+ *
+ * The full router costs about a tenth of a second, which is fine once per
+ * edit and absurd sixty times a second — so the first version of this let a
+ * dragged scene's wires fall back to the bezier until the drag committed.
+ * That was reported immediately, and rightly: the whole point of the
+ * release is that a connection is a line, and watching four of them turn
+ * back into curves the moment you pick a card up says the lines were a
+ * decoration rather than the truth.
+ *
+ * So a drag gets the CHEAP router instead of no router. One turn, first
+ * free lane, still refusing to cross a card — no search, no rip-up, and
+ * only for the handful of wires whose ends actually moved. Everything else
+ * keeps the path it was already given, because nothing about it changed.
+ *
+ * The anchors are still worked out over EVERY link, not just the moving
+ * ones: a wire arriving at a stationary scene shares that card's edge with
+ * its siblings, and allocating slots from a subset would have it hop to a
+ * different slot for the duration of the drag and snap back on release.
+ */
+export function routeDragged(
+  boxes: AnchorBox[],
+  links: AnchorLink[],
+  affected: ReadonlySet<string>,
+): { paths: Map<string, string>; labels: Map<string, { x: number; y: number }> } {
+  if (affected.size === 0) return { paths: new Map(), labels: new Map() };
+  const wires = wireEnds(boxes, links).filter((w) => affected.has(w.link.id));
+  if (wires.length === 0) return { paths: new Map(), labels: new Map() };
+  const { paths, labels } = boardRoute(boxes, wires);
+
+  // Anything the cheap router could not place gets a plain one-turn path
+  // anyway — and this is the ONE place in the file that draws a wire
+  // without checking what is under it.
+  //
+  // It is deliberate and it is narrow. Mid-drag the cards are being pulled
+  // over each other on purpose, so "no legal route exists" is common and
+  // means nothing: the arrangement under the cursor is not an arrangement
+  // anybody is going to keep. A line briefly crossing a card while you
+  // hold it is a far smaller lie than the wire turning into a curve, and
+  // the real router redraws it the instant the drag commits. Nothing here
+  // is ever saved or shown at rest.
+  for (const w of wires) {
+    if (paths.has(w.link.id)) continue;
+    const vertical = w.p1.nx === 0;
+    const points = vertical
+      ? [
+          { x: w.p1.x, y: w.p1.y },
+          { x: w.p1.x, y: (w.p1.y + w.p2.y) / 2 },
+          { x: w.p2.x, y: (w.p1.y + w.p2.y) / 2 },
+          { x: w.p2.x, y: w.p2.y },
+        ]
+      : [
+          { x: w.p1.x, y: w.p1.y },
+          { x: (w.p1.x + w.p2.x) / 2, y: w.p1.y },
+          { x: (w.p1.x + w.p2.x) / 2, y: w.p2.y },
+          { x: w.p2.x, y: w.p2.y },
+        ];
+    paths.set(w.link.id, orthoPath(points));
+    labels.set(w.link.id, midpointOf(points));
+  }
+
+  return { paths, labels };
+}
+
 export function routeWires(
   boxes: AnchorBox[],
   links: AnchorLink[],

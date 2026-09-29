@@ -12,6 +12,36 @@ omitting them.
 
 ---
 
+## v0.73.1 — A wire follows the card you are holding
+
+Reported within the hour of v0.73.0: picking a scene up turned its
+connections back into curves until you let go.
+
+That was deliberate and it was the wrong call. The reasoning had been that
+the obstacle-aware router costs about a tenth of a second, which is fine
+once per edit and impossible sixty times a second — both true — and the
+conclusion drawn from it was "no router during a drag". The right
+conclusion was "the cheap router during a drag": one turn, first free lane,
+still refusing to cross a card, and only for the handful of wires whose ends
+actually moved. Everything else keeps the path the real router already gave
+it, because dragging one scene has never been a reason to redraw the other
+sixty. **0.28ms a frame** for the wires of a busy card.
+
+A wire the cheap router cannot place mid-drag gets a plain one-turn path
+anyway — the only place in the file that draws a wire without checking what
+is under it. Mid-drag the cards are being pulled over each other on purpose,
+so "no legal route" is common and means nothing about the arrangement
+anybody will keep; a line briefly crossing a card while you hold it is a far
+smaller lie than the wire turning into a curve, and the real router redraws
+it the moment the drag commits.
+
+The check for this asserts that the wire's start point **moved with the
+card**, not that it is not a curve — a stale path is a straight line too,
+and just as wrong. Its negative control restores exactly the shipped bug and
+that is what goes red.
+
+---
+
 ## v0.73.0 — A wire that knows what is in its way
 
 Reported as *"they overlap too much and it is almost impossible to read
