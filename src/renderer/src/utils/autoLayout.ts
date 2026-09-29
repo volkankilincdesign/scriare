@@ -6,10 +6,24 @@ interface LayoutEdge {
   target: string;
 }
 
-/** Vertical gap between two cards in the same column — two grid cells. */
+/** Gap between two cards side by side in the same rank — two grid cells. */
 const GAP_BETWEEN_ROWS = 36;
-/** Horizontal gap between columns — six cells, room for a wire and its number. */
+/** Gap between ranks — six cells, room for a wire and its number. */
 const GAP_BETWEEN_COLUMNS = 108;
+
+/**
+ * The same two gaps for a chapter that runs DOWN the page (v0.73.0).
+ *
+ * They are not the sideways pair with the names swapped. Running down, the
+ * gap between one scene and the next is where a wire turns, and 36px is not
+ * enough room to turn in — a router with no lane to change into puts the
+ * wire through the card. Five cells gives it somewhere to go. Across, two
+ * branches of the same moment want to sit close enough to read as a pair
+ * rather than as two unrelated columns, and 90 is five cells of the dot
+ * field, which is one bright dot apart.
+ */
+const STACK_GAP_BETWEEN_RANKS = 90;
+const STACK_GAP_ACROSS = 90;
 
 /**
  * How far into the story each scene is: the LONGEST path to it from a scene
@@ -83,12 +97,15 @@ export function computeAutoLayout(
   nodeIds: string[],
   edges: LayoutEdge[],
   nodeSize?: (id: string) => { width: number; height: number } | undefined,
+  rankdir: "LR" | "TB" = "LR",
 ): Record<string, { x: number; y: number }> {
   const graph = new dagre.graphlib.Graph();
   // v0.43.0 — tighter than the 60/140 this shipped with, and both figures
   // are whole cells of the canvas grid (2 and 6), so a laid-out story and a
   // hand-dragged one are measured in the same unit.
-  graph.setGraph({ rankdir: "LR", nodesep: GAP_BETWEEN_ROWS, ranksep: GAP_BETWEEN_COLUMNS });
+  const nodesep = rankdir === "LR" ? GAP_BETWEEN_ROWS : STACK_GAP_ACROSS;
+  const ranksep = rankdir === "LR" ? GAP_BETWEEN_COLUMNS : STACK_GAP_BETWEEN_RANKS;
+  graph.setGraph({ rankdir, nodesep, ranksep });
   graph.setDefaultEdgeLabel(() => ({}));
 
   const idSet = new Set(nodeIds);
@@ -126,7 +143,7 @@ export function computeAutoLayout(
   });
 
   dagre.layout(graph);
-  straightenRuns(graph, nodeIds, live);
+  straightenRuns(graph, nodeIds, live, rankdir);
 
   const positions: Record<string, { x: number; y: number }> = {};
   nodeIds.forEach((id) => {
@@ -153,11 +170,20 @@ export function computeAutoLayout(
   return positions;
 }
 
-/** Vertical clearance kept between two cards in the same column. */
+/** Clearance kept between two cards sharing a rank. */
 const STRAIGHTEN_CLEARANCE = 12;
 
 /**
  * Pulls a scene onto the line of the scenes that lead to it (v0.43.0).
+ *
+ * v0.73.0 — the "line" is now whichever axis runs ACROSS the flow, rather
+ * than always the vertical one. Sideways that is unchanged and means what
+ * it always meant. Stacked, it is the horizontal position, and it is the
+ * difference between a chapter reading as a spine and reading as a
+ * staircase sliding downhill — which was most of what "logically true but
+ * not pleasing" was pointing at. The function was hard-coded to `.y`
+ * because until now there was only one direction; nobody had taught it the
+ * general rule, only the one case.
  *
  * Ranking by story depth (above) puts everything in the right column but
  * says nothing about height, and dagre decides that by a median rule that
@@ -179,7 +205,11 @@ function straightenRuns(
   graph: dagre.graphlib.Graph,
   nodeIds: string[],
   edges: LayoutEdge[],
+  rankdir: "LR" | "TB",
 ): void {
+  // The coordinate across the flow, and the size measured along it.
+  const cross = rankdir === "LR" ? "y" : "x";
+  const span = rankdir === "LR" ? "height" : "width";
   const known = new Set(nodeIds);
   const feeders = new Map<string, string[]>(nodeIds.map((id) => [id, []]));
   for (const edge of edges) {
@@ -202,17 +232,20 @@ function straightenRuns(
       // scene says nothing about where this one belongs.
       const earlier = feeders.get(id)!.filter((f) => rankOf(f) < rank);
       if (earlier.length === 0) continue;
-      const lines = new Set(earlier.map((f) => graph.node(f).y));
+      const lines = new Set(earlier.map((f) => graph.node(f)[cross] as number));
       if (lines.size !== 1) continue;
       const line = [...lines][0];
-      if (node.y === line) continue;
+      if (node[cross] === line) continue;
       const clash = byRank.get(rank)!.some((other) => {
         if (other === id) return false;
         const o = graph.node(other);
-        return Math.abs(o.y - line) < (o.height + node.height) / 2 + STRAIGHTEN_CLEARANCE;
+        return (
+          Math.abs((o[cross] as number) - line) <
+          ((o[span] as number) + (node[span] as number)) / 2 + STRAIGHTEN_CLEARANCE
+        );
       });
       if (clash) continue;
-      node.y = line;
+      node[cross] = line;
     }
   }
 }

@@ -67,9 +67,19 @@ lives in.
   groups that fold, and Auto Layout that arranges the inside of every
   chapter in a single undoable step, on a dotted canvas that shows its own
   scale. Everything on it moves, lands and resizes on that dot field's own
-  18px grid — hold Alt for the one card that has to sit between the lines. A connection carries its choice's number; point at one — or select
-  the scene — to read the choice itself. The splitter hands the graph as
-  much of the window as you want, up to all of it.
+  18px grid — hold Alt for the one card that has to sit between the lines.
+  A **chapter runs down the page** and the chapters stand side by side like
+  columns, so a story is a shape you can see at once rather than a ribbon
+  twenty-three times longer than it is deep.
+- **Wires that know what is in the way.** Each choice leaves from its own
+  point on the card, in the order you wrote it, on the side it is actually
+  heading for. Nothing is routed through a scene it has nothing to do with;
+  crossing another wire at a right angle is cheap and reads as a plus,
+  while running alongside one costs enough that a wire takes the next track
+  over instead. A connection carries its choice's number. Select a scene and
+  everything more than one step away fades out of the way — not to nothing,
+  so the lit path still reads as a path through something. The splitter
+  hands the graph as much of the window as you want, up to all of it.
 - **One hierarchy.** The folder in the sidebar and the box on the canvas
   are the same object: rearrange the picture and the tree follows.
 - **Characters and Locations** with pages, aliases and backlinks. `@` them
@@ -155,7 +165,7 @@ lives in.
 
 ## Status
 
-**v0.72.0 — in active development, and usable.** The editor, graph,
+**v0.73.0 — in active development, and usable.** The editor, graph,
 runtime, entities, notes, variables, validation, search and **export** are
 all real, and the app now builds a Windows installer. See
 [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest list of what
@@ -175,15 +185,18 @@ screen. Clicking it copies the version, your platform and the engine
 underneath — paste that into the report and neither of us has to guess
 which build you were on.
 
-**860 automated tests** run against the real packaged application, and
-**236 negative controls**: each one breaks a specific line of the shipped
+**890 automated tests** run against the real packaged application, and
+**245 negative controls**: each one breaks a specific line of the shipped
 source on purpose and checks that a named assertion fails. A test that has
 never been seen to fail proves nothing, and several times now a control
 has failed to catch its sabotage — each time a finding about the test
 rather than about the app, and each time the test is what got rewritten.
 The sharpest of them: a spec that asked the code under test which
 attributes to check, so deleting one made the code stop maintaining it and
-the test stop looking for it, both at once, in silence.
+the test stop looking for it, both at once, in silence. The most recent
+went the other way — a control stayed green because the *comment* it was
+defending made a claim that was not true, and the comment is what got
+rewritten.
 
 ## Running it
 

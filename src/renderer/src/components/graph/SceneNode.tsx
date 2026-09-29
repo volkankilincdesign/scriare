@@ -10,6 +10,8 @@ interface SceneNodeData {
   dialogue?: { inPage: number; exits: number } | null;
   isActive: boolean;
   isStart: boolean;
+  /** v0.73.0 — something else is selected, and this is not one step from it. */
+  dimmed?: boolean;
   [key: string]: unknown;
 }
 
@@ -31,11 +33,18 @@ interface SceneNodeData {
 const HANDLE_STYLE = { opacity: 0, pointerEvents: "none" as const };
 
 export function SceneNode({ data, selected }: NodeProps) {
-  const { label, choiceCount, dialogue, isActive, isStart } = data as SceneNodeData;
+  const { label, choiceCount, dialogue, isActive, isStart, dimmed } = data as SceneNodeData;
 
   return (
     <div
-      style={{ width: SCENE_NODE_WIDTH, height: SCENE_NODE_HEIGHT }}
+      // `opacity` rather than a colour change (v0.73.0): a dimmed card has
+      // to lose its border, its fill, its title and its badge all at once,
+      // and there is no way to say that in tokens without inventing a
+      // faded twin of every one of them. Not zero, and not close to it —
+      // the point is that the rest of the story is still THERE, just out
+      // of the way, so that the lit path reads as a path through something
+      // rather than as the only thing that exists.
+      style={{ width: SCENE_NODE_WIDTH, height: SCENE_NODE_HEIGHT, opacity: dimmed ? 0.28 : 1 }}
       // `scriare-scene-card` is a stable hook for the graph's CSS-only
       // drag-lift effect (see index.css) — it targets
       // `.react-flow__node.dragging .scriare-scene-card` directly, rather

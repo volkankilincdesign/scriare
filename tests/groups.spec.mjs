@@ -316,9 +316,21 @@ export default async function ({ api, check, seedProject }) {
     const rect = p.content.find((n) => n.id === "chap").rect;
     return { before, pos, rect };
   });
+  // v0.73.0 — DOWN the page, not across it. The claim this check exists to
+  // make is unchanged ("Auto Layout reaches inside a group at all", which
+  // it did not do before v0.29.0); only the direction a chapter runs has
+  // changed, and it changed on purpose. Still an ordering assertion rather
+  // than "the positions differ", because "they moved" is also true of a
+  // layout that scattered them.
   check("Auto Layout arranges the scenes INSIDE a group",
-    r.pos.a.x < r.pos.b.x && r.pos.b.x < r.pos.c.x,
-    `a.x=${r.pos.a.x} b.x=${r.pos.b.x} c.x=${r.pos.c.x} (must follow the a→b→c chain left to right)`);
+    r.pos.a.y < r.pos.b.y && r.pos.b.y < r.pos.c.y,
+    `a.y=${r.pos.a.y} b.y=${r.pos.b.y} c.y=${r.pos.c.y} (must follow the a→b→c chain down the page)`);
+
+  // ...and the chapter is a COLUMN, which is the other half of the change:
+  // a chain with nothing branching off it sits on one line.
+  check("...in one column, because nothing branches off that chain",
+    r.pos.a.x === r.pos.b.x && r.pos.b.x === r.pos.c.x,
+    `x: ${r.pos.a.x} / ${r.pos.b.x} / ${r.pos.c.x}`);
 
   check("every scene in the group ends up inside its box",
     ["a", "b", "c"].every(

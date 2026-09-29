@@ -136,8 +136,36 @@ export function computeGraphLayout(project: Project): LayoutResult | null {
     }
 
     const sizeById = new Map(members.map((m) => [m.id, { width: m.width, height: m.height }]));
-    const positions = computeAutoLayout([...memberIds], edges, (id) => sizeById.get(id));
+    // A chapter runs DOWN the page; the chapters themselves run across it
+    // (v0.73.0).
+    //
+    // Everything used to run left to right at every level, which is what
+    // produced The Blue Hour as 7,352px wide and 314px tall — a ribbon
+    // twenty-three times longer than it is deep, that you can never see at
+    // once and therefore can never read as a shape. Stacked, the same
+    // story is 2,893×1,156: two and a half to one, which fits on a screen.
+    // And a chapter that runs down the page is a thing a reader already has
+    // a model for, because that is what a chapter does.
+    const positions = computeAutoLayout(
+      [...memberIds],
+      edges,
+      (id) => sizeById.get(id),
+      containerId === null ? "LR" : "TB",
+    );
     localPositions.set(containerId ?? "", positions);
+
+    // Chapters line up along the top, like columns of a page.
+    //
+    // dagre staggers them by rank, which is right for arbitrary boxes and
+    // wrong for chapters: a chapter is not a step in a flow, it is a column
+    // of the story, and five columns starting at five different heights
+    // read as a mess rather than as an order. Only when EVERY root member
+    // is a chapter — a loose scene at the top level IS a step in a flow,
+    // and its rank is telling the truth about where it belongs.
+    if (containerId === null && members.length > 1 && members.every((m) => m.kind === "group")) {
+      const top = Math.min(...members.map((m) => positions[m.id].y));
+      for (const m of members) positions[m.id] = { x: positions[m.id].x, y: top };
+    }
 
     if (containerId) {
       // The group grows (or shrinks) to exactly hold what dagre just

@@ -62,6 +62,9 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./utils/contentIds"),
     import("./export/sheet/buildSheet"),
     import("../../shared/sheet/model"),
+    import("./utils/wireAnchors"),
+    import("./utils/wireRouter"),
+    import("./utils/autoLayoutGraph"),
   ]).then(
     ([
       projectStore,
@@ -102,6 +105,9 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       contentIds,
       sheetBuilder,
       sheetModel,
+      wireAnchors,
+      wireRouter,
+      autoLayoutGraph,
     ]) => {
       Object.assign(window, {
         __scriareProjectStore: projectStore.useProjectStore,
@@ -139,7 +145,12 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         // v0.43.0 — the layout rules are pure arithmetic, so the specs that
         // cover them build graphs and read the geometry back rather than
         // measuring a picture of one.
-        __scriareAutoLayout: autoLayout,
+        __scriareAutoLayout: { ...autoLayout, ...autoLayoutGraph },
+        // v0.73.0 — the anchor model and the router. Both are pure
+        // functions over boxes and links, so the specs hand them a story's
+        // geometry and read the paths back, rather than measuring a picture
+        // of a graph and hoping the pixels mean what they look like.
+        __scriareWires: { ...wireAnchors, ...wireRouter },
         // v0.44.0 — the theme list and the store that applies one, so the
         // themes spec can walk every theme rather than trusting a copy of
         // the list kept in the test.

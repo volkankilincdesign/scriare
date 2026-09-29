@@ -12,6 +12,89 @@ omitting them.
 
 ---
 
+## v0.73.0 — A wire that knows what is in its way
+
+Reported as *"they overlap too much and it is almost impossible to read
+which node is connected to which"*. Three separate facts turned up, and
+only one of them was the layout.
+
+**Every exit left from the same pixel.** One anchor in the middle of the
+right edge, out, one in the middle of the left edge, in — so four choices
+leaving a scene were, for their first stretch, the same line. Measured on
+The Blue Hour: 66 pairs of wires shared a starting point and 104 shared a
+finishing one. No routing separates two lines that begin at the same place,
+so every choice gets its own slot, in the order it sits on the page.
+
+**A chapter now runs DOWN the page.** Everything ran left to right at every
+level, which made the story 7,352px wide and 314px tall — a ribbon
+twenty-three times longer than it is deep, that you can never see at once
+and so can never read as a shape. Stacked, with the chapters lined up along
+the top like columns of a page, the same story is 2,952×1,082. Which
+immediately exposed the second fact:
+
+**A wire still left sideways to reach the scene directly below it,** swung
+out into empty canvas, turned and came back — so for its first forty pixels
+it pointed at the wrong scene. 64 of 72 wires were that shape. A wire now
+leaves the side it is heading towards: down the page it leaves the bottom
+and lands on the top, across it leaves the right, backwards it leaves the
+left, because that is where it goes. *This is the part that was not a
+matter of taste, and it was reported as one — "logically true but not
+pleasing".*
+
+**And the straightening pass only knew one direction.** It had pulled a
+scene onto its feeders' line since v0.43.0, on the vertical axis, because
+until now there was only one direction to pull on. Stacked, the axis across
+the flow is the horizontal one, and without that a chapter is a staircase
+sliding downhill rather than a spine.
+
+**Then the third fact: sixty wires passed underneath cards they had nothing
+to do with.** That is the worst of the three — a line crossing a scene
+looks like it *ends* there. So the canvas is now a place with things in it:
+
+- **A card is a hard obstacle.** Nothing routes through one, and there is no
+  code path that can draw a wire without asking. The forbidden rectangle is
+  the card *plus a pixel* — a line lying exactly along a border is legal by
+  the geometry and wrong by the eye.
+- **Another wire is a soft one,** and the two ways of meeting one are priced
+  very differently. Crossing at a right angle is nearly free, because a plus
+  sign is not ambiguous; running *along* the same line costs six times empty
+  canvas, so a wire takes the next 18px track rather than share. Since every
+  segment is axis-aligned, every crossing is exactly ninety degrees: two
+  parallel lines that read as one line are not reduced here, they are
+  impossible.
+- **Then rip-up-and-retry.** The wire routed first takes the good track and
+  can force a later one into a detour that makes no sense to look at, so the
+  worst quarter is torn out and routed again with the rest of the picture in
+  place, under a hard time budget — Auto Layout is one button press with an
+  undo behind it, and has to feel instant rather than converge beautifully.
+
+**It does not scale, and the limit is in the code rather than in a comment.**
+Measured on generated stories: 111ms at 32 scenes, 355ms at 100, 589ms at
+250 — and then 4.1 seconds at 500 and 39 at a thousand, because the grid
+grows on both axes at once and the search window stops helping once one
+chapter is bigger than the window. Past 300 boxes a cheap one-turn router
+runs instead. A wire *neither* can place comes back as nothing and is drawn
+the old way, which is the opposite of what the first attempt did: it had a
+give-up path that drew the wire anyway, unchecked, and that is exactly how a
+connection ended up running under two scenes.
+
+**And the cheapest part, which is not geometry at all:** select a scene and
+everything that is not it or one step from it fades to a quarter. Not to
+nothing — the point is that the rest of the story is still *there*, out of
+the way, so the lit path reads as a path through something.
+
+Two of the nine new negative controls failed first time, and both were
+findings about the control rather than the app. One asserted that spreading
+slots at even fractions costs you the card's centre line; it does not, an
+odd count owns the centre either way, and the comment in the source that
+claimed otherwise has been corrected rather than quietly deleted. The other
+aimed the straightening pass at the wrong axis and *collapsed* the chapter
+instead of tilting it, so a different assertion went red and the control
+reported nothing caught while having found a worse bug than it was looking
+for.
+
+---
+
 ## v0.72.0 — What a locked choice is allowed to say
 
 A locked option is shown to the player on purpose. The runtime's own

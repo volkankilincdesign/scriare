@@ -2211,6 +2211,117 @@ const CONTROLS = [
     spec: "sheet-export",
     expect: "an UNNAMED variable is not handed to a translator",
   },
+
+  // ─── v0.73.0 — the wires ────────────────────────────────────────────
+  {
+    // The whole premise of the anchor model. Back to one point per card,
+    // and four choices leave from the same pixel again.
+    name: "every choice leaving a scene from the same point again",
+    file: src("utils/wireAnchors.ts"),
+    from: "  const offset = (index - (count - 1) / 2) * pitch;",
+    to: "  const offset = 0;",
+    spec: "graph-wires",
+    expect: "three choices out of one scene leave from three different points",
+  },
+  {
+    // Slots at even fractions rather than on a fixed pitch.
+    //
+    // This control was written first against "the middle slot is on the
+    // card's centre line" and stayed GREEN, because at even fractions an
+    // odd count owns the centre too — the claim in the comment was simply
+    // false, and the control is what caught it. What the two schemes
+    // really disagree about is whether spacing is a constant or depends on
+    // how many choices a scene has, so that is what is asserted now.
+    name: "slots spread across the edge instead of set on the grid's pitch",
+    file: src("utils/wireAnchors.ts"),
+    from: "  const offset = (index - (count - 1) / 2) * pitch;",
+    to: "  const offset = ((index + 1) / (count + 1) - 0.5) * along;",
+    spec: "graph-wires",
+    expect: "two exits and four exits are spaced on the same pitch",
+  },
+  {
+    // The S-bend, restored: sides fixed to right/left whatever direction
+    // the wire actually travels in.
+    name: "a wire leaving sideways to reach the scene below it",
+    file: src("utils/wireAnchors.ts"),
+    from: "    const [sOut, sIn] = sideFor(from, to);",
+    to: '    const [sOut, sIn] = ["right", "left"];',
+    spec: "graph-wires",
+    expect: "a wire to the scene BELOW leaves the bottom and lands on the top",
+  },
+  {
+    // Cards stop being obstacles — the defect this whole release is
+    // about, put back on purpose.
+    name: "a card that a wire may route straight through",
+    file: src("utils/wireRouter.ts"),
+    from: "      if (horizontal ? hBlocked[ei] : vBlocked[ei]) continue;",
+    to: "      if (false) continue;",
+    spec: "graph-wires",
+    expect: "a wire that skips three scenes goes AROUND them, not through",
+  },
+  {
+    // The give-up path that drew a wire anyway, which is how a connection
+    // ran under two scenes in the version this replaces.
+    name: "a wire the router could not place, drawn anyway",
+    file: src("utils/wireRouter.ts"),
+    // Sabotaged at the OUTPUT rather than at the failure, because the
+    // first attempt — stashing an empty node list — threw inside the path
+    // builder, and a crash kills the spec rather than reddening it, which
+    // reports as "CRASHED" and proves nothing. A wrong answer has to be
+    // plausible to be a control.
+    from: "    const nodes = laid.get(w);\n    if (!nodes) continue;",
+    to: "    const nodes = laid.get(w);\n    if (!nodes) { paths.set(w.link.id, `M ${w.p1.x} ${w.p1.y} L ${w.p2.x} ${w.p2.y}`); continue; }",
+    spec: "graph-wires",
+    expect: "a wire with nowhere to go comes back with no path at all",
+  },
+  {
+    // The measured limit. Removing the switch is what "it'll be fine"
+    // looks like in a diff, and at a thousand scenes it is 39 seconds.
+    name: "the obstacle-aware router turned loose on a story too big for it",
+    file: src("utils/wireRouter.ts"),
+    from: "  if (boxes.length > boardAbove) {",
+    to: "  if (false) {",
+    spec: "graph-wires",
+    expect: "a story too big for it gets the cheap one rather than a freeze",
+  },
+  {
+    // The straightening pass, across the flow.
+    //
+    // Sabotaged by switching the pass OFF for the stack rather than by
+    // pointing it at the wrong axis. Aiming it at the flow axis was tried
+    // first and collapsed the chapter — every scene landed on one line, on
+    // top of each other — so what went red was the ordering check, not the
+    // column one, and the control reported NOT CAUGHT while having found a
+    // worse bug than the one it was looking for. Turning the pass off is
+    // the failure this check actually exists for: a spine that slides
+    // downhill, in the right order, one card at a time.
+    name: "a stacked chapter that slides downhill instead of standing in a column",
+    file: src("utils/autoLayout.ts"),
+    from: "  straightenRuns(graph, nodeIds, live, rankdir);",
+    to: '  if (rankdir === "LR") straightenRuns(graph, nodeIds, live, rankdir);',
+    spec: "graph-auto-layout",
+    expect: "stacked, that same spine stands in one column",
+  },
+  {
+    // The direction a chapter runs. Sideways at every level is what
+    // produced a story twenty-three times wider than it was deep.
+    name: "chapters running sideways again",
+    file: src("utils/autoLayoutGraph.ts"),
+    from: '      containerId === null ? "LR" : "TB",',
+    to: '      "LR",',
+    spec: "groups",
+    expect: "Auto Layout arranges the scenes INSIDE a group",
+  },
+  {
+    // Dim-on-select, off. The geometry is untouched, so nothing in the
+    // layout or routing checks notices — which is the point of having it.
+    name: "selecting a scene that no longer clears the view around it",
+    file: src("components/graph/FlowPanel.tsx"),
+    from: "    if (selectedGraphIds.size === 0) return null;",
+    to: "    if (true) return null;",
+    spec: "graph-wires",
+    expect: "fades the scene it has nothing to do with",
+  },
 ];
 
 

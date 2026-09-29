@@ -9,6 +9,7 @@ import type {
   OnNodesChange,
   ReactFlowInstance,
   NodeTypes,
+  EdgeTypes,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useProjectStore } from "../../state/projectStore";
@@ -21,7 +22,13 @@ import {
 } from "../../utils/reuseBySignature";
 import { mentionResolver } from "../../utils/mentions";
 import { dialogueExits, extractDialogueLines } from "../../utils/dialogueBlocks";
-import { GRAPH_GRID, snapRect } from "../../utils/graphConstants";
+import {
+  GRAPH_GRID,
+  SCENE_NODE_HEIGHT,
+  SCENE_NODE_WIDTH,
+  snapRect,
+} from "../../utils/graphConstants";
+import { routeWires } from "../../utils/wireRouter";
 import {
   COLLAPSED_GROUP_SIZE,
   contentIndex,
@@ -32,6 +39,7 @@ import {
   visibleStandIn,
 } from "../../utils/graphGroups";
 import { SceneNode } from "./SceneNode";
+import { RoutedEdge } from "./RoutedEdge";
 import { GraphMiniMap } from "./GraphMiniMap";
 import { GroupNode } from "./GroupNode";
 import { DockGlyph, DockToggle } from "../common/DockToggle";
@@ -50,6 +58,12 @@ const nodeTypes: NodeTypes = {
   scene: SceneNode,
   frame: GroupNode,
 };
+
+// One edge type, and it draws whatever the router decided (v0.73.0). The
+// shape of a wire depends on what else is on the canvas, which no single
+// edge can know, so every edge asks the same component to draw the path it
+// was handed — or a bezier, when there isn't one. See RoutedEdge.
+const edgeTypes: EdgeTypes = { routed: RoutedEdge };
 
 // Sprint 8B interaction-consistency fix: the graph's two camera-fit
 // animations (the initial mount's `fitViewOptions` and Auto Layout's own
@@ -466,7 +480,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
           // routing glitch — closer to the Blueprint-style wires the frame
           // grouping is deliberately going for. Auto-layout's ordinary
           // forward connections look effectively identical either way.
-          type: "default",
+          type: "routed",
           // v0.39.1 — the label is NOT set here. Printing every choice's
           // full sentence over the curves made the curves unreadable: on a
           // real 13-scene story the labels overlapped each other and sat
@@ -476,7 +490,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
           // styling memo below decides what's actually drawn: a short
           // ordinal bead at rest, the full sentence only for the handful of
           // wires you're pointing at.
-          data: { short: `Choice ${ordinal}` },
+          data: { short: `Choice ${ordinal}`, ordinal },
         });
       }
     }
@@ -485,10 +499,10 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       id: `bundle-${source}-${target}`,
       source,
       target,
-      type: "default",
+      type: "routed",
       // A bundle is several choices folded into one wire, so it cannot name
       // a choice; it says how many it stands for instead.
-      data: { bundled: true, short: `×${count}` },
+      data: { bundled: true, short: `×${count}`, ordinal: 0 },
     }));
 
     return { choiceCountByScene: counts, dialogueByScene: talk, edgesBase: [...direct, ...bundles] };
@@ -513,6 +527,86 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
    * whether anything visible about it changed.
    */
   const edgeCache = useRef(newSignatureCache<Edge>());
+
+  /**
+   * Every wire's shape, worked out once for the whole canvas (v0.73.0).
+   *
+   * Keyed on the COMMITTED geometry — `project` and the edge list — and
+   * deliberately not on the drag overlays beside it. Routing costs about a
+   * tenth of a second on a real story, which is nothing once per edit and
+   * impossible sixty times a second, so a wire whose scene is mid-drag has a
+   * stale path and RoutedEdge draws it as a bezier until the drag commits.
+   * That is the arrangement, not a gap in it.
+   *
+   * The obstacles are the scene cards and the FOLDED chapter boxes, which
+   * are exactly the things a wire can end at. An open chapter box is not an
+   * obstacle: it is a container, its scenes are inside it, and a wire
+   * crossing its border crosses a label rather than a thing.
+   */
+  const routes = useMemo(() => {
+    const empty = {
+      paths: new Map<string, string>(),
+      labels: new Map<string, { x: number; y: number }>(),
+    };
+    if (!project) return empty;
+    const hidden = hiddenSceneIds(project);
+    const boxes = [
+      ...project.scenes
+        .filter((scene) => !hidden.has(scene.id))
+        .map((scene) => ({
+          id: scene.id,
+          x: scene.position.x,
+          y: scene.position.y,
+          width: SCENE_NODE_WIDTH,
+          height: SCENE_NODE_HEIGHT,
+        })),
+      ...graphGroups(project.content, project.scenes)
+        .filter((group) => !group.hidden && group.collapsed)
+        .map((group) => ({
+          id: group.id,
+          x: group.rect.x,
+          y: group.rect.y,
+          width: COLLAPSED_GROUP_SIZE.width,
+          height: COLLAPSED_GROUP_SIZE.height,
+        })),
+    ];
+    const links = edgesBase.map((edge) => ({
+      id: edge.id,
+      source: edge.source,
+      target: edge.target,
+      ordinal: (edge.data as { ordinal?: number } | undefined)?.ordinal ?? 0,
+    }));
+    const result = routeWires(boxes, links);
+    return { paths: result.paths, labels: result.labels };
+  }, [project, edgesBase]);
+
+  // A wire cannot be routed and dragged at once — see `routes` above.
+  const dragging = Boolean(frameDrag || sceneDrag || frameResize);
+
+  /**
+   * What stays lit when something is selected (v0.73.0).
+   *
+   * The complaint this whole release answers was "it is almost impossible
+   * to read which node is connected to which", and every other part of the
+   * answer is geometry: better anchors, a better layout, a router that
+   * knows what is in the way. This part is not geometry at all and it is
+   * probably the cheapest of them — pick a scene and everything that is not
+   * it or one step from it gets out of the way.
+   *
+   * Keyed on `selectedGraphIds` (click, Ctrl+click, box-select) and NOT on
+   * `selectedSceneId`, which is "open in the Scene Editor" and is set
+   * almost all the time. Dimming on that would mean the graph spent its
+   * life three-quarters faded, answering a question nobody asked.
+   */
+  const litIds = useMemo(() => {
+    if (selectedGraphIds.size === 0) return null;
+    const lit = new Set(selectedGraphIds);
+    for (const edge of edgesBase) {
+      if (selectedGraphIds.has(edge.source)) lit.add(edge.target);
+      if (selectedGraphIds.has(edge.target)) lit.add(edge.source);
+    }
+    return lit;
+  }, [selectedGraphIds, edgesBase]);
 
   const edges = useMemo<Edge[]>(() => {
     return edgesBase.map((edge) => {
@@ -560,16 +654,26 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       // graph zoomed out is a picture of the shape of the story, and the
       // shape doesn't need the numbering.
       const readable = zoom >= LABEL_MIN_ZOOM;
+      // The routed path, unless a drag is in flight — then nothing, and
+      // RoutedEdge falls back to the bezier that follows the cursor.
+      const path = dragging ? undefined : routes.paths.get(edge.id);
+      const at = path ? routes.labels.get(edge.id) : undefined;
+      // Lit when either end is part of what is selected; faded when
+      // something is selected and this is not part of it.
+      const dimmed = Boolean(litIds) && !isConnectedToSelected;
       const sig = [
         edge.source,
         edge.target,
         isConnectedToSelected,
         isBundle,
+        dimmed,
         readable ? labels?.short ?? "" : "",
+        path ?? "",
       ].join("|");
       const build = (): Edge => ({
         ...edge,
-        label: readable ? labels?.short : undefined,
+        data: { ...edge.data, path, labelX: at?.x, labelY: at?.y },
+        label: readable && !dimmed ? labels?.short : undefined,
         labelStyle: {
           fill: isConnectedToSelected ? "var(--text-2)" : "var(--text-3)",
           fontSize: LABEL_PX,
@@ -586,12 +690,17 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
         style: {
           stroke: isConnectedToSelected ? "var(--accent)" : "var(--border-faint)",
           strokeWidth: isConnectedToSelected ? 2.2 : isBundle ? 2.6 : 1.6,
+          // Not zero: a wire you can still see the run of is what makes the
+          // lit one read as "this one, out of all those", rather than as the
+          // only connection in the story.
+          opacity: dimmed ? 0.12 : 1,
+          transition: "opacity 120ms ease",
         },
         zIndex: 0,
       });
       return reuseBySignature(edgeCache.current, edge.id, sig, build);
     });
-  }, [edgesBase, selectedSceneId, selectedGraphIds, zoom]);
+  }, [edgesBase, selectedSceneId, selectedGraphIds, zoom, routes, dragging, litIds]);
 
   // Which group (if any) currently encloses a scene, mapped once per
   // render — a scene inside a group that is being dragged has to ride along
@@ -800,6 +909,9 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
           // `handleNodeDoubleClick` below.
           isActive: scene.id === selectedSceneId,
           isStart: scene.id === project.startSceneId,
+          // See `litIds`: faded when something else is selected and this
+          // scene is neither it nor one step from it.
+          dimmed: Boolean(litIds) && !litIds!.has(scene.id),
         },
         // Fed back in every recompute for the same reason a frame's
         // `selected` is — see `selectedGraphIds`. Scenes never carried this
@@ -821,6 +933,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
         fresh.data.choiceCount,
         fresh.data.isActive,
         fresh.data.isStart,
+        fresh.data.dimmed,
         fresh.selected,
         fresh.zIndex,
         measured?.width,
@@ -847,6 +960,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     sceneDrag,
     frameResize,
     choiceCountByScene,
+    litIds,
     measuredVersion,
     updateFolderRect,
   ]);
@@ -1093,6 +1207,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
             <ReactFlow
               nodes={nodes}
               edges={edges}
+              edgeTypes={edgeTypes}
               nodeTypes={nodeTypes}
               onInit={(instance) => {
                 flowInstanceRef.current = instance;

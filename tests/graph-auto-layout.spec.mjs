@@ -24,12 +24,14 @@ export default async function ({ page, api, check, seedProject }) {
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   /** Lay out a graph described as [from, to] pairs and report the geometry. */
-  const layout = (edges) =>
-    api((links) => {
+  const layout = (edges, rankdir) =>
+    api(({ links, rankdir: dir }) => {
       const ids = [...new Set(links.flat())];
       const positions = window.__scriareAutoLayout.computeAutoLayout(
         ids,
         links.map(([source, target]) => ({ source, target })),
+        undefined,
+        dir,
       );
       const columns = {};
       for (const id of ids) {
@@ -37,7 +39,7 @@ export default async function ({ page, api, check, seedProject }) {
         (columns[key] ??= []).push(id);
       }
       return { positions, columns };
-    }, edges);
+    }, { links: edges, rankdir });
 
   // 1 — the spine. Five scenes in a row, each leading to the next: every
   // one a column further right, all on one line, so every connection is
@@ -113,6 +115,31 @@ export default async function ({ page, api, check, seedProject }) {
   check("a spine whose scenes also link ahead still comes out as one line",
     spineLines.size === 1,
     JSON.stringify(Object.fromEntries(["open", "book", "coin", "table"].map((id) => [id, r.positions[id].y]))));
+
+  // 3c — the same shape, stacked (v0.73.0).
+  //
+  // A chapter now runs DOWN the page, so the axis the straightening pass
+  // works on is the one ACROSS the flow — which is the horizontal one, not
+  // the vertical one it was hard-coded to. Nobody had taught the function
+  // the general rule, only the single case that existed; left alone, the
+  // same spine that comes out as one line sideways comes out as a
+  // staircase sliding downhill, and "logically true but not pleasing" was
+  // mostly this.
+  r = await layout([
+    ["open", "book"], ["open", "coin"],
+    ["book", "coin"], ["book", "table"],
+    ["coin", "table"],
+  ], "TB");
+  const stackedLines = new Set(["open", "book", "coin", "table"].map((id) => r.positions[id].x));
+  check("stacked, that same spine stands in one column",
+    stackedLines.size === 1,
+    JSON.stringify(Object.fromEntries(["open", "book", "coin", "table"].map((id) => [id, r.positions[id].x]))));
+
+  check("...and still runs in order, down the page",
+    r.positions.open.y < r.positions.book.y &&
+      r.positions.book.y < r.positions.coin.y &&
+      r.positions.coin.y < r.positions.table.y,
+    ["open", "book", "coin", "table"].map((id) => `${id}@${r.positions[id].y}`).join(" "));
 
   // 4 — a loop. A story that sends the reader back has no "depth" for the
   // scenes inside the loop, and the ranking has to survive that rather than
