@@ -189,7 +189,7 @@ lives in.
 
 ## Status
 
-**v0.75.1 — in active development, and usable.** The editor, graph,
+**v0.75.2 — in active development, and usable.** The editor, graph,
 runtime, entities, notes, variables, validation, search and **export** are
 all real, and the app now builds a Windows installer. See
 [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest list of what
@@ -209,18 +209,21 @@ screen. Clicking it copies the version, your platform and the engine
 underneath — paste that into the report and neither of us has to guess
 which build you were on.
 
-**922 automated tests** run against the real packaged application, and
-**259 negative controls**: each one breaks a specific line of the shipped
-source on purpose and checks that a named assertion fails. A test that has
-never been seen to fail proves nothing, and several times now a control
-has failed to catch its sabotage — each time a finding about the test
-rather than about the app, and each time the test is what got rewritten.
-The sharpest of them: a spec that asked the code under test which
-attributes to check, so deleting one made the code stop maintaining it and
-the test stop looking for it, both at once, in silence. The most recent
-went the other way — a control stayed green because the *comment* it was
-defending made a claim that was not true, and the comment is what got
-rewritten.
+**917 automated tests** run against the real packaged application, and
+**253 negative controls**: each one breaks a specific line of the shipped
+source on purpose and checks that a named assertion fails. 252 of them
+currently do; one does not, and is on the list to be rewritten, because a
+control that stays green is a finding about the test rather than about the
+app. That has happened several times now, and every time the test is what
+got rewritten. The sharpest of them: a spec that asked the code under test
+which attributes to check, so deleting one made the code stop maintaining
+it and the test stop looking for it, both at once, in silence. Another
+stayed green because the *comment* it was defending made a claim that was
+not true, and the comment is what got rewritten.
+
+Counts are honest rather than flattering: v0.75.1's README said 922 tests
+because a temporary spec had been left in `tests/` and its checks were
+being counted.
 
 ## Running it
 

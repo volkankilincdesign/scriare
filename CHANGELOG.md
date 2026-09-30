@@ -12,6 +12,53 @@ omitting them.
 
 ---
 
+## v0.75.2 — A dialog covers the window
+
+Reported: open Project Settings or Preferences and the status bar along the
+bottom stayed bright and clickable while the rest of the app went behind
+frosted glass. Choice Styles had always dimmed it properly. "Show Story
+Graph" sat there, lit, offering to do something to a canvas nobody could
+see.
+
+`z-index: 100` only outranks what shares a stacking context, and the app's
+chrome makes several — the top bar and the status bar are both
+`position: relative; z-index: 3`, the side panels `z-index: 2`, all of it
+from the lift-and-shadow pass. Those two dialogs were written inside the
+top bar's `<header>`, because that is where the button that opens them
+lives. So their backdrop's 100 was spent **inside a box worth 3**, and the
+status bar — worth the same 3, and later in the document — went on painting
+over it. Every other dialog is mounted at the app's root and was fine.
+
+**Measured before it was touched, and the obvious check would have missed
+it.** The backdrop's rectangle *did* span the status bar, for all three
+dialogs: a geometry test says everything is covered. What told the truth
+was `elementFromPoint` over the button — which still returned the button.
+Legible, clickable, behind glass.
+
+**The fix is a portal, not two moved lines.** Moving those two mounts to
+the app root fixes the two dialogs that exist and not the next one written
+inside a panel. `Modal` now renders into `document.body` wherever its JSX
+happens to sit, so where a dialog is written is a detail of who owns its
+open flag and can no longer decide what the dialog is able to cover. React
+events bubble through the React tree, not the DOM one, so nothing above a
+dialog notices.
+
+**One thing changed on purpose.** The stylesheet gives `.scriare-topbar`'s
+selects and bordered controls a raised cast, meant for toolbar controls.
+Project Settings' fields were collecting it by descent alone — measured,
+a two-layer shadow no other dialog's fields carry. Out of the header they
+are flat, like every field in every other dialog.
+
+Two negative controls: one puts the dialog back inside the bar that opened
+it, one keeps the rule for the two dialogs that were complained about and
+lets the others drift. The check runs against every dialog, by hit test.
+
+**A correction.** v0.75.1's README said 922 tests. A temporary spec had
+been left in `tests/`, and its checks were counted. The real figure is 917,
+and the temp files are gone. The control count is now stated as what it is:
+253 that apply, 252 of them verified to catch their sabotage, one that does
+not and is on the list.
+
 ## v0.75.1 — The way back, in one place
 
 Preferences shipped with its "Back to Project Settings" drawn as a ghost

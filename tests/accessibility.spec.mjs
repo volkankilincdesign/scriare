@@ -253,6 +253,97 @@ export default async function run({ page, api, check, seedProject }) {
   await api(() => window.__scriareUIStore.getState().closeStoryCheck());
   await wait(250);
 
+  /* ── a dialog covers the app, including the app's own chrome ──── */
+
+  // HIT-TEST, NOT GEOMETRY. The reported fault (v0.75.1) was Project
+  // Settings and Preferences leaving the status bar bright and clickable
+  // while everything else went behind frosted glass, and the reason a
+  // rectangle comparison would have missed it is that the scrim's rect DID
+  // span the bar — measured, `covers: true` for all three dialogs, while
+  // `elementFromPoint` over "Show Story Graph" still returned the button.
+  // `z-[100]` only outranks what shares a stacking context, and those two
+  // dialogs were written inside `.scriare-topbar`, which is one.
+  //
+  // Checked for EVERY dialog, not the two that were wrong: the fault was
+  // never about those dialogs, it was about where a dialog is allowed to
+  // be written, and the next one somebody puts inside a panel should fail
+  // here rather than ship.
+  const chromeUnder = async (label, open, close) => {
+    await api(open);
+    await wait(350);
+    const r = await api(() => {
+      const card = document.querySelector('[role="dialog"]');
+      if (!card) return { opened: false };
+      const blocked = {};
+      for (const sel of [".scriare-statusbar", ".scriare-topbar", ".scriare-panel-l"]) {
+        const bar = document.querySelector(sel);
+        if (!bar) continue;
+        const btn = [...bar.querySelectorAll("button")].pop();
+        if (!btn) continue;
+        const b = btn.getBoundingClientRect();
+        const hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+        // The scrim, or the card, may answer — anything except the bar's
+        // own control, which is the thing that must not be reachable.
+        blocked[sel] = !(hit === btn || btn.contains(hit));
+      }
+      return { opened: true, blocked };
+    });
+    await api(close);
+    await wait(250);
+    check(
+      `${label}: the app's own chrome is behind the dialog, not in front of it`,
+      r.opened === true && Object.values(r.blocked ?? {}).every(Boolean),
+      JSON.stringify(r),
+    );
+  };
+
+  await chromeUnder(
+    "Project Settings",
+    () => window.__scriareUIStore.getState().openSettings(),
+    () => window.__scriareUIStore.getState().closeSettings(),
+  );
+  await chromeUnder(
+    "Preferences",
+    () => window.__scriareUIStore.getState().openPreferences("settings"),
+    () => window.__scriareUIStore.getState().closePreferences(),
+  );
+  await chromeUnder(
+    "Choice Styles",
+    () => window.__scriareUIStore.getState().openChoiceStyles("settings"),
+    () => window.__scriareUIStore.getState().closeChoiceStyles(),
+  );
+  await chromeUnder(
+    "Check Story",
+    () => window.__scriareUIStore.getState().openStoryCheck(),
+    () => window.__scriareUIStore.getState().closeStoryCheck(),
+  );
+
+  // And the structural reason, stated once so a future dialog cannot be
+  // "fixed" by giving it a bigger number instead of getting it out of the
+  // box: no dialog's backdrop may sit inside a stacking context at all.
+  await api(() => window.__scriareUIStore.getState().openSettings());
+  await wait(300);
+  const trapped2 = await api(() => {
+    const scrim = document.querySelector('[role="dialog"]')?.parentElement;
+    if (!scrim) return { err: "no dialog" };
+    const boxes = [];
+    let n = scrim.parentElement;
+    while (n && n !== document.body) {
+      const cs = getComputedStyle(n);
+      if (cs.zIndex !== "auto" || cs.transform !== "none" || cs.filter !== "none")
+        boxes.push(`${String(n.className).split(" ")[0] || n.tagName}:z=${cs.zIndex}`);
+      n = n.parentElement;
+    }
+    return { parentIsBody: scrim.parentElement === document.body, boxes };
+  });
+  check(
+    "a dialog's backdrop is not trapped inside a stacking context",
+    trapped2.parentIsBody === true && (trapped2.boxes ?? []).length === 0,
+    JSON.stringify(trapped2),
+  );
+  await api(() => window.__scriareUIStore.getState().closeSettings());
+  await wait(250);
+
   /* ── the Inspector agrees with the canvas about who is in it ──── */
 
   // READ OFF THE SCREEN, not out of the utility. The first version of this

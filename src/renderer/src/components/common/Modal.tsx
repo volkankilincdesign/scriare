@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import type { ReactNode } from "react";
 
 interface ModalProps {
@@ -21,6 +22,38 @@ interface ModalProps {
  * dark, rounded card, closable with Escape or a click outside. This is what
  * replaces window.confirm()/alert() app-wide — see ConfirmDialogHost for the
  * confirmation dialog built on top of it.
+ *
+ * IT RENDERS INTO document.body, NOT WHERE IT IS WRITTEN (v0.75.2,
+ * reported). `z-[100]` only outranks what shares its stacking context, and
+ * the app's own chrome makes several: `.scriare-topbar` and
+ * `.scriare-statusbar` are `position: relative; z-index: 3`, the side
+ * panels `z-index: 2`. Project Settings and Preferences were written
+ * inside TopBar's `<header>`, so their backdrop's 100 was spent INSIDE a
+ * box worth 3 — and the status bar, worth the same 3 and later in the
+ * document, went on painting over it. Measured on v0.75.1: the scrim's
+ * rectangle did span the bar (so nothing looked wrong to a geometry
+ * check), while `elementFromPoint` over "Show Story Graph" still returned
+ * the button. It was legible, it was clickable, and it was behind frosted
+ * glass. Every dialog mounted at App level was already correct, which is
+ * why this went unnoticed for as long as it did: the app was right almost
+ * everywhere, and the exception was invisible unless you tried to click
+ * something you were not supposed to be able to reach.
+ *
+ * The portal is the fix rather than moving those two mounts, because
+ * moving them fixes the two dialogs that exist and not the next one
+ * somebody writes inside a panel. A dialog claims the whole window; where
+ * its JSX happens to live is a detail of who owns the open flag, and it
+ * should not be able to decide what the dialog can cover. React events
+ * still bubble through the React tree, so no handler above a portalled
+ * dialog notices the difference.
+ *
+ * WHAT IT ALSO CHANGED, deliberately: index.css styles `.scriare-topbar
+ * select` and the bar's bordered controls with `--lift-raised`, meant for
+ * toolbar controls. Project Settings' fields were picking that up by
+ * descent alone — measured, they carried a two-layer cast no other
+ * dialog's fields have. Out of the header they are flat, like every field
+ * in every other dialog. That is the rule the app already followed
+ * everywhere it was not being contradicted by accident.
  */
 
 /**
@@ -155,7 +188,7 @@ export function Modal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose, onEnter]);
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--overlay)] backdrop-blur-sm"
       onMouseDown={(e) => {
@@ -192,6 +225,7 @@ export function Modal({
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

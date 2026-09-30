@@ -2483,6 +2483,42 @@ const CONTROLS = [
     spec: "graph-wires",
     expect: "fades the scene it has nothing to do with",
   },
+  {
+    // The reported fault itself, put back: the dialog lands inside the bar
+    // that owns its open flag rather than over the window. `.scriare-topbar`
+    // is `position: relative; z-index: 3`, so the backdrop's z-100 stops
+    // meaning anything outside it and the status bar — worth the same 3 and
+    // later in the document — goes on painting over the glass.
+    //
+    // The sabotage moves the portal's TARGET rather than deleting the call.
+    // Deleting it would leave `(<div/>, document.body)` — a comma
+    // expression returning a DOM node, which crashes instead of answering
+    // wrongly. This renders perfectly, traps focus, and passes every other
+    // dialog check in the suite. That is what a control has to be.
+    name: "a dialog drawn into the bar that opened it instead of over the window",
+    file: src("components/common/Modal.tsx"),
+    from: "    document.body,\n  );",
+    to: "    document.querySelector(\".scriare-topbar\") ?? document.body,\n  );",
+    spec: "accessibility",
+    expect: "chrome is behind the dialog",
+  },
+  {
+    // The rule kept for the two dialogs that were reported and no others.
+    // `max-w-md` is exactly Project Settings and Preferences, so this is
+    // the shape of a fix aimed at a bug report instead of at the app: the
+    // two complained-about dialogs come out right and Choice Styles and
+    // Check Story quietly go back under the chrome.
+    //
+    // It is here because a check that only ever opens the dialogs someone
+    // complained about would stay green through this, and would have been
+    // worth nothing the next time a dialog was written inside a panel.
+    name: "the covering rule kept only for the dialogs that were complained about",
+    file: src("components/common/Modal.tsx"),
+    from: "    document.body,\n  );",
+    to: "    widthClassName === \"max-w-md\"\n      ? document.body\n      : (document.querySelector(\".scriare-topbar\") ?? document.body),\n  );",
+    spec: "accessibility",
+    expect: "chrome is behind the dialog",
+  },
 ];
 
 
