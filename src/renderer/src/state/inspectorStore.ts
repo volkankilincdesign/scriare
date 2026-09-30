@@ -47,7 +47,7 @@ export type InspectorTarget =
        */
       optionId?: string | null;
     }
-  // v0.30.0 — a Conditional Text block. Selected by the cursor being
+  // v0.30.0 — a Conditional block. Selected by the cursor being
   // anywhere INSIDE it rather than by a NodeSelection over it, because
   // unlike a Choice Block it holds ordinary prose the writer types into;
   // see SceneEditor's onSelectionUpdate.

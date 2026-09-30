@@ -319,7 +319,7 @@ interface ChoiceTarget {
  * mount); every handler below no-ops if so rather than crashing.
  */
 /**
- * Properties for a Conditional Text block (v0.30.0) — the conditions that
+ * Properties for a Conditional (v0.30.0, renamed in v0.78.0) — the conditions that
  * decide whether its prose appears at all.
  *
  * Much simpler than ChoiceProperties because there is nothing else to edit:

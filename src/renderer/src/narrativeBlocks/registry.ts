@@ -45,10 +45,20 @@ export const NARRATIVE_BLOCKS: NarrativeBlockDefinition[] = [
   },
   {
     id: "conditional",
-    title: "Conditional Text",
+    // v0.78.0 — "Conditional", the one word the toolbar button, the
+    // block's own header and the Inspector all use. This was the last
+    // place still saying "Conditional Text", and the menu is exactly
+    // where a name being inconsistent does the most damage: it is how a
+    // writer meets the block for the first time.
+    title: "Conditional",
     description: "Prose that only appears when a condition holds",
     icon: "◇",
-    keywords: ["condition", "conditional", "if", "gate", "variable", "state", "reactive"],
+    // `text` kept as a KEYWORD although it left the title. The menu
+    // matches on title as well as keywords, so until now typing `/text`
+    // found this block; renaming without this line would quietly break a
+    // habit somebody may already have, which is a worse trade than one
+    // extra word in a list nobody reads.
+    keywords: ["condition", "conditional", "if", "gate", "variable", "state", "reactive", "text"],
     command: (editor, range) =>
       editor.chain().focus().deleteRange(range).insertConditionalBlock().run(),
   },

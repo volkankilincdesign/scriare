@@ -57,11 +57,15 @@ export const SlashCommandMenu = forwardRef<SlashCommandMenuHandle, SlashCommandM
     }
 
     return (
-      <div className="w-64 overflow-hidden rounded-md border border-[var(--border)] bg-[var(--bg)] py-1 shadow-xl">
+      <div
+        data-slash-menu
+        className="w-64 overflow-hidden rounded-md border border-[var(--border)] bg-[var(--bg)] py-1 shadow-xl"
+      >
         {props.items.map((item, index) => (
           <button
             key={item.id}
             type="button"
+            data-slash-item={item.id}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => selectItem(index)}
             className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-left ${
@@ -72,7 +76,9 @@ export const SlashCommandMenu = forwardRef<SlashCommandMenuHandle, SlashCommandM
               {item.icon}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm text-[var(--text)]">{item.title}</span>
+              <span data-slash-title className="block truncate text-sm text-[var(--text)]">
+                {item.title}
+              </span>
               <span className="block truncate text-xs text-[var(--text-3)]">{item.description}</span>
             </span>
           </button>

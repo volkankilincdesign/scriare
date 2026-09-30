@@ -12,6 +12,43 @@ omitting them.
 
 ---
 
+## v0.78.1 — The last place still using the old name
+
+The slash-command menu said **Conditional Text** while the button, the
+block's header and the Inspector all said **Conditional**. One string, and
+the worst one to leave: the menu is where a writer meets the block for the
+first time.
+
+Counted before touching anything, because the note at the end of v0.78.0
+called this a sweep and it is not one. The Story Graph never names the
+block. The script export and the spreadsheet handle it by node type and
+describe it by its **conditions** rather than by a block name, so neither
+prints one anywhere. Everything else was comments.
+
+**`text` kept as a keyword.** The menu matches on title as well as
+keywords, so `/text` used to find this block. Renaming without that line
+would have quietly broken a habit somebody may already have, with no error
+to report — which is why it has a control of its own.
+
+**The two mentions in `docs/` are left alone on purpose.** Both are dated
+design records describing what was decided at the time; editing them to
+match a later rename falsifies the record, for the same reason the
+changelog is never rewritten.
+
+**Three of the new controls would not go red, and every one was the test's
+fault.** The slash-menu checks read every button on screen and filtered for
+`/condition/i` — which always matched the toolbar's own Conditional button,
+so they passed whatever the menu said. The menu has `data-slash-menu`,
+`data-slash-item` and `data-slash-title` now, and the check reads the title
+element rather than guessing at a line of `innerText`.
+
+The third is the more interesting one. The caret-lands-inside control kept
+passing because the fixture focused the editor first, and inserting at a
+caret that is already in the prose puts the block in the right place by
+itself. The bug only exists in the flow it was found in: open a scene,
+reach for the button, having typed nothing. The fixture loads the document
+and bounces scenes rather than focusing, and the control goes red.
+
 ## v0.78.0 — The third sibling
 
 Conditional Text has existed since v0.30.0 and could only be made by typing

@@ -29,7 +29,7 @@ import { EMPTY_EDITOR_DOC, loadDocumentIntoEditor } from "../../utils/loadDocume
  * A Character or Location page (v0.35.0).
  *
  * The same editor as a scene, minus the parts that only mean something in a
- * story being played: no Choice Blocks, no Conditional Text. A character
+ * story being played: no Choice Blocks, no Conditionals. A character
  * page is worldbuilding, not a branch — and the toolbar hides its Choice
  * button on its own here, because that button asks the schema whether it
  * has anywhere to put one.

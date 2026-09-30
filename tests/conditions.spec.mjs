@@ -240,6 +240,51 @@ export async function theThirdSibling({ page, api, check, seedProject, app }) {
   await win.evaluate((w) => w.setBounds({ x: 0, y: 0, width: 1280, height: 1000 }));
   await wait(300);
 
+  // ── the slash menu calls it what the button calls it ──────────────────
+  // The last place still saying "Conditional Text" (v0.78.0), and the one
+  // where a name being inconsistent does the most damage: the menu is how
+  // a writer meets the block for the first time.
+  const menu = async (query) => {
+    await api(() => {
+      const ed = window.__scriareEditorStore.getState().editor;
+      ed.chain().focus().clearContent().insertContent({ type: "paragraph" }).run();
+    });
+    await wait(200);
+    await page.keyboard.type(query);
+    await wait(350);
+    // SCOPED TO THE MENU. The first version read every button on screen
+    // and filtered for /condition/i — which always matched the toolbar's
+    // own Conditional button, so it passed no matter what the menu said.
+    // Two controls went green against it before that was noticed.
+    const items = await api(() =>
+      [...document.querySelectorAll("[data-slash-menu] [data-slash-title]")].map((t) =>
+        t.textContent.trim(),
+      ),
+    );
+    await page.keyboard.press("Escape");
+    await api(() => {
+      const ed = window.__scriareEditorStore.getState().editor;
+      ed.chain().focus().clearContent().insertContent({ type: "paragraph" }).run();
+    });
+    await wait(200);
+    return items;
+  };
+
+  const byName = await menu("/cond");
+  check(
+    "the slash menu calls it Conditional, the same word as the button and the block",
+    byName.includes("Conditional") && !byName.includes("Conditional Text"),
+    JSON.stringify(byName),
+  );
+  // The menu matches on title as well as keywords, so the rename would
+  // have quietly broken anyone who reached it by typing `/text`.
+  const byHabit = await menu("/text");
+  check(
+    "...and is still reachable by the word that used to be in its title",
+    byHabit.includes("Conditional"),
+    JSON.stringify(byHabit),
+  );
+
   // ── the button exists, and is not the lesser of three ─────────────────
   const buttons = await api(() => {
     const read = (sel) => {
@@ -275,6 +320,34 @@ export async function theThirdSibling({ page, api, check, seedProject, app }) {
 
   // ── clicking it lands the caret INSIDE, and it takes as many lines as
   //    the writer types ───────────────────────────────────────────────────
+  // FROM A SCENE THE WRITER HAS JUST OPENED AND NOT YET TYPED IN, which
+  // is the flow this was reported from: open a scene, reach for the new
+  // button. Insert-at-the-caret does the right thing when the caret is
+  // already in the prose, so a fixture that focuses the editor first
+  // cannot see the bug — measured, the control stayed green through it.
+  await api(() => {
+    const st = window.__scriareProjectStore.getState();
+    window.__scriareProjectStore.getState().updateSceneContent(st.project.scenes[0].id, {
+      type: "doc",
+      content: [
+        { type: "paragraph", attrs: { lineId: "r1" }, content: [{ type: "text", text: "Rain on the glass." }] },
+        { type: "paragraph", attrs: { lineId: "r2" }, content: [{ type: "text", text: "Three floors up." }] },
+      ],
+    });
+  });
+  await wait(250);
+  // Bounced rather than focused: the editor loads the document and nobody
+  // has put a caret in it.
+  await api(() => {
+    const s2 = window.__scriareProjectStore.getState();
+    s2.selectScene(s2.project.scenes[1].id);
+  });
+  await wait(250);
+  await api(() => {
+    const s2 = window.__scriareProjectStore.getState();
+    s2.selectScene(s2.project.scenes[0].id);
+  });
+  await wait(400);
   await api(() => document.querySelector("[data-insert-conditional]")?.click());
   await wait(400);
   await page.keyboard.type("You came up. Good.");

@@ -2760,6 +2760,29 @@ const CONTROLS = [
     spec: "conditions",
     expect: "no longer spends two rows explaining",
   },
+  {
+    // The old name back in the one place that still had it. Everything
+    // works; the block is simply called two things, and the menu is where
+    // a writer meets it first.
+    name: "the slash menu calling the block by a name nothing else uses",
+    file: src("narrativeBlocks/registry.ts"),
+    from: '    title: "Conditional",',
+    to: '    title: "Conditional Text",',
+    spec: "conditions",
+    expect: "the same word as the button and the block",
+  },
+  {
+    // The rename done without keeping the old word findable. Nothing
+    // looks wrong — the menu is consistent and the block is correct — and
+    // a writer who has been typing `/text` for weeks simply stops finding
+    // it, with no error to report.
+    name: "a rename that quietly breaks the way somebody already finds it",
+    file: src("narrativeBlocks/registry.ts"),
+    from: '"state", "reactive", "text"],',
+    to: '"state", "reactive"],',
+    spec: "conditions",
+    expect: "reachable by the word that used to be in its title",
+  },
 ];
 
 
