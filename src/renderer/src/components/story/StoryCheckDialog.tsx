@@ -110,6 +110,11 @@ export function StoryCheckDialog({ onClose }: StoryCheckDialogProps) {
     // not exist. Each finding says what its own id refers to now, and
     // `null` means the Inspector stays on the scene.
     if (issue.blockId && issue.inspect) {
+      // NO lineId here, though a Dialogue target takes one. Measured: the
+      // reveal puts the caret inside the anchored line, and SceneEditor's
+      // ancestor walk then sets the target WITH that line's id — so
+      // passing it here as well changed nothing any test could see. Code
+      // that cannot be observed is code that drifts, so it is not here.
       selectTarget({ kind: issue.inspect, sceneId: issue.sceneId, blockId: issue.blockId });
     }
 
@@ -118,13 +123,19 @@ export function StoryCheckDialog({ onClose }: StoryCheckDialogProps) {
     // as the scene and left the writer to find the line by reading it. The
     // same note Find leaves, carrying an id instead of positions; the
     // editor picks it up once the scene is loaded (useRevealMatch).
-    if (issue.blockId) {
+    // The ANCHOR where there is one, which is as small as the finding:
+    // one unnamed variable on option 4 marks option 4, not all six
+    // (v0.77.2, reported). A finding that really is about the whole block
+    // — a conversation nothing can close — has no anchor and marks the
+    // block, which is the truth about it.
+    const mark = issue.anchorId ?? issue.blockId;
+    if (mark) {
       requestReveal({
         sceneId: issue.sceneId,
         entityId: null,
         from: 0,
         to: 0,
-        nodeId: issue.blockId,
+        nodeId: mark,
       });
     }
 
@@ -237,13 +248,13 @@ export function StoryCheckDialog({ onClose }: StoryCheckDialogProps) {
                               own group, would read "Scene 2" under a heading
                               that already says Scene 2 — so there the hint
                               stands alone as the row's only line. */}
-                          {issue.blockId && (
+                          {(issue.anchorId ?? issue.blockId) && (
                             <span className="block truncate text-[13px]">{issue.label}</span>
                           )}
                           <span
                             data-hint
                             className={`block truncate text-[11.5px] text-[var(--text-3)] ${
-                              issue.blockId ? "mt-px" : "text-[13px]"
+                              (issue.anchorId ?? issue.blockId) ? "mt-px" : "text-[13px]"
                             }`}
                           >
                             {issue.hint}

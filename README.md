@@ -189,7 +189,7 @@ lives in.
 
 ## Status
 
-**v0.77.1 — in active development, and usable.** The editor, graph,
+**v0.77.2 — in active development, and usable.** The editor, graph,
 runtime, entities, notes, variables, validation, search and **export** are
 all real, and the app now builds a Windows installer. See
 [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest list of what
@@ -209,9 +209,9 @@ screen. Clicking it copies the version, your platform and the engine
 underneath — paste that into the report and neither of us has to guess
 which build you were on.
 
-**943 automated tests** run against the real packaged application, and
-**265 negative controls**: each one breaks a specific line of the shipped
-source on purpose and checks that a named assertion fails. 264 of them
+**949 automated tests** run against the real packaged application, and
+**268 negative controls**: each one breaks a specific line of the shipped
+source on purpose and checks that a named assertion fails. 267 of them
 currently do; one does not, and is on the list to be rewritten, because a
 control that stays green is a finding about the test rather than about the
 app. That has happened several times now, and every time the test is what

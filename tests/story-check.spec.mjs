@@ -366,6 +366,7 @@ export default async function ({ page, api, check, seedProject, app }) {
   // in one body is how a spec becomes unreadable.
   await speakers({ api, check, seedProject });
   await rowsAndReveal({ page, api, check, seedProject, app });
+  await markIsAsSmallAsTheFinding({ page, api, check, seedProject, app });
 }
 
 /**
@@ -593,11 +594,11 @@ export async function speakers({ api, check, seedProject }) {
     const issue = window.__scriareStoryCheck
       .checkStory(store.getState().project)
       .issues.find((i) => i.kind === "deleted-speaker");
-    return { blockId: issue?.blockId ?? null, label: issue?.label ?? null };
+    return { anchorId: issue?.anchorId ?? null, label: issue?.label ?? null };
   }, ghost);
   check(
     "the row points at the FIRST line that lost its speaker, not at the scene",
-    anchored.blockId === "first-line",
+    anchored.anchorId === "first-line",
     JSON.stringify(anchored),
   );
   check(
@@ -884,6 +885,189 @@ export async function rowsAndReveal({ page, api, check, seedProject, app }) {
     still: Boolean(document.querySelector(".scriare-revealed")),
   }));
   check("...and the mark takes itself away", faded.still === false, JSON.stringify(faded));
+
+  await seedProject();
+}
+
+/**
+ * The mark is as small as the finding (v0.77.2, reported).
+ *
+ * v0.77.0 marked whatever the Inspector opened on, because one field was
+ * doing both jobs. So one unnamed variable on option 4 of a six-option
+ * Choice Block lit all six — and sent the writer hunting inside the thing
+ * they had just been pointed at, which is the same "somewhere over there"
+ * the reveal exists to end.
+ *
+ * Two fields now: `blockId` is what the Inspector opens on (it has panels
+ * for blocks and nothing finer), `anchorId` is what the editor marks. A
+ * finding that really is about the whole block leaves the anchor unset,
+ * and that is not a gap — a conversation nothing can close has no one line
+ * to blame.
+ */
+export async function markIsAsSmallAsTheFinding({ page, api, check, seedProject, app }) {
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  await seedProject();
+  const win = await app.browserWindow(page);
+  await win.evaluate((w) => w.setBounds({ x: 0, y: 0, width: 1280, height: 900 }));
+  await wait(250);
+
+  await api(() => {
+    const st = window.__scriareProjectStore.getState();
+    const { buildChoiceBlockNode } = window.__scriareChoiceUtils;
+    const { buildDialogueBlockNode } = window.__scriareDialogue;
+    const vid = st.createVariable("resolve", "number");
+    // SIX options with ONE at fault. Six rather than two because the
+    // failure being ruled out is "the mark is the block", and with two
+    // options a block-sized mark and a line-sized one are nearly the same
+    // rectangle — the check would pass on the bug.
+    const choice = buildChoiceBlockNode(
+      [1, 2, 3, 4, 5, 6].map((n) => ({
+        id: `opt-${n}`,
+        text: `Choice number ${n}.`,
+        targetSceneId: n === 4 ? null : st.project.scenes[1].id,
+      })),
+      "the-choice",
+    );
+    const dialogue = buildDialogueBlockNode(
+      [
+        { id: "dl-1", text: "Fine.", after: "stay" },
+        { id: "dl-2", text: "And if it fails?", after: "stay", whenUnmet: "lock",
+          conditions: [{ variableId: vid, op: "gte", value: 3 }] },
+        { id: "dl-3", text: "Never mind.", after: "end" },
+      ],
+      "the-conversation",
+    );
+    window.__scriareProjectStore.getState().updateSceneContent(st.project.scenes[0].id, {
+      type: "doc",
+      content: [
+        { type: "paragraph", attrs: { lineId: "p1" }, content: [{ type: "text", text: "Rain on the glass." }] },
+        choice,
+        { type: "paragraph", attrs: { lineId: "p2" }, content: [{ type: "text", text: "Later." }] },
+        dialogue,
+      ],
+    });
+  });
+  await wait(300);
+  await api(() => {
+    const st = window.__scriareProjectStore.getState();
+    st.selectScene(st.project.scenes[1].id);
+  });
+  await wait(250);
+  await api(() => {
+    const st = window.__scriareProjectStore.getState();
+    st.selectScene(st.project.scenes[0].id);
+  });
+  await wait(400);
+
+  const fields = await api(() => {
+    const p = window.__scriareProjectStore.getState().project;
+    return window.__scriareStoryCheck
+      .checkStory(p)
+      .issues.filter((i) => i.sceneId === p.scenes[0].id)
+      .map((i) => ({ kind: i.kind, blockId: i.blockId ?? null, anchorId: i.anchorId ?? null }));
+  });
+  const unlinked = fields.find((f) => f.kind === "unlinked-choice");
+  const unnamed = fields.find((f) => f.kind === "unnamed-variable-shown");
+  check(
+    "a finding about ONE option keeps the block for the Inspector and the option for the mark",
+    unlinked?.blockId === "the-choice" && unlinked?.anchorId === "opt-4",
+    JSON.stringify(unlinked),
+  );
+  check(
+    "...and the same for one line of a conversation",
+    unnamed?.blockId === "the-conversation" && unnamed?.anchorId === "dl-2",
+    JSON.stringify(unnamed),
+  );
+
+  /** Opens the report, opens every scene, clicks one row, reads the mark. */
+  const clickAndRead = async (selector) => {
+    await api(() => window.__scriareUIStore.getState().openStoryCheck());
+    await wait(450);
+    await api(() => {
+      document.querySelectorAll("[data-scene-group] > button").forEach((b) => b.click());
+    });
+    await wait(250);
+    const clicked = await api((sel) => {
+      const row = document.querySelector(sel);
+      row?.click();
+      return Boolean(row);
+    }, selector);
+    await wait(700);
+    const read = await api(() => {
+      const m = document.querySelector(".scriare-revealed");
+      const block = document.querySelector(".node-choiceBlock, [class*='node-dialogueBlock']");
+      return {
+        // The class ProseMirror puts on the node view names the node type,
+        // which is the honest way to ask "what got marked" — reading the
+        // text would pass on a block whose first line happens to match.
+        marked: m ? String(m.className).match(/node-(\w+)/)?.[1] ?? null : null,
+        text: m?.textContent?.slice(0, 30) ?? null,
+        markedHeight: m ? Math.round(m.getBoundingClientRect().height) : null,
+        blockHeight: block ? Math.round(block.getBoundingClientRect().height) : null,
+        inspector: window.__scriareInspectorStore.getState().target,
+      };
+    });
+    await wait(1700);
+    return { clicked, ...read };
+  };
+
+  const onOption = await clickAndRead('[data-issue="unlinked-choice"]');
+  check(
+    "clicking it marks the OPTION, not the six-option block around it",
+    onOption.clicked === true &&
+      onOption.marked === "choiceOption" &&
+      onOption.markedHeight > 0 &&
+      onOption.markedHeight < onOption.blockHeight / 2,
+    JSON.stringify(onOption),
+  );
+
+  const onLine = await clickAndRead('[data-issue="unnamed-variable-shown"]');
+  check(
+    "...and marks the LINE, not the conversation around it",
+    onLine.clicked === true && onLine.marked === "dialogueLine",
+    JSON.stringify(onLine),
+  );
+  check(
+    "...with the Inspector opened on that same line, not the conversation's first",
+    onLine.inspector?.kind === "dialogue" && onLine.inspector?.lineId === "dl-2",
+    JSON.stringify(onLine.inspector),
+  );
+
+  // ── and the one that really is about the whole block ──────────────────
+  await seedProject();
+  await api(() => {
+    const st = window.__scriareProjectStore.getState();
+    const { buildDialogueBlockNode } = window.__scriareDialogue;
+    // Every line stays, so nothing can close the conversation — a finding
+    // with no single line to blame.
+    const block = buildDialogueBlockNode(
+      [
+        { id: "x-1", text: "Fine.", after: "stay", repeatable: true },
+        { id: "x-2", text: "Go on.", after: "stay", repeatable: true },
+      ],
+      "the-trap",
+    );
+    window.__scriareProjectStore.getState().updateSceneContent(st.project.scenes[0].id, {
+      type: "doc",
+      content: [
+        { type: "paragraph", attrs: { lineId: "q1" }, content: [{ type: "text", text: "Rain." }] },
+        block,
+      ],
+    });
+  });
+  await wait(300);
+  const wholeBlock = await api(() => {
+    const p = window.__scriareProjectStore.getState().project;
+    const i = window.__scriareStoryCheck
+      .checkStory(p)
+      .issues.find((x) => x.kind === "dialogue-never-ends");
+    return i ? { blockId: i.blockId ?? null, anchorId: i.anchorId ?? null } : null;
+  });
+  check(
+    "a conversation nothing can close blames no single line, and marks the block",
+    wholeBlock !== null && wholeBlock.blockId === "the-trap" && wholeBlock.anchorId === null,
+    JSON.stringify(wholeBlock),
+  );
 
   await seedProject();
 }

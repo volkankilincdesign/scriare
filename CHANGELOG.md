@@ -12,6 +12,41 @@ omitting them.
 
 ---
 
+## v0.77.2 — As small as the finding
+
+One unnamed variable on option 4 of a six-option Choice Block lit all six —
+and sent the writer hunting inside the thing they had just been pointed at,
+which is the same "somewhere over there" the reveal was built to end.
+
+One field was answering two questions. The Inspector can only open on a
+**block**; the mark should be as small as the fault. Those are different
+ids, so they are different fields now: `blockId` for the panel, `anchorId`
+for the mark. A choice finding anchors to its option, a Dialogue finding to
+its line, a speaker finding to the paragraph that lost its name.
+
+A finding that really is about the whole block — a conversation nothing can
+close — leaves the anchor unset and the block is marked. That is not a gap.
+There is no one line to blame, and pretending otherwise would point at an
+innocent one.
+
+**Two pieces of code deleted for doing nothing.** The first draft also
+passed the anchor to the Inspector as a Dialogue `lineId`, so the panel
+would open on the same line. Its negative control would not go red, and the
+reason was that the reveal already puts the caret inside that line and
+SceneEditor's ancestor walk sets the target with its id — the pass-through
+changed nothing any test could see. Code that cannot be observed is code
+that drifts, so it went, and the control was re-aimed at the walk that
+actually does the work.
+
+That is the third time this week a belt-and-braces line turned out to be
+only braces: v0.77.0's `goTo` had one, and v0.77.1 found another. The
+pattern is worth naming — a second mechanism added "to be safe" is
+untestable by construction when the first one already works, and the only
+way to find out is to try to break it.
+
+Three controls, one of which had to be rewritten after it was caught being
+unbreakable.
+
 ## v0.77.1 — A kind is not a place
 
 Reported within the hour: clicking a finding inside a Dialogue lit the

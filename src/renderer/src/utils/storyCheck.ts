@@ -104,7 +104,28 @@ export interface StoryIssue {
   hint: string;
   /** Where to go when this is clicked. */
   sceneId?: string;
+  /**
+   * The BLOCK the Inspector opens on — a Choice Block or a Dialogue,
+   * never finer than that, because those are the only things it has
+   * panels for.
+   */
   blockId?: string;
+  /**
+   * The precise node the editor scrolls to and marks (v0.77.2, reported).
+   *
+   * Separate from `blockId` because they are answers to different
+   * questions, and v0.77.0 used one field for both. The Inspector can only
+   * open on a block; the MARK should be as small as the finding is. One
+   * unnamed variable on option 4 of a six-option Choice Block lit all six
+   * and sent the writer hunting inside the thing they had just been
+   * pointed at — which is the same "somewhere over there" the reveal was
+   * built to end.
+   *
+   * A finding that really is about the whole block (a conversation nothing
+   * can close) leaves this unset and the block is marked, which is honest:
+   * there is no one line to blame.
+   */
+  anchorId?: string;
   /**
    * What `blockId` actually points AT, so the Inspector can be opened on
    * it (v0.77.0).
@@ -262,6 +283,8 @@ export function checkStory(project: Project | null): StoryCheck {
     label: string,
     sceneId: string,
     blockId: string,
+    /** The option or line itself — what the editor marks. See `anchorId`. */
+    anchorId: string,
     /**
      * Which kind of block raised it (v0.77.1). The same finding comes from
      * a choice option and from a Dialogue line, so the KIND cannot say
@@ -291,6 +314,7 @@ export function checkStory(project: Project | null): StoryCheck {
       what: "unnamed variable",
       sceneId,
       blockId,
+      anchorId,
       inspect,
     });
   };
@@ -330,6 +354,7 @@ export function checkStory(project: Project | null): StoryCheck {
           what: "unlinked",
           sceneId: scene.id,
           blockId,
+          anchorId: option.id,
         });
       } else if (!byId.has(option.targetSceneId)) {
         issues.push({
@@ -342,6 +367,7 @@ export function checkStory(project: Project | null): StoryCheck {
           what: "broken link",
           sceneId: scene.id,
           blockId,
+          anchorId: option.id,
         });
       } else {
         targets.push(option.targetSceneId);
@@ -363,6 +389,7 @@ export function checkStory(project: Project | null): StoryCheck {
             what: "dead gate",
             sceneId: scene.id,
             blockId,
+            anchorId: option.id,
           });
         }
       });
@@ -379,11 +406,12 @@ export function checkStory(project: Project | null): StoryCheck {
             what: "dead action",
             sceneId: scene.id,
             blockId,
+            anchorId: option.id,
           });
         }
       });
 
-      reportUnnamed(option, option.id, where, label, scene.id, blockId);
+      reportUnnamed(option, option.id, where, label, scene.id, blockId, option.id);
     });
 
     // ── the Dialogue (v0.66.0) ──────────────────────────────────────
@@ -440,6 +468,7 @@ export function checkStory(project: Project | null): StoryCheck {
               what: "unlinked",
               sceneId: scene.id,
               blockId,
+              anchorId: line.id,
               inspect: "dialogue",
             });
           } else if (!byId.has(line.targetSceneId)) {
@@ -453,6 +482,7 @@ export function checkStory(project: Project | null): StoryCheck {
               what: "broken link",
               sceneId: scene.id,
               blockId,
+              anchorId: line.id,
               inspect: "dialogue",
             });
           } else {
@@ -460,7 +490,7 @@ export function checkStory(project: Project | null): StoryCheck {
           }
         }
 
-        reportUnnamed(line, line.id, where, label, scene.id, blockId, "dialogue");
+        reportUnnamed(line, line.id, where, label, scene.id, blockId, line.id, "dialogue");
 
         line.conditions.forEach((condition) => {
           if (!variableIds.has(condition.variableId)) {
@@ -475,6 +505,7 @@ export function checkStory(project: Project | null): StoryCheck {
               what: "can never be said",
               sceneId: scene.id,
               blockId,
+              anchorId: line.id,
               inspect: "dialogue",
             });
           }
@@ -493,6 +524,7 @@ export function checkStory(project: Project | null): StoryCheck {
               what: "dead action",
               sceneId: scene.id,
               blockId,
+              anchorId: line.id,
               inspect: "dialogue",
             });
           }
@@ -555,10 +587,11 @@ export function checkStory(project: Project | null): StoryCheck {
         label: entity ? entity.name || "Unnamed" : "Deleted character",
         what: entity ? "cannot speak" : "no speaker",
         sceneId: scene.id,
-        // The id of the first line that lost its name. Not something the
-        // Inspector can show — `inspect` is null for these kinds — but
-        // exactly what the editor should scroll to and mark (v0.77.0).
-        ...(anchor ? { blockId: anchor } : {}),
+        // The first line that lost its name. An ANCHOR, not a blockId,
+        // since v0.77.2: a paragraph is not a block, the Inspector has no
+        // panel for one, and the field meaning "what the Inspector opens
+        // on" should not carry something it cannot open.
+        ...(anchor ? { anchorId: anchor } : {}),
       });
     });
 

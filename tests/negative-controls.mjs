@@ -2576,7 +2576,7 @@ const CONTROLS = [
     // reads the issue objects rather than the screen.
     name: "a speaker row that names the scene instead of the first line in it",
     file: src("utils/storyCheck.ts"),
-    from: "        ...(anchor ? { blockId: anchor } : {}),",
+    from: "        ...(anchor ? { anchorId: anchor } : {}),",
     to: "",
     spec: "story-check",
     expect: "points at the FIRST line",
@@ -2600,7 +2600,7 @@ const CONTROLS = [
     name: "an explanation that is correct in the data and drawn nowhere",
     file: src("components/story/StoryCheckDialog.tsx"),
     from: "                            {issue.hint}",
-    to: "                            {issue.blockId ? \"\" : issue.hint}",
+    to: "                            {(issue.anchorId ?? issue.blockId) ? \"\" : issue.hint}",
     spec: "story-check",
     expect: "explains itself on the page",
   },
@@ -2623,8 +2623,8 @@ const CONTROLS = [
     // that does not exist.
     name: "the Inspector told that a conversation is a choice",
     file: src("components/story/StoryCheckDialog.tsx"),
-    from: "    if (issue.blockId && issue.inspect) {\n      selectTarget({ kind: issue.inspect, sceneId: issue.sceneId, blockId: issue.blockId });",
-    to: '    if (issue.blockId) {\n      selectTarget({ kind: "choice", sceneId: issue.sceneId, blockId: issue.blockId });',
+    from: "      selectTarget({ kind: issue.inspect, sceneId: issue.sceneId, blockId: issue.blockId });",
+    to: '      selectTarget({ kind: "choice", sceneId: issue.sceneId, blockId: issue.blockId });',
     spec: "story-check",
     expect: "opens the Inspector on the conversation",
   },
@@ -2664,10 +2664,46 @@ const CONTROLS = [
     // that is where the caller's knowledge is thrown away.
     name: "a Dialogue's finding filed as a choice's because they share a kind",
     file: src("utils/storyCheck.ts"),
-    from: "      sceneId,\n      blockId,\n      inspect,\n    });\n  };",
-    to: '      sceneId,\n      blockId,\n      inspect: "choice",\n    });\n  };',
+    from: "      sceneId,\n      blockId,\n      anchorId,\n      inspect,\n    });\n  };",
+    to: '      sceneId,\n      blockId,\n      anchorId,\n      inspect: "choice",\n    });\n  };',
     spec: "story-check",
     expect: "opens the Inspector on the conversation",
+  },
+  {
+    // v0.77.0's shape: one field for two questions, so the mark is
+    // whatever the Inspector opens on — all six options of a Choice Block
+    // for a fault on one of them. It still scrolls, it still marks, it
+    // still lands in the right scene; it is simply pointing at the
+    // haystack. Nothing that reads the issue objects can tell.
+    name: "a whole block lit up for a fault on one line inside it",
+    file: src("components/story/StoryCheckDialog.tsx"),
+    from: "    const mark = issue.anchorId ?? issue.blockId;",
+    to: "    const mark = issue.blockId ?? issue.anchorId;",
+    spec: "story-check",
+    expect: "marks the OPTION",
+  },
+  {
+    // The anchor dropped at the source instead. Same visible outcome by a
+    // different route — here the finding never knew which option it was
+    // about, so no consumer could.
+    name: "a choice finding that does not record which option it is about",
+    file: src("utils/storyCheck.ts"),
+    from: "          anchorId: option.id,\n        });",
+    to: "        });",
+    spec: "story-check",
+    expect: "the option for the mark",
+  },
+  {
+    // The Inspector opened on the conversation's FIRST line whatever was
+    // clicked — the state before the anchor was passed through as a
+    // lineId. The editor and the panel then disagree about which line the
+    // writer came for, which is worse than either being wrong alone.
+    name: "a Dialogue panel opened on a different line from the one marked",
+    file: src("components/editor/SceneEditor.tsx"),
+    from: 'inspector.selectTarget({ kind: "dialogue", sceneId, blockId, lineId });',
+    to: 'inspector.selectTarget({ kind: "dialogue", sceneId, blockId });',
+    spec: "story-check",
+    expect: "not the conversation's first",
   },
 ];
 
