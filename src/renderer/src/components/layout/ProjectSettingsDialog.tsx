@@ -160,67 +160,75 @@ export function ProjectSettingsDialog({ onClose }: ProjectSettingsDialogProps) {
         ))}
       </select>
 
-      <label className="scriare-section-label mb-1 block text-[var(--text-3)]">Choice styles</label>
-      <p className="mb-2 text-xs text-[var(--text-3)]">
-        How choices look — named once, used anywhere in the story.
-      </p>
-      <button
-        type="button"
-        onClick={() => {
-          // Closes this dialog rather than stacking one modal on another:
-          // the styles manager is a place you go, not a detail of Settings.
-          // It is told WHERE IT CAME FROM, so it can offer the way back
-          // that this swap left missing until v0.55.0.
-          onClose();
-          useUIStore.getState().openChoiceStyles("settings");
-        }}
-        className="mb-5 w-full rounded-md border border-[var(--border)] px-3 py-2 text-left text-sm text-[var(--text-2)] hover:border-[var(--border-faint)] hover:text-[var(--text)]"
-      >
-        {project.choiceStyles.length}{" "}
-        {project.choiceStyles.length === 1 ? "style" : "styles"} — manage…
-      </button>
+      {/* ── ELSEWHERE (v0.83.0) ──────────────────────────────────────
+          His complaint: the three kinds of thing in this dialog read as
+          one stack. Underneath it sat a second problem — a DOOR AND A
+          FIELD WERE THE SAME SHAPE. "Start scene" and "Stylesheet" were
+          both full-width bordered rectangles, but one edits a value here
+          and the other closes this dialog and opens another. So the fix
+          is not more spacing between identical objects; it is making the
+          doors stop pretending to be fields.
 
-      <label className="scriare-section-label mb-1 block text-[var(--text-3)]">Stylesheet</label>
-      <p className="mb-2 text-xs text-[var(--text-3)]">
-        Your own CSS for this story — applied in Play Mode and in the exported page.
-      </p>
-      <button
-        type="button"
-        onClick={() => {
-          // Same swap the Choice Styles door does, and for the same
-          // reason: a stylesheet is a surface you sit in, not a detail of
-          // Settings. It is told where it came from so it can offer the
-          // way back.
-          onClose();
-          useUIStore.getState().openStylesheet("settings");
-        }}
-        data-open-stylesheet
-        className="mb-5 w-full rounded-md border border-[var(--border)] px-3 py-2 text-left text-sm text-[var(--text-2)] hover:border-[var(--border-faint)] hover:text-[var(--text)]"
-      >
-        {project.stylesheet
-          ? `${project.stylesheet.split("\n").length} lines — edit…`
-          : "None yet — write one…"}
-      </button>
+          Drawn as rows with the current value on the right and a
+          chevron: the shape says you are leaving, so no heading has to.
+          It is also SHORTER than the version it replaces, because three
+          help sentences become three subtitles and the value moves out of
+          the control's own label — "2 styles — manage…" was a button
+          whose text changed with the data, which is a label doing a
+          value's job.
 
-      {/* The way OUT, and the reason it is a door rather than a section:
-          the theme is not part of this story, and having to cross
-          something to reach it says so more plainly than a heading. */}
-      <div className="mb-5 border-t border-[var(--border-soft)] pt-4">
-        <label className="scriare-section-label mb-1 block text-[var(--text-3)]">Appearance</label>
-        <p className="mb-2 text-xs text-[var(--text-3)]">
-          How the app looks on this computer. Not saved in the story.
+          THE ONE SENTENCE BORROWED from the option we did not take: what
+          is saved in the file and what is not. That distinction was
+          buried under Appearance and it is the only thing separating it
+          from the two doors above it, so it is said once, plainly, over
+          the list. */}
+      <div className="mb-5 mt-1 border-t border-[var(--border-soft)] pt-4">
+        <div className="scriare-section-label mb-0.5 text-[var(--text-3)]">Elsewhere</div>
+        <p className="mb-1 text-xs text-[var(--text-3)]">
+          These open in their own place. Appearance is the only one not saved in the story.
         </p>
-        <button
-          type="button"
-          onClick={() => {
-            onClose();
-            useUIStore.getState().openPreferences("settings");
-          }}
-          data-open-preferences
-          className="w-full rounded-md border border-[var(--border)] px-3 py-2 text-left text-sm text-[var(--text-2)] hover:border-[var(--border-faint)] hover:text-[var(--text)]"
-        >
-          {themeLabel} — change…
-        </button>
+        <div data-settings-doors>
+          <DoorRow
+            title="Choice styles"
+            sub="How choices look, named once"
+            value={`${project.choiceStyles.length} ${
+              project.choiceStyles.length === 1 ? "style" : "styles"
+            }`}
+            data-open-choice-styles
+            onClick={() => {
+              // Still a swap rather than a stack — the styles manager is a
+              // place you go, not a detail of Settings — and still told
+              // WHERE IT CAME FROM so it can offer the way back that
+              // v0.55.0 added. Only the shape of the control changed.
+              onClose();
+              useUIStore.getState().openChoiceStyles("settings");
+            }}
+          />
+          <DoorRow
+            title="Stylesheet"
+            sub="Your own CSS for this story"
+            value={
+              project.stylesheet
+                ? `${project.stylesheet.split("\n").length} lines`
+                : "None yet"
+            }
+            data-open-stylesheet
+            onClick={() => {
+              onClose();
+              useUIStore.getState().openStylesheet("settings");
+            }}
+          />
+          <DoorRow
+            title="Appearance"
+            sub="How the app looks on this computer"
+            value={themeLabel}
+            data-open-preferences
+            onClick={() => {
+              onClose();
+              useUIStore.getState().openPreferences("settings");
+            }}
+          />
+        </div>
       </div>
 
       <div className="flex justify-end gap-2">
@@ -232,5 +240,56 @@ export function ProjectSettingsDialog({ onClose }: ProjectSettingsDialogProps) {
         </Button>
       </div>
     </Modal>
+  );
+}
+
+/**
+ * One door out of Settings (v0.83.0).
+ *
+ * LOCAL, AND IT SHOULD STAY LOCAL UNTIL A SECOND SURFACE WANTS IT. The
+ * kit's own history is the argument: `Button` was extracted because the
+ * primary action already existed in nine spellings across the app, and
+ * v0.82.0's floating panel because four menus already disagreed. This
+ * shape exists in one dialog, three times. A component in `common/` that
+ * one file uses is a decision made in advance of the question — the same
+ * note `Button` leaves about the `lg` size it does not have.
+ *
+ * `value` is on the RIGHT and is the live one. It used to live inside the
+ * button's own label ("2 styles — manage…"), which made a label do a
+ * value's job and meant the control's text changed length with the data.
+ */
+function DoorRow({
+  title,
+  sub,
+  value,
+  onClick,
+  ...rest
+}: {
+  title: string;
+  sub: string;
+  value: string;
+  onClick: () => void;
+} & Record<string, unknown>) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      data-settings-door
+      className="flex w-full items-center gap-3 border-b border-[var(--border-soft)] px-0.5 py-2.5 text-left last:border-b-0 hover:bg-[var(--surface-2-faint)]"
+      {...rest}
+    >
+      <span className="min-w-0 flex-1">
+        <span data-door-title className="block truncate text-sm text-[var(--text)]">
+          {title}
+        </span>
+        <span className="block truncate text-[11.5px] text-[var(--text-3)]">{sub}</span>
+      </span>
+      <span data-door-value className="shrink-0 text-xs text-[var(--text-3)]">
+        {value}
+      </span>
+      <span aria-hidden className="shrink-0 text-[var(--text-3)]">
+        ›
+      </span>
+    </button>
   );
 }

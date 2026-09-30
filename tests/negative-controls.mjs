@@ -3167,6 +3167,37 @@ const CONTROLS = [
     spec: "entities-and-renaming",
     expect: "selects the letters it was dragged across",
   },
+
+  /* ── Settings' doors stop looking like fields (v0.83.0) ───────── */
+  {
+    // A door drawn as a field again, which is the shape that made three
+    // kinds of thing read as one stack.
+    name: "a door in Settings built like a text field",
+    file: src("components/layout/ProjectSettingsDialog.tsx"),
+    from: '      data-settings-door\n      className="flex w-full items-center gap-3',
+    to: '      data-settings-door\n      className="block w-full rounded-md border border-[var(--border)] px-3 py-2',
+    spec: "story-details",
+    expect: "each door shows its current value on the right",
+  },
+  {
+    // The value back inside the label, where it made a label do a value's
+    // job and the control's text change length with the data.
+    name: "a door whose value is hidden inside its own label",
+    file: src("components/layout/ProjectSettingsDialog.tsx"),
+    from: '            value={themeLabel}',
+    to: '            value=""',
+    spec: "story-details",
+    expect: "each door shows its current value on the right",
+  },
+  {
+    // The one sentence borrowed from the option we did not build.
+    name: "a settings list that does not say what is not saved in the story",
+    file: src("components/layout/ProjectSettingsDialog.tsx"),
+    from: "          These open in their own place. Appearance is the only one not saved in the story.",
+    to: "          These open in their own place.",
+    spec: "story-details",
+    expect: "says which of them is not saved in the story",
+  },
 ];
 
 

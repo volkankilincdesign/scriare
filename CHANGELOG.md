@@ -12,6 +12,52 @@ omitting them.
 
 ---
 
+## v0.83.0 — A door is not a field
+
+His complaint was that Project Settings reads as one undifferentiated
+stack — the story's own facts, two places you can go, and one setting that
+is not part of the story at all, all in a row. Two mockups, and he picked
+the one that fixes the cause rather than the symptom.
+
+**The cause was shape, not spacing.** A door and a text field were the
+same object: full-width, bordered, rounded, left-aligned text. "Start
+scene" and "Stylesheet" looked like the same kind of control, though one
+edits a value here and the other closes this dialog and opens another. No
+amount of space between identical rectangles makes them different kinds of
+thing.
+
+**So the doors stopped pretending.** Choice Styles, Stylesheet and
+Appearance are a list at the foot now — a title, a subtitle, the current
+value on the right, a chevron. The shape says you are leaving, so no
+heading has to say it, and the dialog came out SHORTER than the version it
+replaces: three help sentences became three subtitles, and the value moved
+out of the control's own label. "2 styles — manage…" was a label doing a
+value's job, and its text changed length with the data.
+
+**One sentence was borrowed from the option we did not build.** What is
+saved in the file and what is not was buried under Appearance, and it is
+the only thing separating that door from the two above it. It is said once
+now, over the list.
+
+**The row component stays inside the dialog.** The kit's own history is
+the argument for not extracting it: `Button` was pulled out because the
+primary action already existed in nine spellings, and v0.82.0's floating
+panel because four menus already disagreed. This shape exists in one file,
+three times. A `common/` component with one caller is a decision made
+ahead of the question.
+
+**Two checks were found wanting, both by their own controls.** A
+navigation spec clicked the Choice Styles door by the word "manage", which
+no longer exists — a control found by its text is a control that moves
+when the copy does, which is the same mistake the Export button check made
+in v0.80.0. And the new check claimed each door "shows its current value
+on the right" while only testing that a value element existed: a door
+rebuilt as a stacked block still has one, and the control stayed green
+saying so. It measures the geometry now — the value has to start after the
+title ends, on the same line.
+
+---
+
 ## v0.82.0 — One floating panel, and five shadows that were never there
 
 Phase 2 of the UI sweep, unparked, starting with the small three —

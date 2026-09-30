@@ -290,4 +290,73 @@ export default async function ({ page, api, check, seedProject, app }) {
   await win.evaluate((w) => w.setBounds({ x: 0, y: 0, width: 1280, height: 800 }));
   await wait(200);
   await seedProject();
+
+  /* ── the doors are doors (v0.83.0) ─────────────────────────────── */
+
+  // His complaint was that the three kinds of thing in this dialog read
+  // as one stack. The cause underneath it: a DOOR AND A FIELD WERE THE
+  // SAME SHAPE — both full-width bordered rectangles — though one edits a
+  // value here and the other closes this dialog and opens another. So
+  // what is asserted is the difference, measured: a door is not built
+  // like an input, it carries its value on the right instead of inside
+  // its own label, and all three live in one list.
+  await api(() => window.__scriareUIStore.getState().openSettings());
+  await wait(260);
+
+  const doors = await api(() => {
+    const list = document.querySelector("[data-settings-doors]");
+    const rows = [...document.querySelectorAll("[data-settings-door]")];
+    const field = document.querySelector("[data-story-title]");
+    return {
+      count: rows.length,
+      insideOneList: rows.every((r) => list && list.contains(r)),
+      titles: rows.map((r) => r.textContent.replace(/\s+/g, " ").trim()),
+      values: rows.map((r) => r.querySelector("[data-door-value]")?.textContent ?? null),
+      // "ON THE RIGHT", MEASURED. The first version of this checked that
+      // a value element existed, which is not the same claim: a door
+      // rebuilt as a stacked block still has one, and its negative
+      // control stayed green saying so. The value has to start after the
+      // title ends, on the same line.
+      besideNotUnder: rows.every((r) => {
+        const t = r.querySelector("[data-door-title]");
+        const v = r.querySelector("[data-door-value]");
+        if (!t || !v) return false;
+        const a = t.getBoundingClientRect();
+        const b = v.getBoundingClientRect();
+        return b.left >= a.right && Math.abs(b.top - a.top) < a.height * 1.5;
+      }),
+      // A door is a button; a field is an input. The old shape made them
+      // the same rectangle, so this is the assertion that the shapes are
+      // no longer interchangeable.
+      areButtons: rows.every((r) => r.tagName === "BUTTON"),
+      fieldIsInput: field ? field.tagName === "INPUT" : null,
+      // The sentence borrowed from the option we did not build: which of
+      // these is not part of the story.
+      saysWhatIsNotSaved: /not saved in the story/i.test(
+        document.querySelector("[data-settings-doors]")?.parentElement?.textContent ?? "",
+      ),
+      // And no door still hides its value inside its own label.
+      noneLabelTheirValue: rows.every((r) => !/manage…|write one…|change…/.test(r.textContent)),
+    };
+  });
+
+  check("all three doors are in one list", doors.count === 3 && doors.insideOneList, doors.titles.join(" / "));
+  check("a door is a button and a field is an input", doors.areButtons && doors.fieldIsInput === true);
+  check(
+    "each door shows its current value on the right",
+    doors.values.every((v) => typeof v === "string" && v.length > 0) && doors.besideNotUnder,
+    `${JSON.stringify(doors.values)} · beside: ${doors.besideNotUnder}`,
+  );
+  check(
+    "...rather than inside its own label, the way they used to",
+    doors.noneLabelTheirValue === true,
+    doors.titles.join(" / "),
+  );
+  check(
+    "the list says which of them is not saved in the story",
+    doors.saysWhatIsNotSaved === true,
+  );
+
+  await api(() => window.__scriareUIStore.getState().closeSettings());
+  await wait(160);
 }

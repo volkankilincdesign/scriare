@@ -56,7 +56,13 @@ export default async function run({ page, api, check, seedProject }) {
   );
 
   // Through the real button, so this is the route a writer takes.
-  await page.getByRole("button", { name: /manage/i }).click();
+  // BY ITS OWN HANDLE, not by the word "manage". This read
+  // `getByRole("button", { name: /manage/i })` until v0.83.0 moved the
+  // door's value out of its label — "2 styles — manage…" became a row
+  // titled "Choice styles" with "2 styles" on the right — and the spec
+  // then waited thirty seconds for a word that no longer existed. A
+  // control found by its text is a control that moves when the copy does.
+  await page.click("[data-open-choice-styles]");
   await wait(250);
   const styles = await dialogs();
   check(
