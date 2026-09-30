@@ -3198,6 +3198,24 @@ const CONTROLS = [
     spec: "story-details",
     expect: "says which of them is not saved in the story",
   },
+  {
+    // Export silent about the stylesheet again — the state that had him
+    // hunting the dialog for a switch that does not exist.
+    name: "an export that never mentions the stylesheet it is shipping",
+    file: src("components/export/ExportDialog.tsx"),
+    from: "            {project.stylesheet && (",
+    to: "            {false && (",
+    spec: "custom-css",
+    expect: "says the stylesheet is going with the page",
+  },
+  // THERE IS NO CONTROL FOR THE OPPOSITE — announcing a stylesheet that
+  // does not exist — and the attempt is worth recording. Forcing the
+  // guard true CRASHES the render rather than failing an assertion,
+  // because the guard and the value it reads are the same expression:
+  // with no stylesheet there is nothing to call `.split` on. The check
+  // stays; its property is enforced by the code's shape rather than by a
+  // watchable failure, which is the third time this pattern has come up
+  // (see v0.80.0's box-class control and v0.81.0's tooltip one).
 ];
 
 

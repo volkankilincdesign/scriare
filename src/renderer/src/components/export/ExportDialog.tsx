@@ -212,6 +212,31 @@ export function ExportDialog() {
               ))}
               <span className="text-[var(--text-3)]">· Back · Restart · keeps their place</span>
             </div>
+            {/* v0.83.1 — THE STYLESHEET, SAID OUT LOUD. He wrote CSS, opened
+                this dialog looking for the switch that turns it on, and
+                found nothing — because there is no switch: a stylesheet is
+                part of the story, like the Choice Styles and the prose, and
+                it always ships. But "what the reader gets" is the one panel
+                whose whole job is answering "what does it look like", and
+                the stylesheet is now the biggest single answer to that
+                question. Saying nothing let a writer reasonably conclude it
+                had been left behind.
+
+                Only when there IS one. A line reading "no stylesheet" would
+                be the app volunteering an absence nobody asked about, in a
+                dialog that already argues against handing the writer five
+                more decisions. */}
+            {project.stylesheet && (
+              <div
+                data-export-stylesheet
+                className="mt-2 border-t border-[var(--border-soft)] pt-2 text-xs text-[var(--text-2)]"
+              >
+                <span className="text-[var(--accent)]">✓</span> Your stylesheet goes with it —{" "}
+                {project.stylesheet.split("\n").length}{" "}
+                {project.stylesheet.split("\n").length === 1 ? "line" : "lines"}, applied to this
+                page exactly as in Play Mode.
+              </div>
+            )}
           </div>
 
           <StylesheetNotes

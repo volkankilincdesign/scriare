@@ -401,6 +401,52 @@ export default async function run({ api, check, openExported }) {
     `listed: ${noGate.listed}, disabled: ${noGate.disabled}`,
   );
 
+  /* ── the export says the stylesheet is coming ──────────────────── */
+
+  // He wrote CSS, opened Export looking for the switch that turns it on,
+  // and found nothing. There is no switch — a stylesheet is part of the
+  // story and always ships — but "what the reader gets" is the panel
+  // whose job is answering "what does it look like", and saying nothing
+  // let a writer conclude it had been left behind.
+  const told = await api(async (project) => {
+    const w = (ms) => new Promise((r) => setTimeout(r, ms));
+    const P = window.__scriareProjectTypes;
+    const read = async (proj) => {
+      window.__scriareProjectStore.setState({
+        project: P.normalizeProject(proj),
+        filePath: null,
+        saveStatus: "saved",
+      });
+      await w(90);
+      window.__scriareUIStore.getState().openExport();
+      await w(220);
+      const line = document.querySelector("[data-export-stylesheet]");
+      const text = line ? line.textContent.replace(/\s+/g, " ").trim() : null;
+      window.__scriareUIStore.getState().closeExport();
+      await w(140);
+      return text;
+    };
+    const withCss = await read(project);
+    const without = await read({ ...project, stylesheet: undefined });
+    return { withCss, without };
+  }, fixture(".scriare-page { background: #101014; }\n.scriare-choice { border-radius: 0; }"));
+
+  check(
+    "Export says the stylesheet is going with the page",
+    typeof told.withCss === "string" && /stylesheet goes with it/i.test(told.withCss),
+    String(told.withCss),
+  );
+  check(
+    "...and how much of it there is, so it can be recognised",
+    typeof told.withCss === "string" && /\b2 lines\b/.test(told.withCss),
+    String(told.withCss),
+  );
+  check(
+    "a story with no stylesheet is not told about the one it does not have",
+    told.without === null,
+    String(told.without),
+  );
+
   /* ── the editor's own surface ──────────────────────────────────── */
 
   // WHAT A PLACEHOLDER LOOKS LIKE, which is a thing no test had ever
