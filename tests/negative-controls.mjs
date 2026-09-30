@@ -3208,6 +3208,27 @@ const CONTROLS = [
     spec: "custom-css",
     expect: "says the stylesheet is going with the page",
   },
+  {
+    // The New button back to its own spelling — the state this file was
+    // in, with a bordered secondary button written two ways inside it.
+    name: "a secondary button re-typed instead of taken from the kit",
+    file: src("components/layout/ContentBrowser.tsx"),
+    from: '            <Button\n              intent="secondary"\n              size="sm"\n              ref={newButton}',
+    to: '            <Button\n              intent="secondary"\n              size="md"\n              ref={newButton}',
+    spec: "kit",
+    expect: "the kit's secondary, measured",
+  },
+  {
+    // The search field painted in the panel's own colour, which is what
+    // "finishing the job" with the kit's row-scale input would do.
+    name: "a search field painted the same colour as the panel behind it",
+    file: src("components/layout/ContentBrowser.tsx"),
+    from: 'className="w-full rounded-md border border-[var(--border-soft)] bg-[var(--bg)]',
+    to: 'className="w-full rounded-md border border-[var(--border-soft)] bg-[var(--surface)]',
+    spec: "kit",
+    expect: "not painted the same as the panel behind it",
+  },
+
   // THERE IS NO CONTROL FOR THE OPPOSITE — announcing a stylesheet that
   // does not exist — and the attempt is worth recording. Forcing the
   // guard true CRASHES the render rather than failing an assertion,

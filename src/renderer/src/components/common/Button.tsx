@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 /**
@@ -68,15 +69,21 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
 }
 
-export function Button({
-  intent = "secondary",
-  size = "md",
-  className = "",
-  type = "button",
-  ...rest
-}: ButtonProps) {
+/**
+ * `forwardRef` since v0.84.0, and it was the kit catching up rather than
+ * the kit growing. The Content Browser's "+ New ▾" anchors a menu to its
+ * own element, so bringing it onto this component meant the component
+ * needed a ref — and until something did, not having one was the right
+ * amount of Button. The same rule the missing `lg` size is kept by: a
+ * variant with no caller is a decision made ahead of the question.
+ */
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { intent = "secondary", size = "md", className = "", type = "button", ...rest },
+  ref,
+) {
   return (
     <button
+      ref={ref}
       // Spelled out rather than defaulted by the caller: a <button> inside
       // a form submits it, and this component is used inside dialogs that
       // have inputs in them.
@@ -85,4 +92,4 @@ export function Button({
       {...rest}
     />
   );
-}
+});

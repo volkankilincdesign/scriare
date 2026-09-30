@@ -244,4 +244,61 @@ export default async function run({ page, api, check, seedProject, app }) {
     "the workspace is handed back to the next spec",
     await api(() => Boolean(window.__scriareProjectStore.getState().project)),
   );
+
+  /* ── the Content Browser's controls (v0.84.0) ──────────────────── */
+
+  // COUNTED, the way v0.56.0 did it. This file held a bordered secondary
+  // button in TWO spellings — `rounded-md … text-[var(--text-2)]` beside
+  // `rounded … py-0.5 … text-[var(--text-2)]` — and neither was the kit's.
+  // Asserted by measuring the two against each other and against a real
+  // kit Button, rather than by looking for an import: what matters is
+  // that a writer sees one control, not that one file imports one thing.
+  const browser = await api(() => {
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const reference = document.createElement("button");
+    reference.className =
+      "inline-flex items-center justify-center gap-2 font-medium transition-colors rounded px-2.5 py-1 text-xs border border-[var(--border)] bg-transparent text-[var(--text)]";
+    host.appendChild(reference);
+    const r = getComputedStyle(reference);
+    const want = { radius: r.borderTopLeftRadius, pad: r.paddingTop, size: r.fontSize, weight: r.fontWeight };
+    host.remove();
+
+    const seen = [...document.querySelectorAll("[data-new-content]")].map((b) => {
+      const cs = getComputedStyle(b);
+      return { radius: cs.borderTopLeftRadius, pad: cs.paddingTop, size: cs.fontSize, weight: cs.fontWeight };
+    });
+    return { want, seen };
+  });
+
+  check(
+    "the Content Browser's New button is the kit's secondary, measured",
+    browser.seen.length === 1 &&
+      browser.seen[0].radius === browser.want.radius &&
+      browser.seen[0].pad === browser.want.pad &&
+      browser.seen[0].size === browser.want.size &&
+      browser.seen[0].weight === browser.want.weight,
+    `${JSON.stringify(browser.seen[0])} against ${JSON.stringify(browser.want)}`,
+  );
+
+  // THE SEARCH INPUT WAS LEFT ALONE, and this records why so the next
+  // sweep does not "finish the job". The kit's row-scale input is
+  // `bg-[var(--surface)]`, and this panel IS `--surface` — so the kit's
+  // own spelling would paint an invisible field. The panel's `--bg`
+  // input is correct and the kit's assumption is the thing that is
+  // narrow. Asserted, so the day someone aligns them the check says what
+  // it costs.
+  const contrast = await api(() => {
+    const panel = document.querySelector(".scriare-panel-l");
+    const input = panel ? panel.querySelector("input") : null;
+    return {
+      panel: panel ? getComputedStyle(panel).backgroundColor : null,
+      field: input ? getComputedStyle(input).backgroundColor : null,
+    };
+  });
+  check(
+    "the Content Browser's search field is not painted the same as the panel behind it",
+    contrast.panel !== null && contrast.field !== null && contrast.panel !== contrast.field,
+    `panel ${contrast.panel} · field ${contrast.field}`,
+  );
 }

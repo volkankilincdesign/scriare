@@ -51,13 +51,14 @@ function EntityList({ kind }: { kind: EntityKind }) {
         <p className="mb-2 text-xs text-[var(--text-3)]">
           No {ENTITY_LABEL[kind].toLowerCase()}s yet.
         </p>
-        <button
-          type="button"
-          onClick={() => createEntity(kind)}
-          className="rounded-md border border-[var(--border)] px-2.5 py-1 text-xs font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
-        >
+        {/* v0.84.0 — the kit's secondary, not a third hand-typed copy of
+            it. This was `rounded-md … text-[var(--text-2)]` where the
+            component is `rounded … text-[var(--text)]`: near enough that
+            nobody would name the difference, which is how a bordered
+            button came to exist in two spellings inside ONE file. */}
+        <Button intent="secondary" size="sm" onClick={() => createEntity(kind)}>
           Create {ENTITY_LABEL[kind]}
-        </button>
+        </Button>
         <p className="mt-2 text-[11px] leading-relaxed text-[var(--text-3)]">
           {/* A note cannot be made with @, because a note cannot be
               mentioned — so the empty state says what a note is FOR
@@ -728,18 +729,18 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
               is a different kind of act, not the third item in a row of
               three (v0.45.0, reported). */}
           <div className="flex items-center gap-2.5">
-            <button
-              type="button"
+            <Button
+              intent="secondary"
+              size="sm"
               ref={newButton}
               data-new-content
               aria-haspopup="menu"
               aria-expanded={newMenu !== null}
               onClick={openNewMenu}
-              className="rounded border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
               title="New scene, group, character or location"
             >
               + New ▾
-            </button>
+            </Button>
             <DockToggle direction="left" onClick={onToggle} title="Collapse Content" />
           </div>
         </div>
