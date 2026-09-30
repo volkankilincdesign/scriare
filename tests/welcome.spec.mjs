@@ -1319,6 +1319,15 @@ export default async function run({ page, api, check, seedProject, app }) {
       seen[t.id] = {
         ground: t.ground,
         colour: el ? getComputedStyle(el).color : null,
+        // THE PAINTED FILL, not only the inherited `color` (v0.80.0). This
+        // read `color` alone, which is the value the mark is TOLD to use;
+        // a path with a hex `fill` on it would have kept that value and
+        // painted something else entirely. Found by a negative control
+        // that pinned the fill and was not caught.
+        // The RECT is the letter — the paths inside are a mask, painted in
+        // black and white so the mask works, and reading one of those was
+        // the first mistake this check made.
+        fill: el ? getComputedStyle(el.querySelector("rect") ?? el).fill : null,
         accent,
       };
     }
@@ -1330,7 +1339,7 @@ export default async function run({ page, api, check, seedProject, app }) {
   const darkColours = new Set(values.filter((m) => m.ground === "dark").map((m) => m.colour));
   check(
     "the wordmark is repainted by the theme rather than swapped between two files",
-    values.every((m) => m.colour && m.colour === m.accent) &&
+    values.every((m) => m.colour && m.colour === m.accent && m.fill === m.accent) &&
       lightColours.size > 1 &&
       darkColours.size > 1,
     `${lightColours.size} colours across the three light grounds, ${darkColours.size} across the five dark`,

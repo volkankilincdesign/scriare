@@ -204,26 +204,29 @@ export function pageRuntime(): string {
     return false;
   }
 
+  // A CLASS, NOT AN INLINE STYLE (v0.80.0). Every one of these five
+  // properties used to be written onto the element, and an inline style
+  // beats every stylesheet there is — which meant a writer's own CSS
+  // could never restyle a choice. The values now live in a generated rule
+  // in the scriare.boxes layer; choice.bx is the class that selects it.
   function choiceButton(choice) {
-    var button = element("button", "scriare-choice");
+    var button = element("button", "scriare-choice " + choice.bx);
     button.type = "button";
-    button.style.background = choice.b.fill || "var(--surface-2-translucent)";
-    button.style.borderColor = choice.b.border || "var(--border)";
-    button.style.borderWidth = choice.b.borderWidth + "px";
-    button.style.borderStyle = choice.b.borderWidth > 0 ? "solid" : "none";
-    button.style.borderRadius = choice.b.radius + "px";
     button.innerHTML = choice.l;
     button.addEventListener("click", function () { choose(choice); });
     return button;
   }
 
   function lockedButton(choice) {
-    var button = element("button", "scriare-choice is-locked");
+    // The SAME box class a live choice gets, which is what borrows the
+    // style's corner radius so a locked option still reads as one of the
+    // choices around it. Its fill and border do not come through: the
+      // base layer's .is-locked rule sits in a LATER layer than the
+    // generated boxes, so the dashed, drained treatment still wins — the
+    // arrangement that made one generated table enough.
+    var button = element("button", "scriare-choice is-locked " + choice.bx);
     button.type = "button";
     button.disabled = true;
-    // The style's corner radius is borrowed so a locked option still reads
-    // as one of the choices around it.
-    button.style.borderRadius = choice.b.radius + "px";
     var line = element("span", null);
     var cross = element("span", "scriare-lock-x");
     cross.setAttribute("aria-hidden", "true");
@@ -291,15 +294,10 @@ export function pageRuntime(): string {
   }
 
   function dialogueLineButton(line, segment) {
-    var button = element("button", "scriare-choice");
+    var button = element("button", "scriare-choice " + line.bx);
     button.type = "button";
     button.setAttribute("data-dialogue-line", line.i);
     button.setAttribute("data-after", line.f);
-    button.style.background = line.b.fill || "var(--surface-2-translucent)";
-    button.style.borderColor = line.b.border || "var(--border)";
-    button.style.borderWidth = line.b.borderWidth + "px";
-    button.style.borderStyle = line.b.borderWidth > 0 ? "solid" : "none";
-    button.style.borderRadius = line.b.radius + "px";
     button.innerHTML = line.l;
     button.addEventListener("click", function () { sayIt(line, segment); });
     return button;

@@ -5,6 +5,7 @@ import { EMPTY_DOC } from "../types/project";
 import type { Variable, VariableAction, VariableCondition } from "../types/variables";
 import { lockSentence } from "../types/variables";
 import { resolveChoiceBox } from "../types/choiceStyles";
+import { boxClass } from "../styles/choiceBoxLayer";
 import type { ChoiceBox } from "../types/choiceStyles";
 import { readChoiceBlockOptions } from "../utils/choiceBlocks";
 import { extractDialogueLines, DIALOGUE_BLOCK_TYPE } from "../utils/dialogueBlocks";
@@ -60,9 +61,20 @@ export interface ExportChoice {
    */
   r: string;
   a: VariableAction[];
-  /** Resolved box. Styles are looked up here so the export carries values,
-   *  not a style table plus a resolution algorithm. */
-  b: ChoiceBox;
+  /**
+   * The CLASS that paints this choice's box — not the box itself (v0.80.0).
+   *
+   * It held the resolved values until Custom CSS arrived, and the page set
+   * them as inline styles. An inline style beats every stylesheet, so a
+   * writer's `.scriare-choice { background: red }` could never have worked.
+   * The values now live once in `ExportStory.boxes` and are painted by a
+   * generated rule in a cascade layer; see styles/choiceBoxLayer.ts.
+   *
+   * Renamed from `b` deliberately: the key had to change so that any
+   * reader of the old one throws rather than quietly reading `undefined`
+   * off a string.
+   */
+  bx: string;
 }
 
 /** One line of a Dialogue, as the exported page needs it (v0.66.0). */
@@ -86,7 +98,8 @@ export interface ExportDialogueLine {
   u: "hide" | "lock";
   r: string;
   a: VariableAction[];
-  b: ChoiceBox;
+  /** See ExportChoice.bx. */
+  bx: string;
 }
 
 export type ExportSegment =
@@ -125,6 +138,20 @@ export interface ExportStory {
   start: string | null;
   scenes: ExportScene[];
   variables: Variable[];
+  /**
+   * Every distinct choice box the story uses, keyed by the class that
+   * paints it (v0.80.0). One entry per LOOK rather than one per choice: a
+   * story where four hundred choices wear the same style ships four
+   * hundred short class names and one rule, where it used to ship four
+   * hundred copies of the same four values.
+   */
+  boxes: Record<string, ChoiceBox>;
+  /**
+   * The writer's own stylesheet, verbatim, or absent (v0.80.0). Absent
+   * rather than empty, like `author` — a story with no stylesheet should
+   * carry no stylesheet, not a blank one.
+   */
+  css?: string;
 }
 
 function renderProse(content: JSONContent): string {
@@ -180,6 +207,16 @@ export function buildExportStory(project: Project): ExportStory {
   const variables = project.variables ?? [];
   const styles = project.choiceStyles ?? [];
 
+  // Collected as the story is built rather than by a second walk over it:
+  // one pass cannot disagree with itself about which boxes a story uses.
+  const boxes: Record<string, ChoiceBox> = {};
+  function boxFor(ref: Parameters<typeof resolveChoiceBox>[1]): string {
+    const box = resolveChoiceBox(styles, ref);
+    const cls = boxClass(box);
+    boxes[cls] = box;
+    return cls;
+  }
+
   const scenes: ExportScene[] = project.scenes.map((scene) => {
     const resolved = resolveMentions(scene.content ?? EMPTY_DOC, entities);
     const spoken = applySpeakerPrefixes(resolved, entities, playerName);
@@ -224,7 +261,7 @@ export function buildExportStory(project: Project): ExportStory {
           u: line.whenUnmet,
           r: lockSentence(line.lockReason, line.conditions, variables),
           a: line.actions ?? [],
-          b: resolveChoiceBox(styles, line.style),
+          bx: boxFor(line.style),
         }));
         if (lines.length > 0) {
           seg.push({ k: "d", id: (node.attrs?.blockId as string) ?? "", o: lines });
@@ -245,7 +282,7 @@ export function buildExportStory(project: Project): ExportStory {
             u: option.whenUnmet,
             r: lockSentence(option.lockReason, option.conditions, variables),
             a: option.actions ?? [],
-            b: resolveChoiceBox(styles, option.style),
+            bx: boxFor(option.style),
           }));
         if (options.length > 0) seg.push({ k: "c", o: options });
         continue;
@@ -263,5 +300,7 @@ export function buildExportStory(project: Project): ExportStory {
     start: project.startSceneId ?? (scenes[0]?.id ?? null),
     scenes,
     variables,
+    boxes,
+    css: project.stylesheet || undefined,
   };
 }

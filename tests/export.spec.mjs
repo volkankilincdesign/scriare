@@ -308,9 +308,16 @@ export default async function run({ api, check, openExported }) {
       // reader; what they can act on is which thing they lack.
       lockedReason: Boolean(buttons[2] && buttons[2].textContent.includes("Requires Trust")),
       lockedHidesTheNumber: Boolean(buttons[2] && !buttons[2].textContent.includes("at least 3")),
-      defaultFollowsGround: buttons[0].style.background.includes("var(--surface-2-translucent)"),
-      customRadius: buttons[1].style.borderRadius,
-      customFill: buttons[1].style.background,
+      // v0.80.0 — READ OFF THE COMPUTED STYLE, NOT THE INLINE ONE. These
+      // three read `button.style.*` until the box moved out of an inline
+      // style and into a generated rule in a cascade layer, so that a
+      // writer's own CSS could reach it. Measuring the inline attribute
+      // was measuring the MECHANISM; what the reader gets is the computed
+      // value, and that is what these ask for now — the assertions below
+      // did not have to change, which is the point.
+      defaultOnNight: getComputedStyle(buttons[0]).backgroundColor,
+      customRadius: getComputedStyle(buttons[1]).borderRadius,
+      customFill: getComputedStyle(buttons[1]).backgroundColor,
       gatedProseHidden: !text.includes("You already know what she is going to say"),
     };
   });
@@ -323,10 +330,28 @@ export default async function run({ api, check, openExported }) {
     "...and NOT the number behind it — a threshold is the machine, not the story",
     choices.lockedHidesTheNumber === true,
   );
+  // An untouched choice is painted from a ground token, so the proof that
+  // it still follows the ground is that it MOVES when the ground does. The
+  // old spelling of this check looked for the literal text
+  // "var(--surface-2-translucent)" in an inline style, which proved the
+  // notation and not the behaviour: a token that had been quietly renamed
+  // would have failed it, and one that resolved to nothing would have
+  // passed.
+  const groundFollow = await page.evaluate(() => {
+    const root = document.documentElement;
+    const button = document.querySelector(".scriare-choice");
+    const was = getComputedStyle(button).backgroundColor;
+    root.setAttribute("data-ground", root.getAttribute("data-ground") === "paper" ? "night" : "paper");
+    const now = getComputedStyle(button).backgroundColor;
+    root.setAttribute("data-ground", root.getAttribute("data-ground") === "paper" ? "night" : "paper");
+    return { was, now };
+  });
   check(
     "an untouched choice still follows the reader's ground",
-    choices.defaultFollowsGround === true,
-    choices.defaultFollowsGround ? "var(--surface-2-translucent)" : "baked into a fixed colour",
+    groundFollow.was !== groundFollow.now &&
+      groundFollow.was !== "rgba(0, 0, 0, 0)" &&
+      groundFollow.now !== "rgba(0, 0, 0, 0)",
+    `${groundFollow.was} → ${groundFollow.now}`,
   );
   check(
     "a hand-picked choice colour arrives exactly as chosen",

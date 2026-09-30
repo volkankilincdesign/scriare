@@ -1,5 +1,28 @@
 @import "./themes.css";
-@tailwind base;
+
+/* Cascade layers (v0.80.0), and the order is the whole point.
+   `scriare.reset` holds Tailwind's preflight; `scriare.boxes` holds the
+   Choice Style rules generated per story; `scriare.base` is reserved for
+   the exported page, which declares the same order in its own document.
+   Everything else in this file, and every Tailwind utility, is UNLAYERED
+   — and unlayered beats every layer whatever its specificity.
+
+   WHY PREFLIGHT HAD TO MOVE. It sets `background-color: transparent` and
+   `border-width: 0` on every button. Those are unlayered element rules,
+   so they outranked the generated box rules and a styled choice in Play
+   Mode came out with no fill and no border — measured, in
+   tests/choice-styles.spec.mjs, which is what sent this here. Demoting
+   preflight into the first layer puts it back underneath everything, which
+   is where a reset belongs and where everyone already assumed it was.
+
+   This makes Play Mode and the exported page ONE arrangement rather than
+   two that resemble each other, which is the only version of this a
+   writer's stylesheet can be previewed in. */
+@layer scriare.reset, scriare.boxes, scriare.base;
+
+@layer scriare.reset {
+  @tailwind base;
+}
 @tailwind components;
 @tailwind utilities;
 

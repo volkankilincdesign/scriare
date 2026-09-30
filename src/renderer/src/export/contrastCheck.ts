@@ -1,5 +1,6 @@
 import type { ExportStory } from "./buildStory";
 import type { ChoiceBox } from "../types/choiceStyles";
+import { DEFAULT_CHOICE_BOX } from "../types/choiceStyles";
 import { GROUND_PAGE_HEX, GROUND_TEXT_HEX, READING_GROUNDS } from "./readingThemes";
 import type { ReadingGround } from "./readingThemes";
 
@@ -250,6 +251,14 @@ function worstOnBox(
 export function checkStoryContrast(story: ExportStory): ContrastFinding[] {
   const findings: ContrastFinding[] = [];
 
+  // A choice carries the CLASS of its box rather than the box itself since
+  // v0.80.0, so the values are looked up once here. `boxFor` falling back
+  // to the default is not defensive padding: a story written by a newer
+  // version, or one hand-edited, can name a class this table does not
+  // hold, and a missing box must mean "checked as an ordinary choice"
+  // rather than "silently not checked at all".
+  const boxFor = (cls: string): ChoiceBox => story.boxes?.[cls] ?? DEFAULT_CHOICE_BOX;
+
   for (const ground of READING_GROUNDS) {
     const page = parseColor(GROUND_PAGE_HEX[ground.id]);
     const defaultText = parseColor(GROUND_TEXT_HEX[ground.id]);
@@ -259,7 +268,7 @@ export function checkStoryContrast(story: ExportStory): ContrastFinding[] {
       for (const segment of scene.seg) {
         if (segment.k === "c") {
           for (const choice of segment.o) {
-            const worst = worstOnBox(choice.l, choice.b, page, defaultText);
+            const worst = worstOnBox(choice.l, boxFor(choice.bx), page, defaultText);
             if (worst !== null && worst < THRESHOLD) {
               findings.push({
                 scene: scene.title,
@@ -278,7 +287,7 @@ export function checkStoryContrast(story: ExportStory): ContrastFinding[] {
         // flat string and carries no colour of its own by construction.
         if (segment.k === "d") {
           for (const line of segment.o) {
-            const worst = worstOnBox(line.l, line.b, page, defaultText);
+            const worst = worstOnBox(line.l, boxFor(line.bx), page, defaultText);
             if (worst !== null && worst < THRESHOLD) {
               findings.push({
                 scene: scene.title,

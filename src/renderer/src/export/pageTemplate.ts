@@ -41,8 +41,42 @@ function embedJson(value: unknown): string {
     .replace(/\u2029/g, "\\u2029");
 }
 
+/**
+ * The writer's own stylesheet, in a `<style>` of its own (v0.80.0).
+ *
+ * SEPARATE ELEMENT, NOT APPENDED TO THE APP'S. Three reasons, and the
+ * first two are enough on their own. It is unlayered where the app's is
+ * layered, and keeping them apart makes that visible to anyone who opens
+ * the file. A syntax error in the writer's CSS then cannot swallow a rule
+ * of the app's — the browser recovers at the end of the element, so the
+ * blast radius is their stylesheet rather than the page. And the file
+ * reads as what it is: the story's styling, written by the person whose
+ * story it is, at the end.
+ *
+ * ESCAPING IS NOT OPTIONAL HERE. The HTML parser looks for `</style` in
+ * the raw text of a style element before any CSS is parsed, so a writer
+ * whose stylesheet contains that sequence — in a comment, in a `content:`
+ * string, pasted from a snippet — would end the element early and spill
+ * the rest of their CSS onto the page as visible text. Breaking the
+ * sequence with a CSS comment is invisible to the parser that matters and
+ * changes nothing about what the stylesheet does.
+ */
+function writerStyles(css: string | undefined): string {
+  if (!css || css.trim().length === 0) return "";
+  const safe = css.replace(/<\/(style)/gi, "<\\2f$1");
+  return `\n<!-- The story's own stylesheet. -->\n<style>${safe}</style>`;
+}
+
 export function buildExportHtml(story: ExportStory): string {
   const title = escapeHtml(story.name || "Untitled story");
+
+  // THE STYLESHEET IS NOT DATA. It is already in the page as a `<style>`
+  // element; leaving it on the embedded story would ship every byte of it
+  // a second time inside `var STORY = …`, where nothing reads it. Found by
+  // a test that was looking for a spilled `</style>` in the body text and
+  // found the writer's CSS sitting in the script instead — which was not
+  // the bug it was hunting, and was a bug.
+  const { css: _stylesheet, ...data } = story;
 
   // `lang` only when the story says so (v0.75.0).
   //
@@ -69,7 +103,7 @@ export function buildExportHtml(story: ExportStory): string {
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="generator" content="Scriare">${author}
 <title>${title}</title>
-<style>${pageStyles()}</style>
+<style>${pageStyles(story.boxes)}</style>${writerStyles(story.css)}
 </head>
 <body>
 <header class="scriare-bar">
@@ -82,7 +116,7 @@ export function buildExportHtml(story: ExportStory): string {
 </header>
 <main class="scriare-reader" id="scriare-reader"></main>
 <script>
-var STORY = ${embedJson(story)};
+var STORY = ${embedJson(data)};
 ${pageRuntime()}
 </script>
 </body>

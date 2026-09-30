@@ -55,6 +55,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./export/pageTemplate"),
     import("./export/contrastCheck"),
     import("./export/readingThemes"),
+    import("./export/stylesheetNotes"),
+    import("./styles/choiceBoxLayer"),
     import("./utils/recentShape"),
     import("../../shared/recentEntries"),
     import("../../shared/fileArgs"),
@@ -101,6 +103,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       pageTemplate,
       contrastCheck,
       readingThemes,
+      stylesheetNotes,
+      choiceBoxLayer,
       recentShape,
       recentEntries,
       fileArgs,
@@ -171,6 +175,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         // assert on the page it produced, rather than driving a save
         // dialog a headless run cannot open.
         __scriareExport: { ...buildStory, ...pageTemplate, ...contrastCheck, ...readingThemes },
+        __scriareStylesheetNotes: stylesheetNotes,
+        __scriareBoxLayer: choiceBoxLayer,
         // v0.53.0 — the Welcome screen's cached story shape. Pure functions
         // over a project, so the spec builds a story, runs the real builder
         // and measures the bytes it produced.

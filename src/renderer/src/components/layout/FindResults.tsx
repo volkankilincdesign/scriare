@@ -280,9 +280,21 @@ function Section({
                   the list says at a glance which is which. */}
               {replacement && chosen ? (
                 <>
+                  {/* Struck through in the same grey as the text, NOT in
+                      --danger. The first build of this used the danger
+                      colour and it read as a warning: grep says --danger
+                      is spoken everywhere else in the app by things that
+                      destroy something — the danger items in the content
+                      context menu, the remove buttons in the Dialogue
+                      panel and the Inspector. Nothing here is dangerous.
+                      A preview of a rename is not an alarm, and the app's
+                      own rule is that colour is reserved for meaning the
+                      writer assigned. The highlight on the NEW word is
+                      already the whole signal; the old one only has to
+                      get out of its way. */}
                   <span
                     data-replace-was
-                    className="text-[var(--text-3)] line-through decoration-[var(--danger)]"
+                    className="text-[var(--text-3)] line-through decoration-[var(--text-3)]"
                   >
                     {hit.snippet.slice(hit.markStart, hit.markEnd)}
                   </span>{" "}

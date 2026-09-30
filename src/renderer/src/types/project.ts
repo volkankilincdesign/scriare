@@ -205,6 +205,23 @@ export interface Project {
    * wants the default.
    */
   playerName?: string;
+  /**
+   * The writer's own CSS for their story (v0.80.0).
+   *
+   * Part of the story rather than a machine setting, so it lives in the
+   * `.scriare` file and travels with it — a writer who opens their story
+   * on another computer finds their stylesheet, the same way they find
+   * their Choice Styles. Absent rather than empty when unset, like
+   * `author`: a story nobody has styled should carry no stylesheet at all,
+   * not a blank one that looks like a decision.
+   *
+   * It is stored VERBATIM. Nothing here parses, prettifies, minifies or
+   * validates it — the editor warns about what will not work, and the
+   * export warns about what it will cost, but the bytes the writer typed
+   * are the bytes that ship. See export/pageStyles.ts for the cascade this
+   * sits in and why it wins.
+   */
+  stylesheet?: string;
   createdAt: string;
   updatedAt: string;
   startSceneId: string | null;
@@ -369,6 +386,16 @@ export function normalizeProject(raw: Project): Project {
     author: trimmed(raw.author),
     language: trimmed(raw.language),
     playerName: trimmed(raw.playerName),
+    // The stylesheet follows the same absent-or-real rule, with ONE
+    // difference that matters: it is not `trimmed`. Leading whitespace is
+    // meaningless in CSS but an indented block is how people write it, and
+    // a tool that quietly re-indents what you typed the next time you open
+    // the file is a tool you stop trusting with the rest of it. Only a
+    // stylesheet that is entirely blank is dropped.
+    stylesheet:
+      typeof raw.stylesheet === "string" && raw.stylesheet.trim().length > 0
+        ? raw.stylesheet
+        : undefined,
     scenes: cleanedScenes,
     content,
     favorites: raw.favorites ?? [],

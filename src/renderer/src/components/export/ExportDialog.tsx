@@ -11,6 +11,7 @@ import { buildExportHtml, suggestedExportName } from "../../export/pageTemplate"
 import { checkStoryContrast } from "../../export/contrastCheck";
 import type { ContrastFinding } from "../../export/contrastCheck";
 import { DEFAULT_GROUND, READING_GROUNDS } from "../../export/readingThemes";
+import { overriddenGroundTokens, remoteFetches } from "../../export/stylesheetNotes";
 
 /**
  * Export (v0.48.0).
@@ -49,6 +50,13 @@ export function ExportDialog() {
    */
   const [tab, setTab] = useState<"page" | "script" | "sheet">("page");
   const [busy, setBusy] = useState(false);
+  /**
+   * The writer has read the list of things their stylesheet will fetch
+   * (v0.80.0). Reset with the dialog, like `done` and `tab`: a tick is an
+   * answer about THIS export, and carrying it forward would mean the
+   * second export of a story never asked.
+   */
+  const [fetchesAcked, setFetchesAcked] = useState(false);
   const [done, setDone] = useState<{ filePath: string; bytes: number } | null>(null);
 
   // This dialog is mounted for the life of the app and hides itself with
@@ -63,6 +71,7 @@ export function ExportDialog() {
       setDone(null);
       setBusy(false);
       setTab("page");
+      setFetchesAcked(false);
     }
   }, [open]);
 
@@ -205,13 +214,35 @@ export function ExportDialog() {
             </div>
           </div>
 
-          <Findings findings={prepared.findings} />
+          <StylesheetNotes
+            css={project.stylesheet}
+            acked={fetchesAcked}
+            onAck={setFetchesAcked}
+          />
+
+          <Findings
+            findings={prepared.findings}
+            groundsOverridden={overriddenGroundTokens(project.stylesheet).length > 0}
+          />
 
           <div className="mt-5 flex items-center justify-end gap-2">
             <Button intent="ghost" onClick={close}>
               Cancel
             </Button>
-            <Button intent="primary" disabled={busy} onClick={() => void handleExport()}>
+            {/* HELD, NOT WARNED. Everywhere else this dialog reports and
+                exports anyway — an unreadable colour can be the point, and
+                a tool that refuses a deliberate effect has stopped being a
+                tool. This one is different in kind: it changes a FACTUAL
+                claim the app makes about the file it writes, from "makes
+                no requests" to "phones an unrelated company every time it
+                is opened". That is not a judgement about the story, and
+                the writer should not be able to ship it by not reading. */}
+            <Button
+              intent="primary"
+              data-export-go
+              disabled={busy || (remoteFetches(project.stylesheet).length > 0 && !fetchesAcked)}
+              onClick={() => void handleExport()}
+            >
               {busy ? "Exporting…" : "Export…"}
             </Button>
           </div>
@@ -230,12 +261,38 @@ export function ExportDialog() {
  * information and become an obstacle, and the next thing they learn is to
  * ignore it.
  */
-function Findings({ findings }: { findings: ContrastFinding[] }) {
+function Findings({
+  findings,
+  groundsOverridden,
+}: {
+  findings: ContrastFinding[];
+  groundsOverridden: boolean;
+}) {
+  // Said first, because it changes what every number below MEANS. The
+  // check measures a colour against the reading grounds' own values; a
+  // stylesheet that redefines `--page` or `--text` has moved them, and the
+  // ratios are then true about a page that is not the one shipping.
+  // Recomputing them would mean resolving the writer's whole cascade,
+  // which is a browser's job and not a dialog's — so the honest thing is
+  // to keep the numbers and say what they are now worth.
+  const caveat = groundsOverridden ? (
+    <p
+      data-ground-caveat
+      className="mb-2 text-[11px] text-[var(--text-3)]"
+    >
+      Your stylesheet changes the reading grounds' own colours, so these are
+      measured against the built-in ones rather than the page you'll ship.
+    </p>
+  ) : null;
+
   if (findings.length === 0) {
     return (
-      <div className="flex items-start gap-2 rounded-md border border-[var(--border-soft)] px-3 py-2.5 text-xs text-[var(--text-2)]">
-        <span className="text-[var(--success)]">✓</span>
-        <span>Every colour in the story reads on both grounds.</span>
+      <div className="rounded-md border border-[var(--border-soft)] px-3 py-2.5">
+        {caveat}
+        <div className="flex items-start gap-2 text-xs text-[var(--text-2)]">
+          <span className="text-[var(--success)]">✓</span>
+          <span>Every colour in the story reads on both grounds.</span>
+        </div>
       </div>
     );
   }
@@ -244,6 +301,7 @@ function Findings({ findings }: { findings: ContrastFinding[] }) {
 
   return (
     <div className="rounded-md border border-[var(--border-soft)] px-3 py-2.5">
+      {caveat}
       <div className="mb-2 flex items-start gap-2 text-xs text-[var(--text-2)]">
         <span className="text-[var(--warning)]">⚠</span>
         <span>
@@ -272,6 +330,63 @@ function Findings({ findings }: { findings: ContrastFinding[] }) {
           and {findings.length - shown.length} more
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * What the story's own stylesheet does to the file being written
+ * (v0.80.0).
+ *
+ * Two different things, deliberately drawn differently. Redefining a
+ * ground colour is ordinary use of the feature and gets a grey line beside
+ * the contrast findings; fetching something from the internet breaks the
+ * one promise the README makes about an exported story, and gets a tick
+ * that holds the Export button.
+ */
+function StylesheetNotes({
+  css,
+  acked,
+  onAck,
+}: {
+  css: string | undefined;
+  acked: boolean;
+  onAck: (value: boolean) => void;
+}) {
+  const fetches = remoteFetches(css);
+  if (fetches.length === 0) return null;
+
+  return (
+    <div
+      data-export-css-fetches
+      className="mb-4 rounded-md border border-[var(--warning)] px-3 py-2.5"
+    >
+      <div className="mb-2 flex items-start gap-2 text-xs text-[var(--text-2)]">
+        <span className="text-[var(--warning)]">⚠</span>
+        <span>
+          Your stylesheet fetches {fetches.length === 1 ? "something" : `${fetches.length} things`}{" "}
+          from the internet. This page will no longer work offline, and whoever
+          hosts {fetches.length === 1 ? "it" : "them"} learns each time someone opens
+          your story.
+        </span>
+      </div>
+      <ul className="mb-2 space-y-0.5 font-mono text-[11px] text-[var(--text-3)]">
+        {fetches.slice(0, 4).map((one) => (
+          <li key={one} className="truncate">
+            {one}
+          </li>
+        ))}
+        {fetches.length > 4 && <li>and {fetches.length - 4} more</li>}
+      </ul>
+      <label className="flex items-center gap-2 text-xs text-[var(--text-2)]">
+        <input
+          type="checkbox"
+          checked={acked}
+          onChange={(e) => onAck(e.target.checked)}
+          data-export-css-ack
+        />
+        Export it anyway — I meant to include {fetches.length === 1 ? "this" : "these"}.
+      </label>
     </div>
   );
 }

@@ -265,6 +265,9 @@ interface ProjectState {
     playerName?: string;
   }) => void;
 
+  /** The writer's own CSS for their story (v0.80.0). Blank clears it. */
+  setStylesheet: (css: string) => void;
+
   /**
    * Creates a Story group placed on the canvas, empty — the graph's
    * "+ Group" button. A group made from the Content Browser starts with no
@@ -1603,6 +1606,34 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
     pushHistory(set, get, "Story details");
     set({ project: next, saveStatus: "unsaved" });
+    scheduleAutosave(get);
+  },
+
+  /**
+   * The writer's stylesheet (v0.80.0).
+   *
+   * Its own action rather than a fifth field on `setStoryDetails`, for two
+   * reasons that both come down to size. A stylesheet is hundreds of lines
+   * where the others are a word, so putting it on the undo stack under
+   * "Story details" would make one label mean two completely different
+   * sizes of change. And the editor that writes it is a place you sit in,
+   * not a dialog you fill and dismiss.
+   *
+   * Blank collapses to absent, here as in `normalizeProject`, because this
+   * is the door the writer uses: a stylesheet emptied today must not sit
+   * in the file as `""` until the next time the story is opened.
+   */
+  setStylesheet: (css) => {
+    const { project } = get();
+    if (!project) return;
+    const next = css.trim().length > 0 ? css : undefined;
+    if (next === project.stylesheet) return;
+
+    pushHistory(set, get, "Stylesheet");
+    set({
+      project: { ...project, stylesheet: next, updatedAt: new Date().toISOString() },
+      saveStatus: "unsaved",
+    });
     scheduleAutosave(get);
   },
 

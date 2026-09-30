@@ -105,9 +105,21 @@ not read, but nothing marks the conversion at the moment it happens.
 
 ## The class contract
 
-These names are the same in the editor, in Play Mode and in the export.
 **Adding one is cheap; renaming one is a breaking change to somebody's
-stylesheet.** The planned CSS tab can only work if they hold.
+stylesheet** — no longer hypothetically: v0.80.0 shipped the stylesheet,
+so these names are now published API.
+
+This section used to open "these names are the same in the editor, in Play
+Mode and in the export", and for three of them that was simply untrue.
+Play Mode carried `.scriare-speaker`, `.scriare-mention` and (since
+v0.66.0) `.scriare-choice` on Dialogue lines, and nothing else: the prose
+wrapper, the choices column, the ending card and a Choice Block's own
+buttons were Tailwind utilities with no contract class on them at all. A
+writer's stylesheet would therefore have worked in the exported file and
+done nothing in the preview — for two years the claim cost nothing, and
+the moment it was load-bearing it was wrong. v0.80.0 added the ones that
+could be added without changing how Play Mode looks. Three are still
+export-only, and the stylesheet editor says which.
 
 | Class | What it is |
 | --- | --- |
@@ -126,11 +138,77 @@ stylesheet.** The planned CSS tab can only work if they hold.
 | `.scriare-bar` | Back / Restart / ground switch |
 | `.scriare-resume` | The "you were partway through" offer |
 
+Export-only, because Play Mode has no such thing: `.scriare-page` (Play
+draws no sheet), `.scriare-bar` (Play has the app's own), `.scriare-resume`
+and `.scriare-lock-why`.
+
 **Every colour in the exported stylesheet comes from a token**, never a
 literal. That is what makes the ground switch work at all, and it is what
-will make the CSS tab work: overriding `--accent` in one line has to
-recolour everything that means "accent", not only the places someone
-remembered to make overridable.
+makes the stylesheet work: overriding `--accent` in one line recolours
+everything that means "accent", not only the places someone remembered to
+make overridable.
+
+## The stylesheet, and the cascade it sits in (v0.80.0)
+
+A writer's own CSS lives on the project, travels in the `.scriare` file,
+is applied in Play Mode behind a switch, and goes out with the page.
+
+**Their rules win, without `!important`.** Cascade layers are how:
+
+```
+@layer scriare.reset    Tailwind's preflight (the app only)
+@layer scriare.boxes    the generated Choice Style rules
+@layer scriare.base     the app's / the page's own stylesheet
+(unlayered)             the writer's CSS
+```
+
+Unlayered beats every layer *whatever its specificity*, which is the
+property this whole arrangement is bought with: the app writes descendant
+selectors (`.scriare-prose h2`) where a writer writes `h2`, so on
+specificity alone the writer would lose almost every argument. The two
+halves of the mechanism are measured in `tests/custom-css.spec.mjs` before
+anything is built on them, because if either stopped holding in the shipped
+Chromium the design would be wrong rather than slightly off.
+
+**Choice Styles had to stop being inline styles.** An inline declaration
+beats every stylesheet there is, so for as long as a choice's box was
+written onto the element, no writer CSS could ever have reached it. The
+box is now a generated rule keyed by a class derived from the box's own
+values — one rule per LOOK rather than one per choice — and the same
+function produces that class in the export and in Play Mode, so the two
+cannot number the same box differently.
+
+**`scriare.boxes` sits before `scriare.base` on purpose.** A locked
+choice's dashed, drained treatment lives in base and has to keep winning
+over the generated box rule, exactly as it did when locked buttons were
+given nothing but a radius. That ordering is why one generated table is
+enough and there is no second one for radii.
+
+**Tailwind's preflight is in a layer for the same reason.** It sets
+`background-color: transparent` and `border-width: 0` on every button,
+unlayered — so it outranked the generated box rules and a styled choice in
+Play Mode came out with no fill at all. Measured, not reasoned about: the
+choice-styles spec went red and sent it here.
+
+### What the app says out loud
+
+- **Network.** `@import` and `url(https://…)` break the "one file, no
+  requests" promise above — the one claim in the README a stylesheet can
+  make false. The export lists each one and **holds the Export button**
+  behind a tick. This is the one place the export stops rather than warns,
+  and the reason is that it is a factual claim about the file rather than
+  a judgement about the story. `data:` URIs and relative paths are not
+  counted; counting them would train a writer to tick past the warning
+  that matters.
+- **Ground tokens.** A stylesheet that redefines `--page` or `--text` has
+  moved the values the contrast check measures against, so the dialog says
+  the numbers describe the built-in grounds rather than the page being
+  shipped. Recomputing them would mean resolving the writer's whole
+  cascade, which is a browser's job.
+- **`</style>`.** Escaped on the way into the file, for the same reason
+  `</script>` is in the story data: the HTML parser looks for it in raw
+  text before any CSS is parsed, and a writer who pasted a snippet
+  containing it would spill the rest of their stylesheet onto the page.
 
 ## One file, no requests
 

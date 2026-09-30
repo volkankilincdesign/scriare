@@ -13,6 +13,7 @@ import { renderRuntimeBlock } from "./registry";
 import { RUNTIME_EXTENSIONS } from "./extensions";
 import { VariableReadout } from "./VariableReadout";
 import { PLAY_GROUND_CSS } from "./playGroundStyles";
+import { LAYER_ORDER, boxLayerCss, collectProjectBoxes } from "../styles/choiceBoxLayer";
 import { usePlayGroundStore } from "../state/playGroundStore";
 import { READING_GROUNDS } from "../export/readingThemes";
 import type { RuntimeContext } from "./types";
@@ -21,6 +22,8 @@ export function PlayRuntime() {
   const project = useProjectStore((s) => s.project);
   const ground = usePlayGroundStore((s) => s.ground);
   const toggleGround = usePlayGroundStore((s) => s.toggleGround);
+  const customCss = usePlayGroundStore((s) => s.customCss);
+  const toggleCustomCss = usePlayGroundStore((s) => s.toggleCustomCss);
   const playSceneId = useProjectStore((s) => s.playSceneId);
   const playToken = useProjectStore((s) => s.playToken);
   const goToPlayScene = useProjectStore((s) => s.goToPlayScene);
@@ -158,6 +161,11 @@ export function PlayRuntime() {
     return out;
   }, [renderedSegments, closedDialogues, saidLines, playVariableValues, project?.variables]);
 
+  // Memoised on the project because collecting these walks every scene.
+  // While Play is open the project does not change, so this runs once per
+  // play session in practice.
+  const projectBoxes = useMemo(() => collectProjectBoxes(project), [project]);
+
   const hasAnyLinkedChoice = useMemo(
     () => (scene ? extractChoices(scene.content).some((c) => c.targetSceneId) : false),
     [scene],
@@ -181,11 +189,53 @@ export function PlayRuntime() {
       className="absolute inset-0 z-10 flex flex-col bg-[var(--bg)]"
     >
       <style>{PLAY_GROUND_CSS}</style>
+      {/* The same cascade the exported page is built on (v0.80.0). The
+          generated box rules go in a layer so the writer's own stylesheet,
+          which is unlayered, wins over them without anyone typing
+          `!important` — see styles/choiceBoxLayer.ts for the whole
+          arrangement. Play Mode has no build step, so the boxes are
+          collected from the project; both routes end at the same class,
+          because the class is derived from the box's values. */}
+      <style>{`${LAYER_ORDER}\n${boxLayerCss(projectBoxes)}`}</style>
+      {/* THE STORY'S OWN STYLESHEET, UNSCOPED AND ONLY WHILE PLAYING.
+          Unscoped is the deliberate half: scoping it to this root would
+          make `body` and `html` rules silently do nothing here and work in
+          the export, which is the one thing a preview must not do. The
+          cost is that a stylesheet can make a mess of the app's own chrome
+          while Play is open — recoverable two ways that do not depend on
+          anything being clickable: Esc exits Play, and this bar's switch
+          takes the stylesheet off. Both are why the switch exists. */}
+      {customCss && project.stylesheet ? (
+        <style data-play-custom-css>{project.stylesheet}</style>
+      ) : null}
       <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-4 py-2">
         <span className="scriare-section-label text-[var(--accent)]">
           ▶ Playing — {project.name}
         </span>
         <div className="flex items-center gap-3">
+          {/* Only when there is something to switch OFF. A control that
+              does nothing is a question the writer has to answer before
+              they can ignore it. */}
+          {project.stylesheet ? (
+            <button
+              type="button"
+              data-play-css-switch
+              aria-pressed={customCss}
+              onClick={toggleCustomCss}
+              title={
+                customCss
+                  ? "Showing your stylesheet — click to see the story without it"
+                  : "Your stylesheet is off — click to put it back on"
+              }
+              className={`rounded border px-2 py-0.5 text-xs transition-colors ${
+                customCss
+                  ? "border-[var(--accent)] text-[var(--accent)]"
+                  : "border-[var(--border)] text-[var(--text-3)] hover:text-[var(--text-2)]"
+              }`}
+            >
+              CSS
+            </button>
+          ) : null}
           <GroundSwitch ground={ground} onToggle={toggleGround} />
           {/* v0.35.0 — this used to be a second "Exit Play" button, a few
               pixels below the one in the top bar, which stays on screen
@@ -208,8 +258,8 @@ export function PlayRuntime() {
             // change — that remount is what triggers the CSS fade-in below,
             // a simple, dependency-free transition (see .runtime-scene-fade
             // in styles/index.css).
-            <div key={scene.id} className="runtime-scene-fade">
-              <h1 className="mb-6 text-2xl font-semibold text-[var(--text)]">
+            <div key={scene.id} className="scriare-scene runtime-scene-fade">
+              <h1 className="scriare-scene-title mb-6 text-2xl font-semibold text-[var(--text)]">
                 {scene.title || "Untitled scene"}
               </h1>
 
@@ -230,7 +280,16 @@ export function PlayRuntime() {
                 ) : (
                   <div
                     key={index}
-                    className={READING_PROSE_CLASS}
+                    // v0.80.0 — carries the contract class as well as its
+                    // own typography. docs/export.md has claimed since
+                    // v0.48.0 that these names are "the same in the editor,
+                    // in Play Mode and in the export"; for the prose
+                    // wrapper, the choices column and the ending card it
+                    // simply was not, and a writer's stylesheet would have
+                    // worked in the exported file and done nothing in the
+                    // preview. Additive: nothing in the app styles
+                    // .scriare-prose, so this changes no pixel.
+                    className={`scriare-prose ${READING_PROSE_CLASS}`}
                     dangerouslySetInnerHTML={{ __html: segment.html }}
                   />
                 ),
@@ -241,7 +300,7 @@ export function PlayRuntime() {
               // dialog, so on a light theme this card came out as a heavy grey
               // slab across the page (v0.46.0). An ending is a panel on the
               // page, and panels are surfaces.
-              <div className="mt-10 flex flex-col items-center gap-4 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-2)] px-8 py-10 text-center">
+              <div className="scriare-ending mt-10 flex flex-col items-center gap-4 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-2)] px-8 py-10 text-center">
                   <div className="text-lg font-semibold tracking-wide text-[var(--text-2)]">The End</div>
                   <div className="flex items-center gap-2">
                     <button

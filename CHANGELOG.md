@@ -12,6 +12,146 @@ omitting them.
 
 ---
 
+## v0.80.0 — Your own CSS, and the cascade that makes it win
+
+Find & Replace was the last thing a writer would have named as missing.
+This is the one where the honest sentence was "Twine already does this":
+your own stylesheet for your own story, kept in the `.scriare` file,
+previewed in Play Mode, and shipped with the exported page.
+
+**The whole feature is one promise: your rules win, and you never type
+`!important`.** Everything below exists to make that true rather than
+nearly true.
+
+**Choice Styles had to stop being inline styles.** A choice's box — fill,
+border, thickness, radius — was written onto the element with
+`element.style.background`, and an inline declaration beats every
+stylesheet there is. Measured first, in the spec, before anything was
+built on it: for as long as that was how a choice was painted, no writer
+CSS could ever have reached one. The box is now a generated CSS rule keyed
+by a class derived from the box's own four values — one rule per LOOK
+rather than one per choice, so four hundred choices in one style ship four
+hundred short class names and a single rule. The class is a hash of the
+values rather than a counter because the export and Play Mode collect
+their boxes by different routes, and two counters walking a story in
+slightly different orders is the classic pair that drifts.
+
+**Then cascade layers, which is the part worth explaining.** The app's
+stylesheet and those generated rules are inside `@layer`; your CSS is not.
+An unlayered rule beats a layered one *whatever its specificity* — and
+that, not source order, is what makes this work. The app writes
+`.scriare-prose h2` where you write `h2`; on specificity alone you would
+lose almost every argument you had with it. There is a check for exactly
+that: a writer's plain `h2 { color: … }` beating the app's own
+two-part selector, asserted against the real exported file by reading the
+colour off the heading a reader sees.
+
+**Tailwind's reset had to move too, and a test found it.** Preflight sets
+`background-color: transparent` and `border-width: 0` on every button,
+unlayered, so it outranked the generated box rules and a styled choice in
+Play Mode came out with no fill and no border. The choice-styles spec went
+red and said so. Putting preflight in the first layer puts a reset back
+underneath everything, which is where everyone already assumed it was —
+and it makes Play Mode and the exported page one arrangement rather than
+two that resemble each other, which is the only version of this a
+stylesheet can honestly be previewed in. The full suite was run against
+that change specifically: 998 checks, nothing moved.
+
+**The class contract had been telling a lie since v0.48.0.**
+`docs/export.md` said these names are "the same in the editor, in Play
+Mode and in the export". They were not: Play Mode carried
+`.scriare-speaker`, `.scriare-mention` and a Dialogue line's
+`.scriare-choice`, and nothing else — no `.scriare-prose`, no
+`.scriare-choices`, no `.scriare-ending`, and a Choice Block's own buttons
+had no contract class at all. For two years that claim cost nothing.
+The moment it became load-bearing it was wrong, and your stylesheet would
+have worked in the exported file and done nothing in the preview. The
+names that could be added without changing how Play Mode looks were added.
+Three remain export-only — `.scriare-page`, `.scriare-bar`,
+`.scriare-resume` — and the editor says so in a column rather than leaving
+you to wonder for an hour whether the feature works.
+
+**Where it lives: a door out of Project Settings,** on the Choice Styles
+pattern, with the way back that v0.55.0 established as the price of
+closing Settings on the way open. It is a draft with a Save, where almost
+everything else in this app commits as you type — because
+`.scriare-choice { backgro` is not a smaller version of a rule, it is a
+broken one, and applying it on every keystroke would mean a hundred broken
+previews and a hundred entries on the undo stack. It does not format,
+lint, autocomplete or colour your syntax; what it owes you is the two
+things you cannot work out yourself, which are what you can target and
+what your CSS will cost.
+
+**Play Mode wears it, and has a switch to take it off.** Your CSS applies
+there unscoped — scoping it would make `body` and `html` rules silently do
+nothing in the preview and work in the export, which is the one thing a
+preview must not do. The cost is that a stylesheet can make a mess of the
+app while Play is open, and the switch is half the answer: Esc still
+exits, because it is a keydown handler rather than something you have to
+be able to see to click.
+
+**Two things the export now says out loud.** A stylesheet that redefines
+`--page` or `--text` has moved the values the readability check measures
+against, so the dialog says its numbers describe the built-in grounds
+rather than the page you are shipping — rather than printing figures it
+can no longer stand behind. And a stylesheet that fetches anything —
+`@import`, a webfont, an image on a CDN — breaks the one factual claim the
+README makes about an exported story: one file, no requests, works
+offline, nobody learns who read it. **That one holds the Export button**
+until you have read the list and ticked it. Everywhere else this dialog
+reports and exports anyway, because an unreadable colour can be the point
+and a tool that refuses a deliberate effect has stopped being a tool. This
+is different in kind: it is not a judgement about your story, it is the
+app about to print something untrue about the file it just wrote.
+
+**Found on the way, by tests that went red for the wrong reason.** The
+stylesheet was being written into the exported file twice — once as the
+`<style>` element and again inside `var STORY = …`, where nothing read it.
+A check hunting for a spilled `</style>` found it sitting in the script
+instead. And the first Export-button check passed while measuring the top
+bar's Export button rather than the dialog's, which is the same mistake
+the slash-menu controls made in v0.78.0: a check that reads every button
+on screen is reading the wrong one.
+
+**Ten new negative controls, and four old ones repaired.** Each half of
+the cascade is broken on its own, because a control that only broke "the
+whole arrangement" would pass while two of the three things were wrong.
+Three of the ten did not go red the first time and each was a finding
+about the control rather than the code: two named sabotages that do not
+actually break the claim, and one — "the box class is derived from the
+values rather than from a counter" — named a property that removes a
+failure mode rather than one a test can watch fail, since both surfaces
+call the same function. It was replaced with a sabotage that collapses two
+different styles into one class, which is the thing that would actually
+show. Four controls elsewhere had gone stale as the code under them
+changed; repairing the wordmark's turned up a check that read the `color`
+the mark is TOLD to use rather than the fill it actually paints, so a
+hard-coded hex would have passed it. The runner also gained `NAME=`, so a
+repaired control can be re-verified by name instead of by an index that
+moves every time a control is added above it.
+
+---
+
+## v0.79.1 — The struck-out word is not an alarm
+
+He looked at the Replace preview in his own story and asked whether the red
+line through the old words was right. It was not, and the reason is one the
+app already had written down: colour in Scriare is reserved for meaning the
+writer assigned, and `--danger` is spoken everywhere else by things that
+destroy something — the danger items in the content context menu, the
+remove buttons in the Dialogue panel and the Inspector. Nothing in a
+preview is dangerous. It is a sentence being read before a decision is
+made, and the highlight on the new word is already the whole signal. The
+strike is now the same grey as the text it crosses out.
+
+He also asked whether the partial highlight over *The Blue Hour* was a bug
+— his shot showed `THE BLUE H` marked rather than the full phrase. It is
+not. Measured against the real search: a full query marks `"THE BLUE HOUR"`
+and `"The Blue Hour"`, and the screenshot caught the panel mid-typing,
+which is Find doing what it does on every keystroke.
+
+---
+
 ## v0.79.0 — Find's other half
 
 Find has had no Replace since v0.38.0, which meant renaming a term across

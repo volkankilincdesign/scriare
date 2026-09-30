@@ -77,10 +77,12 @@ const CONTROLS = [
     expect: "cannot end the exported file early",
   },
   {
+    // v0.80.0 — the box moved out of the choice and into a table keyed
+    // by the class that paints it, so the sabotage moved with it.
     name: "a default choice style baked into a fixed colour",
     file: src("export/buildStory.ts"),
-    from: "            b: resolveChoiceBox(styles, option.style),",
-    to: '            b: { ...resolveChoiceBox(styles, option.style), fill: "#2a2a28", border: "#3a3a37" },',
+    from: "    const box = resolveChoiceBox(styles, ref);",
+    to: '    const box = { ...resolveChoiceBox(styles, ref), fill: "#2a2a28", border: "#3a3a37" };',
     spec: "export.spec",
     expect: "still follows the reader's ground",
   },
@@ -119,7 +121,7 @@ const CONTROLS = [
   {
     name: "speaker names left out of the export",
     file: src("export/buildStory.ts"),
-    from: "    const spoken = applySpeakerPrefixes(resolved, entities);",
+    from: "    const spoken = applySpeakerPrefixes(resolved, entities, playerName);",
     to: "    const spoken = resolved;",
     spec: "export.spec",
     expect: "speaker's name as prose",
@@ -135,7 +137,7 @@ const CONTROLS = [
   {
     name: "a locked choice that will not say why",
     file: src("export/pageRuntime.ts"),
-    from: '      why.textContent = "Requires " + choice.r;',
+    from: "      why.textContent = choice.r;",
     to: '      why.textContent = "";',
     spec: "export.spec",
     expect: "says what it needs",
@@ -259,8 +261,8 @@ const CONTROLS = [
   {
     name: "an empty spoken line that consumes the run again",
     file: src("utils/speakerLines.ts"),
-    from: "      if (!hasVisibleText(node)) return node;\n\n      const speaker = nodeSpeaker(node.attrs);\n      const name = run.line(speaker) ? speakerName(speaker, entities) : null;\n      if (!name) return node;",
-    to: "      const speaker = nodeSpeaker(node.attrs);\n      const name = run.line(speaker) ? speakerName(speaker, entities) : null;\n      if (!name || !hasVisibleText(node)) return node;",
+    from: "      if (!hasVisibleText(node)) return node;\n\n      const speaker = nodeSpeaker(node.attrs);\n      const name = run.line(speaker) ? speakerName(speaker, entities, playerName) : null;\n      if (!name) return node;",
+    to: "      const speaker = nodeSpeaker(node.attrs);\n      const name = run.line(speaker) ? speakerName(speaker, entities, playerName) : null;\n      if (!name || !hasVisibleText(node)) return node;",
     spec: "audit-fixes",
     expect: "does not swallow the speaker's name",
   },
@@ -636,16 +638,26 @@ const CONTROLS = [
     expect: "where the keyboard lands",
   },
   {
-    name: "the wordmark swapped by the theme's NAME rather than its ground",
+    // v0.80.0 — REPOINTED. The mark stopped being two image files picked
+    // by the theme and became one inline SVG painted in `currentColor`,
+    // so the old sabotage named a line that no longer exists. The claim
+    // the check makes is unchanged — the mark follows the theme rather
+    // than being swapped between two fixed things — so the sabotage is
+    // now the modern way to get that wrong: pin the fill.
+    name: "the wordmark painted in a fixed colour rather than the theme's",
     file: src("components/common/BrandMark.tsx"),
-    from: "  const src = isLightGround(theme) ? logoPrimaryLight : logoPrimaryDark;",
-    to: '  const src = theme === "light" ? logoPrimaryLight : logoPrimaryDark;',
+    from: '        fill="currentColor"',
+    to: '        fill="#c8a96a"',
     spec: "welcome",
     // A straight apostrophe, because that is what the check's name has.
     // The first version of this line wrote a curly one and the control
     // came back NOT CAUGHT while the assertion was failing correctly
     // three lines above it — the same stale-`expect` mistake v0.49.0 made.
-    expect: "follows the theme's GROUND",
+    // v0.80.0 — the check was reworded when the mark became one inline
+    // SVG, and this string was left pointing at the old sentence. Exactly
+    // the mistake the comment three lines up warns about, made in the
+    // same file by the person writing that warning down.
+    expect: "repainted by the theme rather than swapped",
   },
   // ── v0.53.1 · the resize and polish pass ──────────────────────────────
   {
@@ -2849,6 +2861,124 @@ const CONTROLS = [
     spec: "find",
     expect: "shows what it will become",
   },
+
+  /* ── Custom CSS (v0.80.0) ─────────────────────────────────────────
+     The load-bearing claim is that a writer's plain rule beats the app's
+     own painting of a choice. It rests on three separate things being
+     true at once — the app's rules being layered, the generated box rules
+     being layered, and the writer's not being — so each is broken on its
+     own below. A control that only broke "the whole arrangement" would
+     pass while two of the three were wrong. */
+  {
+    // The app's own stylesheet out of its layer. It then outranks any
+    // writer rule that is less specific than one of its own — which is
+    // most of what a writer types, because the app writes descendants
+    // (`.scriare-prose h2`) where a writer writes `h2`.
+    name: "the exported page's stylesheet escaping its cascade layer",
+    file: src("export/pageStyles.ts"),
+    from: "@layer scriare.base {",
+    to: "@media all {",
+    spec: "custom-css",
+    expect: "plainer rule beats a more specific one",
+  },
+  {
+    // The writer's stylesheet put in the same layer as the generated box
+    // rules, where specificity decides again and it loses.
+    name: "the writer's stylesheet folded in with the generated rules",
+    file: src("export/pageTemplate.ts"),
+    from: "<style>${safe}</style>`;",
+    to: "<style>@layer scriare.boxes { ${safe} }</style>`;",
+    spec: "custom-css",
+    expect: "beats the Choice Style, with no !important",
+  },
+  {
+    // Choice Styles back on inline styles, in the exported page. This is
+    // the version of the app that shipped for two years, and it is the
+    // reason the feature needed a cascade at all.
+    name: "a choice painted with an inline style again",
+    file: src("export/pageRuntime.ts"),
+    from: 'var button = element("button", "scriare-choice " + choice.bx);',
+    to: 'var button = element("button", "scriare-choice"); button.style.background = "rgb(9,9,9)";',
+    spec: "custom-css",
+    expect: "beats the Choice Style, with no !important",
+  },
+  {
+    // Tailwind's preflight back out of its layer. It sets
+    // `background-color: transparent` on every button, unlayered, so a
+    // styled choice in PLAY MODE loses its fill — which is how this was
+    // found in the first place.
+    name: "Tailwind's reset outranking the generated choice boxes",
+    file: src("styles/index.css"),
+    from: "@layer scriare.reset {\n  @tailwind base;\n}",
+    to: "@tailwind base;",
+    spec: "choice-styles",
+    expect: "painted in its style during Play",
+  },
+  {
+    // Two different boxes given one class, so they share a rule and the
+    // last one written wins for both.
+    //
+    // The first version of this control swapped the hash for the key's
+    // LENGTH and was never caught, correctly: both surfaces call this one
+    // function, so any consistent scheme works and "derived from the
+    // values rather than from a counter" is a property that removes a
+    // failure mode rather than one a test can watch fail. What a test CAN
+    // watch is two distinct looks collapsing into one.
+    name: "two different choice styles given the same class",
+    file: src("styles/choiceBoxLayer.ts"),
+    from: "  return `scriare-box-${hash.toString(36)}`;",
+    to: "  return `scriare-box-same`;",
+    spec: "custom-css",
+    expect: "the rest of that style is still there",
+  },
+  {
+    // The escape removed. A stylesheet containing `</style>` then ends its
+    // own element and the rest of it lands on the page as text.
+    name: "a stylesheet allowed to close its own element",
+    file: src("export/pageTemplate.ts"),
+    from: 'const safe = css.replace(/<\\/(style)/gi, "<\\\\2f$1");',
+    to: "const safe = css;",
+    spec: "custom-css",
+    expect: "does not end the element early",
+  },
+  {
+    // The Export button no longer held. A writer can then ship a page that
+    // phones a third party without having read that it does.
+    name: "an export that ships a network fetch without being asked",
+    file: src("components/export/ExportDialog.tsx"),
+    from: "              disabled={busy || (remoteFetches(project.stylesheet).length > 0 && !fetchesAcked)}",
+    to: "              disabled={busy}",
+    spec: "custom-css",
+    expect: "Export is held until the writer has read what it costs",
+  },
+  {
+    // An @import counted twice, which is what the first version did.
+    name: "a fetch reported twice because it matched two patterns",
+    file: src("export/stylesheetNotes.ts"),
+    from: "  const byTarget = new Map<string, string>();",
+    to: "  const byTarget = { set: (_k, v) => found.push(v), has: () => false, values: () => found };\n  const found = [];",
+    spec: "custom-css",
+    expect: "both reported",
+  },
+  {
+    // The stylesheet trimmed on the way into the file. A writer who
+    // indents their CSS finds it re-indented the next time they open it.
+    name: "a stylesheet tidied up on its way into the file",
+    file: src("types/project.ts"),
+    from: "        ? raw.stylesheet\n        : undefined,",
+    to: "        ? raw.stylesheet.trim()\n        : undefined,",
+    spec: "custom-css",
+    expect: "indentation is not tidied away",
+  },
+  {
+    // Play Mode's switch that does not switch.
+    name: "a Play Mode CSS switch that changes nothing",
+    file: src("runtime/PlayRuntime.tsx"),
+    from: "{customCss && project.stylesheet ? (",
+    to: "{project.stylesheet ? (",
+    spec: "custom-css",
+    expect: "takes it off, back to the Choice Style underneath",
+  },
 ];
 
 
@@ -2874,7 +3004,15 @@ async function runSpec(spec) {
 // a quarter of an hour of rebuilds, and while a feature is being written
 // the one that matters is the one just added.
 const only = process.env.ONLY;
-const matching = only ? CONTROLS.filter((c) => c.spec.startsWith(only)) : CONTROLS;
+// NAME=wordmark runs the one control whose name contains that text
+// (v0.80.0). SKIP/TAKE index into a list that moves whenever a control is
+// added above, which is how a repaired control gets "verified" by watching
+// a different one go red. A name does not move.
+const named = process.env.NAME?.toLowerCase();
+const matching = CONTROLS.filter(
+  (c) =>
+    (!only || c.spec.startsWith(only)) && (!named || c.name.toLowerCase().includes(named)),
+);
 
 // SKIP/TAKE cut the selection into runs that finish inside a shell's time
 // limit. Every control is a full production rebuild plus a spec run, so a

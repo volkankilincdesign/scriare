@@ -1,4 +1,6 @@
 import { GROUND_TOKENS } from "./readingThemes";
+import { LAYER_ORDER, boxLayerCss } from "../styles/choiceBoxLayer";
+import type { ChoiceBox } from "../types/choiceStyles";
 
 /**
  * The exported page's stylesheet (v0.48.0).
@@ -31,9 +33,25 @@ import { GROUND_TOKENS } from "./readingThemes";
  * describes the app having had and fixing. Faces the WRITER chose from the
  * toolbar are unaffected: those are Georgia, Helvetica and Courier, which
  * are on the reader's machine already.
+ *
+ * THIRD RULE, ADDED IN v0.80.0: EVERYTHING BELOW IS IN A CASCADE LAYER.
+ * The writer's own stylesheet is unlayered, and unlayered beats every layer
+ * whatever its specificity — which is what lets a plain
+ * `.scriare-choice { background: red }` win against the generated
+ * per-style rule without anybody having to type `!important`. The layer
+ * order is `scriare.boxes, scriare.base`, so the rules below still win
+ * over the generated ones exactly as they did when a choice's box was an
+ * inline style; styles/choiceBoxLayer.ts explains why a locked choice
+ * depends on that.
+ *
+ * A rule added to this file inherits the whole arrangement by sitting
+ * inside the template string. A rule added OUTSIDE it would silently
+ * outrank the writer, which is the one mistake this file can now make.
  */
-export function pageStyles(): string {
-  return `
+export function pageStyles(boxes: Record<string, ChoiceBox> = {}): string {
+  return `${LAYER_ORDER}
+${boxLayerCss(boxes)}
+@layer scriare.base {
 :root {
   color-scheme: dark;
 ${GROUND_TOKENS.night}
@@ -223,7 +241,12 @@ body {
   font: inherit; font-size: .93em; line-height: 1.5;
   padding: 9px 16px;
   color: var(--text);
-  border-style: solid;
+  /* "border-style" lived here until v0.80.0 and had to leave. The
+     generated box rule sets it — solid, or none for a zero-width border —
+     and that rule is in an EARLIER layer, so a border-style declaration here
+     would quietly win and give a zero-width border a style it does not
+     want. Harmless to look at, and exactly the kind of thing that stops
+     being harmless the first time somebody reasons from it. */
   cursor: pointer;
   transition: filter .14s;
 }
@@ -301,6 +324,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .scriare-scene { animation: none; }
   .scriare-bar button, .scriare-choice { transition: none; }
+}
 }
 `;
 }

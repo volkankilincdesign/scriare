@@ -4,7 +4,8 @@ import type { ChoiceOption } from "../../utils/choiceBlocks";
 import { readChoiceBlockOptions } from "../../utils/choiceBlocks";
 import { RUNTIME_EXTENSIONS } from "../extensions";
 import { evaluateConditions, lockSentence } from "../../types/variables";
-import { choiceBoxCss, resolveChoiceBox } from "../../types/choiceStyles";
+import { resolveChoiceBox } from "../../types/choiceStyles";
+import { boxClass } from "../../styles/choiceBoxLayer";
 import type { RuntimeBlockDefinition, RuntimeContext } from "../types";
 
 interface RuntimeChoiceOptionsProps {
@@ -31,7 +32,7 @@ function RuntimeChoiceOptions({ options, context }: RuntimeChoiceOptionsProps) {
   if (visible.length === 0) return null;
 
   return (
-    <div className="my-6 flex flex-col gap-2">
+    <div className="scriare-choices my-6 flex flex-col gap-2">
       {visible.map(({ option, passes }) =>
         passes ? (
           <button
@@ -40,7 +41,6 @@ function RuntimeChoiceOptions({ options, context }: RuntimeChoiceOptionsProps) {
             // named styles. An unstyled choice resolves to the Default
             // style, whose values are the theme variables this button used
             // to hard-code, so an untouched story looks exactly as it did.
-            style={choiceBoxCss(resolveChoiceBox(context.choiceStyles, option.style))}
             type="button"
             onClick={() => {
               // Actions run before the jump, same order a player reads them
@@ -50,7 +50,12 @@ function RuntimeChoiceOptions({ options, context }: RuntimeChoiceOptionsProps) {
               if (option.actions?.length) context.applyActions(option.actions);
               context.goToScene(option.targetSceneId as string);
             }}
-            className="border-solid px-4 py-2 text-left text-sm text-[var(--text)] transition-colors hover:brightness-110"
+            // v0.80.0 — the box is a class in a cascade layer rather than
+            // an inline style, so a writer's stylesheet can reach it.
+            // `border-solid` left with it: the generated rule sets the
+            // border style, and a Tailwind utility is unlayered and would
+            // have outranked it.
+            className={`scriare-choice ${boxClass(resolveChoiceBox(context.choiceStyles, option.style))} px-4 py-2 text-left text-sm text-[var(--text)] transition-colors hover:brightness-110`}
           >
             <Label option={option} />
           </button>
@@ -66,8 +71,7 @@ function RuntimeChoiceOptions({ options, context }: RuntimeChoiceOptionsProps) {
             // A locked choice keeps its own dashed, drained treatment —
             // that IS the information — but borrows the style's corner
             // radius so it still reads as one of the choices around it.
-            style={{ borderRadius: `${resolveChoiceBox(context.choiceStyles, option.style).radius}px` }}
-            className="cursor-not-allowed border border-dashed border-[var(--border-soft)] bg-transparent px-4 py-2 text-left text-sm text-[var(--text-3)]"
+            className={`scriare-choice is-locked ${boxClass(resolveChoiceBox(context.choiceStyles, option.style))} cursor-not-allowed border border-dashed border-[var(--border-soft)] bg-transparent px-4 py-2 text-left text-sm text-[var(--text-3)]`}
           >
             <span className="flex items-center gap-2">
               <span aria-hidden>✕</span>

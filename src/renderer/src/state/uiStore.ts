@@ -40,6 +40,17 @@ interface UIState {
    * Settings opened could not get back to it, because nothing outside
    * TopBar could reopen it.
    */
+  /**
+   * v0.80.0 — the story's stylesheet. A place you go, on the Choice Styles
+   * pattern and for the same reason: it is a surface you sit in, not a
+   * field on a form. It records where it came from so it can offer the way
+   * back, which v0.55.0 established as the price of closing Settings on
+   * the way open.
+   */
+  stylesheetOpen: boolean;
+  openStylesheet: (from?: DialogOrigin | null) => void;
+  closeStylesheet: () => void;
+  stylesheetFrom: DialogOrigin | null;
   settingsOpen: boolean;
   openSettings: () => void;
   closeSettings: () => void;
@@ -158,6 +169,10 @@ export const useUIStore = create<UIState>((set) => ({
   // the same bug the Choice Styles origin had and the same fix.
   closePreferences: () => set({ preferencesOpen: false, preferencesFrom: null }),
 
+  stylesheetOpen: false,
+  stylesheetFrom: null,
+  openStylesheet: (from = null) => set({ stylesheetOpen: true, stylesheetFrom: from }),
+  closeStylesheet: () => set({ stylesheetOpen: false }),
   settingsOpen: false,
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),

@@ -180,6 +180,28 @@ export function ProjectSettingsDialog({ onClose }: ProjectSettingsDialogProps) {
         {project.choiceStyles.length === 1 ? "style" : "styles"} — manage…
       </button>
 
+      <label className="scriare-section-label mb-1 block text-[var(--text-3)]">Stylesheet</label>
+      <p className="mb-2 text-xs text-[var(--text-3)]">
+        Your own CSS for this story — applied in Play Mode and in the exported page.
+      </p>
+      <button
+        type="button"
+        onClick={() => {
+          // Same swap the Choice Styles door does, and for the same
+          // reason: a stylesheet is a surface you sit in, not a detail of
+          // Settings. It is told where it came from so it can offer the
+          // way back.
+          onClose();
+          useUIStore.getState().openStylesheet("settings");
+        }}
+        data-open-stylesheet
+        className="mb-5 w-full rounded-md border border-[var(--border)] px-3 py-2 text-left text-sm text-[var(--text-2)] hover:border-[var(--border-faint)] hover:text-[var(--text)]"
+      >
+        {project.stylesheet
+          ? `${project.stylesheet.split("\n").length} lines — edit…`
+          : "None yet — write one…"}
+      </button>
+
       {/* The way OUT, and the reason it is a door rather than a section:
           the theme is not part of this story, and having to cross
           something to reach it says so more plainly than a heading. */}

@@ -482,6 +482,59 @@ than gaps.
   `+ Add` anything, only a way out.
 
 
+### The stylesheet, and the cascade underneath it
+
+- **v0.79.0 Find & Replace** — a preview of every hit before anything is
+  pressed, one undo step across every scene it touched, and mentions left
+  alone with the panel saying why. **His wording, twice over:** he
+  rejected "will not change" for mentions because they *do* change — by
+  renaming the character, which is the only thing that changes one and
+  changes all of them at once.
+- **v0.79.1** — the Replace preview struck the old words through in
+  `--danger`. He asked whether that was right; it was not. `--danger` is
+  spoken everywhere else in the app by things that destroy something, and
+  a preview destroys nothing.
+- **v0.80.0 The story's own stylesheet.** The feature is one promise —
+  your rules win, and you never type `!important` — and the rest is what
+  it took to make that true.
+
+  **Cascade layers are the mechanism, and the reason is specificity, not
+  order.** The app writes `.scriare-prose h2`; a writer writes `h2`. An
+  unlayered rule beats a layered one whatever its specificity, so the
+  app's stylesheet and the generated Choice Style rules go in layers and
+  the writer's CSS does not. Both halves of that are measured in the spec
+  before anything is built on them.
+
+  **Choice Styles had to stop being inline styles.** An inline
+  declaration beats every stylesheet there is, so while a choice's box
+  was written onto the element no writer CSS could have reached it. It is
+  a generated rule now, keyed by a class derived from the box's own
+  values — a hash rather than a counter, because the export and Play Mode
+  collect boxes by different routes and two counters walking a story in
+  different orders is the pair that drifts.
+
+  **Tailwind's preflight moved into a layer, and a test sent it there.**
+  It sets `background-color: transparent` on every button, unlayered, so
+  it outranked the generated rules and a styled choice in Play came out
+  with no fill. The whole suite was run against that change alone.
+
+  **The class contract had been claiming something untrue since
+  v0.48.0** — that the names are the same in the editor, in Play Mode and
+  in the export. Play carried three of them. The claim cost nothing for
+  two years and was wrong the moment it was load-bearing.
+
+  **Two decisions he made, both against my first draft:** the stylesheet
+  is a door out of Project Settings rather than a document in the Content
+  Browser, and Play Mode gets a switch to take it off rather than wearing
+  it unconditionally — because the first question when something looks
+  wrong is whether it is your stylesheet or your story, and the only
+  honest answer is a way to look again without it.
+
+  **The export holds its button** for a stylesheet that fetches anything.
+  It is the one place the export stops rather than warns, and the
+  distinction is that this changes a factual claim about the file rather
+  than a judgement about the story.
+
 **The spreadsheet export's schema is settled** — see
 `docs/spreadsheet-export.md`, decided 28 Sep: three identifiers (an opaque
 Key, an opaque Scene ID, and a readable Ref like `15.D2` recomputed at
@@ -1031,6 +1084,23 @@ exists, lines that can be used in a tease — lives in
   machine, so that is what the tests and controls check; the timings stay
   as documentation and say out loud when the machine is too loaded to
   judge.
+- **A claim nobody depends on is a claim nobody checks.** The class
+  contract said its names were the same in three places, and for three of
+  them it had been false since the day it was written. Nothing caught it
+  because nothing rested on it — and the moment something did, it was
+  wrong. Documentation that states a property no test asserts is a note
+  about intentions, not about the code.
+- **A control that only breaks the whole arrangement passes while most of
+  it is broken.** The cascade here has three independent parts, so there
+  are three sabotages rather than one. Two of the first drafts named
+  changes that did not actually break the claim, and went uncaught
+  correctly.
+- **Some properties remove a failure mode rather than create a testable
+  one.** "The box class is derived from the values rather than a counter"
+  cannot be watched to fail, because both surfaces call the same
+  function; what CAN be watched is two different styles collapsing into
+  one class. If a control will not go red, ask whether the property it
+  names is observable at all before assuming the test is at fault.
 - **The design documents live in two places now**, and the project
   workspace is the source of truth. The repo's `docs/` is a snapshot
   mirrored at release time — so a doc edited here is stale there until the

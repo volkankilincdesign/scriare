@@ -2,7 +2,8 @@ import type { JSONContent } from "@tiptap/react";
 import { extractDialogueLines } from "../../utils/dialogueBlocks";
 import type { DialogueLine } from "../../utils/dialogueBlocks";
 import { evaluateConditions, lockSentence } from "../../types/variables";
-import { choiceBoxCss, resolveChoiceBox } from "../../types/choiceStyles";
+import { resolveChoiceBox } from "../../types/choiceStyles";
+import { boxClass } from "../../styles/choiceBoxLayer";
 import { speakerName } from "../../types/speaker";
 import type { RuntimeBlockDefinition, RuntimeContext } from "../types";
 
@@ -110,7 +111,7 @@ function RuntimeDialogue({
       ))}
 
       {!closed && visible.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="scriare-choices flex flex-col gap-2">
           {visible.map(({ line, passes }) =>
             passes ? (
               <button
@@ -118,9 +119,13 @@ function RuntimeDialogue({
                 type="button"
                 data-dialogue-line={line.id}
                 data-after={line.after}
-                style={choiceBoxCss(resolveChoiceBox(context.choiceStyles, line.style))}
                 onClick={() => pick(line)}
-                className="scriare-choice w-full cursor-pointer rounded-md border px-4 py-2.5 text-left transition-colors hover:border-[var(--accent)]"
+                // v0.80.0 — the box is a CLASS now, not an inline style, so
+                // a writer's own stylesheet can reach it. `rounded-md` and
+                // `border` left with it: the generated rule owns the
+                // radius, width and style, and a utility class is unlayered
+                // so it would have outranked the layer they live in.
+                className={`scriare-choice ${boxClass(resolveChoiceBox(context.choiceStyles, line.style))} w-full cursor-pointer px-4 py-2.5 text-left transition-colors hover:border-[var(--accent)]`}
               >
                 {line.text || "…"}
               </button>
@@ -129,8 +134,7 @@ function RuntimeDialogue({
                 key={line.id}
                 data-dialogue-line={line.id}
                 data-locked="true"
-                style={choiceBoxCss(resolveChoiceBox(context.choiceStyles, line.style))}
-                className="scriare-choice is-locked w-full rounded-md border px-4 py-2.5 text-left opacity-60"
+                className={`scriare-choice is-locked ${boxClass(resolveChoiceBox(context.choiceStyles, line.style))} w-full px-4 py-2.5 text-left opacity-60`}
               >
                 <span>{line.text || "…"}</span>
                 <span className="mt-1 block text-xs text-[var(--text-3)]">

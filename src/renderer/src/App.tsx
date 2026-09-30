@@ -10,6 +10,7 @@ import { ConfirmDialogHost } from "./components/common/ConfirmDialogHost";
 import { SaveConflictDialog } from "./components/common/SaveConflictDialog";
 import { ToastHost } from "./components/common/ToastHost";
 import { ChoiceStylesDialog } from "./components/choices/ChoiceStylesDialog";
+import { StylesheetDialog } from "./components/layout/StylesheetDialog";
 import { useCloseGuard } from "./hooks/useCloseGuard";
 import { useOpenFromDisk } from "./hooks/useOpenFromDisk";
 import { useBoot } from "./hooks/useBoot";
@@ -81,6 +82,8 @@ export default function App() {
   const closeVariableManager = useUIStore((s) => s.closeVariableManager);
   const choiceStylesOpen = useUIStore((s) => s.choiceStylesOpen);
   const closeChoiceStyles = useUIStore((s) => s.closeChoiceStyles);
+  const stylesheetOpen = useUIStore((s) => s.stylesheetOpen);
+  const closeStylesheet = useUIStore((s) => s.closeStylesheet);
   const storyCheckOpen = useUIStore((s) => s.storyCheckOpen);
   const closeStoryCheck = useUIStore((s) => s.closeStoryCheck);
 
@@ -209,6 +212,7 @@ export default function App() {
 
       {variableManagerOpen && <VariableManagerDialog onClose={closeVariableManager} />}
       {choiceStylesOpen && <ChoiceStylesDialog onClose={closeChoiceStyles} />}
+      {stylesheetOpen && <StylesheetDialog onClose={closeStylesheet} />}
       {storyCheckOpen && <StoryCheckDialog onClose={closeStoryCheck} />}
       {/* Reads its own open flag, because it builds the whole export when it
           opens and that is work worth doing exactly once (v0.48.0). */}

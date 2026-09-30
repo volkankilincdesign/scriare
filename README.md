@@ -153,6 +153,13 @@ lives in.
 - Colours you pick yourself say how they read on both grounds **at the
   moment you pick them**, measured, rather than at the export dialog weeks
   later.
+- **Your own stylesheet**, kept in the story file, applied in Play Mode so
+  you can see it, and shipped with the page. Your rules win over the app's
+  without `!important` — plain `.scriare-choice { background: … }` is
+  obeyed even where the app's own selector is the more specific one. If
+  your CSS fetches anything, the export names it and holds the button
+  until you say you meant it: one file with no requests is a promise, and
+  breaking it is your decision rather than a surprise.
 - **A script**, as a PDF or a Word file, in two layouts — one to hand a
   reader, one to hand a studio.
 - **A spreadsheet of every string a reader sees** — scene titles, prose,
@@ -195,7 +202,7 @@ lives in.
 
 ## Status
 
-**v0.79.0 — in active development, and usable.** The editor, graph,
+**v0.80.0 — in active development, and usable.** The editor, graph,
 runtime, entities, notes, variables, validation, search and **export** are
 all real, and the app now builds a Windows installer. See
 [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest list of what
@@ -215,8 +222,8 @@ screen. Clicking it copies the version, your platform and the engine
 underneath — paste that into the report and neither of us has to guess
 which build you were on.
 
-**974 automated tests** run against the real packaged application, and
-**280 negative controls**: each one breaks a specific line of the shipped
+**1003 automated tests** run against the real packaged application, and
+**298 negative controls**: each one breaks a specific line of the shipped
 source on purpose and checks that a named assertion fails. Two that had
 been reporting green were fixed in v0.78.2. One was a **false alarm since
 v0.60.0** — the sabotage worked and the check caught it every time, but the
@@ -228,7 +235,11 @@ is itself an await. It is asserted on the store's own status now, at the
 instant the promise resolves.
 
 A full sweep is about ninety minutes, so it runs in groups rather than in
-one pass; every group run since those two has been clean.
+one pass; every group run since those two has been clean. v0.80.0 added
+ten and repaired four that had gone stale as the code beneath them moved —
+one of which, once it could run again, turned out to be watching a check
+that read the colour an element is *told* to use rather than the one it
+paints.
 
 A control that stays green is a finding about the test rather than about
 the app, and it has happened often enough to be the most useful thing the

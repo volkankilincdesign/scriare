@@ -27,6 +27,7 @@ import type { ReadingGround } from "../export/readingThemes";
  */
 
 const STORAGE_KEY = "scriare.playGround";
+const CSS_KEY = "scriare.playCustomCss";
 
 function isGround(value: string | null): value is ReadingGround {
   return value === "night" || value === "paper";
@@ -44,12 +45,36 @@ function readStoredGround(): ReadingGround {
   }
 }
 
+/**
+ * Whether Play Mode is wearing the story's own stylesheet (v0.80.0).
+ *
+ * DEFAULTS TO ON, because Play Mode is the preview — a writer who has
+ * written CSS wants to see it, and one who has not is unaffected by a
+ * switch that has nothing to apply. Only an explicit "off" is remembered,
+ * so a storage read that fails or returns nothing means on.
+ *
+ * IT EXISTS AT ALL because of a question a writer asks the moment
+ * something looks wrong: is that my stylesheet, or is that my story? The
+ * only honest answer is a way to take the stylesheet off and look again,
+ * and having to delete their CSS to ask is not that.
+ */
+function readStoredCustomCss(): boolean {
+  try {
+    return window.localStorage.getItem(CSS_KEY) !== "off";
+  } catch {
+    return true;
+  }
+}
+
 interface PlayGroundState {
   ground: ReadingGround;
   setGround: (ground: ReadingGround) => void;
   /** The bar's control is a toggle, because there are two grounds and the
    *  export's own bar has settled on that shape already. */
   toggleGround: () => void;
+  /** Is Play Mode wearing the story's own stylesheet? (v0.80.0) */
+  customCss: boolean;
+  toggleCustomCss: () => void;
 }
 
 export const usePlayGroundStore = create<PlayGroundState>((set, get) => ({
@@ -63,4 +88,14 @@ export const usePlayGroundStore = create<PlayGroundState>((set, get) => ({
     set({ ground });
   },
   toggleGround: () => get().setGround(get().ground === "night" ? "paper" : "night"),
+  customCss: readStoredCustomCss(),
+  toggleCustomCss: () => {
+    const next = !get().customCss;
+    try {
+      window.localStorage.setItem(CSS_KEY, next ? "on" : "off");
+    } catch {
+      // Best-effort, as above.
+    }
+    set({ customCss: next });
+  },
 }));
