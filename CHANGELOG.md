@@ -12,6 +12,132 @@ omitting them.
 
 ---
 
+## v0.77.0 — Click a line to go there
+
+The dialog has said that in its own subtitle since v0.36.0, and it has
+never been true. It went as far as the **scene**, and in a two-hundred-word
+scene with six choice blocks, "there" is a guess — so writers hovered the
+rows instead, because hovering was cheaper than arriving somewhere vague.
+The hover was never the design. It was the workaround people found.
+
+**Reported as three things, and they were one thing.** A scene with a
+single finding was drawn as a different component — no disclosure, no line
+underneath, its sentence only in a `title` attribute. On The Blue Hour's
+report that was nine scenes out of twelve, unreadable without a pointer.
+The rule read like tidiness in v0.36.2 ("no disclosure to open for one
+thing") and was a dead end. Every scene opens now.
+
+**A row says what is wrong, in the writer's words.** It used to be the
+thing's name and `what` on the right — *"And if it fails?" … unnamed
+variable* — which is the app's vocabulary, not theirs, and says nothing
+about what their **reader** will see. It reads *The reader is shown
+"resolve"* now, under the name. Thirteen of these, one per kind, written to
+be short and true in that order of difficulty.
+
+**And `what` came off the row.** Drawn as a mockup first, three directions
+against the real report, and the version with all three texts read as
+crowded — because two of them were the same job. `what` still earns the
+scene header, where it counts ("3 unnamed variable") instead of repeating.
+The row number went the same way, replaced by a severity dot: a number said
+only where a row sat among four, while inside a group mixing a problem with
+two warnings the colour is what the width is worth.
+
+**The arrival is the feature.** The editor scrolls to the line, centres it
+and marks it for under two seconds. Find has selected its match since
+v0.38.0 and this deliberately does not: a finding is something to look at
+before deciding, and a whole Choice Block arriving selected means one
+keystroke deletes it. So the caret lands collapsed and a decoration does
+the pointing — a decoration rather than a class on the element, because
+ProseMirror re-renders that element on the next keystroke and takes any
+hand-added class with it.
+
+**Two defects found by building on top of v0.76.0, both shipped yesterday.**
+
+`speakerReferences` read each node's id from `attrs.id` — and **no node
+type in this app stores it there**: a paragraph and a Dialogue line use
+`lineId`, an option `optionId`, both block kinds `blockId`. So every anchor
+was null in every real story, and the row that was supposed to point at the
+first affected line pointed at the scene. Its test passed because the
+fixture wrote `attrs.id` by hand: it was measuring itself. `contentIds.ts`
+has held the mapping since v0.69.0 under a comment calling it "one
+namespace for all five".
+
+And `goTo` told the Inspector that everything carrying a blockId was a
+choice, which was true until v0.76.0 started passing paragraph ids. Each
+finding says what its own id refers to now.
+
+**An honest note on that second one.** The first control written for it
+would not go red, and the reason was the app rather than the test:
+`InspectorPanel` has cleared a target whose choice block does not exist
+since v0.55.0, so the wrong answer was being corrected a frame later and
+nothing visible changed. The check was re-aimed at a **Dialogue** finding,
+where the difference survives — told "choice", the panel finds no options
+and falls back to the scene; told the truth, it opens the conversation.
+The defect was real and less severe than first described.
+
+Six controls, including the two that were wrong on the first attempt: one
+sabotage stored a timer in a different variable and left it firing, so it
+never reproduced the bug it was named after.
+
+## v0.76.0 — Who said that
+
+The last of the five gaps the v0.63.0 audit found, and the one that had
+been hiding in plain sight: `storyCheck.ts` did not contain the word
+"speaker".
+
+`speakerName` returns null for an id that resolves to nobody, and a line
+with no name in front of it **is** narration. So deleting a character does
+not break the story — it rewrites it. A speech becomes the narrator's,
+silently, in whatever scene it was in, and nothing anywhere says so. The
+writer finds out by reading the whole story again.
+
+**A speaker lives in four places, and nothing had ever counted them.** A
+paragraph's attribute and a choice option's arrived in v0.37.0; a Dialogue
+line's own and its **reply's** arrived in v0.66.0. The reply is the one
+that gets missed, because it is a second speaker on a node that already
+has one — a walk written per node rather than per slot finds three of the
+four and looks entirely correct. There is now one list, `speakerReferences`,
+and the negative control that matters most deletes exactly that line.
+
+The siblings rule applies to what the app **knows**, not only to what it
+draws: a check that finds a broken speaker in a choice and not in a
+conversation is the same defect wearing a different coat.
+
+**Two kinds, not one.** A deleted character and a Location set as a
+speaker end the same way and are not the same mistake — "İstanbul was
+deleted" is a lie about something still sitting in the Content panel. The
+second is only reachable in a story written against the first build of
+v0.37.0, before `canSpeak`, when every entity was offered.
+
+**One row per speaker per scene,** his call: a character deleted mid-draft
+is one mistake, not thirty. Counted in references rather than lines,
+because a line whose reply is spoken by the same missing character loses
+two names, and the report must not be tidier than the truth.
+
+**And a warning at the moment it happens — in the toast, not a dialog.**
+He asked for a delete-time warning; the app has had a written rule against
+one since v0.26.0, in `confirmDialogStore`'s own note: a modal earns its
+interruption only while the mistake is permanent, and deleting a character
+has been undoable since v0.25.0. So the undo toast says what it cost
+instead — *Deleted "Mara" — 12 lines in 3 scenes now read as narration* —
+which is the part a writer cannot see, since an attribution is an id on a
+paragraph rather than words on the page. Both delete paths carry it; the
+file's own comment already said no way of deleting something should be
+quieter than another.
+
+Two things the first draft got wrong and the tests caught. The report said
+*"1 line here **are** spoken by"*, because counting and conjugating were
+written separately. And the row carried no `blockId` — which is not only
+navigation: StoryCheckDialog reads that field to decide a row's **shape**,
+so the row drew a 90-character sentence truncated at "It rea…" beside
+neighbours showing a short name and a chip. It points at the first line
+that lost its speaker now.
+
+One check in the new spec looked up a character to attribute lines to and
+skipped itself when the seeded project turned out to ship `entities: []` —
+silently, which is the worst thing a check can do. It makes the cast now,
+and asserts it exists.
+
 ## v0.75.2 — A dialog covers the window
 
 Reported: open Project Settings or Preferences and the status bar along the

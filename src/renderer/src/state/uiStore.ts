@@ -112,9 +112,29 @@ interface UIState {
 export interface RevealRequest {
   sceneId: string | null;
   entityId: string | null;
-  /** ProseMirror positions of the match, as computed by findInStory. */
+  /**
+   * ProseMirror positions of the match, as computed by findInStory.
+   * Ignored when `nodeId` is set.
+   */
   from: number;
   to: number;
+  /**
+   * A node's stable id, for a caller that names the THING rather than the
+   * place (v0.77.0).
+   *
+   * Find computes positions from the stored document, which is right for
+   * it: a match is a range of characters with no identity of its own.
+   * Check Story's findings are about objects — this choice, this line —
+   * and those carry ids (extensions/LineId.ts). An id survives the writer
+   * inserting a sentence above it; a position does not.
+   *
+   * The two also BEHAVE differently, deliberately. Find selects its match,
+   * because somebody who clicked words means to replace them. A finding is
+   * something to look at before deciding, so this leaves a collapsed caret
+   * and marks the node instead — landing with a whole Choice Block
+   * selected would mean the next keystroke deletes it.
+   */
+  nodeId?: string;
 }
 
 export const useUIStore = create<UIState>((set) => ({

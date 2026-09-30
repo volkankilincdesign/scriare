@@ -6,6 +6,8 @@ import { dialogueCanClose, findDialogueBlockLines } from "./dialogueBlocks";
 import type { DialogueLine } from "./dialogueBlocks";
 import { DIALOGUE_BLOCK_TYPE } from "../types/nodeTypes";
 import { MENTION_TYPE } from "../types/entities";
+import { speakerReferences } from "./speakerLines";
+import { canSpeak } from "../types/speaker";
 import type { ChoiceOption } from "./choiceBlocks";
 import type { Project, Scene } from "../types/project";
 
@@ -41,6 +43,23 @@ export type StoryIssueKind =
   | "missing-variable-action"
   /** v0.72.0 — a locked option naming a variable the writer never named. */
   | "unnamed-variable-shown"
+  /**
+   * v0.76.0 — a line whose speaker was deleted. It does not break the
+   * story, it quietly changes it: `speakerName` returns null for an id
+   * that resolves to nobody, and a line with no name in front of it is
+   * narration. Nothing anywhere said so, in the editor or in the report,
+   * so the only way to find it was to read the whole story again.
+   */
+  | "deleted-speaker"
+  /**
+   * v0.76.0 — a speaker that still exists but cannot speak: a Location, or
+   * a Note. Same silent outcome, different cause, so it is its own kind
+   * rather than a footnote on the one above — "İstanbul was deleted" would
+   * be a lie about a location that is still in the story. Only reachable
+   * in a story written against the FIRST build of v0.37.0, before
+   * `canSpeak` (v0.37.1), when every entity was offered as a speaker.
+   */
+  | "silent-speaker"
   | "empty-scene";
 
 export type StorySeverity = "problem" | "warning" | "note";
@@ -61,11 +80,45 @@ export interface StoryIssue {
    * the same choice.
    */
   label: string;
-  /** Two words for what's wrong, for chips and the right-hand column. */
+  /**
+   * Two words for what's wrong. Since v0.77.0 this is for the CHIP on a
+   * scene's header, where it counts ("3 unnamed variable") — it is no
+   * longer drawn on the row, where it was saying the same thing as the
+   * hint one line below it.
+   */
   what: string;
+  /**
+   * One line, on the row, at rest (v0.77.0).
+   *
+   * The third text, between `what` (two words, a chip) and `detail` (a
+   * full sentence with the fix in it). Neither was the right size for a
+   * row: `what` is jargon — "unnamed variable" tells a writer nothing
+   * about what their reader will see — and `detail` runs to 200
+   * characters. Until now the only way to read `detail` was to hover,
+   * which is why this was reported at all.
+   *
+   * Every kind has one, even the ones where arriving at the line shows
+   * you the problem anyway. An explanation on four rows out of six is a
+   * writer wondering what is different about the other two.
+   */
+  hint: string;
   /** Where to go when this is clicked. */
   sceneId?: string;
   blockId?: string;
+  /**
+   * What `blockId` actually points AT, so the Inspector can be opened on
+   * it (v0.77.0).
+   *
+   * `goTo` used to send `kind: "choice"` for anything carrying a blockId,
+   * which was true while only choices carried one. v0.76.0 broke that
+   * without noticing: a speaker finding passes a PARAGRAPH's id, and the
+   * Inspector has no paragraph state — so it was being told a paragraph
+   * was a choice and asked to find one that does not exist.
+   *
+   * `null` means the id is worth revealing in the editor but is not
+   * something the Inspector can show; the panel stays on the scene.
+   */
+  inspect?: "choice" | "dialogue" | null;
 }
 
 export interface StoryStats {
@@ -195,6 +248,9 @@ export function checkStory(project: Project | null): StoryCheck {
 
   const scenes = project.scenes;
   const byId = new Map(scenes.map((s) => [s.id, s]));
+  // Entities, for the speaker pass below. `?? []` because a project
+  // written before v0.35.0 has no entities key at all.
+  const entityById = new Map((project.entities ?? []).map((e) => [e.id, e]));
   const variableIds = new Set(project.variables.map((v) => v.id));
   const variableById = new Map(project.variables.map((v) => [v.id, v]));
 
@@ -218,13 +274,23 @@ export function checkStory(project: Project | null): StoryCheck {
         unnamed.length === 1
           ? `This option is shown locked, so the reader is told why — and is shown the variable's own name, "${unnamed[0]}". Give it a display name, or write this option a reason of its own.`
           : `This option is shown locked, so the reader is told why — and is shown ${unnamed.length} variables by their own names: ${unnamed.map((n) => `"${n}"`).join(", ")}. Give them display names, or write this option a reason of its own.`,
+      // Names the variable, because that is the whole finding: the reader
+      // is about to read the word `knows_roster`, and which word it is is
+      // the thing the writer needs in order to care.
+      hint:
+        unnamed.length === 1
+          ? `The reader is shown “${unnamed[0]}”.`
+          : `The reader is shown ${unnamed.length} variables by their own names.`,
       label,
       what: "unnamed variable",
       sceneId,
       blockId,
     });
   };
-  const issues: StoryIssue[] = [];
+  // A draft until `finish` fills the two fields that are the same for
+  // every occurrence of a kind — see HINTS and INSPECTS. A site that has
+  // something better to say sets its own and keeps it.
+  const issues: IssueDraft[] = [];
   const title = (scene: Scene): string => scene.title || "Untitled scene";
 
   // ── Per-scene checks, and the edges the reachability pass needs ──────
@@ -423,6 +489,67 @@ export function checkStory(project: Project | null): StoryCheck {
     });
     links.set(scene.id, targets);
 
+    /**
+     * Who speaks here, and are they still able to (v0.76.0).
+     *
+     * ONE ISSUE PER SPEAKER PER SCENE, his call. A character deleted
+     * halfway through a draft may have thirty lines across four scenes,
+     * and thirty rows saying the same thing is a report nobody reads to
+     * the bottom of — it is one mistake, not thirty. Grouped by scene
+     * rather than by story because that is how the rest of this report
+     * groups, and because the fix is per-scene work: you go there and
+     * re-attribute the lines.
+     *
+     * The count is of REFERENCES, not of lines: a Dialogue line whose
+     * reply is spoken by the same missing character loses two names, and
+     * saying "1 line" while two names vanish would be the report being
+     * tidier than the truth.
+     */
+    const speakersHere = new Map<string, { count: number; anchor: string | null }>();
+    speakerReferences(scene.content).forEach((ref) => {
+      const seen = speakersHere.get(ref.entityId);
+      // The FIRST one keeps its anchor: one row stands for several lines,
+      // and a row has to land somewhere when it is clicked. The first is
+      // the one to land on — it is where the writer starts reading.
+      if (seen) seen.count += 1;
+      else speakersHere.set(ref.entityId, { count: 1, anchor: ref.anchorId });
+    });
+    speakersHere.forEach(({ count, anchor }, entityId) => {
+      const entity = entityById.get(entityId);
+      // Still here and still able to speak — nothing to say.
+      if (entity && canSpeak(entity)) return;
+      // "1 line here are spoken by" is what counting without conjugating
+      // gets you, and it shipped in the first draft of this. The verb has
+      // to agree with the count, so both halves are chosen together.
+      const places =
+        count === 1 ? "1 line here is" : `${count} lines here are`;
+      issues.push({
+        id: `speaker:${scene.id}:${entityId}`,
+        kind: entity ? "silent-speaker" : "deleted-speaker",
+        // A warning rather than a problem: the story still plays and every
+        // route still works. What changed is what the READER sees, which
+        // is why it cannot be a note either.
+        severity: "warning",
+        title: title(scene),
+        detail: entity
+          ? `${places} spoken by ${entity.name || "an unnamed entity"}, which is a ${entity.kind} and cannot speak. ${count === 1 ? "It reads" : "They read"} as narration.`
+          : `${places} spoken by someone who was deleted. ${count === 1 ? "It reads" : "They read"} as narration.`,
+        // Says HOW MANY, because one lost line and five are different
+        // amounts of work and the row is standing in for all of them.
+        hint:
+          count === 1
+            ? "1 line reads as narration."
+            : `${count} lines read as narration.`,
+        label: entity ? entity.name || "Unnamed" : "Deleted character",
+        what: entity ? "cannot speak" : "no speaker",
+        sceneId: scene.id,
+        // The id of the first line that lost its name. Not something the
+        // Inspector can show — `inspect` is null for these kinds — but
+        // exactly what the editor should scroll to and mark (v0.77.0).
+        ...(anchor ? { blockId: anchor } : {}),
+      });
+    });
+
     if (isEmptyScene(scene)) {
       issues.push({
         id: `empty:${scene.id}`,
@@ -506,7 +633,7 @@ export function checkStory(project: Project | null): StoryCheck {
   const loops = hasCycle(startId, links, reachable);
 
   return {
-    issues: issues.sort(bySeverity),
+    issues: issues.map(finish).sort(bySeverity),
     endings,
     stats: {
       scenes: scenes.length,
@@ -526,6 +653,65 @@ export function checkStory(project: Project | null): StoryCheck {
 const SEVERITY_ORDER: Record<StorySeverity, number> = { problem: 0, warning: 1, note: 2 };
 function bySeverity(a: StoryIssue, b: StoryIssue): number {
   return SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity];
+}
+
+/**
+ * The row's one line, per kind (v0.77.0).
+ *
+ * A TABLE rather than a field on fourteen construction sites, because
+ * eleven of the thirteen kinds say the same thing every time they occur —
+ * "goes nowhere" is not a fact about a particular choice. The three that
+ * genuinely vary set their own and this leaves them alone.
+ *
+ * Written to be read at a glance and to be TRUE, in that order of
+ * difficulty. The temptation is to compress "an action on this choice
+ * sets a variable that was deleted; it does nothing" into "dead action",
+ * which is what `what` already says and what nobody can act on.
+ */
+const HINTS: Record<StoryIssueKind, string> = {
+  "unlinked-choice": "Goes nowhere.",
+  "broken-link": "Its scene was deleted.",
+  "missing-variable-condition": "Its variable was deleted, so it never shows.",
+  "missing-variable-action": "Its variable was deleted, so it does nothing.",
+  "unnamed-variable-shown": "The reader is shown the variable's own name.",
+  "dialogue-never-ends": "Nothing closes this conversation.",
+  "dialogue-dead-gate": "Its variable was deleted, so it can never be said.",
+  "deleted-speaker": "Reads as narration.",
+  "silent-speaker": "This cannot speak, so it reads as narration.",
+  "unreachable-scene": "No choice leads here.",
+  "no-start-scene": "Play Mode has nowhere to begin.",
+  "empty-scene": "Nothing written yet.",
+};
+
+/**
+ * What a kind's `blockId` points at, when it has one.
+ *
+ * Only two of the Inspector's states can be opened from here. A speaker
+ * finding's id is a paragraph, which the Inspector has no state for — so
+ * it is `null`: worth revealing in the editor, not worth pointing a panel
+ * at. Absent from this table means the finding is about the scene itself.
+ */
+const INSPECTS: Partial<Record<StoryIssueKind, "choice" | "dialogue" | null>> = {
+  "unlinked-choice": "choice",
+  "broken-link": "choice",
+  "missing-variable-condition": "choice",
+  "missing-variable-action": "choice",
+  "unnamed-variable-shown": "choice",
+  "dialogue-never-ends": "dialogue",
+  "dialogue-dead-gate": "dialogue",
+  "deleted-speaker": null,
+  "silent-speaker": null,
+};
+
+type IssueDraft = Omit<StoryIssue, "hint"> & { hint?: string };
+
+/** Fills in whatever the construction site did not say for itself. */
+function finish(issue: IssueDraft): StoryIssue {
+  return {
+    ...issue,
+    hint: issue.hint || HINTS[issue.kind],
+    inspect: issue.inspect !== undefined ? issue.inspect : (INSPECTS[issue.kind] ?? null),
+  };
 }
 
 /** Depth-first, tracking the current path — a scene seen twice on one route

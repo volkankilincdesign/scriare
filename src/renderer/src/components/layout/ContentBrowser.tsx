@@ -20,6 +20,7 @@ import { Icon } from "../common/Icon";
 import type { IconName } from "../common/Icon";
 import { ENTITY_ICON, ENTITY_LABEL } from "../../types/entities";
 import { fold } from "../../utils/textFold";
+import { deletedSpeakerNote } from "../../utils/speakerLines";
 import type { EntityKind } from "../../types/entities";
 import { DockGlyph, DockToggle } from "../common/DockToggle";
 
@@ -460,8 +461,12 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
         if (!entity) return;
         event.preventDefault();
         const shown = entity.name || `Untitled ${ENTITY_LABEL[entity.kind].toLowerCase()}`;
+        // Counted BEFORE the delete — afterwards the scenes still hold the
+        // id but the entity is gone, which is the whole defect this is
+        // reporting and would make the toast count nothing.
+        const note = deletedSpeakerNote(current.project.scenes, entity.id);
         deleteEntity(entity.id);
-        showUndo(`Deleted "${shown}"`);
+        showUndo(`Deleted "${shown}"${note}`);
       }
     }
     window.addEventListener("keydown", onKeyDown);
@@ -552,12 +557,17 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
           label: `Delete ${ENTITY_LABEL[entity.kind]}`,
           danger: true,
           onSelect: () => {
+            // v0.76.0 — what her lines cost, counted before she goes.
+            const note = deletedSpeakerNote(project!.scenes, entity.id);
             deleteEntity(entity.id);
             // The same toast a deleted scene raises. Mentions of her are
             // deliberately left in the prose — they render as the words
             // that were written — so the undo here restores the page and
-            // the link, not the sentences.
-            showUndo(`Deleted "${shown}"`);
+            // the link, not the sentences. What the toast now ALSO says is
+            // the part a writer cannot see: a speaker attribution is not
+            // words on the page, it is an id on a paragraph, and losing it
+            // turns a speech into narration somewhere they are not looking.
+            showUndo(`Deleted "${shown}"${note}`);
           },
         },
       ];

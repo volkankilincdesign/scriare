@@ -39,6 +39,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./types/entities"),
     import("./utils/mentions"),
     import("./utils/storyCheck"),
+    import("./hooks/useRevealMatch"),
+    import("./extensions/RevealFlash"),
     import("./types/speaker"),
     import("./utils/speakerLines"),
     import("./utils/findInStory"),
@@ -82,6 +84,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       entities,
       mentions,
       storyCheck,
+      revealMatch,
+      revealFlash,
       speakerTypes,
       speakerLines,
       findInStory,
@@ -129,6 +133,10 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         __scriareEntities: entities,
         __scriareMentions: mentions,
         __scriareStoryCheck: storyCheck,
+        // v0.77.0 — the id-to-position lookup the reveal is built on, so a
+        // spec can ask where a node IS rather than infer it from a scroll
+        // offset, which would measure the browser instead of the app.
+        __scriareReveal: { ...revealMatch, ...revealFlash },
         __scriareSpeaker: speakerTypes,
         __scriareSpeakerLines: speakerLines,
         __scriareFind: findInStory,

@@ -976,3 +976,25 @@ button.scriare-dock-btn:focus-visible {
 .scriare-story-row:hover {
   background-color: var(--surface-2);
 }
+
+/* The node a Check Story finding sent the writer to (v0.77.0).
+
+   Painted in --accent-soft with a --warning edge, which is the pairing the
+   report itself uses: the chip that was clicked is drawn in --warning, so
+   arriving at something wearing the same colour says "this is the one you
+   asked about" without a word. An outline rather than a fill, because a
+   fill behind prose fights the text it is trying to point at, and the
+   speaker decorations are already drawn over these lines.
+
+   The transition is on the way OUT only. Appearing instantly is what makes
+   it findable; leaving instantly is what would make the writer wonder
+   whether they imagined it. */
+.scriare-revealed {
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px var(--warning), 0 0 0 6px var(--accent-soft);
+  background: var(--accent-soft);
+  transition: box-shadow 420ms ease-out, background 420ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .scriare-revealed { transition: none; }
+}

@@ -2519,6 +2519,138 @@ const CONTROLS = [
     spec: "accessibility",
     expect: "chrome is behind the dialog",
   },
+  {
+    // THE SLOT THAT GETS MISSED. A Dialogue line carries two speakers —
+    // its own and its reply's — so a walk that handles the node rather
+    // than the slots finds three of the four and looks entirely correct:
+    // prose, choices and dialogue lines all report, and only the reply is
+    // silently invisible. This is the control the whole four-slot walk
+    // exists for.
+    name: "a speaker walk that finds a line's speaker but not its reply's",
+    file: src("utils/speakerLines.ts"),
+    from: '      take(node.attrs?.replySpeaker, "reply", id);',
+    to: "",
+    spec: "story-check",
+    expect: "REPLY",
+  },
+  {
+    // The false alarm. `@player` is not an entity id and cannot dangle, so
+    // counting it would put a warning on almost every story that exists —
+    // the kind of wrong answer that gets a whole feature turned off.
+    name: "the player counted as somebody who could have been deleted",
+    file: src("utils/speakerLines.ts"),
+    from: "    if (!speaker || speaker === PLAYER_SPEAKER) return;",
+    to: "    if (!speaker) return;",
+    spec: "story-check",
+    expect: "the player is never reported",
+  },
+  {
+    // A Location set as a speaker is still in the story. Calling that
+    // "deleted" is a sentence the writer cannot act on: they go looking
+    // for something that is sitting in the Content panel.
+    name: "a location that cannot speak reported as one that was deleted",
+    file: src("utils/storyCheck.ts"),
+    from: '        kind: entity ? "silent-speaker" : "deleted-speaker",',
+    to: '        kind: "deleted-speaker",',
+    spec: "story-check",
+    expect: "not as deleted",
+  },
+  {
+    // Counting lines rather than references. A Dialogue line whose reply
+    // is spoken by the same missing character loses two names, so a count
+    // of nodes reads lower than the damage — and the report would be
+    // tidier than the truth, which is the failure nobody notices.
+    name: "a report that counts the lines rather than the names that vanish",
+    file: src("utils/storyCheck.ts"),
+    from: "      if (seen) seen.count += 1;",
+    to: "      if (seen) seen.count += 0;",
+    spec: "story-check",
+    expect: "ONE row, not five",
+  },
+  {
+    // The anchor dropped. Two defects from one missing field: the row
+    // stands for five lines and opens none of them, AND — because
+    // StoryCheckDialog decides a row's SHAPE from whether it has a
+    // blockId — it silently turns from a name and a chip into a
+    // truncated sentence. That second one is invisible to anything that
+    // reads the issue objects rather than the screen.
+    name: "a speaker row that names the scene instead of the first line in it",
+    file: src("utils/storyCheck.ts"),
+    from: "        ...(anchor ? { blockId: anchor } : {}),",
+    to: "",
+    spec: "story-check",
+    expect: "points at the FIRST line",
+  },
+  {
+    // The reported defect, put back: one finding means a different
+    // component with no way to open it. Everything else about the report
+    // keeps working, which is exactly why it survived from v0.36.2.
+    name: "a scene with one finding drawn as something that cannot be opened",
+    file: src("components/story/StoryCheckDialog.tsx"),
+    from: "                {isOpen && (",
+    to: "                {isOpen && group.issues.length > 1 && (",
+    spec: "story-check",
+    expect: "explains itself on the page",
+  },
+  {
+    // The hint dropped from the row, back to hover-only. The data is still
+    // perfect — `checkStory` returns the sentence either way — so every
+    // assertion made against the issue OBJECTS stays green. Only a check
+    // that reads the screen can see this, which is why they do.
+    name: "an explanation that is correct in the data and drawn nowhere",
+    file: src("components/story/StoryCheckDialog.tsx"),
+    from: "                            {issue.hint}",
+    to: "                            {issue.blockId ? \"\" : issue.hint}",
+    spec: "story-check",
+    expect: "explains itself on the page",
+  },
+  {
+    // The v0.76.0 defect exactly as it shipped: the walk asks for an
+    // attribute no node type in this app uses, so every anchor is null in
+    // every real document and the reveal has nothing to scroll to. It went
+    // unnoticed for a release because the spec's own fixture wrote the
+    // same wrong attribute.
+    name: "a node's id read from an attribute no node type uses",
+    file: src("utils/speakerLines.ts"),
+    from: "    const attr = idAttrFor(node.type);",
+    to: '    const attr = "id";',
+    spec: "story-check",
+    expect: "points at the FIRST line",
+  },
+  {
+    // Told the Inspector everything is a choice, which is what goTo did
+    // until now — and what made v0.76.0's speaker rows point at a choice
+    // that does not exist.
+    name: "the Inspector told that a conversation is a choice",
+    file: src("components/story/StoryCheckDialog.tsx"),
+    from: "    if (issue.blockId && issue.inspect) {\n      selectTarget({ kind: issue.inspect, sceneId: issue.sceneId, blockId: issue.blockId });",
+    to: '    if (issue.blockId) {\n      selectTarget({ kind: "choice", sceneId: issue.sceneId, blockId: issue.blockId });',
+    spec: "story-check",
+    expect: "opens the Inspector on the conversation",
+  },
+  {
+    // The scroll removed, the mark kept. The finding is still marked and
+    // the caret is still in the right place — it is simply 2000px down a
+    // scroller that never moved, which is the state this shipped in for
+    // half an hour before it was measured.
+    name: "a line marked where the writer cannot see it",
+    file: src("hooks/useRevealMatch.ts"),
+    from: '        dom.scrollIntoView({ block: "center", behavior: "smooth" });',
+    to: "",
+    spec: "story-check",
+    expect: "scrolls the editor to the line",
+  },
+  {
+    // The fade cancelled by its own cleanup — the shape the obvious
+    // version of this has, where `clearReveal` re-runs the effect and
+    // React tears the timer down before it can fire.
+    name: "a mark that never takes itself away",
+    file: src("hooks/useRevealMatch.ts"),
+    from: "      }, REVEAL_FLASH_MS);\n      return;",
+    to: "      }, REVEAL_FLASH_MS);\n      return () => window.clearTimeout(fadeTimer.current);",
+    spec: "story-check",
+    expect: "takes itself away",
+  },
 ];
 
 

@@ -27,6 +27,7 @@ import { Mention } from "../../extensions/Mention";
 import { Speaker } from "../../extensions/Speaker";
 import { SlashCommand } from "../../extensions/SlashCommand";
 import { MarkerStyleSync } from "../../extensions/MarkerStyleSync";
+import { RevealFlash } from "../../extensions/RevealFlash";
 import { TextStyleCleanup } from "../../extensions/TextStyleCleanup";
 import { EditorToolbar } from "./EditorToolbar";
 import { ColorReadingCorner } from "./ColorReadingCorner";
@@ -68,6 +69,8 @@ export function SceneEditor() {
       ConditionalBlock,
       SlashCommand,
       MarkerStyleSync,
+      // v0.77.0 — marks the node a Check Story finding sent the writer to.
+      RevealFlash,
       TextStyleCleanup,
     ],
     content: scene?.content,
