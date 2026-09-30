@@ -47,6 +47,15 @@ interface UIState {
    * back, which v0.55.0 established as the price of closing Settings on
    * the way open.
    */
+  /**
+   * v0.81.0 — "How Scriare works". A place rather than an event: nothing
+   * opens it on first launch and nothing dismisses it forever, because the
+   * question it answers is asked more often in week three than in minute
+   * one.
+   */
+  helpOpen: boolean;
+  openHelp: () => void;
+  closeHelp: () => void;
   stylesheetOpen: boolean;
   openStylesheet: (from?: DialogOrigin | null) => void;
   closeStylesheet: () => void;
@@ -169,6 +178,9 @@ export const useUIStore = create<UIState>((set) => ({
   // the same bug the Choice Styles origin had and the same fix.
   closePreferences: () => set({ preferencesOpen: false, preferencesFrom: null }),
 
+  helpOpen: false,
+  openHelp: () => set({ helpOpen: true }),
+  closeHelp: () => set({ helpOpen: false }),
   stylesheetOpen: false,
   stylesheetFrom: null,
   openStylesheet: (from = null) => set({ stylesheetOpen: true, stylesheetFrom: from }),

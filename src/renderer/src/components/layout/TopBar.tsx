@@ -147,6 +147,23 @@ export function TopBar() {
             𝑥 Variables
           </button>
         )}
+        {/* v0.81.0 — "How Scriare works". Here rather than in the editor's
+            own toolbar, where it belongs by meaning and did not fit by
+            geometry: see EditorToolbar for the row it made wrap. Beside
+            Settings because they are the same kind of control — a door to
+            a place, not an action on the story. */}
+        {!isPlaying && (
+          <button
+            type="button"
+            onClick={() => useUIStore.getState().openHelp()}
+            title="How Scriare works — what the three blocks are for"
+            aria-label="How Scriare works"
+            data-open-help
+            className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
+          >
+            ?
+          </button>
+        )}
         {!isPlaying && (
           <button
             type="button"

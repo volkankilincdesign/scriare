@@ -50,7 +50,22 @@ export function SceneEditor() {
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Placeholder.configure({ placeholder: "Start writing this scene..." }),
+      // v0.81.0 — the placeholder names the door out of an empty page.
+      //
+      // This is the one moment of first-run teaching nothing else can
+      // reach: a brand-new story, an empty scene, and three buttons in a
+      // toolbar whose words mean nothing yet. Twine's whole onboarding is
+      // one line in the default passage, and it is the only part of
+      // Twine's onboarding anybody has ever praised. Naming "/" here costs
+      // six words and reaches every writer on their first screen, where a
+      // tour would have to be opened and a FAQ found.
+      //
+      // Only on an empty document, which is what Placeholder already
+      // does — a writer who has typed anything at all has stopped being
+      // the person this sentence is for.
+      Placeholder.configure({
+        placeholder: "Start writing this scene — or press / for a Choice, a Dialogue or a Conditional",
+      }),
       Underline,
       TextStyle,
       Color,

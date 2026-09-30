@@ -12,6 +12,98 @@ omitting them.
 
 ---
 
+## v0.81.0 — What these three blocks are for
+
+Scriare is not hard to operate. It is unfamiliar: three buttons sit in that
+toolbar and two of them are things Twine structurally cannot do, so a
+writer arriving from Twine has a prior for one and nothing for the other
+two. That is a conceptual problem, not a procedural one — which is why
+this is not a tour.
+
+**Nobody in this genre has shipped the tour.** Arcweave opens a new account
+onto a built-in example project and sends the rest to docs and YouTube.
+Twine ships one line of text inside the default passage. Both teach at the
+point of use and let an example carry the rest, and both are right: a tour
+teaches procedure to somebody who does not yet know why, and it is the
+shape most people dismiss unread.
+
+**The app was telling a newcomer three different things about one block.**
+The toolbar button said one sentence, the slash menu said another, and the
+block's own header said a third — near enough that nobody noticed, far
+enough that a writer met two descriptions and concluded there were two
+things. The Conditional was "a passage that only appears sometimes" on the
+button and "Prose that only appears when a condition holds" in the menu.
+The Choice button said **"Insert a Choice Block"**: grammatical, accurate,
+and useless to the one person who needs it. All four surfaces read from the
+catalog now, so a block explaining itself differently in two places is not
+a mistake this app can make.
+
+**The Choice was missing things its siblings have had since the day they
+were drawn.** The Dialogue's header has worn "— stays on this page" since
+v0.66.0 and the Conditional's "— appears sometimes" since v0.78.0; the
+Choice had no tagline and put its count in the wrong place. It reads
+**"⤷ Choice — the page turns here"** now, and that line was written against
+its sibling rather than on its own: *the page turns here* against *stays on
+this page* teaches the difference between the two blocks in four words,
+which is the thing a newcomer actually needs and which no amount of
+documentation delivers as cheaply. It also had no `data-choice-block`
+handle, so the oldest of the three blocks was the only one a test could not
+point at — found by a check that could read its siblings' headers and not
+its own. Both gaps were age, not behaviour, which the siblings rule does
+not accept as a reason.
+
+**"How Scriare works" is a place, not an event.** Nothing fires it on first
+launch and nothing dismisses it forever, because the question is asked more
+often in week three than in minute one. Three pictures and three sentences
+first — built from the same glyph and the same tagline the real block wears,
+so it cannot go stale the way a screenshot would — then fourteen questions
+underneath, grouped in the order the work happens in. Two doors: a quiet ?
+beside the three block buttons, which is where the question is actually
+asked, and one on the Welcome screen, which is where a newcomer starts and
+the last place they can reach once a story is open.
+
+**And the cheapest teaching in the app is one line.** An empty scene now
+reads *"Start writing this scene — or press / for a Choice, a Dialogue or a
+Conditional."* Six extra words, on the first screen every writer sees,
+where a tour would have to be opened and a panel found. It is the only part
+of Twine's onboarding anyone has ever praised, and it costs nothing.
+
+**The FAQ answers what the app does, not what it will do** — an FAQ
+describing a plan is a promise nobody agreed to, and the first answer a
+writer catches being wrong is the last one they read. It also leaves out
+anything the screen already says: a question whose answer is a button
+labelled with it teaches a writer that this list is where obvious things
+live, and then they stop opening it. The prose is a first draft and the
+voice is Volkan's; what the tests check is the one thing prose can be
+mechanically wrong about, which is naming a surface that does not exist.
+
+**Two things the app would not let me do, both fair.** The ? started
+beside the three block buttons, which is exactly where the question gets
+asked — and the editor's toolbar wrapped to a second row the moment a
+caret entered a choice and the Choice group appeared beside it, so the
+writer's own text moved down and back up while they typed. That is a bug a
+user reported in v0.33.1 and there is a check that has guarded it ever
+since; it is not worth re-introducing for a question mark, so the door is
+in the top bar, one bar up and always visible. The Welcome screen's header
+refused for a different reason: it holds exactly two actions, asserted by
+name, and draws a frame that is checked to be identical across nought
+stories, one, and a shelf. A newcomer meets the line under the empty shelf
+instead, which is the branch that only renders for somebody with no
+stories at all — closer to "a newcomer" than a button in that header could
+have been.
+
+**Eight negative controls**, each breaking the agreement in a different
+place, because the failure this guards against is not "the help is missing"
+— it is four surfaces quietly drifting apart, which is the state the app
+was in for two years with nothing noticing. One did not go red first time:
+the check for a tautological tooltip was matching `^Insert a…` against a
+string that now begins with the block's name, so it tested a spelling
+rather than the property. It asks whether the description survives having
+its own block's name taken out of it now, which "Insert a Choice Block"
+cannot and the shortest real one clears by two words.
+
+---
+
 ## v0.80.0 — Your own CSS, and the cascade that makes it win
 
 Find & Replace was the last thing a writer would have named as missing.

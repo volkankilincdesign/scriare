@@ -1,4 +1,5 @@
 import { NodeViewContent, NodeViewWrapper } from "@tiptap/react";
+import { blockTagline } from "../../narrativeBlocks/registry";
 import type { NodeViewProps } from "@tiptap/react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useInspectorStore } from "../../state/inspectorStore";
@@ -79,6 +80,13 @@ export function ChoiceBlockView({ node, deleteNode, selected, editor }: NodeView
           ? "border-[var(--accent)] bg-[var(--accent-soft)]"
           : "border-[var(--border)] bg-[var(--surface-2-faint)]"
       }`}
+      // v0.81.0 — the handle its two siblings have carried since the day
+      // they were drawn. Found by a first-run check that could read the
+      // Dialogue's header and the Conditional's and not the Choice's: the
+      // oldest of the three blocks was the only one a test could not point
+      // at, which is the same age-not-behaviour gap that left it without a
+      // tagline.
+      data-choice-block={node.attrs.blockId ?? undefined}
     >
       <div
         contentEditable={false}
@@ -87,8 +95,24 @@ export function ChoiceBlockView({ node, deleteNode, selected, editor }: NodeView
       >
         <span aria-hidden>⤷</span>
         <span>Choice</span>
+        {/* v0.81.0 — THE TAGLINE, and the count moved to the right to
+            match. Both siblings have worn one since the day they were
+            drawn — the Dialogue "— stays on this page", the Conditional
+            "— appears sometimes" — and the Choice, which is the block a
+            newcomer meets first, had neither. The siblings rule says
+            anything drawn for one is drawn for all three unless the
+            difference is behavioural, and "the header is older" is not a
+            behaviour.
+
+            "The page turns here" is chosen against "stays on this page"
+            on purpose: the pair teaches the distinction between the two
+            blocks in four words, which is the thing a newcomer actually
+            needs and no amount of documentation delivers as cheaply. */}
         <span className="font-normal normal-case text-[var(--text-3)]">
-          ({count} {count === 1 ? "option" : "options"})
+          — {blockTagline("choice")}
+        </span>
+        <span className="ml-auto font-normal normal-case text-[var(--text-3)]">
+          {count} {count === 1 ? "option" : "options"}
         </span>
       </div>
 

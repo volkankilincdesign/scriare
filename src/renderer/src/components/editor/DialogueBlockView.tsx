@@ -1,4 +1,5 @@
 import { NodeViewContent, NodeViewWrapper } from "@tiptap/react";
+import { blockTagline } from "../../narrativeBlocks/registry";
 import type { NodeViewProps } from "@tiptap/react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useInspectorStore } from "../../state/inspectorStore";
@@ -80,7 +81,7 @@ export function DialogueBlockView({ node, deleteNode, selected, editor }: NodeVi
         <span aria-hidden>◆</span>
         <span>Dialogue</span>
         <span className="font-normal normal-case text-[var(--text-3)]">
-          — stays on this page
+          — {blockTagline("dialogue")}
         </span>
         <span className="ml-auto font-normal normal-case text-[var(--text-3)]">
           {lines} {lines === 1 ? "line" : "lines"}

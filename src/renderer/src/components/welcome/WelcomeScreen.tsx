@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useUIStore } from "../../state/uiStore";
 import { useProjectStore } from "../../state/projectStore";
 import { NewProjectDialog } from "./NewProjectDialog";
 import { StoryMap } from "./StoryMap";
@@ -154,6 +155,15 @@ export function WelcomeScreen() {
         <div className="flex-grow" />
         {/* The same two buttons as every dialog footer, at the same size —
             this header used px-3.5/px-4 and nothing else in the app did. */}
+        {/* NO HELP DOOR IN THIS HEADER, deliberately. It had one for about
+            an hour and tests/welcome.spec.mjs went red: this header holds
+            exactly two actions, asserted by name, and the frame it draws
+            is checked to be identical across nought stories, one, and a
+            shelf. A third control is a decision that header already made.
+            The newcomer's way in is the line under the empty shelf below,
+            which is the branch that only ever renders for somebody with no
+            stories at all — closer to "a newcomer" than a button here
+            could be. */}
         <Button intent="secondary" onClick={() => void openProject()}>
           Open Project…
         </Button>
@@ -314,6 +324,25 @@ function EmptyShelf({ onStart }: { onStart: () => void }) {
           </span>
         </button>
       </div>
+
+      {/* ONE LINE, AND THEN THE SCREEN STOPS TALKING AGAIN. The pitch above
+          answers what it does and where the work lives, and that restraint
+          is the reason this screen reads well — so the teaching gets a
+          sentence rather than a third card. It is here because this is the
+          one branch of the Welcome screen that only ever renders for
+          somebody with no stories at all, which is as close to "a
+          newcomer" as the app can honestly get. */}
+      <p className="mt-6 text-[13px] text-[var(--text-3)]">
+        New to branching stories?{" "}
+        <button
+          type="button"
+          onClick={() => useUIStore.getState().openHelp()}
+          data-empty-shelf-help
+          className="underline underline-offset-2 hover:text-[var(--text-2)]"
+        >
+          How Scriare works
+        </button>
+      </p>
       </div>
     </main>
   );

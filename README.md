@@ -153,6 +153,12 @@ lives in.
 - Colours you pick yourself say how they read on both grounds **at the
   moment you pick them**, measured, rather than at the export dialog weeks
   later.
+- **Three kinds of block** make a story branch, and each says what it is
+  wherever you meet it — in the toolbar, on the “/” menu, and in its own
+  header. **How Scriare works**, in the top bar, explains all three with
+  the questions a newcomer actually has underneath. It is a place rather
+  than a tour: nothing fires it at you, and it is still there in week
+  three.
 - **Your own stylesheet**, kept in the story file, applied in Play Mode so
   you can see it, and shipped with the page. Your rules win over the app's
   without `!important` — plain `.scriare-choice { background: … }` is
@@ -202,7 +208,7 @@ lives in.
 
 ## Status
 
-**v0.80.0 — in active development, and usable.** The editor, graph,
+**v0.81.0 — in active development, and usable.** The editor, graph,
 runtime, entities, notes, variables, validation, search and **export** are
 all real, and the app now builds a Windows installer. See
 [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest list of what
@@ -222,8 +228,8 @@ screen. Clicking it copies the version, your platform and the engine
 underneath — paste that into the report and neither of us has to guess
 which build you were on.
 
-**1003 automated tests** run against the real packaged application, and
-**298 negative controls**: each one breaks a specific line of the shipped
+**1029 automated tests** run against the real packaged application, and
+**306 negative controls**: each one breaks a specific line of the shipped
 source on purpose and checks that a named assertion fails. Two that had
 been reporting green were fixed in v0.78.2. One was a **false alarm since
 v0.60.0** — the sabotage worked and the check caught it every time, but the

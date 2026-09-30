@@ -535,6 +535,39 @@ than gaps.
   distinction is that this changes a factual claim about the file rather
   than a judgement about the story.
 
+### First-run teaching, and the shape it is not
+
+- **v0.81.0 — the three blocks explain themselves.** His question was FAQ
+  or step-by-step; the answer was neither, and the research supports it.
+  **Arcweave** opens a new account onto a built-in example project ("The
+  Castle") with a Blank Project beside it, and sends everything else to
+  docs and a YouTube series — no in-app tour at all. **Twine** ships one
+  line inside the default passage. Both teach at the point of use and let
+  an example carry the rest. A tour teaches procedure to somebody who does
+  not yet know why, and is the shape most people dismiss unread.
+
+  **The real defect was that the app said three different things about one
+  block.** The toolbar tooltip, the slash-menu description and the block's
+  own header were typed separately and disagreed — the Conditional had two
+  near-enough sentences, and the Choice button said "Insert a Choice
+  Block", which is the app repeating its own noun at the one person who
+  does not know it. All four surfaces read from the catalog now.
+
+  **The Choice was behind its siblings again.** No tagline, its count in
+  the wrong place, and no `data-choice-block` handle — so the oldest of
+  the three was the only one a test could not point at. All three gaps
+  were age rather than behaviour.
+
+  **"How Scriare works" is a place, not an event.** Nothing fires it and
+  nothing dismisses it: the question is asked more often in week three
+  than in minute one.
+
+  **Two placements the app refused, and both refusals were right.** The
+  editor toolbar wrapped a row (v0.33.1's reported bug, still guarded);
+  the Welcome header holds exactly two actions and a frame asserted across
+  three states. The door went to the top bar and to a line under the empty
+  shelf.
+
 **The spreadsheet export's schema is settled** — see
 `docs/spreadsheet-export.md`, decided 28 Sep: three identifiers (an opaque
 Key, an opaque Scene ID, and a readable Ref like `15.D2` recomputed at
@@ -1084,6 +1117,11 @@ exists, lines that can be used in a tease — lives in
   machine, so that is what the tests and controls check; the timings stay
   as documentation and say out loud when the machine is too loaded to
   judge.
+- **When a test refuses a placement, the test is usually holding
+  something somebody already paid for.** Two of this feature's three
+  doors were rejected by checks that existed because of an earlier bug
+  report and an earlier design decision. Moving the control was cheaper
+  and more correct than loosening either.
 - **A claim nobody depends on is a claim nobody checks.** The class
   contract said its names were the same in three places, and for three of
   them it had been false since the day it was written. Nothing caught it

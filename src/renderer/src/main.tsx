@@ -57,6 +57,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./export/readingThemes"),
     import("./export/stylesheetNotes"),
     import("./styles/choiceBoxLayer"),
+    import("./narrativeBlocks/registry"),
+    import("./help/faq"),
     import("./utils/recentShape"),
     import("../../shared/recentEntries"),
     import("../../shared/fileArgs"),
@@ -105,6 +107,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       readingThemes,
       stylesheetNotes,
       choiceBoxLayer,
+      narrativeBlocks,
+      faq,
       recentShape,
       recentEntries,
       fileArgs,
@@ -177,6 +181,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         __scriareExport: { ...buildStory, ...pageTemplate, ...contrastCheck, ...readingThemes },
         __scriareStylesheetNotes: stylesheetNotes,
         __scriareBoxLayer: choiceBoxLayer,
+        __scriareBlocks: narrativeBlocks,
+        __scriareFaq: faq,
         // v0.53.0 — the Welcome screen's cached story shape. Pure functions
         // over a project, so the spec builds a story, runs the real builder
         // and measures the bytes it produced.

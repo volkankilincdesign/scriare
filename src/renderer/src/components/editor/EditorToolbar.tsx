@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { blockTooltip } from "../../narrativeBlocks/registry";
 import type { ReactNode } from "react";
 import type { Editor } from "@tiptap/react";
 import { Icon } from "../common/Icon";
@@ -625,7 +626,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         // its own guard.
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => editor.chain().focus().insertChoiceBlock().run()}
-        title="Insert a Choice Block"
+        title={blockTooltip("choice")}
         data-insert-choice
         className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] bg-[var(--accent-fill-strong)] px-2.5 text-xs font-semibold text-[var(--accent-text-on)] transition-colors hover:bg-[var(--accent)]"
       >
@@ -650,7 +651,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           type="button"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => editor.chain().focus().insertDialogueBlock().run()}
-          title="Insert a Dialogue — a conversation that stays on this page"
+          title={blockTooltip("dialogue")}
           data-insert-dialogue
           className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] bg-[var(--accent-fill-strong)] px-2.5 text-xs font-semibold text-[var(--accent-text-on)] transition-colors hover:bg-[var(--accent)]"
         >
@@ -675,7 +676,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           type="button"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => editor.chain().focus().insertConditionalBlock().run()}
-          title="Insert a Conditional — a passage that only appears sometimes"
+          title={blockTooltip("conditional")}
           data-insert-conditional
           className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] bg-[var(--accent-fill-strong)] px-2.5 text-xs font-semibold text-[var(--accent-text-on)] transition-colors hover:bg-[var(--accent)]"
         >
@@ -683,6 +684,18 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           Conditional
         </button>
       )}
+
+      {/* THE HELP DOOR IS NOT HERE, and that is a measurement rather than
+          a preference. It was, for about an hour: a 28px ? beside the three
+          block buttons, which is exactly where the question "what is that
+          third button for" gets asked. Then tests/toolbar.spec.mjs went
+          red — the bar wrapped to a second row the moment a caret entered
+          a choice and the Choice group appeared beside it, so the writer's
+          own text moved down and back up while they typed. That is a bug a
+          user reported in v0.33.1 and it is not worth re-introducing for a
+          question mark. The door is in the top bar instead, one bar up and
+          always visible, and the slash menu still lists what each block is
+          at the moment a writer is choosing between them. */}
         </>
       )}
 

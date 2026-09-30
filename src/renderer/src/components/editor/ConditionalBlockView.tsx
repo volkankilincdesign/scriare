@@ -1,4 +1,5 @@
 import { NodeViewContent, NodeViewWrapper } from "@tiptap/react";
+import { blockTagline } from "../../narrativeBlocks/registry";
 import type { NodeViewProps } from "@tiptap/react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useInspectorStore } from "../../state/inspectorStore";
@@ -98,7 +99,7 @@ export function ConditionalBlockView({ node, deleteNode, selected }: NodeViewPro
         <span aria-hidden>◇</span>
         <span>Conditional</span>
         <span className="font-normal normal-case text-[var(--text-3)]">
-          — appears sometimes
+          — {blockTagline("conditional")}
         </span>
         <span className="ml-auto font-normal normal-case text-[var(--text-3)]">
           {count === 0 ? "no conditions" : `${count} ${count === 1 ? "condition" : "conditions"}`}

@@ -2979,6 +2979,96 @@ const CONTROLS = [
     spec: "custom-css",
     expect: "takes it off, back to the Choice Style underneath",
   },
+
+  /* ── First-run teaching (v0.81.0) ─────────────────────────────────
+     The claim is that a block says ONE thing about itself wherever it is
+     met. Every control below breaks that in a different place, because
+     the failure this guards against is not "the help is missing" — it is
+     four surfaces quietly drifting apart, which is the state the app was
+     in before this version and which nothing noticed for two years. */
+  {
+    // A tooltip typed by hand again, saying something reasonable and
+    // different. This is the exact shape of the bug that shipped: the
+    // Conditional's button and its slash-menu entry had two near-enough
+    // sentences, and near-enough is how a newcomer concludes there are
+    // two things.
+    name: "a block tooltip written by hand instead of read from the catalog",
+    file: src("components/editor/EditorToolbar.tsx"),
+    from: 'title={blockTooltip("conditional")}',
+    to: 'title="Insert a Conditional block"',
+    spec: "first-run",
+    expect: "tooltip is the registry's own sentence",
+  },
+  {
+    // The Choice's tooltip back to naming itself. Grammatical, accurate,
+    // and useless to the one person who needs it — which is why there is
+    // a check for it by shape rather than by string.
+    name: "a tooltip that is the app repeating its own noun",
+    file: src("narrativeBlocks/registry.ts"),
+    from: '    description: "The story branches — the reader picks one and moves on",',
+    to: '    description: "Insert a choice block",',
+    spec: "first-run",
+    expect: "says something its own name does not",
+  },
+  {
+    // The block's own header carrying its own copy of the words.
+    name: "a block header with its own private tagline",
+    file: src("components/editor/DialogueBlockView.tsx"),
+    from: '          — {blockTagline("dialogue")}',
+    to: "          — a conversation block",
+    spec: "first-run",
+    expect: "wears the same tagline as everything else",
+  },
+  {
+    // The panel writing its own explanations. It would look right, read
+    // right, and be a fifth place to keep in step.
+    name: "the help panel explaining a block in its own words",
+    file: src("components/layout/HelpDialog.tsx"),
+    from: "                <p className=\"text-[13px] leading-relaxed text-[var(--text-2)]\">{block.teaches}</p>",
+    to: "                <p className=\"text-[13px] leading-relaxed text-[var(--text-2)]\">A kind of block.</p>",
+    spec: "first-run",
+    expect: "in the same words the toolbar and the block itself use",
+  },
+  {
+    // A block dropped from the panel — the failure mode a hard-coded list
+    // of ids would have, which is why the list is derived from `teaches`.
+    name: "a block type missing from the panel that explains them",
+    file: src("narrativeBlocks/registry.ts"),
+    from: "export const STORY_BLOCKS = NARRATIVE_BLOCKS.filter((block) => Boolean(block.teaches));",
+    to: 'export const STORY_BLOCKS = NARRATIVE_BLOCKS.filter((block) => Boolean(block.teaches) && block.id !== "conditional");',
+    spec: "first-run",
+    expect: "explains exactly the blocks that have something to teach",
+  },
+  {
+    // The door removed from the toolbar. The Welcome screen's copy would
+    // still be there, and unreachable from the moment the question is
+    // actually asked.
+    name: "help reachable only from a screen you have already left",
+    file: src("components/layout/TopBar.tsx"),
+    from: "            data-open-help",
+    to: "            data-open-help-disabled",
+    spec: "first-run",
+    expect: "a door to it wherever a writer is standing",
+  },
+  {
+    // The empty page stops naming the way in.
+    name: "an empty scene that says nothing about the three blocks",
+    file: src("components/editor/SceneEditor.tsx"),
+    from: '        placeholder: "Start writing this scene — or press / for a Choice, a Dialogue or a Conditional",',
+    to: '        placeholder: "Start writing this scene...",',
+    spec: "first-run",
+    expect: "tells a newcomer how to reach the three blocks",
+  },
+  {
+    // An FAQ entry that names a place the app does not have. The prose is
+    // his to judge; a wrong signpost is not a matter of taste.
+    name: "an FAQ answer pointing at a surface that does not exist",
+    file: src("help/faq.ts"),
+    from: "Yes — Project Settings → Stylesheet takes your own CSS.",
+    to: "Yes — the Appearance tab takes your own CSS.",
+    spec: "first-run",
+    expect: "points at things that exist",
+  },
 ];
 
 
