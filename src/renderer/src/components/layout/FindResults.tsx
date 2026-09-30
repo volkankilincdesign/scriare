@@ -1,8 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useProjectStore } from "../../state/projectStore";
 import { useUIStore } from "../../state/uiStore";
 import { useInspectorStore } from "../../state/inspectorStore";
 import { findInStory } from "../../utils/findInStory";
+import { isReplaceable, skipped } from "../../utils/replaceInStory";
 import type { FindHit } from "../../utils/findInStory";
 import { Icon } from "../common/Icon";
 
@@ -42,8 +43,42 @@ export function FindResults({ query }: FindResultsProps) {
   // thing it pointed at would be worse than the work saved.
   const result = useMemo(() => findInStory(project, query), [project, query]);
 
+  const replaceHits = useProjectStore((s) => s.replaceHits);
+  const [replacement, setReplacement] = useState("");
+  /**
+   * Hits the writer has UNTICKED, by id.
+   *
+   * Held as exclusions rather than as a selection so that everything is
+   * chosen by default: a writer who types a replacement and presses the
+   * button means "all of them" far more often than "none of them", and a
+   * list that starts empty makes the common case the laborious one.
+   */
+  const [excluded, setExcluded] = useState<Set<string>>(new Set());
+
   const inStory = result.hits.filter((hit) => hit.sceneId);
   const onPages = result.hits.filter((hit) => hit.entityId);
+
+  const replaceable = result.hits.filter(isReplaceable);
+  const chosen = replaceable.filter((hit) => !excluded.has(hit.id));
+  const left = skipped(result.hits);
+
+  function toggle(hit: FindHit): void {
+    setExcluded((prev) => {
+      const next = new Set(prev);
+      if (next.has(hit.id)) next.delete(hit.id);
+      else next.add(hit.id);
+      return next;
+    });
+  }
+
+  function runReplace(): void {
+    if (!replacement || chosen.length === 0) return;
+    replaceHits(chosen, replacement);
+    // The query still matches whatever was NOT replaced, so the panel
+    // refreshes itself from the store. The exclusions go: they were about
+    // hits that no longer exist.
+    setExcluded(new Set());
+  }
 
   function go(hit: FindHit): void {
     if (hit.sceneId) {
@@ -76,8 +111,72 @@ export function FindResults({ query }: FindResultsProps) {
 
   return (
     <div data-find-results>
-      <Section title="In the story" icon="scene" hits={inStory} onGo={go} />
-      <Section title="On pages" icon="character" hits={onPages} onGo={go} />
+      {/* THE REPLACE BAR (v0.79.0). Above the results rather than below,
+          because what it does is about all of them and a control that acts
+          on a list belongs at the head of it. */}
+      <div className="mb-1.5 flex flex-col gap-1.5 px-2 pt-1">
+        <div className="flex items-center gap-1.5">
+          <input
+            id="find-replace-with"
+            value={replacement}
+            onChange={(e) => setReplacement(e.target.value)}
+            placeholder="Replace with…"
+            data-replace-with
+            className="min-w-0 flex-1 rounded-md border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+          />
+          <button
+            type="button"
+            onClick={runReplace}
+            disabled={!replacement || chosen.length === 0}
+            data-replace-all
+            title={
+              chosen.length === 0
+                ? "Nothing here can be replaced"
+                : `Replace ${chosen.length} in one step — Ctrl+Z puts it all back`
+            }
+            className="shrink-0 rounded-md bg-[var(--accent-fill-strong)] px-2.5 py-1 text-xs font-semibold text-[var(--accent-text-on)] transition-colors hover:bg-[var(--accent)] disabled:pointer-events-none disabled:bg-transparent disabled:text-[var(--border-faint)]"
+          >
+            Replace {chosen.length}
+          </button>
+        </div>
+        {/* What Replace will NOT do, said before it is pressed rather than
+            discovered afterwards. His wording, and the reason it is not
+            "will not change": they WILL change — by renaming the
+            character, which is the only thing that changes a mention. */}
+        {left.mentions > 0 && (
+          <p data-replace-skips className="text-[11px] leading-snug text-[var(--text-3)]">
+            {left.mentions === 1
+              ? "1 is a mention, not text. It follows the character\u2019s own name."
+              : `${left.mentions} are mentions, not text. They follow the character\u2019s own name.`}
+          </p>
+        )}
+        {left.names > 0 && (
+          <p data-replace-skips-names className="text-[11px] leading-snug text-[var(--text-3)]">
+            {left.names === 1
+              ? "1 is a page\u2019s own name. Rename the page to change it."
+              : `${left.names} are pages\u2019 own names. Rename the page to change them.`}
+          </p>
+        )}
+      </div>
+
+      <Section
+        title="In the story"
+        icon="scene"
+        hits={inStory}
+        onGo={go}
+        replacement={replacement}
+        excluded={excluded}
+        onToggle={toggle}
+      />
+      <Section
+        title="On pages"
+        icon="character"
+        hits={onPages}
+        onGo={go}
+        replacement={replacement}
+        excluded={excluded}
+        onToggle={toggle}
+      />
       {result.truncated && (
         <p className="px-2 py-2 text-[11px] text-[var(--text-3)]">
           Showing the first {result.hits.length}. Type a little more to narrow it.
@@ -93,11 +192,17 @@ function Section({
   icon,
   hits,
   onGo,
+  replacement,
+  excluded,
+  onToggle,
 }: {
   title: string;
   icon: "scene" | "character";
   hits: FindHit[];
   onGo: (hit: FindHit) => void;
+  replacement: string;
+  excluded: Set<string>;
+  onToggle: (hit: FindHit) => void;
 }) {
   if (hits.length === 0) return null;
 
@@ -125,13 +230,32 @@ function Section({
             <Icon name={icon} className="h-3 w-3 shrink-0 text-[var(--text-3)]" />
             <span className="min-w-0 truncate">{group.where}</span>
           </div>
-          {group.hits.map((hit) => (
+          {group.hits.map((hit) => {
+            const canReplace = isReplaceable(hit);
+            const chosen = canReplace && !excluded.has(hit.id);
+            return (
+            <div key={hit.id} className="flex items-start gap-1">
+              {/* One tick per hit, and only where there is something to
+                  tick. A checkbox beside a mention would be a control that
+                  does nothing, which is worse than no control. */}
+              {canReplace ? (
+                <input
+                  type="checkbox"
+                  id={`find-pick-${hit.id}`}
+                  checked={chosen}
+                  onChange={() => onToggle(hit)}
+                  data-replace-pick
+                  aria-label={`Replace this occurrence in ${hit.where}`}
+                  className="mt-[7px] ml-2 shrink-0 accent-[var(--accent)]"
+                />
+              ) : (
+                <span className="mt-[7px] ml-2 h-3 w-3 shrink-0" aria-hidden />
+              )}
             <button
-              key={hit.id}
               type="button"
               data-find-hit={hit.kind}
               onClick={() => onGo(hit)}
-              className="block w-full rounded-md px-2 py-1 pl-6 text-left text-xs leading-snug text-[var(--text-3)] hover:bg-[var(--bg)] hover:text-[var(--text-2)]"
+              className="block min-w-0 flex-1 rounded-md px-2 py-1 text-left text-xs leading-snug text-[var(--text-3)] hover:bg-[var(--bg)] hover:text-[var(--text-2)]"
             >
               {/* A choice reads differently from a line of prose and is
                   repaired somewhere else, so it says which it is. */}
@@ -148,12 +272,34 @@ function Section({
                 </span>
               )}
               {hit.snippet.slice(0, hit.markStart)}
-              <mark className="scriare-find-mark">
-                {hit.snippet.slice(hit.markStart, hit.markEnd)}
-              </mark>
+              {/* THE PREVIEW. With a replacement typed, a hit that is going
+                  to change shows what it will become — the old words struck
+                  through, the new ones in their place — so Replace All is
+                  pressed by somebody who has already read the result. A hit
+                  that is not going to change keeps its plain highlight, so
+                  the list says at a glance which is which. */}
+              {replacement && chosen ? (
+                <>
+                  <span
+                    data-replace-was
+                    className="text-[var(--text-3)] line-through decoration-[var(--danger)]"
+                  >
+                    {hit.snippet.slice(hit.markStart, hit.markEnd)}
+                  </span>{" "}
+                  <mark className="scriare-find-mark" data-replace-will>
+                    {replacement}
+                  </mark>
+                </>
+              ) : (
+                <mark className="scriare-find-mark">
+                  {hit.snippet.slice(hit.markStart, hit.markEnd)}
+                </mark>
+              )}
               {hit.snippet.slice(hit.markEnd)}
             </button>
-          ))}
+            </div>
+            );
+          })}
         </div>
       ))}
     </div>

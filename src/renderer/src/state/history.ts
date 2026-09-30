@@ -51,6 +51,21 @@ export interface HistoryEntry {
   project: Project;
   selectedSceneId: string | null;
   /**
+   * This step owns the PROSE as well as the structure (v0.79.0).
+   *
+   * Everything else in this stack is structural, so undo carries the live
+   * prose forward rather than reverting it — see `mergeLiveProse`, and the
+   * v0.49.0 note in it about the paragraphs that used to vanish. Replace
+   * is the first action that deliberately rewrites prose across documents
+   * nobody has open, and for it that rule is exactly backwards: carrying
+   * the live prose forward would carry the replacement forward and make
+   * undo a no-op. Measured on the first build, which did.
+   *
+   * Set it only for an action whose whole purpose is the prose, or the
+   * v0.49.0 bug comes back wearing this flag.
+   */
+  ownsProse?: boolean;
+  /**
    * Optional identity for run-together edits. Two consecutive snapshots
    * sharing a mergeKey, less than MERGE_WINDOW_MS apart, collapse into the
    * first — see `recordSnapshot`. Scope it to the thing being edited
@@ -170,7 +185,11 @@ export function takeUndo(current: HistoryEntry): HistoryEntry | null {
   // undoing it, then typing again must not fold back into the step that
   // was just undone.
   lastMergeKey = null;
-  future.push({ ...current, label: entry.label });
+  // The label AND the prose ownership travel with the step, not with the
+  // direction. A Replace undone has to be redoable as a Replace, and the
+  // first build carried only the label — so redo fell back to merging the
+  // live (already-undone) prose forward and did nothing at all.
+  future.push({ ...current, label: entry.label, ownsProse: entry.ownsProse });
   return entry;
 }
 
@@ -179,7 +198,7 @@ export function takeRedo(current: HistoryEntry): HistoryEntry | null {
   const entry = future.pop();
   if (!entry) return null;
   lastMergeKey = null;
-  past.push({ ...current, label: entry.label });
+  past.push({ ...current, label: entry.label, ownsProse: entry.ownsProse });
   return entry;
 }
 

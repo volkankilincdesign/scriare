@@ -198,6 +198,29 @@ export default async function run({ page, api, check, seedProject }) {
    * numbers are reported and the assertions are skipped with it said out
    * loud. A red build that means "the CI box was busy" teaches people to
    * ignore red builds.
+   *
+   * WHAT THAT GOT WRONG, AND FOR HOW LONG (fixed v0.78.2). "Skipped" was
+   * implemented as `check(name, !quiet || cost < threshold)` — which is
+   * not a skip, it is a PASS. On this container the floor measures around
+   * 480 ms against a QUIET_FLOOR of 45, so the machine is never quiet,
+   * and both thresholds have been reporting green while asserting
+   * nothing. Two of the suite's passes were decorative, and the README
+   * counted them.
+   *
+   * They are logged rather than checked now when the clock cannot resolve
+   * them. The suite is two checks smaller on a loaded box and every
+   * remaining one means something, which is the trade this project makes
+   * everywhere else. The paired deltas say why it cannot be rescued with
+   * a ratio instead: a recent run gave −32.8, 14.6, 16.2 ms for the same
+   * measurement. A negative cost is not a slow machine, it is noise an
+   * order of magnitude above the signal.
+   *
+   * The guarantees themselves did not depend on these. The graph fix is
+   * asserted by mechanism at the foot of this file, where the answer is
+   * the same on any machine. The Content panel has no mechanism to assert
+   * because v0.51.0 measured its suspect and REVERTED the fix — so that
+   * threshold was only ever a tripwire, and a tripwire that cannot fire
+   * on the machine it runs on is not one.
    */
   await clickTitled("Collapse Content");
   await wait(700);
@@ -211,12 +234,15 @@ export default async function run({ page, api, check, seedProject }) {
 
   const QUIET_FLOOR = 45;
   const quiet = floor < QUIET_FLOOR;
-  check(
-    "the machine is quiet enough to measure on",
-    true,
+  // Logged, not checked. "The machine is quiet enough" was a `check` whose
+  // condition was the literal `true`, which is a sentence rather than a
+  // test — and on a box where it is false it was the sentence explaining
+  // why the two below did nothing.
+  console.log(
     quiet
-      ? `floor ${floor.toFixed(1)} ms (two frames)`
-      : `floor ${floor.toFixed(1)} ms — too loaded to judge, thresholds below are reported only`,
+      ? `  · floor ${floor.toFixed(1)} ms (two frames) — timings are asserted below`
+      : `  · floor ${floor.toFixed(1)} ms — the clock cannot resolve a two-frame ` +
+        `operation here, so the two timings below are MEASURED AND NOT ASSERTED`,
   );
 
   const panelDeltas = await paired("Collapse Content", "Expand Content", 3);
@@ -225,32 +251,37 @@ export default async function run({ page, api, check, seedProject }) {
   const graphDeltas = await paired("Collapse Story Graph", "Expand Story Graph", 3);
   const graphCost = median(graphDeltas);
 
-  /* ── audit #23: the Content panel ─────────────────────────────── */
+  const spread = (ds) => ds.map((d) => d.toFixed(1)).join(", ");
 
-  // Measured before the fix: 13.8 ms. The panel handed every row a fresh
-  // context object and each folder row then filtered and sorted the whole
-  // node list to find its own children — see utils/contentTree.ts.
-  check(
-    "the Content panel adds little to the cost of an edit",
-    !quiet || panelCost < 26,
-    `${panelCost.toFixed(1)} ms, median of ${panelDeltas.length} paired runs ` +
-      `(${panelDeltas.map((d) => d.toFixed(1)).join(", ")})`,
-  );
+  if (quiet) {
+    /* ── audit #23: the Content panel ───────────────────────────── */
+    // Measured before the fix: 13.8 ms. The panel handed every row a fresh
+    // context object and each folder row then filtered and sorted the whole
+    // node list to find its own children — see utils/contentTree.ts.
+    check(
+      "the Content panel adds little to the cost of an edit",
+      panelCost < 26,
+      `${panelCost.toFixed(1)} ms, median of ${panelDeltas.length} paired runs (${spread(panelDeltas)})`,
+    );
 
-  /* ── the one the audit did not name: the Story Graph ──────────── */
-
-  // Measured before the fix: 50.2 ms, because the nodes memo depends on
-  // `project` and React Flow diffs by reference, so a title edit handed it
-  // 300 new node objects. Unchanged scene nodes keep their identity now.
-  //
-  // The floor is two animation frames, so this can never reach zero; what
-  // it must not do is go back to costing more than the frames it waits for.
-  check(
-    "the Story Graph does not dominate the cost of an edit",
-    !quiet || graphCost < 75,
-    `${graphCost.toFixed(1)} ms, median of ${graphDeltas.length} paired runs ` +
-      `(${graphDeltas.map((d) => d.toFixed(1)).join(", ")})`,
-  );
+    /* ── the one the audit did not name: the Story Graph ─────────── */
+    // Measured before the fix: 50.2 ms, because the nodes memo depends on
+    // `project` and React Flow diffs by reference, so a title edit handed
+    // it 300 new node objects. Unchanged scene nodes keep their identity
+    // now. The floor is two animation frames, so this can never reach
+    // zero; what it must not do is cost more than the frames it waits for.
+    check(
+      "the Story Graph does not dominate the cost of an edit",
+      graphCost < 75,
+      `${graphCost.toFixed(1)} ms, median of ${graphDeltas.length} paired runs (${spread(graphDeltas)})`,
+    );
+  } else {
+    // Still printed, because the numbers are worth having in the log even
+    // when they cannot carry an assertion — that is how the v0.51.0
+    // measurements were gathered in the first place.
+    console.log(`  · Content panel: ${panelCost.toFixed(1)} ms (${spread(panelDeltas)}) — not asserted`);
+    console.log(`  · Story Graph:   ${graphCost.toFixed(1)} ms (${spread(graphDeltas)}) — not asserted`);
+  }
 
   /* ── audit #17/#18: walking every scene's choices ─────────────── */
 

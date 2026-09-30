@@ -1,6 +1,6 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.67.4; two items added 28 Sep.
+Agreed with Volkan, 13 Sep 2026. Updated after v0.78.1.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
@@ -394,14 +394,128 @@ than gaps.
   button, the row card, v0.65.0's I2 grammar, FieldRow and QuietRule. Not
   started, at his instruction.
 
-**Next, agreed 27 Sep:** the **spreadsheet export** (.xlsx) for
-localisation and VO, now unblocked — `lineId` rode in with the Dialogue,
-so every line in the story has something a translator can key against.
-Then the elective list: Custom CSS for the export (G2), Twine import.
+- **v0.68.0 The wordmark in the top bar** — drawn inline and filled with
+  `currentColor` so it takes the theme's accent; the letterform cut through
+  as a hole, aligned to the cap band of the word beside it, and the viewBox
+  padded by 6% because the artwork's circle was tangent to its own edge.
 
-760 tests, 186 negative controls. Two bugs were found by the new spec and
-one control came back green — the green one was a gap in the tests (the
-graph badge had no assertion), and the assertion is what got written.
+### The spreadsheet, and what auditing an id first turned up
+
+- **v0.69.0 The ids under column A** — before writing the exporter, the
+  line id was audited against every way a writer can disturb a line, and
+  it did not hold: **Enter in the middle of a sentence gave both halves
+  the same id**, permanently. `keepOnSplit: false` only bites at the end
+  of a block; ProseMirror's default copies every attribute on the other
+  path. Two mechanisms now — `transformPasted` clears ids on the way in,
+  because that is the only moment the editor can tell an arriving node
+  from the one it was copied from, and a sweep repairs whatever is left.
+- **v0.70.0 The third door** — Export's third tab. Every string a reader
+  sees, not only the spoken ones: titles, prose, choices, conditions.
+- **v0.70.1 / v0.71.0 / v0.71.1 / v0.71.2 — four passes at one column.**
+  The Keys read as ciphertext (`nanoid()`'s default, taken in the first
+  hour of the project and never revisited, because for sixty-nine
+  versions nothing outside the app ever read an id). The first two
+  attempts were wrong the same way: they asked what an id should LOOK
+  like instead of **who reads it**. Then the Lines sheet shipped
+  protected — aimed at guarding a translator from a bad sort, and locking
+  the writer out of their own export. Then a frozen-pane split drew a
+  dark rule down the file that the file does not get to opt out of.
+- **v0.72.0 What a locked choice is allowed to say** — a locked option is
+  shown on purpose, which quietly made the variable's NAME into prose: a
+  player met "Requires knows_roster is true" in the middle of a story.
+  Variables have display names now, and Check Story reports a locked
+  option whose reader-visible variables are unnamed.
+
+### The Story Graph's wires
+
+- **v0.73.0 A wire that knows what is in its way** — his report: with
+  several exits the wires overlapped so badly you could not tell which
+  node joined which. Replaced curves with an **A\* router over a lane
+  grid** — card edges, margins, anchors and fill lines every 18px, state
+  of (node, axis) so a turn can be priced, rip-up-and-retry under a time
+  budget. Crossing at a right angle is cheap; running ALONG another wire
+  is expensive, which is the distinction he drew: parallel lines that
+  overlap read as one line.
+- **v0.73.1 A wire follows the card you are holding** — the drag
+  regression, and my own wrong conclusion from a correct premise.
+- **v0.74.0 The shelf draws the story you actually arranged** — the
+  Welcome screen's cached map routes its wires too, in graph space and
+  then scaled, because a card there is 20.6×6.4px and the router's
+  margins assume a real one.
+
+### The story's own facts, and the report that reads them
+
+- **v0.75.0 The story says what it is** — title, author, language and
+  the protagonist's name. Three of the five v0.63.0 audit gaps were one
+  gap: there was nowhere to put them. The player is no longer hard-coded
+  "You"; the exported page carries a `lang` only when the story has said
+  one, because `lang="en"` on a Turkish story is worse than nothing.
+- **v0.75.1 / v0.75.2** — a child dialog's way out moved from the footer
+  to the header, where Choice Styles had drawn it since v0.55.0; and
+  every dialog's backdrop moved to a portal, because `z-[100]` inside
+  `.scriare-topbar` (`z-index: 3`) is spent inside a box worth 3 — the
+  status bar stayed bright and clickable over the glass.
+- **v0.76.0 Who said that** — the fifth audit gap. A speaker lives in
+  **four** places (a paragraph, a choice option, a Dialogue line and that
+  line's REPLY), and nothing had ever enumerated them. Deleting a
+  character silently turned their speeches into narration.
+- **v0.77.0 → v0.77.2 Click a line to go there** — the dialog had
+  promised that in its own subtitle since v0.36.0 and went as far as the
+  scene. Every scene group opens now, each finding carries a one-line
+  explanation at rest, and clicking scrolls the editor to the exact
+  node and marks it. Three follow-ups in one day, each finding the
+  previous one's blind spot: a finding's KIND cannot say which block
+  raised it, and the mark must be as small as the fault.
+
+### The third block type
+
+- **v0.78.0 / v0.78.1 The third sibling** — Conditional Text had existed
+  since v0.30.0 reachable only by a slash command, so a writer had to
+  already know it was there. It is a button now, drawn as exactly the
+  same control as the other two, with a real node view: a header that
+  names it and counts its conditions, and a footer that closes it and
+  says WHEN in words. **His call, overruling mine:** I drew it lighter,
+  and he was right that the reason it read badly stacked was that it was
+  drawn as a different KIND of thing from its neighbours — a third
+  different weight keeps the same mistake in a smaller size. What makes
+  it the lightest is what it DOES: it holds prose, so it offers no
+  `+ Add` anything, only a way out.
+
+
+**The spreadsheet export's schema is settled** — see
+`docs/spreadsheet-export.md`, decided 28 Sep: three identifiers (an opaque
+Key, an opaque Scene ID, and a readable Ref like `15.D2` recomputed at
+export from reachability), seventeen columns, one file per language, an
+xlsx for people and a UTF-8 CSV for Unreal's DataTable with the Key as its
+RowName. Nothing in the `.scriare` file changes. **A variable's display
+name** — so a player stops reading "Requires resolve is at least 3" — is
+its own small version straight after.
+
+~~**Next, agreed 27 Sep:** the spreadsheet export.~~ **Shipped as
+v0.70.0**, and it took four more versions to get column A right. A
+variable's display name — so a player stops reading "Requires resolve is
+at least 3" — shipped with it as v0.72.0.
+
+**Where it actually stands, 30 Sep.** There is **no launch-blocking
+software left that is Claude's to build.** Of the five launch items,
+Export shipped in v0.48.0 and the installer in v0.61.0; the remaining
+three — the demo story, the video, the case study — are all his. What is
+left on Claude's side is Find & Replace, Custom CSS on export, the
+app-wide UI sweep and a short list of housekeeping, none of which blocks
+a soft launch. The full list, with effort and trade-offs, was drawn up on
+30 Sep.
+
+**The demo story and the example story are the same thing,** his call —
+it ships beside the app so a stranger's first ten seconds contain
+something rather than an empty Welcome screen. He is writing it here,
+migrating from Twine, which is a better case-study line than a Twine
+importer would be.
+
+**Images in scenes: stepped back from,** his call, and recorded rather
+than deleted. If they ever land they will not appear in the Story Graph —
+it is already tight and the map would have loading problems.
+
+961 tests, 273 negative controls (as of v0.78.1).
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and
@@ -669,7 +783,6 @@ before a story exists that needs it.
   the first move is a measurement: lay the demo story out, record edge
   crossings, total wire length, and how many nodes land inside a box they
   do not belong to, so "better" has a number rather than an impression.
-- **The page-corner alignment** parked in v0.40.0.
 
 ### Launch — the list that decides when it ships
 
@@ -758,24 +871,20 @@ Nothing here blocks the launch, and nothing here gets started before it.
 - **A UI pass on the oldest surfaces** — ~~Welcome screen~~ (v0.53.0–
   v0.54.0), ~~the dialog kit, Project Settings, New Project, Move To,
   the confirm dialog and the Variable Manager~~ (v0.56.0). WHAT IS LEFT:
-  the Inspector's field stack (1999 lines, 19 distinct rounded-class
+  the Inspector's field stack (1442 lines, 19 distinct rounded-class
   strings — the largest single surface in the app and the one where the
   kit will pay most), the Content Browser's 10, the content context menu
   (v0.18.0, the oldest version note in the codebase), the slash-command
   menu and `GroupNode` (v0.28.0). None of them has a defect underneath
   it, so none of them is in front of the installer.
-- **The wordmark in the top bar** — raised 28 Sep, with the assets
-  already in `other_materials/logos/`: `logo_primary_light.svg`,
-  `logo_primary_dark.svg` and the two icon-only variants. Two faults in
-  one control: it does not follow the theme (it is drawn in its own colour
-  against eight different grounds, and on Overcast it reads as a sticker),
-  and it does not sit on the baseline of the story title beside it. The
-  shape of the fix is the one the speaker chip needed in v0.66.1 — align
-  the mark's optical centre to the text's cap band rather than trusting a
-  box — plus picking the light or dark file from the theme's ground, or
-  inlining the SVG and painting it with `currentColor` so there is one file
-  and no picking at all. Small, visible on every screenshot of the app,
-  and therefore worth doing before the case-study images are taken.
+- ~~**The wordmark in the top bar**~~ — **done in v0.68.0.** Drawn inline
+  and filled with `currentColor` so it takes the theme's accent, the
+  letterform cut through as a hole, aligned to the cap band of the word
+  beside it (it sat 2.5px low), and the viewBox padded by 6% because the
+  artwork's circle was tangent to its own element's edge — which at 24px
+  is what read as "the top and bottom are cut off". The two baked SVG
+  variants are gone from the renderer; the OS icon is still a fixed asset,
+  as it must be.
 - **Crash-recovery drafts** — the autosave journal deliberately left out of
   the save-safety work. Only worth it if he ever loses something to a power
   cut that the atomic write couldn't catch.
@@ -835,6 +944,38 @@ exists, lines that can be used in a tease — lives in
   one screen; and, in v0.48.0, an injection test that put `</script>` in
   prose, where Tiptap had already escaped it, while the real hole — a scene
   *title* — stood unwatched.
+- **A FIXTURE THAT AVOIDS THE AMBIGUOUS CASE TESTS THE EASY HALF.** The
+  sharpest lesson of the v0.75–v0.78 run, hit four times in a week, and
+  worth the case study on its own. A speaker-anchor check wrote
+  `attrs.id` in its own fixture — an attribute no node type in this app
+  uses — so the walk and the fixture agreed with each other and with
+  nothing else, while every anchor in every real story was null. A
+  Dialogue check clicked a `dialogue-dead-gate`, a kind only a Dialogue
+  can raise, so the table it was meant to test was never asked the hard
+  question. A slash-menu check read every button on screen and matched
+  the toolbar's own button. And a caret-lands-inside check focused the
+  editor first, where inserting at a caret already in the prose lands
+  correctly by accident. Every one passed. Every one guarded nothing.
+- **A SECOND MECHANISM ADDED "TO BE SAFE" IS UNTESTABLE BY
+  CONSTRUCTION.** Three times in v0.77.x a belt-and-braces line turned
+  out to be only braces: its negative control would not go red, because
+  the first mechanism already produced the result. Code that cannot be
+  observed is code that drifts, so it was deleted rather than kept. The
+  only way to find out is to try to break it.
+- **A control can be wrong in a FOURTH way: its own `expect` string.**
+  "A + New that cannot make everything the tree holds" reported NOT
+  CAUGHT for eighteen versions while its sabotage worked perfectly and
+  the check caught it every time — the check had been reworded in
+  v0.60.0 and the control was still looking for the old sentence. The
+  runner now tells "nothing failed" apart from "something failed, but
+  not the thing you named", because they are different problems.
+- **A skip that is implemented as a pass is a lie the suite tells
+  itself.** perf.spec's two timing thresholds were written as
+  `check(name, !quiet || cost < threshold)`, which passes on a loaded
+  machine. This container's floor measures ~480 ms against a QUIET_FLOOR
+  of 45, so they had never once asserted anything here and the README
+  counted them. They are logged rather than checked when the clock
+  cannot resolve them (v0.78.2).
 - **Reviewing the diff finds things the tests do not.** v0.47.0 turned up
   three defects that way and v0.48.0 three more, including an export that
   reused the save path and brought a `.bak` along with it.

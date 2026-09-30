@@ -99,7 +99,7 @@ export default async function run({ page, api, app, check, seedProject }) {
   // produced zero beats with no error — and what broke every spec that ran
   // after this one in a full suite, since specs share one app.
   await seedProject();
-  await api(async (filePath) => {
+  const savedAt = await api(async (filePath) => {
     const store = window.__scriareProjectStore;
     store.setState({
       project: { ...store.getState().project, name: "A1" },
@@ -116,12 +116,38 @@ export default async function run({ page, api, app, check, seedProject }) {
     // The second caller queues behind the first. When THIS resolves, the
     // newest text must already be on disk.
     await store.getState().saveNow();
+    // READ AT THE INSTANT IT RESOLVES, in the same tick, with nothing
+    // awaited in between — see the check below for why that matters.
+    return store.getState().saveStatus;
   }, file2);
 
   check(
     "await saveNow() resolves only once the newest text is on disk",
     JSON.parse(await readFile(file2, "utf-8")).name === "A3",
     JSON.parse(await readFile(file2, "utf-8")).name,
+  );
+
+  /**
+   * THE ORDERING, ASSERTED WHERE THE CLOCK CANNOT HIDE IT (v0.78.2).
+   *
+   * The disk check above cannot catch a promise that settles too early,
+   * and its negative control proved it: resolving `saveRun` BEFORE the
+   * queued re-run leaves the suite entirely green. The queued save still
+   * happens a moment later, and `readFile` is itself an await — so by the
+   * time the test looks, the right text is there. The control reported
+   * NOT CAUGHT from v0.49.1 until this was written, which made it the
+   * second false assurance found in one day.
+   *
+   * `saveStatus` is the mechanism, and it is exact: saveNow sets "saved"
+   * only when `saveQueued` is false at the end of the write. So if the
+   * awaited promise resolves while anything is still queued, the status
+   * at that instant is not "saved" — no timing, no threshold, the same
+   * answer on any machine.
+   */
+  check(
+    "...and not while a queued save is still outstanding",
+    savedAt === "saved",
+    `saveStatus at the moment await saveNow() resolved: ${savedAt}`,
   );
 
   // Hand the app back in a state the next spec can use. Specs share one

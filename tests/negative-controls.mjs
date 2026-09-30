@@ -322,12 +322,17 @@ const CONTROLS = [
     expect: "keystrokes typed while a save was in flight",
   },
   {
+    // NOT CAUGHT from v0.49.1 until v0.78.2, and the disk check could
+    // never have caught it: the queued save still lands a moment later,
+    // and `readFile` is itself an await, so by the time the test looks the
+    // right text is on disk. The ordering is asserted on `saveStatus` now,
+    // which is exact — saveNow sets "saved" only when nothing is queued.
     name: "a saveRun that resolves before the queued re-run",
     file: src("state/projectStore.ts"),
     from: "    if (saveQueued) {\n      saveQueued = false;\n      await get().saveNow();\n    }\n    } finally {",
     to: "    settle();\n    if (saveQueued) {\n      saveQueued = false;\n      await get().saveNow();\n    }\n    } finally {",
     spec: "close-safety",
-    expect: "resolves only once the newest text is on disk",
+    expect: "while a queued save is still outstanding",
   },
   // REMOVED, deliberately. The sabotage was "reset the flags before the
   // flush instead of after", and it changed nothing: `closeProject` calls
@@ -1141,12 +1146,20 @@ const CONTROLS = [
     expect: "painted in the warning colour",
   },
   {
+    // The sabotage always worked and the check always caught it — what
+    // drifted was this `expect` string (fixed v0.78.2). The check was
+    // written as "all four things the tree holds" and rewritten in
+    // v0.60.0, when Notes made it five, to say "everything"; nobody
+    // updated the control, so the runner went looking for a failing line
+    // that no longer existed and reported NOT CAUGHT for eighteen
+    // versions. A fourth way for a control to be wrong, and the one the
+    // runner could not tell apart from a real miss — see `verdictFor`.
     name: "a + New that cannot make everything the tree holds",
     file: src("components/layout/ContentBrowser.tsx"),
     from: '      {\n        label: "New Character",',
     to: '      {\n        label: "New Charactor",',
     spec: "scene-panel",
-    expect: "all four things the tree holds",
+    expect: "everything the tree holds",
   },
   {
     // The old per-category "+" opened its section on the way; the menu
@@ -2783,6 +2796,59 @@ const CONTROLS = [
     spec: "conditions",
     expect: "reachable by the word that used to be in its title",
   },
+  {
+    // Mentions written over. The replacement lands, the text looks right,
+    // and the link between the prose and the character page is gone — so
+    // renaming her later changes every other mention and not this one.
+    name: "a replace that writes over a mention as if it were text",
+    file: src("utils/replaceInStory.ts"),
+    from: "  return !hit.touchesMention && hit.kind !== \"name\";",
+    to: "  return hit.kind !== \"name\";",
+    spec: "find",
+    expect: "only what Replace can act on",
+  },
+  {
+    // Applied in ascending order. Every replacement shifts the positions
+    // after it, so the second hit in a line lands a few characters off —
+    // and with same-length text it is invisible until you read it.
+    name: "replacements applied front to back, so each one moves the next",
+    file: src("utils/replaceInStory.ts"),
+    from: "    .sort((a, b) => b.from - a.from);",
+    to: "    .sort((a, b) => a.from - b.from);",
+    spec: "find",
+    expect: "the ticked hits change",
+  },
+  {
+    // The emptied text node left in place. The replacement is correct and
+    // the document will not load again, because ProseMirror's schema has
+    // no empty text node.
+    name: "an emptied text node left where the schema has no room for one",
+    file: src("utils/replaceInStory.ts"),
+    from: "  if (replaced > 0) pruneEmptyText(doc);",
+    to: "",
+    spec: "find",
+    expect: "leaves no empty text node",
+  },
+  {
+    // One undo step per document instead of one for the gesture — which on
+    // a forty-scene rename means forty presses of Ctrl+Z.
+    name: "a story-wide replace that owns none of the prose it changed",
+    file: src("state/projectStore.ts"),
+    from: "    pushHistory(set, get, replaced === 1 ? \"Replace\" : `Replace ${replaced}`, undefined, true);",
+    to: "    pushHistory(set, get, replaced === 1 ? \"Replace\" : `Replace ${replaced}`);",
+    spec: "find",
+    expect: "puts every one of them back",
+  },
+  {
+    // The preview removed. Replace still works; it is simply a destructive
+    // button pressed by somebody who has not seen what it will do.
+    name: "a Replace All with nothing shown before it is pressed",
+    file: src("components/layout/FindResults.tsx"),
+    from: "              {replacement && chosen ? (",
+    to: "              {false ? (",
+    spec: "find",
+    expect: "shows what it will become",
+  },
 ];
 
 
@@ -2940,12 +3006,39 @@ for (const control of selected) {
   const caught = failedLines.some((line) => line.includes(control.expect));
   const crashed = /Error:|TypeError|SyntaxError/.test(output) && failedLines.length === 0;
 
+  /**
+   * THE FOURTH WAY A CONTROL CAN BE WRONG (v0.78.2).
+   *
+   * The three in the file's header are all about the sabotage or the
+   * spec. This one is about the control's own `expect` string, and it
+   * looked exactly like a real miss for eighteen versions: "a + New that
+   * cannot make everything the tree holds" reported NOT CAUGHT while its
+   * sabotage worked perfectly and the check caught it every time. The
+   * check had been reworded in v0.60.0 — four things became five, "all
+   * four" became "everything" — and the control was still looking for the
+   * old sentence.
+   *
+   * "Nothing failed" and "something failed, but not the thing you named"
+   * are different problems with different fixes, and the runner used to
+   * print the same three words for both. It says which now.
+   */
+  const stale = !caught && !crashed && failedLines.length > 0;
+
   verdicts.push({
     name: control.name,
-    verdict: caught ? "caught" : crashed ? "CRASHED (no assertion failed)" : "NOT CAUGHT",
+    verdict: caught
+      ? "caught"
+      : crashed
+        ? "CRASHED (no assertion failed)"
+        : stale
+          ? "EXPECT STRING MATCHES NOTHING (the sabotage did fail a check)"
+          : "NOT CAUGHT",
     detail: failedLines.slice(0, 3).join(" | ") || "nothing failed",
   });
-  console.log(`${caught ? "✓ " : "✗ "} ${control.name} — ${caught ? "caught" : "NOT CAUGHT"}`);
+  console.log(`${caught ? "✓ " : "✗ "} ${control.name} — ${caught ? "caught" : stale ? "its expect string matches nothing" : "NOT CAUGHT"}`);
+  if (stale) {
+    console.log(`     the sabotage DID fail ${failedLines.length} check(s); none of them contain "${control.expect}":`);
+  }
   if (!caught) console.log(`     ${failedLines.slice(0, 4).join("\n     ") || "the whole suite stayed green"}`);
 }
 

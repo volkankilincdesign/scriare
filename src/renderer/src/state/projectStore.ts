@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { nanoid } from "nanoid";
 import type { JSONContent } from "@tiptap/react";
+import { replaceInDocument, replaceableHits } from "../utils/replaceInStory";
+import type { FindHit } from "../utils/findInStory";
 import type {
   ContentFolder,
   ContentLeaf,
@@ -198,6 +200,12 @@ interface ProjectState {
   duplicateScene: (sceneId: string) => void;
   duplicateScenes: (sceneIds: string[]) => void;
   updateSceneContent: (sceneId: string, content: JSONContent) => void;
+  /**
+   * Replace every hit in `hits` with `replacement`, across whatever
+   * documents they belong to, as ONE undo step (v0.79.0). Returns how many
+   * were actually written.
+   */
+  replaceHits: (hits: FindHit[], replacement: string) => number;
 
   /**
    * v0.35.0 — entities. Creating one files it in its kind's category and
@@ -511,10 +519,16 @@ type SetState = (partial: Partial<ProjectState>) => void;
  * `mergeKey` folds a run of keystroke-level edits to the same thing into
  * one undo step; omit it for anything that happens once per gesture.
  */
-function pushHistory(set: SetState, get: () => ProjectState, label: string, mergeKey?: string): void {
+function pushHistory(
+  set: SetState,
+  get: () => ProjectState,
+  label: string,
+  mergeKey?: string,
+  ownsProse?: boolean,
+): void {
   const { project, selectedSceneId } = get();
   if (!project) return;
-  recordSnapshot({ label, project, selectedSceneId, mergeKey });
+  recordSnapshot({ label, project, selectedSceneId, mergeKey, ownsProse });
   set(historyFlags());
 }
 
@@ -551,7 +565,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     if (!entry) return;
 
     set({
-      project: mergeLiveProse(entry.project, project),
+      // A step that owns the prose is restored whole — see `ownsProse`.
+      project: entry.ownsProse ? entry.project : mergeLiveProse(entry.project, project),
       // A scene that was open before the undone action may no longer
       // exist (undoing a Create), so fall back rather than pointing the
       // editor at nothing.
@@ -577,7 +592,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     if (!entry) return;
 
     set({
-      project: mergeLiveProse(entry.project, project),
+      project: entry.ownsProse ? entry.project : mergeLiveProse(entry.project, project),
       selectedSceneId:
         entry.selectedSceneId && entry.project.scenes.some((s) => s.id === entry.selectedSceneId)
           ? entry.selectedSceneId
@@ -946,6 +961,77 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       saveStatus: "unsaved",
     });
     scheduleAutosave(get);
+  },
+
+  /**
+   * Find's other half (v0.79.0).
+   *
+   * ONE STEP, ACROSS EVERY DOCUMENT IT TOUCHED. A story-wide rename is one
+   * thing the writer did, so `pushHistory` is called once at the end
+   * rather than per scene — forty scenes replaced and forty presses of
+   * Ctrl+Z to get back is not undo, it is a punishment.
+   *
+   * THE OPEN SCENE IS NOT SPECIAL, and that is the point of doing this in
+   * the store. One scene is mounted in ProseMirror and the rest are JSON;
+   * writing through the editor would mean Replace could only reach the
+   * scene you happen to be looking at. `documentToken` makes the mounted
+   * editor reload afterwards, which is the reason that token exists.
+   *
+   * Hits are FILTERED here as well as in the panel. The panel tells the
+   * writer what it will skip, but a caller that passes a mention hit
+   * anyway must not be able to write over it — the rule belongs with the
+   * data, not with the surface that happens to be showing it.
+   */
+  replaceHits: (hits, replacement) => {
+    const { project } = get();
+    if (!project) return 0;
+
+    const doable = replaceableHits(hits);
+    if (doable.length === 0) return 0;
+
+    const bySceneId = new Map<string, { from: number; to: number }[]>();
+    const byEntityId = new Map<string, { from: number; to: number }[]>();
+    for (const hit of doable) {
+      const into = hit.sceneId ? bySceneId : byEntityId;
+      const key = (hit.sceneId ?? hit.entityId) as string;
+      const list = into.get(key) ?? [];
+      list.push({ from: hit.from, to: hit.to });
+      into.set(key, list);
+    }
+
+    let replaced = 0;
+    const scenes = project.scenes.map((scene) => {
+      const ranges = bySceneId.get(scene.id);
+      if (!ranges) return scene;
+      const out = replaceInDocument(scene.content, ranges, replacement);
+      replaced += out.replaced;
+      return out.content ? { ...scene, content: out.content } : scene;
+    });
+    const entities = (project.entities ?? []).map((entity) => {
+      const ranges = byEntityId.get(entity.id);
+      if (!ranges) return entity;
+      const out = replaceInDocument(entity.content, ranges, replacement);
+      replaced += out.replaced;
+      return out.content ? { ...entity, content: out.content } : entity;
+    });
+
+    if (replaced === 0) return 0;
+
+    // BEFORE the `set`, as this function's own note requires: it snapshots
+    // whatever `project` currently is, so calling it afterwards records
+    // the state the writer is trying to get BACK from. The first build did
+    // exactly that and undo was a no-op — measured, not reasoned about.
+    pushHistory(set, get, replaced === 1 ? "Replace" : `Replace ${replaced}`, undefined, true);
+
+    set({
+      project: { ...project, scenes, entities, updatedAt: new Date().toISOString() },
+      saveStatus: "unsaved",
+      // The mounted editor is holding a document that just changed
+      // underneath it, and its scene id did not.
+      documentToken: get().documentToken + 1,
+    });
+    scheduleAutosave(get);
+    return replaced;
   },
 
   // Sprint 9B removed the old store-level `updateChoiceOption` — Choice

@@ -123,6 +123,12 @@ lives in.
   needs fixing.
 - **Find** (Ctrl+F) across prose, choice labels and entity pages. Clicking
   a result opens the scene with the matched words selected.
+- **Replace**, in the same panel. Every hit shows what it would become
+  before anything is pressed, with a tick per hit, and the whole thing is
+  one undo step however many scenes it touched. Mentions are left alone
+  and the panel says so: a mention stores a character's id and renders
+  whatever she is currently called, so it changes when you rename her,
+  not when you replace text.
 
 **Playing**
 
@@ -189,7 +195,7 @@ lives in.
 
 ## Status
 
-**v0.78.1 — in active development, and usable.** The editor, graph,
+**v0.79.0 — in active development, and usable.** The editor, graph,
 runtime, entities, notes, variables, validation, search and **export** are
 all real, and the app now builds a Windows installer. See
 [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest list of what
@@ -209,21 +215,40 @@ screen. Clicking it copies the version, your platform and the engine
 underneath — paste that into the report and neither of us has to guess
 which build you were on.
 
-**963 automated tests** run against the real packaged application, and
-**275 negative controls**: each one breaks a specific line of the shipped
-source on purpose and checks that a named assertion fails. 274 of them
-currently do; one does not, and is on the list to be rewritten, because a
-control that stays green is a finding about the test rather than about the
-app. That has happened several times now, and every time the test is what
-got rewritten. The sharpest of them: a spec that asked the code under test
-which attributes to check, so deleting one made the code stop maintaining
-it and the test stop looking for it, both at once, in silence. Another
-stayed green because the *comment* it was defending made a claim that was
-not true, and the comment is what got rewritten.
+**974 automated tests** run against the real packaged application, and
+**280 negative controls**: each one breaks a specific line of the shipped
+source on purpose and checks that a named assertion fails. Two that had
+been reporting green were fixed in v0.78.2. One was a **false alarm since
+v0.60.0** — the sabotage worked and the check caught it every time, but the
+check had been reworded and the control was still looking for the old
+sentence. The other was **real, and had been open since v0.49.1**: a save
+that resolves before its queued re-run could not be caught by reading the
+file afterwards, because the queued save lands a moment later and the read
+is itself an await. It is asserted on the store's own status now, at the
+instant the promise resolves.
 
-Counts are honest rather than flattering: v0.75.1's README said 922 tests
+A full sweep is about ninety minutes, so it runs in groups rather than in
+one pass; every group run since those two has been clean.
+
+A control that stays green is a finding about the test rather than about
+the app, and it has happened often enough to be the most useful thing the
+suite does. The sharpest: a spec that asked the code under test which
+attributes to check, so deleting one made the code stop maintaining it and
+the test stop looking for it, both at once, in silence. One stayed green
+because the *comment* it was defending made a claim that was not true, and
+the comment is what got rewritten. Four in one week stayed green because
+the fixture avoided the ambiguous case — a speaker check that wrote an
+attribute no node type in the app uses, so the walk and the fixture agreed
+with each other and with nothing else.
+
+Counts are honest rather than flattering. v0.75.1's README said 922 tests
 because a temporary spec had been left in `tests/` and its checks were
-being counted.
+being counted. And v0.78.2 removed three more: `perf.spec` wrote two
+timing thresholds as `check(name, !quiet || cost < threshold)`, which is a
+pass rather than a skip on a loaded machine — this container's floor
+measures around 480 ms against a threshold of 45, so they had never once
+asserted anything here. They are logged, not counted, when the clock
+cannot resolve them.
 
 ## Running it
 

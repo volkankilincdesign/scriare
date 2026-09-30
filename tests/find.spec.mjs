@@ -19,7 +19,7 @@
  *    wrong: it reads as eight characters and occupies one, so a match
  *    after one is off by seven unless the arithmetic is right.
  */
-export default async function ({ api, check }) {
+export default async function ({ page, api, check, seedProject, app }) {
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   // ── The folding, and the index map it has to carry ───────────────────
@@ -303,4 +303,230 @@ export default async function ({ api, check }) {
   });
   check("...and clicking it opens the page with the words selected",
     r.entity === "e1" && r.selected === "gündüz", JSON.stringify(r));
+
+  await replace({ page, api, check, seedProject, app });
+}
+
+/**
+ * Replace (v0.79.0) — Find's other half, eighteen versions late.
+ *
+ * The decisions this is asserting are his, and each one is a thing Replace
+ * must NOT do as much as a thing it must:
+ *
+ *  - A PREVIEW BEFORE COMMITTING. The panel already listed every hit; it
+ *    shows what each one would become, with a tick per hit, and one button.
+ *  - MENTIONS ARE LEFT ALONE, and said so. A mention stores an entity id
+ *    and renders whatever that entity is currently called, so writing over
+ *    those letters swaps a live link for dead ones. The name changes by
+ *    renaming the character — and then it changes everywhere at once,
+ *    which is why the panel does not say "will not change".
+ *  - ONE UNDO STEP for the whole thing, across every document it touched.
+ *    Forty scenes replaced and forty presses of Ctrl+Z is not undo.
+ */
+export async function replace({ page, api, check, seedProject, app }) {
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  await seedProject();
+  const win = await app.browserWindow(page);
+  await win.evaluate((w) => w.setBounds({ x: 0, y: 0, width: 1280, height: 900 }));
+  await wait(250);
+
+  await api(() => {
+    const store = window.__scriareProjectStore;
+    const mara = store.getState().createEntity("character", "Mara");
+    const p = store.getState().project;
+    const line = (id, kids) => ({ type: "paragraph", attrs: { lineId: id }, content: kids });
+    store.getState().updateSceneContent(p.scenes[0].id, {
+      type: "doc",
+      content: [
+        // TWO in one line, which is the only shape that can catch a
+        // replace applied front to back: with one hit per line nothing
+        // ever moves and ascending order looks correct.
+        line("a", [{ type: "text", text: "Mara waited for Mara." }]),
+        // A match split across two marks, which is the case that decides
+        // whether formatting survives a replacement.
+        line("b", [
+          { type: "text", text: "Ma" },
+          { type: "text", text: "ra", marks: [{ type: "bold" }] },
+          { type: "text", text: " again." },
+        ]),
+        line("c", [
+          { type: "text", text: "Then " },
+          { type: "mention", attrs: { entityId: mara, label: "Mara" } },
+          { type: "text", text: " left." },
+        ]),
+      ],
+    });
+    store.getState().updateSceneContent(p.scenes[1].id, {
+      type: "doc",
+      content: [line("d", [{ type: "text", text: "Mara elsewhere." }])],
+    });
+  });
+  await wait(400);
+
+  // CLEARED FIRST. This runs after the sections above, which leave their
+  // own query in the box — typing into it appends and finds nothing, which
+  // is what the first run of this did.
+  const box = await page.$("input[placeholder*='Search']");
+  await box.click();
+  await box.fill("");
+  await wait(200);
+  await page.keyboard.type("Mara");
+  await wait(700);
+
+  const found = await api(() => ({
+    hits: document.querySelectorAll("[data-find-hit]").length,
+    picks: document.querySelectorAll("[data-replace-pick]").length,
+    mentionLine: document.querySelector("[data-replace-skips]")?.textContent?.trim() ?? null,
+    nameLine: document.querySelector("[data-replace-skips-names]")?.textContent?.trim() ?? null,
+    button: document.querySelector("[data-replace-all]")?.textContent?.trim() ?? null,
+  }));
+  // Five things match: three in prose (one of them split across marks),
+  // one mention, one the character's own name.
+  check(
+    "only what Replace can act on gets a tick",
+    found.hits === 6 && found.picks === 4,
+    JSON.stringify(found),
+  );
+  // HIS WORDING, verbatim. "Will not change" was rejected because it gives
+  // the wrong signal — they do change, by the only route that changes them.
+  check(
+    "a mention says what it is rather than that it cannot be changed",
+    found.mentionLine === "1 is a mention, not text. It follows the character’s own name." &&
+      !/will not change/i.test(found.mentionLine),
+    JSON.stringify(found.mentionLine),
+  );
+  check(
+    "a page's own name says the same, in its own words",
+    found.nameLine === "1 is a page’s own name. Rename the page to change it.",
+    JSON.stringify(found.nameLine),
+  );
+
+  // ── the preview ───────────────────────────────────────────────────────
+  const rep = await page.$("[data-replace-with]");
+  await rep.click();
+  await page.keyboard.type("Meral");
+  await wait(400);
+  const preview = await api(() => ({
+    was: [...document.querySelectorAll("[data-replace-was]")].map((e) => e.textContent),
+    will: [...document.querySelectorAll("[data-replace-will]")].map((e) => e.textContent),
+    button: document.querySelector("[data-replace-all]")?.textContent?.trim() ?? null,
+  }));
+  check(
+    "every hit that will change shows what it will become, before anything is pressed",
+    preview.was.length === 4 &&
+      preview.will.length === 4 &&
+      preview.was.every((t) => t === "Mara") &&
+      preview.will.every((t) => t === "Meral"),
+    JSON.stringify(preview),
+  );
+
+  // ── unticking one takes it out of the count and out of the story ──────
+  // The THIRD pick, not the second. The second is the other hit in the
+  // same line as the first, and unticking it leaves one replacement per
+  // line — which is exactly the shape in which applying them front to back
+  // looks correct. Its control stayed green until this moved.
+  await api(() => document.querySelectorAll("[data-replace-pick]")[2]?.click());
+  await wait(300);
+  const unticked = await api(
+    () => document.querySelector("[data-replace-all]")?.textContent?.trim() ?? null,
+  );
+  check("unticking a hit takes it out of the count", unticked === "Replace 3", String(unticked));
+
+  await api(() => document.querySelector("[data-replace-all]")?.click());
+  await wait(700);
+
+  const after = await api(() => {
+    const p = window.__scriareProjectStore.getState().project;
+    const text = (n) => (n.text ?? "") + (n.content ?? []).map(text).join("");
+    const split = p.scenes[0].content.content[1];
+    return {
+      s0: text(p.scenes[0].content),
+      s1: text(p.scenes[1].content),
+      // The bold run has to survive a match that crossed it, and no empty
+      // text node may be left behind — ProseMirror's schema has no such
+      // thing and the document would not load again.
+      splitKids: (split.content ?? []).map((c) => ({ t: c.text, marks: (c.marks ?? []).length })),
+      mentionKept: JSON.stringify(p.scenes[0].content).includes('"mention"'),
+      undoLabel: window.__scriareProjectStore.getState().undoLabel,
+    };
+  });
+  check(
+    "the ticked hits change, in every scene at once",
+    after.s0.startsWith("Meral waited for Meral.") && after.s1 === "Meral elsewhere.",
+    JSON.stringify({ s0: after.s0, s1: after.s1 }),
+  );
+  check(
+    "the unticked one is left exactly as it was",
+    after.s0.includes("Mara again."),
+    JSON.stringify(after.s0),
+  );
+  check(
+    "a mention survives a replacement that ran through it",
+    after.mentionKept === true,
+    JSON.stringify(after.mentionKept),
+  );
+  check(
+    "no empty text node is left behind, which the schema has no room for",
+    after.splitKids.every((k) => k.t.length > 0),
+    JSON.stringify(after.splitKids),
+  );
+
+  // ── the engine's own output, before the store or the editor sees it ───
+  // Asserted here rather than only on the stored project, because the
+  // mounted editor reloads after a replace and ProseMirror normalises what
+  // it loads — so an empty text node left behind is tidied away before
+  // anything downstream could notice, and the check would pass on a build
+  // that cannot open its own file.
+  const raw = await api(() => {
+    const { replaceInDocument } = window.__scriareReplace;
+    const { findInStory } = window.__scriareFind;
+    const doc = { type: "doc", content: [
+      { type: "paragraph", attrs: { lineId: "z" }, content: [
+        { type: "text", text: "Ma" },
+        { type: "text", text: "ra", marks: [{ type: "bold" }] },
+        { type: "text", text: " there." },
+      ] },
+    ] };
+    const store = window.__scriareProjectStore;
+    const p = store.getState().project;
+    store.getState().updateSceneContent(p.scenes[2].id, doc);
+    const hits = findInStory(store.getState().project, "Mara").hits
+      .filter((h) => h.sceneId === p.scenes[2].id);
+    const out = replaceInDocument(doc, hits.map((h) => ({ from: h.from, to: h.to })), "Meral");
+    return (out.content.content[0].content ?? []).map((c) => c.text);
+  });
+  check(
+    "the engine leaves no empty text node, whatever the editor would tidy after it",
+    raw.every((t2) => typeof t2 === "string" && t2.length > 0),
+    JSON.stringify(raw),
+  );
+
+  // ── one step back, and one step forward ───────────────────────────────
+  check(
+    "the whole replacement is one undo step, however many scenes it touched",
+    after.undoLabel === "Replace 3",
+    String(after.undoLabel),
+  );
+  await api(() => window.__scriareProjectStore.getState().undo());
+  await wait(400);
+  const undone = await api(() => {
+    const p = window.__scriareProjectStore.getState().project;
+    const text = (n) => (n.text ?? "") + (n.content ?? []).map(text).join("");
+    return { s0: text(p.scenes[0].content), s1: text(p.scenes[1].content) };
+  });
+  check(
+    "...and one press of it puts every one of them back",
+    undone.s0.startsWith("Mara waited for Mara.") && undone.s1 === "Mara elsewhere.",
+    JSON.stringify(undone),
+  );
+  await api(() => window.__scriareProjectStore.getState().redo());
+  await wait(400);
+  const redone = await api(() => {
+    const p = window.__scriareProjectStore.getState().project;
+    const text = (n) => (n.text ?? "") + (n.content ?? []).map(text).join("");
+    return { s1: text(p.scenes[1].content) };
+  });
+  check("...and redo brings it back", redone.s1 === "Meral elsewhere.", JSON.stringify(redone));
+
+  await seedProject();
 }

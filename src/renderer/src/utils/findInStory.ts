@@ -33,6 +33,16 @@ export interface FindHit {
   /** ProseMirror positions in that document, for revealing the match. */
   from: number;
   to: number;
+  /**
+   * True when this match runs through a mention (v0.79.0).
+   *
+   * Replace leaves these alone. A mention is an entity id wearing a name,
+   * so the letters matched here are a rendering of the character's current
+   * name rather than text in the document — writing over them would swap a
+   * live link for dead letters. The name changes by renaming the
+   * character, and then it changes everywhere at once.
+   */
+  touchesMention: boolean;
 }
 
 export interface FindResult {
@@ -113,6 +123,9 @@ export function findInStory(project: Project | null, query: string): FindResult 
           // nothing to do with its length on screen.
           from: line.starts[match.start],
           to: line.ends[match.end - 1],
+          touchesMention: line.atoms
+            .slice(match.start, match.end)
+            .some(Boolean),
         });
       }
       if (truncated) return;
@@ -133,9 +146,15 @@ export function findInStory(project: Project | null, query: string): FindResult 
         if (foldedMatches(name, query).length === 0) continue;
         const match = foldedMatches(name, query)[0];
         hits.push({
+          // A `name` hit is not document text at all — it is the entity's
+          // own name or one of its aliases. Replace leaves these alone for
+          // the same reason it leaves mentions alone, and they are the
+          // other half of the same fact: rename the character and the name
+          // changes here AND in every mention of her, at once.
           id: `name:${entity.id}:${name}`,
           sceneId: null,
           entityId: entity.id,
+          touchesMention: false,
           where: shown,
           kind: "name",
           blockId: null,
@@ -168,6 +187,20 @@ interface Line {
   starts: number[];
   /** ProseMirror position just after each character of `text`. */
   ends: number[];
+  /**
+   * True for each character that came from an inline ATOM rather than from
+   * text — today that means a mention (v0.79.0).
+   *
+   * Find never needed this: a match that crosses a mention selects the
+   * whole name, which is the only selection an atom has. Replace does, and
+   * for a reason that is not cosmetic. A mention stores an ENTITY ID and
+   * renders whatever that entity is currently called; the characters in
+   * `text` are a rendering, not the document. Writing over them would mean
+   * deleting the atom and putting letters in its place — which silently
+   * breaks the link between the prose and the character page, the one
+   * thing mentions exist for.
+   */
+  atoms: boolean[];
 }
 
 /**
@@ -204,6 +237,7 @@ function readLines(content: JSONContent | undefined | null, entities: Entity[]):
         text: "",
         starts: [],
         ends: [],
+        atoms: [],
       };
       let at = pos + 1;
       for (const child of node.content ?? []) {
@@ -214,6 +248,7 @@ function readLines(content: JSONContent | undefined | null, entities: Entity[]):
             line.text += label[i];
             line.starts.push(at);
             line.ends.push(at + 1);
+            line.atoms.push(true);
           }
           at += 1;
           continue;
@@ -223,6 +258,7 @@ function readLines(content: JSONContent | undefined | null, entities: Entity[]):
             line.text += child.text[i];
             line.starts.push(at + i);
             line.ends.push(at + i + 1);
+            line.atoms.push(false);
           }
           at += child.text.length;
           continue;
@@ -276,7 +312,7 @@ function readLines(content: JSONContent | undefined | null, entities: Entity[]):
  */
 const LEAF_TYPES = new Set([MENTION_TYPE, "horizontalRule", "hardBreak"]);
 
-function nodeSize(node: JSONContent): number {
+export function nodeSize(node: JSONContent): number {
   if (typeof node.text === "string") return node.text.length;
   if (node.type && LEAF_TYPES.has(node.type)) return 1;
   let inner = 0;

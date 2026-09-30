@@ -44,6 +44,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./types/speaker"),
     import("./utils/speakerLines"),
     import("./utils/findInStory"),
+    import("./utils/replaceInStory"),
     import("./utils/textFold"),
     import("./utils/reuseBySignature"),
     import("./state/uiStore"),
@@ -89,6 +90,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       speakerTypes,
       speakerLines,
       findInStory,
+      replaceInStory,
       textFold,
       reuseBySignature,
       uiStore,
@@ -140,6 +142,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         __scriareSpeaker: speakerTypes,
         __scriareSpeakerLines: speakerLines,
         __scriareFind: findInStory,
+        __scriareReplace: replaceInStory,
         __scriareTextFold: textFold,
         // v0.64.0 — Script Export, so the spec can drive the real builder
         // and the real page renderer rather than a copy of either.

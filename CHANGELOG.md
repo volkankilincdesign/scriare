@@ -12,6 +12,129 @@ omitting them.
 
 ---
 
+## v0.79.0 — Find's other half
+
+Find has had no Replace since v0.38.0, which meant renaming a term across
+forty scenes was forty manual edits. It is the only thing left on the list
+that a writer would have named as missing.
+
+**A preview, then one button.** The panel already listed every hit, so it
+shows what each one would become — the old words struck through, the new
+ones in their place — with a tick per hit and a count on the button. His
+call, over the classic Replace/Replace All pair: a replace-all across a
+whole story is a destructive button, and it should not be pressed by
+somebody who has not seen the result.
+
+**Mentions are left alone, and the panel says what they are.** A mention
+stores a character's id and renders whatever she is currently called, so
+the letters that matched are a rendering rather than text in the document.
+Writing over them would swap a live link for dead ones. His wording, and
+he rejected the first draft of it for a precise reason: *"will not change"*
+gives the wrong signal, because they **do** change — by renaming the
+character, which is the only thing that changes a mention, and which
+changes all of them at once. It reads *"3 are mentions, not text. They
+follow the character's own name."* An entity's own name gets the same
+treatment for the same reason.
+
+**One undo step, across every document it touched**, and that needed a new
+idea. The store's history is structural — undo carries the live prose
+forward rather than reverting it, which is what stops a structural undo
+eating paragraphs written since the snapshot (the v0.49.0 note in
+`mergeLiveProse`). Replace is the first action whose whole purpose is the
+prose, and for it that rule is exactly backwards: carrying the live prose
+forward carries the replacement forward and makes undo a no-op. Measured
+on the first build, which did. A history entry can declare that it
+**owns its prose** now, and the flag travels with the step through undo
+and redo rather than with the direction — the second build undid correctly
+and would not redo, for that reason.
+
+**Three things the measurements caught that reasoning had not.**
+
+The first draft reimplemented ProseMirror's node-size arithmetic and got
+the empty-paragraph case wrong — a node with no content is size 2 if it is
+a paragraph and 1 if it is a divider, and the difference lives in the
+schema rather than in the document, which is exactly what `findInStory`'s
+own comment warns about. It imports that function now rather than copying
+it; two copies is how the positions Find hands over start meaning
+something else.
+
+A match split across marks — `Ma` plain, `ra` bold — replaced correctly and
+left `{text: "", marks: [bold]}` behind. ProseMirror's schema has no empty
+text node, so the replacement was right and the document would not load
+again.
+
+And replacements are applied **from the end backwards**, because every one
+of them moves the positions after it. That has a control, and the control
+stayed green at first: the fixture unticked the second hit in a line,
+leaving one replacement per line, which is precisely the shape in which
+front-to-back looks correct.
+
+---
+
+## v0.78.2 — Three tests that were not tests
+
+No feature. Housekeeping, and two of the three turned out to be the suite
+lying to itself.
+
+**The control that had never gone red was right all along.** "A + New that
+cannot make everything the tree holds" has reported NOT CAUGHT since
+v0.60.0, and it was flagged repeatedly as a test that needed rewriting.
+Reproduced by hand: the sabotage applies cleanly, the spec fails, the
+check catches it. What had drifted was the control's own **`expect`
+string** — the check was worded "all four things the tree holds" and
+rewritten in v0.60.0, when Notes made it five, to say "everything". The
+control was still looking for the old sentence, so the runner searched the
+failing lines, found nothing matching, and called it a miss. Eighteen
+versions of a false alarm.
+
+That is a fourth way for a control to be wrong, alongside the three in the
+runner's header, and the only one that looked exactly like a real miss. So
+the runner now tells **"nothing failed"** apart from **"something failed,
+but not the thing you named"**, and prints the sentences that did fail. The
+new message was proved by breaking an `expect` string on purpose.
+
+**Two perf thresholds were passes dressed as skips.** `perf.spec` measures
+a floor — one edit with both panels shut, two animation frames and nothing
+else — and skips its timing assertions when the machine is too loaded to
+judge. The skip was written `check(name, !quiet || cost < threshold)`,
+which on a loaded machine is not a skip, it is a **pass**. This container's
+floor measures around 480 ms against a `QUIET_FLOOR` of 45, so neither
+threshold had ever asserted anything here, and the README counted them
+both. A third, "the machine is quiet enough to measure on", asserted the
+literal `true`.
+
+They are logged rather than checked when the clock cannot resolve them.
+The suite is three checks smaller and every remaining one means something.
+The paired deltas say why a ratio could not rescue them either: a recent
+run gave **−32.8, 14.6, 16.2 ms** for the same measurement. A negative cost
+is not a slow machine, it is noise an order of magnitude above the signal.
+Nothing was guarding a shipped fix — the Story Graph's is asserted by
+mechanism, and the Content panel's suspect was measured and the fix
+reverted in v0.51.0.
+
+**And a second green control, found by looking rather than by being
+told.** Running the sweep to verify the first fix turned up
+*"a saveRun that resolves before the queued re-run"* — NOT CAUGHT since
+v0.49.1, the release that exists because of two data-loss bugs found
+inside v0.49.0's data-loss fixes. This one was real. The check read the
+file after the fact, and a promise that settles too early cannot be caught
+that way: the queued save still lands a moment later, and `readFile` is
+itself an await, so by the time the test looks the right text is there.
+
+The ordering is asserted on `saveStatus` now, captured in the same tick
+the promise resolves. It is exact rather than approximate — `saveNow` sets
+`"saved"` only when nothing is still queued — so there is no timing in it
+and the answer is the same on any machine. Two false assurances in one
+day, in a suite whose entire argument is that it does not give those.
+
+**And the roadmap is current**, through v0.78.1 after ending at v0.68.0 —
+eleven versions, including both new block-type decisions and the whole
+spreadsheet run. It now records that there is no launch-blocking software
+left on Claude's side, that the demo story and the example story are one
+thing, and that images in scenes were stepped back from rather than
+forgotten. The page-corner item from v0.40.0 is deleted: he confirmed it
+was fixed by attrition, and an item nobody can define is not a task.
+
 ## v0.78.1 — The last place still using the old name
 
 The slash-command menu said **Conditional Text** while the button, the
