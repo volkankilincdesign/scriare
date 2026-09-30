@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
+import { FLOATING_PANEL } from "../common/surfaces";
 import type { Editor, Range } from "@tiptap/core";
 import { Icon } from "../common/Icon";
 import { ENTITY_LABEL } from "../../types/entities";
@@ -91,7 +92,7 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(
     const attributing = props.items.some((item) => item.attributing);
 
     return (
-      <div className="w-64 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] py-1 shadow-xl">
+      <div data-floating-panel className={`w-64 overflow-hidden py-1 ${FLOATING_PANEL}`}>
         {props.items.map((item, index) => {
           const active = index === selectedIndex;
           const kind =

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { FLOATING_PANEL } from "../common/surfaces";
 
 export interface ContentMenuItem {
   label: string;
@@ -40,7 +41,8 @@ export function ContentContextMenu({ x, y, items, onClose }: ContentContextMenuP
     <div
       ref={ref}
       style={{ top: y, left: x }}
-      className="fixed z-50 min-w-[160px] rounded-md border border-[var(--border)] bg-[var(--bg)] py-1 shadow-xl"
+      data-floating-panel
+      className={`fixed z-50 min-w-[160px] py-1 ${FLOATING_PANEL}`}
     >
       {items.map((item) => (
         <button

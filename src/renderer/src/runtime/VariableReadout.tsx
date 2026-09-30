@@ -74,7 +74,7 @@ export function VariableReadout({ variables, values }: VariableReadoutProps) {
   return (
     <div className="pointer-events-auto absolute bottom-4 right-4 z-20 max-w-[280px]">
       {open && (
-        <div className="mb-1.5 max-h-64 overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--surface-translucent)] p-2.5 shadow-[var(--shadow-raised)] backdrop-blur">
+        <div className="mb-1.5 max-h-64 overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--surface-translucent)] p-2.5 shadow-[shadow:var(--shadow-raised)] backdrop-blur">
           <table className="w-full border-collapse text-left">
             <tbody>
               {variables.map((variable) => (

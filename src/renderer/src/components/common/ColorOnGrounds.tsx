@@ -69,7 +69,7 @@ export function ColorOnGrounds({
       // The app's own floating-panel spelling, the one the Variable Readout
       // uses in Play: a translucent surface over a blur, on the raised
       // shadow. Nothing new is invented here (v0.56.0's rule).
-      className={`w-[320px] rounded-lg border border-[var(--border)] bg-[var(--surface-translucent)] p-2.5 shadow-[var(--shadow-raised)] backdrop-blur ${className}`}
+      className={`w-[320px] rounded-lg border border-[var(--border)] bg-[var(--surface-translucent)] p-2.5 shadow-[shadow:var(--shadow-raised)] backdrop-blur ${className}`}
     >
       <div className="mb-2 flex items-baseline justify-between gap-2">
         <span className="scriare-section-label text-[var(--text-3)]">How it reads</span>

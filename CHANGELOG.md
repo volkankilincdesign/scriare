@@ -12,6 +12,95 @@ omitting them.
 
 ---
 
+## v0.82.0 — One floating panel, and five shadows that were never there
+
+Phase 2 of the UI sweep, unparked, starting with the small three —
+the right-click menu, the slash menu and the graph's group box — so
+something ships and is tested before the Inspector is touched.
+
+**Found by counting, which is what v0.56.0 established.** Four floating
+menus, three spellings:
+
+    SpeakerMenu        rounded-lg  bg --surface  shadow-xl
+    MentionMenu        rounded-lg  bg --surface  shadow-xl
+    SlashCommandMenu   rounded-md  bg --bg       shadow-xl
+    ContentContextMenu rounded-md  bg --bg       shadow-xl
+
+All four are on one surface now. `--bg` is the ground the page itself is
+painted on, so a menu wearing it reads as a hole cut in the page rather
+than a card lying on it; `--surface` is what the Modal and two of the four
+already used. The Mention and Speaker menus were not in "the small three"
+and were changed anyway: a menu is a menu, and fixing two of four would
+have replaced one inconsistency with a more confusing one.
+
+**Then the part that was actually broken, and it is app-wide.** Every one
+of those menus was shadowed with Tailwind's `shadow-xl` — a fixed black at
+fixed opacities, identical in all eight themes. v0.46.0 had already
+diagnosed exactly that, written it down in InspectorPanel ("on a light
+ground a black shadow at that strength reads as dirt on paper, which is
+the exact thing --shadow-floating exists to get right per theme"), defined
+the token in every theme, and applied it in two places. The menus never
+got the memo.
+
+**And the five places that DID use the token were painting nothing.**
+`shadow-[var(--shadow-floating)]` compiles to:
+
+    --tw-shadow-color: var(--shadow-floating);
+    --tw-shadow: var(--tw-shadow-colored);
+
+Tailwind cannot tell an arbitrary shadow from a shadow COLOUR and guesses
+colour. With no shape to colour, that is `box-shadow: none`. The toast,
+both Welcome cards, the colour-on-grounds preview and Play Mode's variable
+readout have cast no shadow since the day each was written — and nobody
+noticed, because a missing shadow reads as a design decision. The two
+places that worked, in InspectorPanel and DialoguePanel, set `boxShadow`
+as an inline style and so never met the guess. All five use the
+`shadow-[shadow:…]` type hint now, and a check asserts that the class
+paints something, that it paints differently in a light theme than a dark
+one, and that the unhinted spelling still paints nothing — the last so the
+check retires itself if Tailwind ever starts reading it correctly.
+
+None of this was in the plan for the sweep. It came out of a test written
+to ask whether the panel's shadow matched the token's, and the answer was
+"none".
+
+**The third item in the sweep was reverted, and that is the most useful
+thing in this version.** The group box's name is the section label typed
+out by hand — 12px against the class's 10px, 0.025em tracking against
+0.05em — so bringing it onto the kit looked like the easiest of the three.
+Applying the class breaks renaming: a drag across the name selects
+nothing, the caret jumps to the end, and the writer cannot grab the word
+they meant to replace. That is the exact symptom a user reported and which
+GroupNode's `nodrag` fix was written for. Caught on the first run by a
+check that has guarded it for twenty-six versions.
+
+It is not the font size — 10px on its own passes — and not the line
+height, forced back to 16px and still broken. Which of the class's five
+declarations does it was not worth more measuring, because the answer does
+not change the decision: **the kit's label class describes how a LABEL
+looks, and this is an editable control.** "Bring it onto the kit" is not
+the same instruction as "apply the kit's class", and consistency does not
+outrank a gesture somebody reported. The name keeps its own spelling, and
+a negative control now puts the class back and watches the rename check go
+red — so the reason is guarded rather than written in a comment nobody
+reads, and the next sweep cannot quietly "fix" it.
+
+Two of three surfaces took the kit cleanly. The third is the argument for
+doing this a few surfaces at a time rather than in one pass.
+
+**Three findings about the checks, and one is embarrassing.** The panel
+shadow was compared for equality with the token and went red against a
+panel painting correctly — a Tailwind shadow class carries two empty ring
+layers the probe does not. `getComputedStyle` returns a LIVE object, and
+reading it after removing the element gives an empty string that reads
+exactly like a class which does not apply. And the group-name check ended
+in `if (found) … else pass`, a skip implemented as a pass — the precise
+thing v0.78.2 had to fix in the performance spec, written here three lines
+under a comment quoting that lesson. Its negative control went green and
+said so. It makes a group now.
+
+---
+
 ## v0.81.3 — Every control watched to fail, in one pass
 
 No code changed. What changed is that a claim the README has been making

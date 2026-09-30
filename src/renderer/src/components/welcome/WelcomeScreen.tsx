@@ -287,7 +287,7 @@ function EmptyShelf({ onStart }: { onStart: () => void }) {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-raised)]">
+        <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[shadow:var(--shadow-raised)]">
           <div className="border-b border-[var(--border-soft)] bg-[var(--bg)]">
             <StoryMap shape={ILLUSTRATION} height={150} />
           </div>
@@ -303,7 +303,7 @@ function EmptyShelf({ onStart }: { onStart: () => void }) {
         <button
           type="button"
           onClick={onStart}
-          className="flex flex-col rounded-xl bg-[var(--accent)] p-6 text-left text-[var(--accent-text-on)] shadow-[var(--shadow-raised)] transition-colors hover:bg-[var(--accent-hover)]"
+          className="flex flex-col rounded-xl bg-[var(--accent)] p-6 text-left text-[var(--accent-text-on)] shadow-[shadow:var(--shadow-raised)] transition-colors hover:bg-[var(--accent-hover)]"
         >
           <svg
             width="26"

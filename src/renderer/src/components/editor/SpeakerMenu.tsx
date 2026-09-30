@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { FLOATING_PANEL } from "../common/surfaces";
 import type { Editor } from "@tiptap/react";
 import { Icon } from "../common/Icon";
 import { useProjectStore } from "../../state/projectStore";
@@ -77,7 +78,8 @@ export function SpeakerMenu({ editor }: SpeakerMenuProps) {
       ref={panel}
       data-speaker-menu
       style={{ position: "fixed", left: open.rect.left, top: open.rect.bottom + 6, zIndex: 1000 }}
-      className="max-h-72 w-60 overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--surface)] py-1 shadow-xl"
+      data-floating-panel
+      className={`max-h-72 w-60 overflow-y-auto py-1 ${FLOATING_PANEL}`}
     >
       <Row
         label="Nobody — narration"

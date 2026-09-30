@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
+import { FLOATING_PANEL } from "../common/surfaces";
 import type { Editor, Range } from "@tiptap/core";
 import type { NarrativeBlockDefinition } from "../../narrativeBlocks/types";
 
@@ -50,7 +51,7 @@ export const SlashCommandMenu = forwardRef<SlashCommandMenuHandle, SlashCommandM
 
     if (props.items.length === 0) {
       return (
-        <div className="w-64 rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text-3)] shadow-xl">
+        <div className={`w-64 px-3 py-2 text-sm text-[var(--text-3)] ${FLOATING_PANEL}`}>
           No matching blocks
         </div>
       );
@@ -59,7 +60,8 @@ export const SlashCommandMenu = forwardRef<SlashCommandMenuHandle, SlashCommandM
     return (
       <div
         data-slash-menu
-        className="w-64 overflow-hidden rounded-md border border-[var(--border)] bg-[var(--bg)] py-1 shadow-xl"
+        data-floating-panel
+        className={`w-64 overflow-hidden py-1 ${FLOATING_PANEL}`}
       >
         {props.items.map((item, index) => (
           <button

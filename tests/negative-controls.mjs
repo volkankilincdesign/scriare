@@ -3106,6 +3106,67 @@ const CONTROLS = [
     spec: "play-ground",
     expect: "never as “undefined”",
   },
+
+  /* ── One floating panel (v0.82.0) ─────────────────────────────────
+     The sweep's own claims, plus the app-wide one it turned up: a
+     Tailwind arbitrary shadow that compiles to nothing. */
+  {
+    // The hint removed, which is the state five surfaces shipped in.
+    // NOTE the expect string. The general "actually paints a shadow"
+    // check measures the CLASS, and Tailwind keeps generating it while
+    // any file still uses it — ToastHost does. So the sabotage shows up
+    // where it actually bites: on the panel itself.
+    name: "a shadow token Tailwind reads as a colour and paints as nothing",
+    file: src("components/common/surfaces.ts"),
+    from: "shadow-[shadow:var(--shadow-floating)]",
+    to: "shadow-[var(--shadow-floating)]",
+    spec: "surfaces",
+    expect: "takes the theme's own shadow",
+  },
+  {
+    // Tailwind's own fixed black back on the panel. It looks right in a
+    // dark theme and reads as dirt on paper in a light one, which is the
+    // thing v0.46.0 defined the token to avoid.
+    name: "a menu shadowed in Tailwind's fixed black instead of the theme's",
+    file: src("components/common/surfaces.ts"),
+    from: "shadow-[shadow:var(--shadow-floating)]",
+    to: "shadow-xl",
+    spec: "surfaces",
+    expect: "shadowed differently on a light theme than on a dark one",
+  },
+  {
+    // A menu painted on the page's own ground again, so it reads as a
+    // hole cut in the page rather than a card lying on it.
+    name: "a floating menu painted on the page's own ground",
+    file: src("components/common/surfaces.ts"),
+    from: "bg-[var(--surface)]",
+    to: "bg-[var(--bg)]",
+    spec: "surfaces",
+    expect: "a raised surface rather than the page's own ground",
+  },
+  {
+    // One menu keeping its own copy of the surface, which is the state
+    // the app was in: four menus, three spellings.
+    name: "a menu that keeps its own spelling of the panel",
+    file: src("components/editor/SlashCommandMenu.tsx"),
+    from: "className={`w-64 overflow-hidden py-1 ${FLOATING_PANEL}`}",
+    to: 'className="w-64 overflow-hidden rounded-md border border-[var(--border)] bg-[var(--bg)] py-1 shadow-xl"',
+    spec: "surfaces",
+    expect: "painted with the token, not with a fixed black",
+  },
+  {
+    // THE INVERSE CONTROL, and it guards a decision rather than a
+    // mechanism: applying the kit's label class to this editable field
+    // breaks renaming, so the control puts the class back and watches the
+    // rename check go red. It is the reason the group name keeps its own
+    // spelling, kept as a test so the next sweep does not "fix" it again.
+    name: "a chapter name brought onto the kit at the cost of renaming it",
+    file: src("components/graph/GroupNode.tsx"),
+    from: 'className="nodrag nopan min-w-0 flex-1 cursor-text bg-transparent text-xs font-semibold uppercase tracking-wide',
+    to: 'className="scriare-section-label nodrag nopan min-w-0 flex-1 cursor-text bg-transparent',
+    spec: "entities-and-renaming",
+    expect: "selects the letters it was dragged across",
+  },
 ];
 
 

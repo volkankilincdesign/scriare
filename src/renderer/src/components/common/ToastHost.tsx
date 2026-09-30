@@ -33,7 +33,7 @@ export function ToastHost() {
         <div
           key={toast.id}
           role="status"
-          className="scriare-toast pointer-events-auto flex items-center gap-3 rounded-lg border border-[var(--border-faint)] bg-[var(--surface-2)] py-2 pl-4 pr-2 shadow-[var(--shadow-floating)]"
+          className="scriare-toast pointer-events-auto flex items-center gap-3 rounded-lg border border-[var(--border-faint)] bg-[var(--surface-2)] py-2 pl-4 pr-2 shadow-[shadow:var(--shadow-floating)]"
         >
           <span className="text-sm text-[var(--text-2)]">{toast.message}</span>
 

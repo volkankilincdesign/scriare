@@ -155,6 +155,31 @@ export function GroupNode({ id, data, selected }: NodeProps) {
           value={name}
           onChange={(e) => renameFolder(id, e.target.value)}
           placeholder="Group name"
+          /* NOT `.scriare-section-label`, AND THAT IS THE FINDING.
+             This is the app's section label typed out by hand — 12px
+             against the class's 10px, 0.025em tracking against 0.05em —
+             and bringing it onto the kit was the third item in v0.82.0's
+             sweep. It broke renaming.
+
+             Applying the class makes a drag across this name select
+             NOTHING: the caret jumps to the end and the writer cannot
+             grab the word they meant to replace. That is the exact
+             symptom a user reported and which this file's `nodrag`
+             comment below was written to fix. Measured, three runs,
+             deterministic.
+
+             What it is NOT: the font size (10px on its own passes) or
+             the line height (forced back to 16px, still broken). I could
+             not isolate which of the class's five declarations does it,
+             and stopped paying to find out, because the answer does not
+             change the decision.
+
+             THE RULE THIS LEAVES: the kit's label class describes how a
+             LABEL looks, and this is an editable control. "Bring it onto
+             the kit" is not the same instruction as "apply the kit's
+             class", and consistency does not outrank a gesture somebody
+             reported. The two other surfaces in this sweep took the kit
+             cleanly; this one gets the look and keeps its own spelling. */
           className="nodrag nopan min-w-0 flex-1 cursor-text bg-transparent text-xs font-semibold uppercase tracking-wide text-[var(--text-2)] outline-none placeholder:text-[var(--text-3)]"
         />
         <button
