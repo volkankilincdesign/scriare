@@ -2705,6 +2705,61 @@ const CONTROLS = [
     spec: "story-check",
     expect: "not the conversation's first",
   },
+  {
+    // v0.67.4's mistake made a third time: the newest block type drawn as
+    // the quieter control. It still works and it still says the thing
+    // having no button at all was saying.
+    name: "the third block type given a lesser button than its two siblings",
+    file: src("components/editor/EditorToolbar.tsx"),
+    from: '          data-insert-conditional\n          className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] bg-[var(--accent-fill-strong)] px-2.5 text-xs font-semibold text-[var(--accent-text-on)] transition-colors hover:bg-[var(--accent)]"',
+    to: '          data-insert-conditional\n          className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] border border-[var(--border)] px-2.5 text-xs font-medium text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2)]"',
+    spec: "conditions",
+    expect: "same control as the Dialogue",
+  },
+  {
+    // The block inserted and the caret left outside it — how the first
+    // build of this button behaved, so everything typed went into the
+    // page behind the block the writer had just made. Nothing says so.
+    name: "a block to write in that does not put the caret in it",
+    file: src("extensions/ConditionalBlock.ts"),
+    from: "              if (at === -1 || !dispatch) return true;",
+    to: "              if (at === -1 || !dispatch || true) return true;",
+    spec: "conditions",
+    expect: "the first thing typed is inside the block",
+  },
+  {
+    // Drawn as its own kind of thing again. The v0.30.0 treatment is what
+    // made three of them stacked read as one, and re-introducing any of
+    // it is the same mistake in a smaller size.
+    name: "the third sibling drawn as its own kind of object again",
+    file: src("components/editor/ConditionalBlockView.tsx"),
+    from: '          : "border-[var(--border)] bg-[var(--surface-2-faint)]"',
+    to: '          : "border-dashed border-[var(--border-faint)]"',
+    spec: "conditions",
+    expect: "same object as the Choice",
+  },
+  {
+    // A footer that counts instead of saying when. The count is already
+    // in the header; the footer's width is worth the one fact the writer
+    // opened the block to check.
+    name: "a footer that counts conditions instead of naming them",
+    file: src("components/editor/ConditionalBlockView.tsx"),
+    from: '      : `Shown when ${conditions.map((c) => describeCondition(c, variables)).join(", and ")}.`;',
+    to: '      : `${count} ${count === 1 ? "condition" : "conditions"} set.`;',
+    spec: "conditions",
+    expect: "says WHEN, in words",
+  },
+  {
+    // The two rows of explanation restored. Nothing breaks; the panel
+    // simply says in the abstract what the block now says about itself,
+    // in the place the writer is not looking.
+    name: "the Inspector explaining again what the block already says",
+    file: src("components/layout/InspectorPanel.tsx"),
+    from: '        <div className="scriare-section-label text-[var(--text-3)]">Conditional</div>',
+    to: '        <div className="scriare-section-label text-[var(--text-3)]">Conditional</div>\n        <p className="text-xs text-[var(--text-3)]">This passage appears only when every condition below holds.</p>',
+    spec: "conditions",
+    expect: "no longer spends two rows explaining",
+  },
 ];
 
 

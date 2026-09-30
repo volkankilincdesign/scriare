@@ -53,6 +53,7 @@ export type IconName =
   // scene splits; this one has to say the opposite, that the talking
   // happens here and the page stays put.
   | "dialogue"
+  | "conditional"
   | "plus"
   | "properties";
 
@@ -246,6 +247,19 @@ const PATHS: Record<IconName, JSX.Element> = {
     <>
       <path d="M2.7 4.4c0-.55.45-1 1-1h8.6c.55 0 1 .45 1 1v5.2c0 .55-.45 1-1 1H6.6L3.6 13v-2.4h-.9V4.4Z" />
       <path d="M5.4 6.1h5.2M5.4 8.2h3.2" />
+    </>
+  ),
+  // The Conditional (v0.78.0). A page with a diamond on it — the diamond
+  // because that is already how a condition is marked on a Dialogue line
+  // and on a choice's chip, so the symbol is borrowed rather than
+  // invented, and the page because what is gated here is prose rather than
+  // a route. One outline plus one filled accent, like `branch` and
+  // `dialogue`, which is what survives at 15px.
+  conditional: (
+    <>
+      <path d="M3.4 2.9h5.1l3.1 3.1v7.1c0 .3-.25.55-.55.55H3.4a.55.55 0 0 1-.55-.55V3.45c0-.3.25-.55.55-.55Z" />
+      <path d="M8.4 3v3.1h3.1" />
+      <path d="m7.1 8.4 1.5 1.6-1.5 1.6-1.5-1.6z" fill="currentColor" stroke="none" />
     </>
   ),
   plus: <path d="M8 3.4v9.2M3.4 8h9.2" />,

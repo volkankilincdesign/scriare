@@ -658,6 +658,31 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           Dialogue
         </button>
       )}
+
+      {/* v0.78.0 — the third, and the last block type to get one at all.
+          Conditional Text has existed since v0.30.0 reachable only by a
+          slash command, which means a writer had to already know it was
+          there to find it.
+
+          THE SAME BUTTON AGAIN, for v0.67.4's reason restated: drawing
+          this one quieter would say it is the lesser of three, which is
+          what having no button at all was already saying. Three block
+          types, three identical controls; only the icon and the word
+          differ. It reads "Conditional" rather than "IF" so the button
+          and the block's own header agree on one name. */}
+      {editor.schema.nodes.conditionalBlock && (
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => editor.chain().focus().insertConditionalBlock().run()}
+          title="Insert a Conditional — a passage that only appears sometimes"
+          data-insert-conditional
+          className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] bg-[var(--accent-fill-strong)] px-2.5 text-xs font-semibold text-[var(--accent-text-on)] transition-colors hover:bg-[var(--accent)]"
+        >
+          <Icon name="conditional" className="h-[15px] w-[15px]" />
+          Conditional
+        </button>
+      )}
         </>
       )}
 

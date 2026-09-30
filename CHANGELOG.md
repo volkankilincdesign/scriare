@@ -12,6 +12,64 @@ omitting them.
 
 ---
 
+## v0.78.0 — The third sibling
+
+Conditional Text has existed since v0.30.0 and could only be made by typing
+a slash command, so a writer had to already know it was there. Two block
+types with buttons and a third without does not read as an oversight — it
+reads as *the pair is the complete set*, which is worse than the third
+being missing.
+
+It is a button now, drawn as **exactly** the same control as the other two.
+That is v0.67.4's rule stated a third time: making this one quieter would
+say it is the lesser of three, which is the thing having no button at all
+was already saying.
+
+**The block had a beginning and no end.** It was drawn entirely in CSS — a
+dashed left rule, a recessed ground, and the word `IF` in a `::before`.
+Measured on three stacked: 18px between them, no closing edge, and a ground
+at 20% alpha that does not register on screen. So **the gap between two
+unrelated blocks was smaller than the gap between two paragraphs inside one
+of them** — things that belong together looked further apart than things
+that do not. A grouping failure, not a matter of taste, and the thing he
+reported.
+
+It has a real node view now, the same as its siblings: a header that names
+it and counts its conditions, and a footer that closes it. A `::before`
+cannot count anything, cannot say what the conditions are, and cannot end.
+
+**Drawn as family, to the token — his call, overruling mine.** I drew it
+lighter, with no fill, arguing that a Choice and a Dialogue are furniture
+the reader meets while this is prose that happens to be gated. His answer
+is the better one: the reason it was unreadable stacked is that it was
+drawn as a *different kind of thing* from the two it sits beside, and
+answering that with a third different weight keeps the same mistake in a
+smaller size. What makes it the lightest is what it **does**, not what it
+is painted. The mockup's lighter variants are parked, not cancelled.
+
+**Where the difference does belong.** It offers no `+ Add` anything. A
+Choice holds options and a Dialogue holds lines, so both offer a way to add
+one; this holds prose, which you add to by typing. A "+ Add Condition" in
+the footer would be a second door to the Inspector's own control, which is
+exactly the growth he asked to stop.
+
+**It is a place to write, and the first build of the button forgot that.**
+Insert left the caret outside the block, so everything typed afterwards
+went into the page *behind* the thing that had just been made — and nothing
+said so. The caret lands inside now. One Conditional takes as many lines as
+the writer wants; Enter makes another line inside it, and a double Enter at
+the end gets back out.
+
+**The Inspector stopped explaining.** Two rows saying "this passage appears
+only when every condition below holds" existed because nothing else in the
+app said what the block did. The block says it now, in its own footer, in
+one line, naming the actual conditions — through the same `describeCondition`
+phrasing Play Mode and the exported page use for a locked choice, so the
+three cannot drift.
+
+The label is **Conditional** in all three places: the button, the block's
+header, and the panel. `IF` was the odd one out of `CHOICE` and `DIALOGUE`.
+
 ## v0.77.2 — As small as the finding
 
 One unnamed variable on option 4 of a six-option Choice Block lit all six —

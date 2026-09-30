@@ -358,13 +358,14 @@ function ConditionalProperties({
   return (
     <div className="space-y-4">
       <div>
-        <div className="scriare-section-label mb-1 text-[var(--text-3)]">
-          Conditional Text
-        </div>
-        <p className="text-xs text-[var(--text-3)]">
-          This passage appears only when every condition below holds. With no
-          conditions it always appears.
-        </p>
+        {/* v0.78.0 — "Conditional", the one word the block's own header
+            and the toolbar button also use, and the two-sentence
+            explanation deleted. It was there because nothing else in the
+            app said what this block did. The block now says it in its own
+            footer, in one line, naming the actual conditions — where the
+            writer is already looking. Two rows of panel repeating it in
+            the abstract were two rows too many. */}
+        <div className="scriare-section-label text-[var(--text-3)]">Conditional</div>
       </div>
 
       {variables.length === 0 ? (

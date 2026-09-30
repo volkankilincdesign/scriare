@@ -508,36 +508,22 @@ input[type="number"],
   }
 }
 
-/* Conditional Text block (v0.30.0). Marked in the editor so a writer can
-   see at a glance that a passage is gated — a dashed left rule and a
-   slightly recessed ground, deliberately quieter than a Callout, because
-   this is a note about *when* the prose appears rather than emphasis on the
-   prose itself. Play Mode renders the passage with no marking at all: if
-   the reader can see it, the condition passed, and the frame would only be
-   telling them about machinery. */
-.ProseMirror div[data-type="conditional-block"] {
-  position: relative;
-  margin: 1.1em 0;
-  padding: 0.55em 0 0.55em 1.05em;
-  border-left: 2px dashed var(--border-faint);
-  background: var(--surface-2-faint);
-  border-radius: 0 6px 6px 0;
-}
+/* The Conditional's body (v0.78.0).
 
-.ProseMirror div[data-type="conditional-block"]::before {
-  content: "IF";
-  position: absolute;
-  top: 0.3em;
-  left: 1.05em;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: var(--text-3);
-}
+   Everything this block used to be drawn with lives in
+   ConditionalBlockView now — the frame, the label, the summary, the
+   footer — for the reason the view's own note gives: a CSS ::before
+   cannot count conditions, cannot say what they are, and cannot end.
+   What is left here is the one thing that is genuinely typography: the
+   prose inside it reads exactly as prose outside it does, because it IS
+   the same prose and only its timing differs.
 
-.ProseMirror div[data-type="conditional-block"] > *:first-child {
-  margin-top: 1.1em;
-}
+   Play Mode and the export still render the passage with no marking at
+   all, which has been true since v0.30.0 and is the rule this block is
+   for: if the reader can see it, the condition passed, and a frame would
+   only be telling them about machinery. */
+.ProseMirror .scriare-conditional-body > *:first-child { margin-top: 0; }
+.ProseMirror .scriare-conditional-body > *:last-child { margin-bottom: 0; }
 
 /* Choice options as editable rows (v0.32.0).
    A choice's label is now real text in the document, so these rows have to
