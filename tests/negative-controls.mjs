@@ -2651,6 +2651,24 @@ const CONTROLS = [
     spec: "story-check",
     expect: "takes itself away",
   },
+  {
+    // The v0.77.0 defect he reported, put back: a finding raised from a
+    // Dialogue line falls through to the table that is keyed on KIND, and
+    // `unnamed-variable-shown` is filed there as a choice — because a
+    // choice raises it too. InspectorPanel then finds no options on a
+    // Dialogue block's id and falls back to Scene Properties, which is
+    // exactly what he saw: the conversation lit up in the editor and the
+    // panel showed the scene.
+    //
+    // Aimed at the reportUnnamed default rather than at the table, because
+    // that is where the caller's knowledge is thrown away.
+    name: "a Dialogue's finding filed as a choice's because they share a kind",
+    file: src("utils/storyCheck.ts"),
+    from: "      sceneId,\n      blockId,\n      inspect,\n    });\n  };",
+    to: '      sceneId,\n      blockId,\n      inspect: "choice",\n    });\n  };',
+    spec: "story-check",
+    expect: "opens the Inspector on the conversation",
+  },
 ];
 
 

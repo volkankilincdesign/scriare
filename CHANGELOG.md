@@ -12,6 +12,33 @@ omitting them.
 
 ---
 
+## v0.77.1 — A kind is not a place
+
+Reported within the hour: clicking a finding inside a Dialogue lit the
+conversation up in the editor and left the Inspector showing the scene.
+
+v0.77.0 gave each finding an `inspect` field saying what its `blockId`
+points at, and filled it from a table **keyed on the finding's kind**. That
+works for every kind only one thing can raise. It is wrong for the four
+that two things can: `unnamed-variable-shown`, `missing-variable-condition`,
+`missing-variable-action` and `unlinked-choice` are raised from a choice
+option **and** from a Dialogue line. The table filed them all as choices,
+so a Dialogue's finding arrived at the Inspector claiming to be a choice
+with a Dialogue block's id, `InspectorPanel` found no options on it, and
+its v0.55.0 self-healing dropped back to Scene Properties. Everything
+behaved exactly as written.
+
+The kind cannot know; only the caller can. Every finding raised inside the
+Dialogue pass now says so itself, and `reportUnnamed` takes it as an
+argument rather than inferring it.
+
+**The check that should have caught this was aimed one notch off.**
+v0.77.0's test clicked a `dialogue-dead-gate` — a kind *only* a Dialogue
+raises, so its kind alone was enough and the table was never asked the hard
+question. It clicks an `unnamed-variable-shown` raised from a Dialogue line
+now, which is the exact shape he hit. Same lesson as yesterday's speaker
+anchor: a fixture that avoids the ambiguous case tests the easy half.
+
 ## v0.77.0 — Click a line to go there
 
 The dialog has said that in its own subtitle since v0.36.0, and it has

@@ -794,18 +794,29 @@ export async function rowsAndReveal({ page, api, check, seedProject, app }) {
   const madeDialogue = await api(() => {
     const st = window.__scriareProjectStore.getState();
     const { buildDialogueBlockNode } = window.__scriareDialogue;
-    // Gated on a variable that is not in the story: `dialogue-dead-gate`,
-    // which is the Dialogue finding that does not depend on how the block
-    // closes and so cannot be argued with.
+    // AN AMBIGUOUS KIND, on purpose (v0.77.1, reported). The first version
+    // of this used `dialogue-dead-gate`, which only a Dialogue can raise —
+    // so the kind alone was enough to know what its blockId pointed at,
+    // and the check passed while the real case was broken.
+    //
+    // `unnamed-variable-shown` is raised from a choice option AND from a
+    // Dialogue line. That is the case he hit: told "choice" with a
+    // Dialogue block's id, InspectorPanel finds no options and falls back
+    // to Scene Properties — the block lit up in the editor and the panel
+    // showed the scene.
+    // A real variable with no DISPLAY name — which is what makes this
+    // `unnamed-variable-shown` (the reader would be shown "resolve")
+    // rather than a dead gate on a variable that does not exist.
+    const vid = st.createVariable("resolve", "number");
     const block = buildDialogueBlockNode(
       [
-        { text: "Where were you?", after: "stay",
-          conditions: [{ variableId: "a-variable-that-was-deleted", op: "gte", value: 1 }] },
+        { text: "And if it fails?", after: "stay", whenUnmet: "lock",
+          conditions: [{ variableId: vid, op: "gte", value: 3 }] },
         { text: "Never mind.", after: "end" },
       ],
       "the-conversation",
     );
-    st.updateSceneContent(st.project.scenes[0].id, {
+    window.__scriareProjectStore.getState().updateSceneContent(st.project.scenes[0].id, {
       type: "doc",
       content: [
         { type: "paragraph", attrs: { lineId: "p1" }, content: [{ type: "text", text: "Rain." }] },
@@ -814,12 +825,21 @@ export async function rowsAndReveal({ page, api, check, seedProject, app }) {
     });
     const issues = window.__scriareStoryCheck
       .checkStory(window.__scriareProjectStore.getState().project)
-      .issues.filter((i) => String(i.kind).startsWith("dialogue-"));
-    return { count: issues.length, kinds: issues.map((i) => i.kind), inspect: issues[0]?.inspect ?? null };
+      .issues.filter((i) => i.blockId === "the-conversation" || i.inspect === "dialogue");
+    return {
+      count: issues.length,
+      kinds: issues.map((i) => i.kind),
+      inspect: issues[0]?.inspect ?? null,
+    };
   });
   check(
-    "PRECONDITION — a conversation with a dead gate is reported",
-    madeDialogue.count > 0 && madeDialogue.inspect === "dialogue",
+    "PRECONDITION — a Dialogue line raises a finding a choice could raise too",
+    madeDialogue.count > 0 && madeDialogue.kinds.includes("unnamed-variable-shown"),
+    JSON.stringify(madeDialogue),
+  );
+  check(
+    "...and that finding knows it came from a conversation, which its KIND cannot say",
+    madeDialogue.inspect === "dialogue",
     JSON.stringify(madeDialogue),
   );
 
@@ -842,7 +862,9 @@ export async function rowsAndReveal({ page, api, check, seedProject, app }) {
   });
   await wait(250);
   const clickedDialogue = await api(() => {
-    const row = document.querySelector('[data-issue^="dialogue-"]');
+    // The only finding in this scene, and it is a kind a CHOICE could
+    // also raise — which is the whole point of clicking it.
+    const row = document.querySelector('[data-issue="unnamed-variable-shown"]');
     row?.click();
     return Boolean(row);
   });

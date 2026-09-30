@@ -262,6 +262,12 @@ export function checkStory(project: Project | null): StoryCheck {
     label: string,
     sceneId: string,
     blockId: string,
+    /**
+     * Which kind of block raised it (v0.77.1). The same finding comes from
+     * a choice option and from a Dialogue line, so the KIND cannot say
+     * what its blockId points at — only the caller knows.
+     */
+    inspect: "choice" | "dialogue" = "choice",
   ): void => {
     const unnamed = unnamedShownVariablesFor(gated, variableById);
     if (unnamed.length === 0) return;
@@ -285,6 +291,7 @@ export function checkStory(project: Project | null): StoryCheck {
       what: "unnamed variable",
       sceneId,
       blockId,
+      inspect,
     });
   };
   // A draft until `finish` fills the two fields that are the same for
@@ -413,6 +420,7 @@ export function checkStory(project: Project | null): StoryCheck {
           what: "no way out",
           sceneId: scene.id,
           blockId,
+          inspect: "dialogue",
         });
       }
 
@@ -432,6 +440,7 @@ export function checkStory(project: Project | null): StoryCheck {
               what: "unlinked",
               sceneId: scene.id,
               blockId,
+              inspect: "dialogue",
             });
           } else if (!byId.has(line.targetSceneId)) {
             issues.push({
@@ -444,13 +453,14 @@ export function checkStory(project: Project | null): StoryCheck {
               what: "broken link",
               sceneId: scene.id,
               blockId,
+              inspect: "dialogue",
             });
           } else {
             targets.push(line.targetSceneId);
           }
         }
 
-        reportUnnamed(line, line.id, where, label, scene.id, blockId);
+        reportUnnamed(line, line.id, where, label, scene.id, blockId, "dialogue");
 
         line.conditions.forEach((condition) => {
           if (!variableIds.has(condition.variableId)) {
@@ -465,6 +475,7 @@ export function checkStory(project: Project | null): StoryCheck {
               what: "can never be said",
               sceneId: scene.id,
               blockId,
+              inspect: "dialogue",
             });
           }
         });
@@ -482,6 +493,7 @@ export function checkStory(project: Project | null): StoryCheck {
               what: "dead action",
               sceneId: scene.id,
               blockId,
+              inspect: "dialogue",
             });
           }
         });
