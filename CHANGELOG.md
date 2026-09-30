@@ -12,6 +12,32 @@ omitting them.
 
 ---
 
+## v0.81.3 — Every control watched to fail, in one pass
+
+No code changed. What changed is that a claim the README has been making
+carefully is now true plainly.
+
+**309 of 309 negative controls, all caught, nothing found.** The first
+complete sweep since v0.78.2 — each control breaks a specific line of the
+shipped source and the run checks that a named assertion goes red, so the
+whole thing is 309 production rebuilds and 309 spec runs, about two and a
+half hours in groups.
+
+**Finding nothing is the result.** Every previous look found something:
+two controls reporting green in v0.78.2, four gone stale in v0.80.0, and
+one of those turned out to be guarding a check that read the colour an
+element is told to use rather than the one it paints. This time the suite
+was exactly what it claims to be.
+
+**One thing the sweep taught about itself.** The first attempt died
+partway through when its background process was reaped, leaving
+`history.ts` sabotaged — the failure mode the roadmap had written down in
+advance. The `--restore` pre-flight caught it on the next run and said
+which file. The rest ran detached, in groups of sixty, each group
+confirmed before the next started.
+
+---
+
 ## v0.81.2 — Two things a thousand tests could not see
 
 A looking pass: twenty screenshots of the shipped build across the

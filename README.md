@@ -208,7 +208,7 @@ lives in.
 
 ## Status
 
-**v0.81.2 — in active development, and usable.** The editor, graph,
+**v0.81.3 — in active development, and usable.** The editor, graph,
 runtime, entities, notes, variables, validation, search and **export** are
 all real, and the app now builds a Windows installer. See
 [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest list of what
@@ -240,12 +240,16 @@ file afterwards, because the queued save lands a moment later and the read
 is itself an await. It is asserted on the store's own status now, at the
 instant the promise resolves.
 
-A full sweep is about ninety minutes, so it runs in groups rather than in
-one pass; every group run since those two has been clean. v0.80.0 added
-ten and repaired four that had gone stale as the code beneath them moved —
-one of which, once it could run again, turned out to be watching a check
-that read the colour an element is *told* to use rather than the one it
-paints.
+**Every one of them has been watched to fail**, and that sentence is
+current rather than historical: a full sweep finished at v0.81.3 with all
+309 caught, no stale controls and nothing found. It is the first complete
+pass since v0.78.2, and it took about two and a half hours in groups
+because each control is a full production rebuild plus a spec run.
+
+Finding nothing is the result. Every previous look found something — two
+controls reporting green in v0.78.2, four gone stale in v0.80.0, one of
+which turned out to be watching a check that read the colour an element is
+*told* to use rather than the one it paints.
 
 A control that stays green is a finding about the test rather than about
 the app, and it has happened often enough to be the most useful thing the
