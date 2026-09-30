@@ -88,7 +88,15 @@ export function StylesheetDialog({ onClose }: StylesheetDialogProps) {
         data-stylesheet-input
         aria-label="Stylesheet"
         placeholder={".scriare-page { background: #101014; }\n.scriare-choice { border-radius: 0; }"}
-        className="h-[46vh] w-full resize-none rounded-md border border-[var(--border)] bg-[var(--bg)] p-3 font-mono text-[12.5px] leading-relaxed text-[var(--text)] outline-none focus:border-[var(--accent)]"
+        // `placeholder:` is not decoration here. Without it the browser's
+        // own placeholder colour under `color-scheme: dark` came out close
+        // enough to body text that two lines of example CSS read as CSS
+        // ALREADY IN THE STORY — while the footer underneath said "Empty
+        // — the story ships with no stylesheet". Found by looking at a
+        // screenshot of this dialog; every test it has was green, because
+        // no test asks what a placeholder looks like. --text-3 is what
+        // every other placeholder in the app uses.
+        className="h-[46vh] w-full resize-none rounded-md border border-[var(--border)] bg-[var(--bg)] p-3 font-mono text-[12.5px] leading-relaxed text-[var(--text)] outline-none placeholder:text-[var(--text-3)] focus:border-[var(--accent)]"
       />
 
       {/* WHAT YOU CAN TARGET. Folded away by default: it is reference a

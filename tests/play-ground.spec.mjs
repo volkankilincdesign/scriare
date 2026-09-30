@@ -276,4 +276,52 @@ export default async function run({ api, check, seedProject }) {
         !window.__scriareProjectStore.getState().isPlaying,
     ),
   );
+
+  /* ── a variable with nothing in it ──────────────────────────────── */
+
+  // A `.scriare` file can hold a variable with no `defaultValue`:
+  // `normalizeProject` passes the array through untouched, so one written
+  // by hand or by a version before that field existed arrives here as
+  // undefined. The readout printed the literal word "undefined" at a
+  // writer, which is a programmer's word in a HUD — found by looking at a
+  // screenshot of Play Mode, where nothing had ever asserted it because
+  // every fixture in this suite is a well-formed project.
+  //
+  // READ OFF THE HUD, not off the formatter. The formatter is where the
+  // bug was; the HUD is where a writer met it, and a check that calls the
+  // function directly would keep passing the day the readout stopped
+  // calling it.
+  const malformed = await api(async () => {
+    const w = (ms) => new Promise((r) => setTimeout(r, ms));
+    const store = window.__scriareProjectStore.getState();
+    const before = store.project;
+    window.__scriareProjectStore.setState({
+      project: {
+        ...before,
+        // No `defaultValue` on any of them, which is what a hand-edited
+        // file or one from an older version actually looks like.
+        variables: [
+          { id: "n", name: "Trust", type: "number" },
+          { id: "s", name: "Note", type: "string" },
+          { id: "b", name: "Knows", type: "boolean" },
+        ],
+      },
+    });
+    await w(200);
+    window.__scriareProjectStore.getState().startPlay();
+    await w(320);
+    const hud = document.querySelector("[data-play-root] table");
+    const text = hud ? hud.textContent : null;
+    window.__scriareProjectStore.getState().exitPlay();
+    await w(160);
+    window.__scriareProjectStore.setState({ project: before });
+    await w(160);
+    return text;
+  });
+
+  check(
+    "a variable with no default reads as its type's own zero, never as “undefined”",
+    typeof malformed === "string" && !/undefined/.test(malformed),
+    JSON.stringify(malformed),
+  );
 }

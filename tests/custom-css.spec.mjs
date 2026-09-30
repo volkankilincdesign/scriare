@@ -401,6 +401,45 @@ export default async function run({ api, check, openExported }) {
     `listed: ${noGate.listed}, disabled: ${noGate.disabled}`,
   );
 
+  /* ── the editor's own surface ──────────────────────────────────── */
+
+  // WHAT A PLACEHOLDER LOOKS LIKE, which is a thing no test had ever
+  // asked. The example CSS in the empty box rendered close enough to body
+  // text that it read as a stylesheet the story already had — under a
+  // footer saying the story had none. Asserted as a real difference in
+  // computed colour rather than as a class name, because the class is the
+  // mechanism and the confusion was about the pixels.
+  const box = await api(async () => {
+    const w = (ms) => new Promise((r) => setTimeout(r, ms));
+    window.__scriareUIStore.getState().openStylesheet();
+    await w(240);
+    const area = document.querySelector("[data-stylesheet-input]");
+    const text = getComputedStyle(area).color;
+    const hint = getComputedStyle(area, "::placeholder").color;
+    // The colour every other placeholder in the app uses, resolved live
+    // rather than written down here — asserting a hex would pass the day
+    // the token moved and the placeholder did not follow it.
+    const probe = document.createElement("div");
+    probe.style.color = "var(--text-3)";
+    area.parentElement.appendChild(probe);
+    const muted = getComputedStyle(probe).color;
+    probe.remove();
+    window.__scriareUIStore.getState().closeStylesheet();
+    await w(160);
+    return { text, hint, muted, hasPlaceholder: Boolean(area?.getAttribute("placeholder")) };
+  });
+
+  check("the empty stylesheet shows an example of what to write", box.hasPlaceholder === true);
+  // NOT MERELY "DIFFERENT FROM BODY TEXT" — the browser's own default
+  // placeholder is different from body text too, and it was the thing
+  // that read as content. The property is that this box follows the
+  // app's own placeholder colour like every other input does.
+  check(
+    "...in a colour that cannot be mistaken for CSS already in the story",
+    box.hint !== box.text && box.hint === box.muted,
+    `${box.hint} against text ${box.text} and the app's own ${box.muted}`,
+  );
+
   /* ── it is part of the story, so it survives the file ─────────── */
 
   const roundTrip = await api((project) => {

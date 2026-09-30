@@ -12,6 +12,44 @@ omitting them.
 
 ---
 
+## v0.81.2 — Two things a thousand tests could not see
+
+A looking pass: twenty screenshots of the shipped build across the
+dialogs, a light theme, a narrow window and Play Mode, read one at a
+time. Both defects it found were invisible to 1031 passing tests, because
+neither was a thing anybody had thought to assert.
+
+**The Stylesheet box looked like it already had CSS in it.** Its example
+lines are a placeholder, and nothing set a placeholder colour — so the
+browser's own, under `color-scheme: dark`, came out close enough to body
+text that two lines of example CSS read as a stylesheet the story already
+had, directly above a footer saying *"Empty — the story ships with no
+stylesheet"*. It is `--text-3` now, which is what every other placeholder
+in the app uses.
+
+The check for it went green on the first sabotage and that was a finding
+about the check: it asserted the placeholder differed from body text, and
+the browser's default differs from body text too — it was simply too
+close. It resolves the app's own `--text-3` live and compares against
+that instead, which is the property that was actually broken.
+
+**Play Mode's variable readout said "undefined" at a writer.**
+`normalizeProject` passes `variables` through untouched, so a variable
+with no `defaultValue` — hand-edited, or written by a version before that
+field existed — arrives at the readout as undefined. The number branch
+printed the literal word, the string branch printed it in quotes, and the
+boolean branch printed "false", which is the worst of the three because
+it looks like an answer. All three fall back to the type's own zero now.
+The check reads the HUD rather than calling the formatter, because the
+formatter is where the bug was and the HUD is where a writer met it.
+
+**`tools/shots.mjs` grew into the pass itself** — six groups it can run
+alone, including two states a writer with their own stories cannot reach.
+Neither of these was subtle once seen, which is the point: a test asserts
+what somebody thought to assert, and a picture shows what is there.
+
+---
+
 ## v0.81.1 — A dead link on the one screen built for newcomers
 
 The Welcome screen's *How Scriare works* shipped opening nothing. App's

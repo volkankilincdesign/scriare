@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { defaultValueForType } from "../types/variables";
 import type { Variable, VariableValue } from "../types/variables";
 
 interface VariableReadoutProps {
@@ -17,7 +18,20 @@ function loadOpen(): boolean {
 }
 
 function format(value: VariableValue | undefined, variable: Variable): string {
-  const resolved = value ?? variable.defaultValue;
+  /**
+   * THE TYPE'S OWN DEFAULT IS THE LAST FALLBACK (v0.81.2), and it is not
+   * belt-and-braces: `normalizeProject` passes `variables` through
+   * untouched, so a variable with no `defaultValue` — hand-edited, or
+   * written by a version before that field existed — reaches here as
+   * `undefined`. The number branch then printed the literal word
+   * "undefined" into a writer's HUD, the string branch printed
+   * `"undefined"` in quotes, and the boolean branch printed "false",
+   * which is worse than either because it looks like an answer.
+   *
+   * Found by looking at a screenshot of Play Mode. Nothing asserted it,
+   * because every fixture the suite has is a well-formed project.
+   */
+  const resolved = value ?? variable.defaultValue ?? defaultValueForType(variable.type);
   if (variable.type === "boolean") return resolved ? "true" : "false";
   if (variable.type === "string") return String(resolved) === "" ? "—" : `"${resolved}"`;
   return String(resolved);

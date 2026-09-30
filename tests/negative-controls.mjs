@@ -3082,6 +3082,30 @@ const CONTROLS = [
     spec: "first-run",
     expect: "opens the panel, on a screen with no story behind it",
   },
+
+  /* ── found by looking (v0.81.2) ───────────────────────────────────
+     Two defects that 1031 passing tests could not see, because neither
+     was a thing anybody had thought to assert. Both were visible in one
+     screenshot. */
+  {
+    // The placeholder back to the browser's own colour, where two lines of
+    // example CSS read as a stylesheet the story already had.
+    name: "example CSS that reads as CSS the story already has",
+    file: src("components/layout/StylesheetDialog.tsx"),
+    from: "placeholder:text-[var(--text-3)] ",
+    to: "",
+    spec: "custom-css",
+    expect: "cannot be mistaken for CSS already in the story",
+  },
+  {
+    // A writer's HUD printing a programmer's word.
+    name: "a variable HUD that says “undefined” at a writer",
+    file: src("runtime/VariableReadout.tsx"),
+    from: "  const resolved = value ?? variable.defaultValue ?? defaultValueForType(variable.type);",
+    to: "  const resolved = value ?? variable.defaultValue;",
+    spec: "play-ground",
+    expect: "never as “undefined”",
+  },
 ];
 
 
