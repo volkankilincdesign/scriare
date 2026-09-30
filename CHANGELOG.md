@@ -12,6 +12,34 @@ omitting them.
 
 ---
 
+## v0.81.1 — A dead link on the one screen built for newcomers
+
+The Welcome screen's *How Scriare works* shipped opening nothing. App's
+no-project branch renders the Welcome screen and two hosts and nothing
+else, so the link set the flag and no panel was ever mounted.
+
+**Eight negative controls were green over it.** Every one of them drove
+the door in the top bar, which only exists once a story is open — so the
+half of the feature that could not break was tested thoroughly and the
+half built for the person it exists for was not tested at all. That is
+not a gap in coverage so much as a habit: the door was tested where it
+was convenient to test rather than where it was at risk.
+
+**It was found by looking at a screenshot.** Taking pictures of the real
+build for him to check later put the app into the empty-shelf state,
+which is the one state the spec never reached, and the link was visibly
+inert. The ninth control breaks it again, and the check now clears the
+shelf *after* the Welcome screen mounts — `loadRecent()` reads the list
+back off disk in an effect, so a list emptied before the mount is full
+again by the time anything is on screen, and the empty branch never
+renders. The first version of the check went red for exactly that reason.
+
+`tools/shots.mjs` is new and is how the pictures were taken: it launches
+the shipped build and screenshots five states, including two a writer
+with their own stories cannot reach.
+
+---
+
 ## v0.81.0 — What these three blocks are for
 
 Scriare is not hard to operate. It is unfamiliar: three buttons sit in that

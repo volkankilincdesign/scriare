@@ -160,6 +160,18 @@ export default function App() {
     return (
       <>
         <WelcomeScreen />
+        {/* v0.81.1 — THE HELP PANEL HAS TO BE IN THIS BRANCH TOO. It was
+            only in the editor's, so the Welcome screen's own "How Scriare
+            works" link set the flag and nothing rendered: a dead link,
+            pointing at the one thing a newcomer would click, on the one
+            screen built for newcomers.
+
+            Nothing caught it because the spec drove the top bar's door
+            with a story open, which is the half of the feature that was
+            never at risk. It was found by looking at a screenshot of the
+            real Welcome screen — a picture of the state the test never
+            put the app in. */}
+        {helpOpen && <HelpDialog onClose={closeHelp} />}
         <ConfirmDialogHost />
         <ToastHost />
       </>

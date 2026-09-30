@@ -183,6 +183,48 @@ export default async function run({ api, check, seedProject }) {
   check("the questions are there too", panel.questionCount >= 10, `${panel.questionCount} entries`);
   check("closing it leaves nothing behind", panel.closed === true);
 
+  /* ── the OTHER door, on the screen a newcomer starts on ────────── */
+
+  // THE HALF THAT WAS NEVER TESTED, AND WAS BROKEN. Everything above
+  // drives the top bar's door, which only exists once a story is open —
+  // so the Welcome screen's link set the flag and rendered nothing,
+  // because App's no-project branch did not mount the panel. A dead link
+  // pointing at the one thing a newcomer would click, shipped in v0.81.0
+  // with eight negative controls all green.
+  //
+  // It was found by looking at a screenshot of the Welcome screen. The
+  // lesson is not "take more screenshots": it is that a door was tested
+  // where it was convenient to test rather than where it was at risk.
+  const fromWelcome = await api(async () => {
+    const w = (ms) => new Promise((r) => setTimeout(r, ms));
+    const before = window.__scriareProjectStore.getState().project;
+    window.__scriareProjectStore.setState({ project: null, filePath: null });
+    // EMPTIED AFTER THE MOUNT, NOT BEFORE IT. WelcomeScreen calls
+    // loadRecent() in an effect, which reads the shelf back off disk — so
+    // a list cleared before it mounts is repopulated by the time anything
+    // is on screen, and the empty branch never renders.
+    await w(320);
+    window.__scriareProjectStore.setState({ recentProjects: [] });
+    await w(220);
+
+    const link = document.querySelector("[data-empty-shelf-help]");
+    if (link) link.click();
+    await w(260);
+    const opened = Boolean(document.querySelector("[data-help-block]"));
+
+    window.__scriareUIStore.getState().closeHelp();
+    window.__scriareProjectStore.setState({ project: before });
+    await w(200);
+    return { hadLink: Boolean(link), opened };
+  });
+
+  check("the empty shelf offers a newcomer a way in", fromWelcome.hadLink === true);
+  check(
+    "...and it opens the panel, on a screen with no story behind it",
+    fromWelcome.opened === true,
+    String(fromWelcome.opened),
+  );
+
   /* ── an FAQ that answers what the app DOES ─────────────────────── */
 
   // Not a test of the prose — that is his to judge — but of the one

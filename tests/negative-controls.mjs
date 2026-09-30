@@ -3069,6 +3069,19 @@ const CONTROLS = [
     spec: "first-run",
     expect: "points at things that exist",
   },
+  {
+    // The panel out of the no-project branch again — the state v0.81.0
+    // actually shipped in, where the Welcome screen's link set the flag
+    // and rendered nothing. Eight controls were green over it, because
+    // every one of them drove the door that exists only once a story is
+    // open.
+    name: "a help link on the Welcome screen that opens nothing",
+    file: src("App.tsx"),
+    from: "        {helpOpen && <HelpDialog onClose={closeHelp} />}\n        <ConfirmDialogHost />",
+    to: "        <ConfirmDialogHost />",
+    spec: "first-run",
+    expect: "opens the panel, on a screen with no story behind it",
+  },
 ];
 
 
