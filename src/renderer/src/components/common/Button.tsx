@@ -24,7 +24,7 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
  * v0.46.0 had to go and find in Check Story.
  */
 export type ButtonIntent = "primary" | "secondary" | "ghost" | "accentGhost" | "danger";
-export type ButtonSize = "sm" | "md";
+export type ButtonSize = "xs" | "sm" | "md";
 
 const INTENT: Record<ButtonIntent, string> = {
   /** The one next step. At most one per dialog. */
@@ -56,6 +56,15 @@ const SIZE: Record<ButtonSize, string> = {
   sm: "rounded px-2.5 py-1 text-xs",
   /** The default, and what a dialog's footer uses. */
   md: "rounded-md px-3 py-1.5 text-sm",
+  /**
+   * Denser than `sm`, for a panel where controls sit between fields
+   * rather than in a footer (v0.84.0). Added because the Inspector had
+   * SEVEN hand-written copies of the accent button at this size — the
+   * same rule that gave this component its ref: a variant with callers
+   * is a question answered, a variant without one is a decision made in
+   * advance.
+   */
+  xs: "rounded px-1.5 py-0.5 text-xs",
   // There is no `lg`. The mockup drew one for the Welcome hero's
   // Continue, and then that turned out to be a <span> inside a larger
   // button — nesting a button in a button is invalid — so the size had
@@ -76,6 +85,25 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
  * needed a ref — and until something did, not having one was the right
  * amount of Button. The same rule the missing `lg` size is kept by: a
  * variant with no caller is a decision made ahead of the question.
+ *
+ * `className` CANNOT RECOLOUR THIS BUTTON, and the discovery is worth
+ * writing down because the failure is silent. The class string below puts
+ * the caller's `className` last, which reads like "the caller wins" and is
+ * not how CSS decides: both the intent's `text-[var(--accent)]` and a
+ * caller's `text-[var(--text)]` are single-class selectors of equal
+ * specificity, so the one the stylesheet emits LATER wins regardless of
+ * the order they appear in the attribute. Measured in the shipped sheet,
+ * `--text` is 370 bytes after `--accent`. So a caller that passes a colour
+ * gets the intent's colour and no error — which is why intents exist, and
+ * why a new one belongs in `INTENT` rather than at a call site. Layout
+ * utilities (`shrink-0`, `whitespace-nowrap`) are what `className` is for,
+ * and no caller currently passes anything else.
+ *
+ * Found by a negative control that tried to sabotage a call site by
+ * deleting its props and leaving a colour in `className`: the button came
+ * out in `--text`, dropped out of the set the check measures by colour,
+ * and the check passed. The control was wrong — it has to replace the
+ * whole element — but what it exposed is real.
  */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { intent = "secondary", size = "md", className = "", type = "button", ...rest },

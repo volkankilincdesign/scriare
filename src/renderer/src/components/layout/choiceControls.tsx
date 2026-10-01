@@ -1,3 +1,4 @@
+import { Button } from "../common/Button";
 import { useProjectStore } from "../../state/projectStore";
 import { useUIStore } from "../../state/uiStore";
 import { PLAYER_SPEAKER, canSpeak, playerLabel } from "../../types/speaker";
@@ -10,6 +11,7 @@ import {
 } from "../../types/choiceStyles";
 import type { ChoiceBox, ChoiceStyleRef } from "../../types/choiceStyles";
 import { BoxControls } from "../choices/ChoiceStylesDialog";
+import { INPUT_CLASS_PANEL } from "../common/Field";
 
 /**
  * The two controls a Choice and a Dialogue line share (v0.67.2).
@@ -46,7 +48,7 @@ export function SpeakerSelect({
         data-choice-speaker
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value || null)}
-        className="w-full rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+        className={`w-full py-1.5 ${INPUT_CLASS_PANEL}`}
       >
         <option value="">— Nobody —</option>
         <option value={PLAYER_SPEAKER}>{playerName} (the player)</option>
@@ -108,7 +110,7 @@ export function AppearanceControl({
         <select
           value={styleId}
           onChange={(e) => setStyle(e.target.value)}
-          className="min-w-0 flex-1 rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+          className={`min-w-0 flex-1 py-1.5 ${INPUT_CLASS_PANEL}`}
         >
           {styles.map((style) => (
             <option key={style.id} value={style.id}>
@@ -116,17 +118,18 @@ export function AppearanceControl({
             </option>
           ))}
         </select>
-        <button
-          type="button"
+        <Button
           // No origin: this route came from the Inspector, not from
           // Settings, so the dialog must not offer a way "back" to a
           // Settings dialog the writer was never in (v0.55.0).
           onClick={() => openChoiceStyles()}
           title="Edit the project's Choice Styles"
-          className="shrink-0 rounded px-1.5 py-1 text-xs text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+          intent="accentGhost"
+          size="xs"
+          className="shrink-0"
         >
           Edit…
-        </button>
+        </Button>
       </div>
 
       {/* What this choice will actually look like, resolved — including any

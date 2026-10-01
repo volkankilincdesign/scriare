@@ -1,3 +1,4 @@
+import { Button } from "../common/Button";
 import { NodeViewContent, NodeViewWrapper } from "@tiptap/react";
 import { blockTagline } from "../../narrativeBlocks/registry";
 import type { NodeViewProps } from "@tiptap/react";
@@ -126,15 +127,15 @@ export function ChoiceBlockView({ node, deleteNode, selected, editor }: NodeView
           Type the choices here · destinations and conditions in the Inspector →
         </span>
         <div className="flex shrink-0 items-center gap-1">
-          <button
-            type="button"
+          <Button
             onMouseDown={(e) => e.preventDefault()}
             onClick={addChoice}
             title="Add another choice to this block"
-            className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+            intent="accentGhost"
+            size="xs"
           >
             + Add Choice
-          </button>
+          </Button>
           <button
             type="button"
             onMouseDown={(e) => e.preventDefault()}

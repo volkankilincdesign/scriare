@@ -6,6 +6,7 @@ import { findInStory } from "../../utils/findInStory";
 import { isReplaceable, skipped } from "../../utils/replaceInStory";
 import type { FindHit } from "../../utils/findInStory";
 import { Icon } from "../common/Icon";
+import { INPUT_CLASS_PANEL } from "../common/Field";
 
 interface FindResultsProps {
   query: string;
@@ -122,7 +123,11 @@ export function FindResults({ query }: FindResultsProps) {
             onChange={(e) => setReplacement(e.target.value)}
             placeholder="Replace with…"
             data-replace-with
-            className="min-w-0 flex-1 rounded-md border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+            /* The kit's panel field. It was that shape written out by hand
+               with a 6px radius where the app's panel fields use 4px, and
+               no placeholder colour — so "Replace with…" read in Tailwind
+               preflight's grey (v0.84.0). */
+            className={`min-w-0 flex-1 ${INPUT_CLASS_PANEL}`}
           />
           <button
             type="button"

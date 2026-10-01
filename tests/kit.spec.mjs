@@ -28,6 +28,13 @@ export default async function run({ page, api, check, seedProject, app }) {
       ui.closeVariableManager();
       ui.closeStoryCheck();
       ui.closeExport();
+      // THE ONE THIS HELPER DID NOT CLOSE (v0.84.0). Named `closeAll` and
+      // closing five of six, which was true and harmless until the
+      // placeholder sweep opened the sixth — and then a Stylesheet dialog
+      // rode four specs down the run and failed eight checks inside
+      // settings-navigation, which passed when run alone. A helper whose
+      // name is a promise has to keep it.
+      ui.closeStylesheet();
       window.__scriareConfirm?.getState?.().resolve?.(false);
     });
 
@@ -241,7 +248,7 @@ export default async function run({ page, api, check, seedProject, app }) {
   await seedProject();
   await wait(150);
   check(
-    "the workspace is handed back to the next spec",
+    "the window is handed back the size it was found",
     await api(() => Boolean(window.__scriareProjectStore.getState().project)),
   );
 
@@ -300,5 +307,261 @@ export default async function run({ page, api, check, seedProject, app }) {
     "the Content Browser's search field is not painted the same as the panel behind it",
     contrast.panel !== null && contrast.field !== null && contrast.panel !== contrast.field,
     `panel ${contrast.panel} · field ${contrast.field}`,
+  );
+
+  /* ── the Inspector's fields (v0.84.0) ──────────────────────────── */
+
+  // COUNTED: eleven fields in one panel, ten of them on the ground token
+  // and ONE painted the colour of the panel behind it — a destination
+  // picker with `bg-[var(--surface)]` on a `--surface` panel, which is a
+  // field with no fill. The check is the same one the Content Browser
+  // earned in v0.84.0, asked of every field rather than of the search box,
+  // because the defect turned out not to be unique to one panel.
+  // ON A CHOICE, not on a scene. With a scene selected the Inspector shows
+  // ONE field and the first version of this check measured it and passed
+  // — the easy half again. The field stack that had the defect (a
+  // destination picker, conditions, actions) only exists when a choice is
+  // selected, so the fixture puts it there.
+  await api(async () => {
+    const w = (ms) => new Promise((r) => setTimeout(r, ms));
+    const store = window.__scriareProjectStore;
+    const scene = store.getState().project.scenes[0];
+    store.getState().selectScene(scene.id);
+    await w(300);
+    const editor = window.__scriareEditorStore.getState().editor;
+    editor.chain().focus().insertChoiceBlock().run();
+    await w(320);
+    const block = document.querySelector("[data-choice-block]");
+    window.__scriareInspectorStore.getState().selectTarget({
+      kind: "choice",
+      sceneId: scene.id,
+      blockId: block ? block.getAttribute("data-choice-block") : "blk",
+      optionId: null,
+    });
+  });
+  await wait(360);
+
+  // EXPAND ONE, or the panel renders no field at all: every choice is a
+  // folded accordion and the field stack lives inside it.
+  await api(() => {
+    const first = document.querySelector("[data-choice-accordion]");
+    if (first) first.click();
+  });
+  await wait(300);
+
+  const panelFields = await api(() => {
+    const panel = document.querySelector(".scriare-panel-r");
+    if (!panel) return { found: 0 };
+    const ground = getComputedStyle(panel).backgroundColor;
+    const fields = [...panel.querySelectorAll("input, select, textarea")];
+    const painted = fields.map((f) => getComputedStyle(f).backgroundColor);
+    return {
+      found: fields.length,
+      ground,
+      target: JSON.stringify(window.__scriareInspectorStore.getState().target ?? null),
+      heading: panel.textContent.replace(/\s+/g, " ").slice(0, 90),
+      // Colour inputs are excluded: their fill IS the value the writer
+      // picked, so "the same colour as the panel" is a thing a writer can
+      // legitimately choose.
+      sameAsPanel: fields.filter(
+        (f, i) => f.type !== "color" && painted[i] === ground,
+      ).length,
+      // NAMED, not counted. "2 of 7" sends the reader hunting; the tag, the
+      // type and the class list say which two, and the failure message is
+      // where a person actually reads it.
+      offenders: fields
+        .filter((f, i) => f.type !== "color" && painted[i] === ground)
+        .map(
+          (f) =>
+            `${f.tagName.toLowerCase()}${f.type ? `[${f.type}]` : ""}:${
+              f.getAttribute("placeholder") || f.getAttribute("aria-label") || "—"
+            }:${f.className.slice(0, 70)}`,
+        ),
+      distinct: [...new Set(painted)].length,
+    };
+  });
+
+  // A NUMBER, not "more than nothing". The panel showed one field when
+  // the fixture was wrong, and "> 0" called that a pass.
+  check(
+    "the Inspector's field stack is on screen to measure",
+    panelFields.found >= 4,
+    `${panelFields.found} fields`,
+  );
+  check(
+    "no field in the Inspector is painted the colour of the panel behind it",
+    panelFields.sameAsPanel === 0,
+    `${panelFields.sameAsPanel} of ${panelFields.found} · panel ${panelFields.ground}${
+      panelFields.sameAsPanel ? ` · ${panelFields.offenders.join(" | ")}` : ""
+    }`,
+  );
+
+  /* ── the Inspector's small accent buttons (v0.84.0) ────────────── */
+
+  // COUNTED: fourteen hand-written copies of one button — "+ Add
+  // Condition", "+ Add Change", "Open Variable Manager", "Edit…", "+ Line",
+  // "+ Add Choice" — across five files, thirteen of them character for
+  // character identical and the fourteenth differing only in the opacity it
+  // gave a disabled button (40 where its two siblings wrote 50). A
+  // difference nobody chose, in a button nobody noticed, which is the
+  // definition of drift.
+  //
+  // MEASURED AS A SHAPE, NOT AS AN IMPORT. `<Button intent="accentGhost">`
+  // could be imported and then overridden by a className on the call site
+  // — v0.56.0's lesson — so this reads padding, size and radius back off
+  // every accent-coloured button the Inspector has mounted and requires
+  // them to agree. It does not name a count of buttons it expects to find,
+  // because the panel's contents depend on what is selected; it requires
+  // more than one, since one button always agrees with itself.
+  const accents = await api(() => {
+    const panel = document.querySelector(".scriare-panel-r");
+    if (!panel) return { found: 0 };
+    const accent = getComputedStyle(document.documentElement)
+      .getPropertyValue("--accent")
+      .trim();
+    // Resolve the token to the same colour space the computed style reports,
+    // rather than string-matching a var() name that never appears there.
+    const probe = document.createElement("div");
+    probe.style.color = `var(--accent)`;
+    panel.appendChild(probe);
+    const want = getComputedStyle(probe).color;
+    probe.remove();
+
+    const buttons = [...panel.querySelectorAll("button")].filter(
+      (b) => getComputedStyle(b).color === want,
+    );
+    const shape = (b) => {
+      const s = getComputedStyle(b);
+      return `${s.paddingLeft}/${s.paddingTop}/${s.fontSize}/${s.borderRadius}/${s.fontWeight}`;
+    };
+    return {
+      found: buttons.length,
+      accent,
+      shapes: [...new Set(buttons.map(shape))],
+      labels: buttons.map((b) => (b.textContent || "").trim().slice(0, 18)),
+    };
+  });
+
+  check(
+    "the Inspector has more than one accent button to compare",
+    accents.found >= 2,
+    `${accents.found} · ${(accents.labels ?? []).join(", ")}`,
+  );
+  check(
+    "every accent button in the Inspector is one shape",
+    accents.shapes?.length === 1,
+    `${accents.shapes?.length} shape(s): ${(accents.shapes ?? []).join(" vs ")}`,
+  );
+
+  /* ── every placeholder in the app, at once (v0.84.0) ───────────── */
+
+  // WHY A SWEEP AND NOT ANOTHER SINGLE FIELD. v0.81.2 measured one box
+  // whose placeholder read as real content, fixed it, and left a comment
+  // calling `--text-3` the colour every other placeholder uses. It was not:
+  // eleven of twenty-one fields were on the browser's own default. A check
+  // written for one field would have kept passing while ten others were
+  // wrong, so this one asks the property of every placeholder that happens
+  // to be mounted — and says how many it looked at, so a screen this
+  // fixture never opens is visibly not covered rather than silently passing.
+  const sweepHints = () =>
+    api(() => {
+      // Live-resolved, not a hex: asserting a literal would pass the day the
+      // token moves and the placeholders do not follow it.
+      const probe = document.createElement("div");
+      probe.style.color = "var(--text-3)";
+      document.body.appendChild(probe);
+      const muted = getComputedStyle(probe).color;
+      probe.remove();
+
+      const fields = [...document.querySelectorAll("[placeholder]")];
+      return {
+        muted,
+        seen: fields.map((f) => (f.getAttribute("placeholder") || "").slice(0, 28)),
+        wrong: fields
+          .filter((f) => getComputedStyle(f, "::placeholder").color !== muted)
+          .map(
+            (f) =>
+              `${f.tagName.toLowerCase()}("${(f.getAttribute("placeholder") || "").slice(0, 24)}")=${
+                getComputedStyle(f, "::placeholder").color
+              }`,
+          ),
+      };
+    });
+
+  // THREE FIELDS IS NOT A SWEEP. The Inspector alone has three placeholders
+  // mounted and the first version of this check measured those and called
+  // it app-wide. The dialogs hold most of the rest — the Variable Manager
+  // has four, the stylesheet one, New Project one — so the sweep runs on
+  // each screen and the counts add up, and the failure message names every
+  // hint it read so a screen this fixture never opens is visibly absent
+  // rather than silently passing.
+  const hints = await sweepHints();
+  const hintsSeen = new Set(hints.seen);
+  const wrong = [...hints.wrong];
+
+  // A VARIABLE FIRST, or the Variable Manager draws an empty shelf and its
+  // four fields — name, printed-as, initial value, the value cell — are
+  // never mounted. The first run of this sweep opened that dialog, measured
+  // nothing inside it, and reported five hints as though that were the app.
+  await api(() => {
+    window.__scriareProjectStore.getState().createVariable?.("Trust", "number");
+  });
+  await wait(220);
+
+  for (const open of ["openVariableManager", "openStylesheet", "openSettings"]) {
+    await api(async (name) => {
+      const w = (ms) => new Promise((r) => setTimeout(r, ms));
+      window.__scriareUIStore.getState()[name]?.();
+      await w(260);
+    }, open);
+    // AND OPEN WHAT FOLDS. The Variable Manager's five fields live inside a
+    // collapsed row, so a sweep that only opens the dialog measures its
+    // shelf. Same lesson as the Inspector's accordion, one screen over.
+    await api(async () => {
+      const w = (ms) => new Promise((r) => setTimeout(r, ms));
+      const row = document.querySelector("[data-variable-id] button");
+      if (row) row.click();
+      await w(240);
+    });
+    const round = await sweepHints();
+    round.seen.forEach((s) => hintsSeen.add(s));
+    wrong.push(...round.wrong);
+    await closeAll();
+    await wait(200);
+  }
+
+  check(
+    "the placeholder sweep covered most of the app's fields",
+    hintsSeen.size >= 8,
+    `${hintsSeen.size} distinct hints: ${[...hintsSeen].join(" · ")}`,
+  );
+  check(
+    "every placeholder measured is the app's own hint colour, not the browser's",
+    wrong.length === 0,
+    `${hintsSeen.size - wrong.length} clean of ${hintsSeen.size} on ${hints.muted}${
+      wrong.length ? ` · ${[...new Set(wrong)].join(" | ")}` : ""
+    }`,
+  );
+
+  /* ── hand the app back, at the END ──────────────────────────────── */
+
+  // THE HANDBACK HAS TO BE LAST, and this spec learned that the hard way:
+  // v0.84.0 appended three blocks of checks AFTER the reseed that used to
+  // close this file, so the next spec inherited a choice block inserted
+  // into scene one, a variable called Trust and whatever dialog the last
+  // loop had open. It failed four specs later, in a toast queue, which is
+  // exactly as hard to trace as it sounds. A spec that leaves state behind
+  // is a spec that breaks a different file.
+  await closeAll();
+  await api(() => window.__scriareToastStore?.setState?.({ toasts: [] }));
+  await seedProject();
+  await wait(200);
+  check(
+    "the workspace is handed back to the next spec",
+    await api(() => {
+      const project = window.__scriareProjectStore.getState().project;
+      return Boolean(project) && project.variables.length === 0;
+    }),
+    "a project, with none of this spec's leavings in it",
   );
 }

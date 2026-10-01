@@ -568,6 +568,46 @@ than gaps.
   three states. The door went to the top bar and to a line under the empty
   shelf.
 
+- **v0.81.1 – v0.81.3 — three things a thousand tests could not see.** A
+  dead link on the one screen built for newcomers (the help dialog was
+  mounted only inside the project branch, so the Welcome screen's own
+  door opened nothing); a stylesheet placeholder that read as real
+  content and a HUD printing the literal word "undefined"; then the
+  first COMPLETE negative-control sweep since v0.78.2 — 309 controls, all
+  caught, nothing found. Finding nothing was the result; every previous
+  look had found something. Two of the three defects were found by
+  looking at a screenshot, which is the standing argument for a looking
+  pass beside the suite.
+
+### The app-wide UI sweep — one walk, two verdicts
+
+His instruction, 30 Sep: merge the UI sweep and the visual sweep into one
+pass. **One walk, two verdicts** — each surface is brought onto the kit
+and photographed in the same visit, so the structural fix and the
+aesthetic note come out of one look rather than two.
+
+- **v0.82.0 One floating panel, and five shadows that were never there.**
+  Four menus, three spellings of the same panel. The finding underneath
+  was a Tailwind trap: `shadow-[var(--token)]` compiles to
+  `--tw-shadow-color`, which is a COLOUR, so five surfaces across the app
+  had been painting no shadow at all. `shadow-[shadow:var(--token)]` is
+  the spelling that works, and a control proves the unhinted one still
+  paints nothing. Also reverted: `.scriare-section-label` on `GroupNode`'s
+  rename input, which breaks drag-to-select — kept as an inverse control.
+- **v0.83.0 A door is not a field.** His complaint, and the cause was
+  shape rather than spacing: a door out of Project Settings and a text
+  field were the same object. The three doors are a list at the foot now,
+  and the dialog came out shorter than the version it replaced.
+- **v0.84.0 The Inspector, counted.** The largest surface in the app.
+  Eleven field spellings, one of them painted the colour of the panel
+  behind it — a field with no fill, in every theme, since the panel was
+  built; three more of the same in the Dialogue's half, found by the
+  siblings rule. Fourteen hand-written copies of one small accent button
+  across five files. And the count nobody asked for: of twenty-one fields
+  with a placeholder, eleven were in Tailwind preflight's `gray-400`
+  rather than the app's hint colour — a fixed value that does not move
+  when the theme does. The kit owns the placeholder colour now.
+
 **The spreadsheet export's schema is settled** — see
 `docs/spreadsheet-export.md`, decided 28 Sep: three identifiers (an opaque
 Key, an opaque Scene ID, and a readable Ref like `15.D2` recomputed at
@@ -597,11 +637,24 @@ something rather than an empty Welcome screen. He is writing it here,
 migrating from Twine, which is a better case-study line than a Twine
 importer would be.
 
+**Opening the example gives a stranger a REAL PROJECT, not a read-only
+view** — his call, 30 Sep, and it settles the one open question that item
+had. They can write in it, rename it, break it, keep it. So the Welcome
+screen's card copies the `.scriare` into their own documents and opens
+that copy; the shipped file is never the one they edit, and opening the
+example twice gives them two projects rather than one they have already
+changed.
+
+The reasoning is the same one behind everything else on that screen: a
+story you cannot touch teaches you that this is a demo, and the thing the
+example exists to prove is that writing here is easy. The whole feature is
+now unblocked except for the file itself.
+
 **Images in scenes: stepped back from,** his call, and recorded rather
 than deleted. If they ever land they will not appear in the Story Graph —
 it is already tight and the map would have loading problems.
 
-961 tests, 273 negative controls (as of v0.78.1).
+1063 tests, 324 negative controls (as of v0.84.0).
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and
@@ -956,13 +1009,29 @@ Nothing here blocks the launch, and nothing here gets started before it.
   v0.58.0 adds the reading on both grounds beside it. Nothing left here.
 - **A UI pass on the oldest surfaces** — ~~Welcome screen~~ (v0.53.0–
   v0.54.0), ~~the dialog kit, Project Settings, New Project, Move To,
-  the confirm dialog and the Variable Manager~~ (v0.56.0). WHAT IS LEFT:
-  the Inspector's field stack (1442 lines, 19 distinct rounded-class
-  strings — the largest single surface in the app and the one where the
-  kit will pay most), the Content Browser's 10, the content context menu
-  (v0.18.0, the oldest version note in the codebase), the slash-command
-  menu and `GroupNode` (v0.28.0). None of them has a defect underneath
-  it, so none of them is in front of the installer.
+  the confirm dialog and the Variable Manager~~ (v0.56.0), ~~the four
+  floating menus~~ (v0.82.0), ~~Project Settings' doors~~ (v0.83.0),
+  ~~the Content Browser's buttons~~ and ~~the Inspector's field stack,
+  its accent buttons and the app's placeholder colour~~ (v0.84.0).
+  WHAT IS LEFT: the content context menu (v0.18.0, the oldest version
+  note in the codebase), the slash-command menu, `GroupNode` (v0.28.0),
+  and the editor's three block views — which share a button with the
+  Inspector and so were half-swept by v0.84.0 already.
+
+  **The line this sweep keeps proving:** "bring it onto the kit" is not
+  the same instruction as "apply the kit's class". Three surfaces so far
+  were RIGHT to differ — `GroupNode`'s rename input (the shared label
+  class breaks drag-to-select), the Content Browser's search field, and
+  an entity page's empty alias pill — and finding where the kit is the
+  wrong answer is part of the job. The sentence to beware of is one the
+  previous version left behind: v0.81.2 called `--text-3` "the colour
+  every other placeholder in the app uses" and it was untrue of eleven
+  of the twenty-one.
+
+  **And the sweep keeps paying beyond its scope.** v0.82.0 found five
+  shadows that painted nothing; v0.81.1 a dead link on the Welcome
+  screen; v0.84.0 four fields with no fill across two panels and eleven
+  placeholders in Tailwind's grey rather than the app's.
 - ~~**The wordmark in the top bar**~~ — **done in v0.68.0.** Drawn inline
   and filled with `currentColor` so it takes the theme's accent, the
   letterform cut through as a hole, aligned to the cap band of the word

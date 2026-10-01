@@ -212,7 +212,7 @@ export function ExportDialog() {
               ))}
               <span className="text-[var(--text-3)]">· Back · Restart · keeps their place</span>
             </div>
-            {/* v0.83.1 — THE STYLESHEET, SAID OUT LOUD. He wrote CSS, opened
+            {/* v0.84.0 — THE STYLESHEET, SAID OUT LOUD. He wrote CSS, opened
                 this dialog looking for the switch that turns it on, and
                 found nothing — because there is no switch: a stylesheet is
                 part of the story, like the Choice Styles and the prose, and

@@ -1,3 +1,4 @@
+import { Button } from "../common/Button";
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useProjectStore } from "../../state/projectStore";
@@ -17,6 +18,7 @@ import { mentionResolver } from "../../utils/mentions";
 import { buildVariableAction, buildVariableCondition } from "../../types/variables";
 import { useReorderableList } from "./useReorderableList";
 import { AppearanceControl, CREATE_SCENE_VALUE, SpeakerSelect } from "./choiceControls";
+import { INPUT_CLASS_PANEL } from "../common/Field";
 import type { VariableAction, VariableCondition } from "../../types/variables";
 
 /**
@@ -164,13 +166,13 @@ export function DialogueProperties({
         <h3 className="scriare-section-label text-[var(--text-3)]">
           Dialogue
         </h3>
-        <button
-          type="button"
+        <Button
           onClick={() => editor && appendDialogueLine(editor, blockId)}
-          className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+          intent="accentGhost"
+          size="xs"
         >
           + Add Line
-        </button>
+        </Button>
       </div>
 
       {/* The one warning that belongs on the block rather than on a line:
@@ -330,8 +332,16 @@ function LineRow({
     if (action) onPatch({ actions: [...line.actions, action] });
   }
 
-  const select =
-    "w-full rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]";
+  // v0.84.0 — ONTO THE KIT, AND A COLOUR CORRECTION IN THE SAME MOVE.
+  //
+  // This constant said `bg-[var(--surface)]`, which is the colour of the
+  // Inspector this panel is drawn inside: two selects and a textarea with
+  // no fill of their own, reading as text sitting on the panel rather than
+  // as fields you can type in. Two other fields further down this same
+  // file were already hand-spelled on `--bg` and looked right, which is
+  // how it survived — the panel held both answers and the correct one was
+  // sitting next to the wrong one.
+  const select = `w-full py-1.5 ${INPUT_CLASS_PANEL}`;
 
   /**
    * v0.67.1 — THE CHOICE ROW, wearing a conversation's facts.
@@ -483,7 +493,7 @@ function LineRow({
                       placeholder="…and the reply"
                       onChange={(e) => onPatch({ reply: e.target.value })}
                       data-reply-field={line.id}
-                      className="w-full resize-y rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs leading-snug text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                      className={`w-full resize-y py-1.5 leading-snug ${INPUT_CLASS_PANEL}`}
                     />
                   ),
                 })}
@@ -597,7 +607,7 @@ function LineRow({
                     <select
                       value={line.whenUnmet}
                       onChange={(e) => onPatch({ whenUnmet: e.target.value })}
-                      className="min-w-0 flex-1 rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                      className={`min-w-0 flex-1 ${INPUT_CLASS_PANEL}`}
                     >
                       <option value="hide">Hide the line</option>
                       <option value="lock">Show it locked</option>
@@ -613,17 +623,17 @@ function LineRow({
                       onChange={(e) => onPatch({ lockReason: e.target.value })}
                       placeholder="Why, in your words — optional"
                       data-lock-reason
-                      className="w-full rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none placeholder:text-[var(--text-3)] focus:border-[var(--accent)]"
+                      className={`w-full ${INPUT_CLASS_PANEL}`}
                     />
                   )}
-                  <button
-                    type="button"
+                  <Button
                     onClick={addCondition}
                     disabled={variables.length === 0}
-                    className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)] disabled:opacity-50"
+                    intent="accentGhost"
+                    size="xs"
                   >
                     + Add Condition
-                  </button>
+                  </Button>
                 </div>
               )}
 
@@ -649,14 +659,14 @@ function LineRow({
                       () => onPatch({ actions: line.actions.filter((a) => a.id !== action.id) }),
                     ),
                   )}
-                  <button
-                    type="button"
+                  <Button
                     onClick={addAction}
                     disabled={variables.length === 0}
-                    className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)] disabled:opacity-50"
+                    intent="accentGhost"
+                    size="xs"
                   >
                     + Add Action
-                  </button>
+                  </Button>
                 </div>
               )}
 

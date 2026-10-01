@@ -1,3 +1,4 @@
+import { Button } from "../common/Button";
 import { NodeViewContent, NodeViewWrapper } from "@tiptap/react";
 import { blockTagline } from "../../narrativeBlocks/registry";
 import type { NodeViewProps } from "@tiptap/react";
@@ -103,15 +104,15 @@ export function DialogueBlockView({ node, deleteNode, selected, editor }: NodeVi
           )}
         </span>
         <div className="flex shrink-0 items-center gap-1">
-          <button
-            type="button"
+          <Button
             onMouseDown={(e) => e.preventDefault()}
             onClick={addLine}
             title="Add another line to this conversation"
-            className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+            intent="accentGhost"
+            size="xs"
           >
             + Line
-          </button>
+          </Button>
           <button
             type="button"
             onMouseDown={(e) => e.preventDefault()}

@@ -7,13 +7,24 @@ import { useUIStore } from "../../state/uiStore";
 import { THEMES, useThemeStore } from "../../state/themeStore";
 import { STORY_LANGUAGES } from "../../types/languages";
 import { PLAYER_SPEAKER_LABEL } from "../../types/speaker";
+import { INPUT_CLASS } from "../common/Field";
 
 interface ProjectSettingsDialogProps {
   onClose: () => void;
 }
 
-const FIELD =
-  "w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]";
+/**
+ * v0.84.0 — THE KIT'S, not a copy of it.
+ *
+ * This constant was `INPUT_CLASS` written out again, one declaration short:
+ * it had the borders, the fill, the padding and the focus colour, and it
+ * was missing the placeholder colour, so "The player is called" showed its
+ * hint — the word the player is called if you leave it blank — in Tailwind
+ * preflight's grey rather than the app's, in all eight themes. A field
+ * shape copied by hand drifts by whatever the copy left out, and what it
+ * left out is invisible until the one field that needs it appears.
+ */
+const FIELD = INPUT_CLASS;
 
 /**
  * The story's own facts (v0.75.0).

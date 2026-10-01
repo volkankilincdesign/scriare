@@ -1,4 +1,6 @@
+import { Button } from "../common/Button";
 import { useEffect, useRef, useState } from "react";
+import { INPUT_CLASS_PANEL } from "../common/Field";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useProjectStore } from "../../state/projectStore";
 import { DialogueProperties } from "./DialoguePanel";
@@ -371,13 +373,13 @@ function ConditionalProperties({
       {variables.length === 0 ? (
         <div className="space-y-2 rounded-md border border-dashed border-[var(--border-soft)] px-2 py-2 text-xs text-[var(--text-3)]">
           <p>Create a project Variable first to give this passage something to test.</p>
-          <button
-            type="button"
+          <Button
             onClick={openVariableManager}
-            className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+            intent="accentGhost"
+            size="xs"
           >
             Open Variable Manager
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="space-y-2">
@@ -392,16 +394,16 @@ function ConditionalProperties({
               onRemove={() => commit(conditions.filter((c) => c.id !== condition.id))}
             />
           ))}
-          <button
-            type="button"
+          <Button
             onClick={() => {
               const condition = buildVariableCondition(variables);
               if (condition) commit([...conditions, condition]);
             }}
-            className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+            intent="accentGhost"
+            size="xs"
           >
             + Add Condition
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -561,13 +563,13 @@ function ChoiceProperties({ target }: { target: ChoiceTarget }) {
         <h3 className="scriare-section-label text-[var(--text-3)]">
           Choices
         </h3>
-        <button
-          type="button"
+        <Button
           onClick={addChoice}
-          className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+          intent="accentGhost"
+          size="xs"
         >
           + Add Choice
-        </button>
+        </Button>
       </div>
 
       <div className="space-y-2" ref={reorder.containerRef}>
@@ -825,13 +827,14 @@ export function QuietRule({
       className="flex items-center justify-between gap-2 border-t border-[var(--border-soft)] pt-2.5 text-xs text-[var(--text-3)]"
     >
       <span className="text-[var(--text-2)]">{says}</span>
-      <button
-        type="button"
+      <Button
         onClick={onAction}
-        className="shrink-0 whitespace-nowrap rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"
+        intent="accentGhost"
+        size="xs"
+        className="shrink-0 whitespace-nowrap"
       >
         {action}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -909,6 +912,15 @@ function ChoiceAccordion({
         <button
           type="button"
           onClick={onToggle}
+          // v0.84.0 — a handle, and it is not decoration. This accordion
+          // is what hides the Inspector's whole field stack: with every
+          // choice folded the panel renders no input at all, so a check
+          // that looks at "the Inspector's fields" with nothing expanded
+          // measures an empty panel and passes. That is exactly what the
+          // first version of the kit check did. The Choice block got the
+          // same treatment in v0.82.0, for the same reason.
+          data-choice-accordion={option.id}
+          aria-expanded={expanded}
           className="flex min-w-0 flex-1 items-center gap-1.5 py-2 pr-1 text-left"
         >
           <span aria-hidden className="shrink-0 text-[10px] text-[var(--text-3)]">
@@ -1018,7 +1030,7 @@ function ChoiceAccordion({
                   }
                   onPatch({ targetSceneId: value || null });
                 }}
-                className="w-full rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                className={`w-full ${INPUT_CLASS_PANEL}`}
               >
                 <option value="">— Not linked —</option>
                 {otherScenes.map((sc) => (
@@ -1060,7 +1072,7 @@ function ChoiceAccordion({
                 <select
                   value={option.whenUnmet}
                   onChange={(e) => onPatch({ whenUnmet: e.target.value as "hide" | "lock" })}
-                  className="min-w-0 flex-1 rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                  className={`min-w-0 flex-1 ${INPUT_CLASS_PANEL}`}
                 >
                   <option value="hide">Hide the choice</option>
                   <option value="lock">Show it locked</option>
@@ -1075,17 +1087,17 @@ function ChoiceAccordion({
                   onChange={(e) => onPatch({ lockReason: e.target.value })}
                   placeholder="Why, in your words — optional"
                   data-lock-reason
-                  className="w-full rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none placeholder:text-[var(--text-3)] focus:border-[var(--accent)]"
+                  className={`w-full ${INPUT_CLASS_PANEL}`}
                 />
               )}
-              <button
-                type="button"
+              <Button
                 onClick={addCondition}
                 disabled={variables.length === 0}
-                className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)] disabled:opacity-50"
+                intent="accentGhost"
+                size="xs"
               >
                 + Add Condition
-              </button>
+              </Button>
             </div>
           )}
 
@@ -1109,14 +1121,14 @@ function ChoiceAccordion({
                   onRemove={() => removeAction(action.id)}
                 />
               ))}
-              <button
-                type="button"
+              <Button
                 onClick={addAction}
                 disabled={variables.length === 0}
-                className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)] disabled:opacity-50"
+                intent="accentGhost"
+                size="xs"
               >
                 + Add Action
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -1207,7 +1219,7 @@ function ActionRow({ action, variables, onChange, onRemove }: ActionRowProps) {
         <select
           value={creatingVariable ? CREATE_VARIABLE_VALUE : variable.id}
           onChange={(e) => handleVariableSelectChange(e.target.value)}
-          className="min-w-0 flex-1 rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+          className={`min-w-0 flex-1 ${INPUT_CLASS_PANEL}`}
         >
           {variables.map((v) => (
             <option key={v.id} value={v.id}>
@@ -1237,12 +1249,12 @@ function ActionRow({ action, variables, onChange, onRemove }: ActionRowProps) {
               if (e.key === "Escape") cancelNewVariable();
             }}
             placeholder="Variable name"
-            className="w-full rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+            className={`w-full ${INPUT_CLASS_PANEL}`}
           />
           <select
             value={newVariableType}
             onChange={(e) => setNewVariableType(e.target.value as VariableType)}
-            className="w-full rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+            className={`w-full ${INPUT_CLASS_PANEL}`}
           >
             {(Object.keys(VARIABLE_TYPE_LABELS) as VariableType[]).map((t) => (
               <option key={t} value={t}>
@@ -1258,14 +1270,14 @@ function ActionRow({ action, variables, onChange, onRemove }: ActionRowProps) {
             >
               Cancel
             </button>
-            <button
-              type="button"
+            <Button
               onClick={commitNewVariable}
               disabled={!newVariableName.trim()}
-              className="rounded px-1.5 py-0.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft-2)] disabled:opacity-40"
+              intent="accentGhost"
+              size="xs"
             >
               Create
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
@@ -1273,7 +1285,7 @@ function ActionRow({ action, variables, onChange, onRemove }: ActionRowProps) {
           <select
             value={action.operation}
             onChange={(e) => onChange({ operation: e.target.value })}
-            className="shrink-0 rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+            className={`shrink-0 ${INPUT_CLASS_PANEL}`}
           >
             {operations.map((op) => (
               <option key={op.value} value={op.value}>
@@ -1378,7 +1390,7 @@ function ConditionRow({ condition, variables, onChange, onRemove }: ConditionRow
         <select
           value={condition.comparator}
           onChange={(e) => onChange({ comparator: e.target.value })}
-          className="shrink-0 rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+          className={`shrink-0 ${INPUT_CLASS_PANEL}`}
         >
           {comparators.map((c) => (
             <option key={c.value} value={c.value}>
@@ -1412,7 +1424,7 @@ function ValueInput({
         type="number"
         value={typeof value === "number" ? value : Number(value) || 0}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="min-w-0 flex-1 rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+        className={`min-w-0 flex-1 ${INPUT_CLASS_PANEL}`}
       />
     );
   }
@@ -1422,7 +1434,7 @@ function ValueInput({
       <select
         value={String(Boolean(value))}
         onChange={(e) => onChange(e.target.value === "true")}
-        className="min-w-0 flex-1 rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+        className={`min-w-0 flex-1 ${INPUT_CLASS_PANEL}`}
       >
         <option value="true">True</option>
         <option value="false">False</option>
@@ -1436,7 +1448,7 @@ function ValueInput({
       value={typeof value === "string" ? value : String(value ?? "")}
       onChange={(e) => onChange(e.target.value)}
       placeholder="Value"
-      className="min-w-0 flex-1 rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+      className={`min-w-0 flex-1 ${INPUT_CLASS_PANEL}`}
     />
   );
 }

@@ -3229,6 +3229,74 @@ const CONTROLS = [
     expect: "not painted the same as the panel behind it",
   },
 
+  // ── v0.84.0 · the Inspector's fields, buttons and hints ─────────────
+  {
+    // The defect this version found, put back where it was: the kit's
+    // panel field re-pointed at the panel's own colour, which paints every
+    // field on the Inspector and the Content Browser with no fill.
+    name: "the kit's panel field painted the colour of the panel it sits on",
+    file: src("components/common/Field.tsx"),
+    from: "  `rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs",
+    to: "  `rounded border border-[var(--border)] bg-[var(--surface)] px-1.5 py-1 text-xs",
+    spec: "kit",
+    expect: "painted the colour of the panel behind it",
+  },
+  {
+    // One field of the seven, rather than the shared class — because the
+    // check must catch a single call site drifting, not only the kit moving
+    // underneath all of them. This is the exact state the destination
+    // picker shipped in.
+    name: "one Inspector field back on its own spelling, in the panel's colour",
+    file: src("components/layout/choiceControls.tsx"),
+    from: "        className={`w-full py-1.5 ${INPUT_CLASS_PANEL}`}",
+    to: '        className="w-full rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text)]"',
+    spec: "kit",
+    expect: "painted the colour of the panel behind it",
+  },
+  {
+    // The accent button back to a hand-written copy — and not an obviously
+    // wrong one: this is the spelling thirteen call sites actually used,
+    // minus the font weight. A shape check that only notices a button drawn
+    // at twice the size is not measuring anything.
+    name: "an accent button re-typed beside its siblings, one declaration light",
+    file: src("components/layout/choiceControls.tsx"),
+    // THE WHOLE ELEMENT, not its props. The first version of this control
+    // deleted `intent` and `size` and left a colour in `className`, and the
+    // check PASSED — because `className` cannot recolour a kit Button (see
+    // Button.tsx), so the sabotaged button came out in `--text`, fell out
+    // of the set this check selects by colour, and left three buttons that
+    // still agreed with each other. The sabotage has to be what the defect
+    // actually looks like: a hand-written `<button>`, in the spelling
+    // thirteen call sites used, missing only the font weight.
+    from:
+      '        <Button\n          // No origin: this route came from the Inspector, not from\n' +
+      "          // Settings, so the dialog must not offer a way \"back\" to a\n" +
+      "          // Settings dialog the writer was never in (v0.55.0).\n" +
+      "          onClick={() => openChoiceStyles()}\n" +
+      '          title="Edit the project\'s Choice Styles"\n' +
+      '          intent="accentGhost"\n          size="xs"\n          className="shrink-0"\n' +
+      "        >\n          Edit…\n        </Button>",
+    to:
+      "        <button\n          type=\"button\"\n          onClick={() => openChoiceStyles()}\n" +
+      '          title="Edit the project\'s Choice Styles"\n' +
+      '          className="shrink-0 rounded px-1.5 py-0.5 text-xs text-[var(--accent)] hover:bg-[var(--accent-soft-2)]"\n' +
+      "        >\n          Edit…\n        </button>",
+    spec: "kit",
+    expect: "is one shape",
+  },
+  {
+    // The placeholder colour out of the kit, which is the state eleven
+    // fields were in. Deliberately removed from the SHARED constant rather
+    // than from one call site: the claim this version makes is that the
+    // field shape carries it, so the control has to break the shape.
+    name: "the kit's fields back to whatever grey the cascade gives a hint",
+    file: src("components/common/Field.tsx"),
+    from: 'const PLACEHOLDER = "placeholder:text-[var(--text-3)]";',
+    to: 'const PLACEHOLDER = "";',
+    spec: "kit",
+    expect: "the app's own hint colour",
+  },
+
   // THERE IS NO CONTROL FOR THE OPPOSITE — announcing a stylesheet that
   // does not exist — and the attempt is worth recording. Forcing the
   // guard true CRASHES the render rather than failing an assertion,
@@ -3266,10 +3334,19 @@ const only = process.env.ONLY;
 // (v0.80.0). SKIP/TAKE index into a list that moves whenever a control is
 // added above, which is how a repaired control gets "verified" by watching
 // a different one go red. A name does not move.
-const named = process.env.NAME?.toLowerCase();
+// A COMMA MEANS "ANY OF THESE" (v0.84.0). The common job is watching the
+// controls one version added, which is three or four names and never a
+// shared substring. It was `ONLY=<spec>` and a twenty-minute rebuild of
+// every control that spec owns, or four separate runs — so in practice it
+// got done once and not again.
+const named = process.env.NAME?.toLowerCase()
+  .split(",")
+  .map((part) => part.trim())
+  .filter(Boolean);
 const matching = CONTROLS.filter(
   (c) =>
-    (!only || c.spec.startsWith(only)) && (!named || c.name.toLowerCase().includes(named)),
+    (!only || c.spec.startsWith(only)) &&
+    (!named?.length || named.some((part) => c.name.toLowerCase().includes(part))),
 );
 
 // SKIP/TAKE cut the selection into runs that finish inside a shell's time

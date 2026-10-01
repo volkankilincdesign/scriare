@@ -199,7 +199,12 @@ export function EntityEditor() {
               }}
               onBlur={addAlias}
               placeholder="add a name…"
-              className="w-28 rounded-full border border-dashed border-[var(--border-soft)] bg-transparent px-2 py-0.5 text-xs text-[var(--text)] outline-none focus:border-[var(--accent)]"
+              /* NOT the kit's field, deliberately: this is an empty alias
+                 pill among the filled ones, and a dashed outline the shape
+                 of its siblings is the whole affordance. It takes the kit's
+                 placeholder colour and nothing else — the hint was in
+                 Tailwind preflight's grey (v0.84.0). */
+              className="w-28 rounded-full border border-dashed border-[var(--border-soft)] bg-transparent px-2 py-0.5 text-xs text-[var(--text)] outline-none placeholder:text-[var(--text-3)] focus:border-[var(--accent)]"
             />
           </div>
           )}

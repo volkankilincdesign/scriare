@@ -12,6 +12,137 @@ omitting them.
 
 ---
 
+## v0.84.0 — The Inspector, counted
+
+The UI sweep's first real panel. The method is v0.56.0's and has not
+changed: count the spellings of a thing before deciding which one is
+right, and change only what the count supports. It found more than the
+panel it was pointed at, for the fourth version running.
+
+**Seven fields, one of them with no fill.** The Inspector's field stack
+was eleven hand-written class strings, ten on the page's ground colour and
+one — a choice's destination picker — painted `--surface`, which is the
+colour of the panel behind it. A field with no fill is not a subtle
+defect; it had been there since the panel was built, in every theme,
+because nobody counts the fields on a panel they are reading. The kit had
+two field shapes and needed a third: `INPUT_CLASS` is a dialog's field and
+`INPUT_CLASS_SM` a field inside a row card, correctly `--surface` because
+those rows are `--bg`. Neither fits a control sitting straight on a panel
+that IS `--surface`, so both panels had invented their own, which is why
+one of them could be wrong without anything looking odd. Naming the third
+context is what stops the next person guessing which of the other two to
+copy.
+
+**And the same defect in the Dialogue's half, unmeasured.** The two
+controls a Choice and a Dialogue line share, and the Dialogue panel's own
+field constant, were all on `--surface` — three more fields with no fill,
+on the panel next door. The siblings rule found them: anything drawn for
+one of those two blocks is drawn for both. What makes it worth recording
+is that two fields further down that same file were already hand-spelled
+on the correct colour and looked right, which is how the wrong answer
+survived — the panel held both answers, side by side.
+
+**Fourteen copies of one small button.** "+ Add Condition", "+ Add
+Change", "Open Variable Manager", "Edit…", "+ Line", "+ Add Choice",
+across five files. Thirteen were character-for-character identical. The
+fourteenth gave a disabled button `opacity-40` where its two immediate
+siblings wrote `50` — a difference nobody chose, in a button nobody
+noticed, which is the definition of drift. They are `<Button
+intent="accentGhost" size="xs">` now, and the kit's 50 is what the odd one
+out gets.
+
+**Then the count that was not asked for.** Twenty-one fields in the app
+carry a placeholder; ten named a colour. v0.81.2 had fixed one stylesheet
+box whose hint read as real content and left a comment calling `--text-3`
+"the colour every other placeholder in the app uses" — and it was not
+true of eleven of them. Measured, they were on `rgb(156, 163, 175)`:
+Tailwind preflight's `gray-400`, which is the detail that makes it a
+defect rather than a quibble. It is a fixed value. It does not move when
+the theme does, so it is off-token in all eight themes and brighter than
+the prose beside it in the dark ones. The colour belongs to the kit's
+field shapes now, one declaration in three places instead of eleven
+spellings — because "a hint is not content" is not a local property, and
+the only way it stays true in a field added next year is for the field
+shape to carry it.
+
+**Two of the eleven were not on the kit at all**, and the difference
+between them is the sweep's whole judgement. Project Settings had
+`INPUT_CLASS` written out again, one declaration short — the borders, the
+fill, the padding and the focus colour, and no placeholder colour, so "The
+player is called" showed the word a blank field falls back to in Tailwind's
+grey. That one is simply the kit's now. The Find panel's replace field was
+the same story with a 6px radius where the app's panel fields use 4px. But
+the empty alias pill in an entity's page is deliberately NOT a kit field —
+a dashed outline the shape of its filled siblings is the entire affordance
+— so it took the placeholder colour and nothing else. "Bring it onto the
+kit" is not the same instruction as "apply the kit's class", and part of
+this sweep's job is finding where the kit is the wrong answer.
+
+**Two of the version's own checks were too easy, and one was a lie.** The
+field check first ran with a scene selected, measured the single field the
+Inspector shows there, and passed — the easy half. Pointed at a choice, it
+measured zero, because every choice is a folded accordion and the field
+stack lives inside it: a check that asserts "more than nothing" calls an
+empty panel a pass, so it asserts a number now. The placeholder sweep
+then reported five hints as app-wide coverage while the Variable Manager's
+five fields sat inside a collapsed row it never opened — the same lesson,
+one screen over, thirty lines later.
+
+**And the third finding was the spec's own tidying, twice.** All three new
+blocks were appended AFTER the reseed that used to close that file, so the
+next spec inherited a choice block inserted into scene one and a variable
+called Trust. Moving the handback to the end did not fix it, which was the
+more useful half: the helper that spec calls `closeAll` closes five
+dialogs of six, and the placeholder sweep is the first thing in the file
+ever to open the sixth. A Stylesheet dialog then rode four specs down the
+run and failed eight checks inside a spec that passes when run alone —
+the shape of every cross-spec leak, and exactly as hard to trace as it
+sounds. A helper whose name is a promise has to keep it.
+
+**A fourth finding, from a control that passed.** The one meant to catch a
+re-typed accent button deleted that call site's `intent` and `size` and
+left the accent colour in its `className` — and the suite stayed green. The
+reason is worth more than the control: **`className` cannot recolour a kit
+`Button`**. The caller's classes are appended last, which reads like the
+caller winning, and CSS does not decide that way — the intent's
+`text-[var(--accent)]` and a caller's `text-[var(--text)]` are both single
+classes of equal specificity, so whichever the stylesheet emits later wins.
+In the shipped sheet that is `--text`, by 370 bytes. So the sabotaged
+button came out in the body colour, dropped out of the set the check
+selects *by* colour, and left three buttons that still agreed with each
+other. The sabotage was wrong — it replaces the whole element now — but
+what it exposed is a silent trap for anyone who tries to recolour a Button
+from a call site, and it is written down in the component. No caller does;
+all three `className`s passed anywhere in the app are layout only.
+
+**`NAME=` takes a list now.** Watching the controls one version added is
+three or four names with no shared substring, so it was either
+`ONLY=<spec>` and a twenty-minute rebuild of every control that spec owns,
+or four separate runs — which in practice meant it got done once. A comma
+means any of these.
+
+**The export dialog says what it ships.** Carried from the custom-CSS work
+and unreleased until now: he wrote a stylesheet, opened Export looking for
+the switch that turns it on, and found nothing, because there is no
+switch — a stylesheet is part of the story, like the Choice Styles and the
+prose, and it always ships. "What the reader gets" is the one panel whose
+whole job is answering what it looks like, so it names the stylesheet.
+
+**`Button` forwards a ref**, which is the kit catching up rather than the
+kit growing: the Content Browser's "+ New ▾" anchors a menu to its own
+element. Until something needed one, not having one was the right amount
+of Button — the same rule that keeps a `lg` size out of it.
+
+**A control was deleted rather than fixed.** The one for announcing a
+stylesheet that does not exist crashes the render instead of failing an
+assertion, because the guard and the value it reads are the same
+expression: with no stylesheet there is nothing to split. That is the
+third time a property has turned out to be enforced by the code's shape
+rather than by a watchable failure, and the file records all three, since
+a control that cannot exist is worth knowing about.
+
+---
+
 ## v0.83.0 — A door is not a field
 
 His complaint was that Project Settings reads as one undifferentiated
