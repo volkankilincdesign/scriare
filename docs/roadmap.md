@@ -720,9 +720,40 @@ story you cannot touch teaches you that this is a demo, and the thing the
 example exists to prove is that writing here is easy. The whole feature is
 now unblocked except for the file itself.
 
-**Images in scenes: stepped back from,** his call, and recorded rather
-than deleted. If they ever land they will not appear in the Story Graph —
-it is already tight and the map would have loading problems.
+**Images in scenes: AFTER LAUNCH,** his call on 1 Oct, and the reason is
+evidence rather than effort. He wants to see what real use turns up before
+deciding what to add or discard. It is the last of the five v0.63.0 audit
+gaps still open; the other four are built.
+
+His earlier constraint stands: if they ever land they will not appear in the
+Story Graph — it is already tight and the map would have loading problems.
+
+**The file-format call is upstream of everything and is still unmade**,
+which is a second reason to wait, because it is exactly the kind of decision
+real use informs. Embedded in the `.scriare` means a story file that carries
+megabytes; referenced on disk means every export can break when a file
+moves. And an image lands differently in all four exports: the HTML export
+must inline it as base64, so a 2 MB photo becomes ~2.7 MB of text in a file
+whose whole promise is one request; PDF is fine; .docx is awkward, because
+Word has no `break-inside` and an image is an unsplittable block of unknown
+height against v0.64.0's page rules; and the spreadsheet exports the strings
+a reader sees, which an image has none of — so **alt text stops being
+optional** and becomes the only translatable thing about it. Play Mode needs
+it too, or a writer places images blind.
+
+### The standing position from here, stated 1 Oct
+
+**Features after launch are decided on evidence, not on the list.** His
+words: he wants to see the results of real testing before adding or
+discarding anything. Everything in the After-launch group is a guess about
+what a writer will want, and the launch is about to start answering that for
+free — so this file's remaining feature items are candidates waiting on
+evidence rather than a queue waiting on time.
+
+The one exception is the one it has always been: **a defect found by
+measurement gets fixed whatever the list says.** That is what v0.86.0 did —
+crash-recovery drafts were declined on the measurement and the hole the
+measurement found next door was fixed the same day.
 
 1108 tests, 336 negative controls (as of v0.86.0).
 
