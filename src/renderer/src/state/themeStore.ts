@@ -48,7 +48,21 @@ export function isLightGround(theme: ThemeId): boolean {
 }
 
 const STORAGE_KEY = "scriare.theme";
-const DEFAULT_THEME: ThemeId = "dark";
+/**
+ * What a stranger lands on (v0.88.0).
+ *
+ * DAYLIGHT, his call — the first time this has been decided on purpose
+ * rather than inherited. It was "dark" because dark was the only theme the
+ * app had when the line was written, and it stayed through seven more.
+ *
+ * The argument is the one the whole app rests on: the first thing a
+ * stranger should see is prose on a page, and of the three light themes
+ * photographed against the real story the warm one carries prose best. A
+ * writer who prefers a dark room is one click away in Settings and that
+ * choice is remembered; a stranger who never opens Settings gets the
+ * reading ground rather than the tool's.
+ */
+export const DEFAULT_THEME: ThemeId = "daylight";
 
 function isThemeId(value: string | null): value is ThemeId {
   return !!value && THEMES.some((t) => t.id === value);

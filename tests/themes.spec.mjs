@@ -523,6 +523,27 @@ export default async function ({ page, api, check, seedProject }) {
   check("nothing in the chrome paints a colour from outside the palette",
     offenders.length === 0, JSON.stringify(Object.fromEntries(offenders)));
 
+  /* ── what a stranger lands on (v0.88.0) ──────────────────────────── */
+
+  // HIS CALL, AND THE FIRST TIME IT HAS BEEN ONE. The default was "dark"
+  // because dark was the only theme the app had when that line was written,
+  // and it survived seven more. Asserted by id rather than by looking at a
+  // pixel: what is being checked is a decision, and a decision has a name.
+  const landing = await api(() => ({
+    fallback: window.__scriareThemes.DEFAULT_THEME ?? null,
+    known: window.__scriareThemes.THEMES.map((t) => t.id),
+  }));
+  check(
+    "a stranger with no stored preference lands on Daylight",
+    landing.fallback === "daylight",
+    `default: ${landing.fallback}`,
+  );
+  check(
+    "...and that is a theme the app actually has",
+    landing.known.includes(String(landing.fallback)),
+    `${landing.known.length} themes`,
+  );
+
   await api(() => window.__scriareThemes.useThemeStore.getState().setTheme("dark"));
   await seedProject();
   await wait(200);

@@ -608,6 +608,22 @@ aesthetic note come out of one look rather than two.
   rather than the app's hint colour — a fixed value that does not move
   when the theme does. The kit owns the placeholder colour now.
 
+- **v0.88.0 Four verdicts, 1 Oct.** His answers to the visual sweep.
+  **The variable readout stays on camera** (it proves the conditions are
+  real). **The block buttons stay as they are** — his reasoning better than
+  the question: the contrast difference IS the hierarchy, and an insert
+  control louder on a pale ground is the control saying what it is for.
+  **A stranger lands on Daylight**, decided rather than inherited — the
+  default had been `"dark"` since dark was the only theme the app had.
+  **The graph opens at 30% of the column**, never more than 40%, his premise
+  stated as a rule: write stories, not syntax. The fixed 224px it replaced
+  was backwards — 22% of the column at 1920×1080 and 35% at 1024×720, so the
+  graph took most space exactly where space was tightest. Default only: a
+  dragged splitter is kept, including past 40% (v0.41.0 settled that). The
+  floor yields to the ceiling on a very short window, because a rule that
+  bends on the hard case cannot be checked. **It shipped as two numbers and
+  a control deleted one**: a 40% ceiling clamping a 30% share never fired,
+  which is v0.77.x's untestable-second-mechanism pattern for the third time.
 - **v0.87.0 Fold the story and it was gone.** The visual sweep's half that is
   Claude's: every surface photographed from the shipped build with the REAL
   Blue Hour loaded. Two bugs, both found by looking at a picture rather than
@@ -777,7 +793,7 @@ measurement gets fixed whatever the list says.** That is what v0.86.0 did —
 crash-recovery drafts were declined on the measurement and the hole the
 measurement found next door was fixed the same day.
 
-1112 tests, 338 negative controls (as of v0.87.0).
+1116 tests, 341 negative controls (as of v0.88.0).
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and

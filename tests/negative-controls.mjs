@@ -3497,6 +3497,42 @@ const CONTROLS = [
     expect: "still on screen, not off in the margin",
   },
 
+  // ── v0.88.0 · his four verdicts ─────────────────────────────────────
+  {
+    // The default back to dark — the value it held for eight themes because
+    // dark was the only theme the app had when the line was written.
+    name: "a stranger landing on the tool's theme rather than a reading one",
+    file: src("state/themeStore.ts"),
+    from: 'export const DEFAULT_THEME: ThemeId = "daylight";',
+    to: 'export const DEFAULT_THEME: ThemeId = "dark";',
+    spec: "themes",
+    expect: "lands on Daylight",
+  },
+  {
+    // THE SHARE PAST THE PREMISE, which is the only sabotage here that can
+    // be seen. This first pointed at a separate 40% CEILING clamping a 30%
+    // share, and raising that ceiling to 50% changed nothing anywhere —
+    // because at a 30% target the clamp never fires. The belt-and-braces
+    // second mechanism was deleted rather than kept (v0.77.x's rule, for
+    // the third time), and the share is now the thing the check guards.
+    name: "the graph allowed to take half the opening screen",
+    file: src("components/layout/EditorGraphSplit.tsx"),
+    from: "const OPENING_SHARE = 0.3;",
+    to: "const OPENING_SHARE = 0.5;",
+    spec: "graph-layout",
+    expect: "never opens over 40%",
+  },
+  {
+    // And back to the fixed height it replaced, which is the state that was
+    // 22% of the column on a big screen and 35% on a small one.
+    name: "the opening height fixed again, largest where space is tightest",
+    file: src("components/layout/EditorGraphSplit.tsx"),
+    from: "  const wanted = Math.round(columnHeight * OPENING_SHARE);",
+    to: "  const wanted = DEFAULT_FLOW_HEIGHT;",
+    spec: "graph-layout",
+    expect: "larger than the old fixed height",
+  },
+
   // THERE IS NO CONTROL FOR THE OPPOSITE — announcing a stylesheet that
   // does not exist — and the attempt is worth recording. Forcing the
   // guard true CRASHES the render rather than failing an assertion,

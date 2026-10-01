@@ -12,6 +12,71 @@ omitting them.
 
 ---
 
+## v0.88.0 — Four verdicts, and the one that was two numbers
+
+His answers to the visual sweep. Two needed no code and are recorded as
+decisions; two are in the app.
+
+**The variable readout stays on camera.** It proves the conditions are real,
+which is worth more than the tidier frame.
+
+**The block buttons stay as they are**, and his reasoning is better than the
+question: the contrast difference *is* the hierarchy, and an insert control
+that is louder on a pale ground than on a dark one is the control telling
+the writer what it is for. A thing I would have flattened, kept because the
+difference was doing work I had read as drift.
+
+**A stranger lands on Daylight.** The first time that has been decided
+rather than inherited: the default was `"dark"` because dark was the only
+theme the app had when the line was written, and it survived seven more. The
+argument is the one the whole app rests on — the first thing a stranger
+should see is prose on a page.
+
+### The graph's opening height, which was backwards
+
+**His rule is the premise rather than a number:** *write stories, not
+syntax* — so the graph may not take more than 40% of the column on the frame
+the app opens on. Measured against that, the fixed 224px it had was not
+merely too small, it was inverted:
+
+| Column | Graph | Share |
+| --- | --- | --- |
+| 996 (1920×1080) | 224 | 22% |
+| 816 (1440×900) | 224 | 27% |
+| 684 (1366×768) | 224 | 33% |
+| 636 (1024×720) | 224 | 35% |
+
+**The graph took its largest share of the screen exactly where space was
+tightest** and its smallest where there was room to show a map. A share
+fixes both halves at once: 30% of the column, so it opens larger on the
+screens with room (299px at 1920×1080, up from 224) and smaller on the ones
+without.
+
+**The default only.** A writer who has dragged the splitter keeps exactly
+what they dragged, including past 40% — v0.41.0 settled that and this does
+not reopen it. The share applies on the opening frame and never re-applies
+when a window is resized, because a panel that re-sizes itself whenever a
+window moves is a panel with a mind of its own.
+
+**And the floor had to yield to the ceiling.** The app sets no minimum
+window height, so a column short enough for 30% to fall under the usable
+minimum is reachable by dragging the window small. Clamping up there broke
+the one rule actually stated — at a 180px column it opened the graph at 67%
+— and a rule that bends on the hard case is a rule nobody can check. Below
+about a 300px column neither panel is usable at any share, and the splitter
+still drags.
+
+**It shipped as two numbers and a control deleted one of them.** The first
+version was a 30% share clamped to a 40% ceiling, and raising that ceiling
+to 50% changed nothing anywhere — because at a 30% target the clamp never
+fires. That is the pattern this project has deleted three times already
+(v0.77.x: a second mechanism added to be safe is untestable by
+construction), so the ceiling is gone, the share is the rule, and the check
+asserts the 40% property — push the share past it and the check goes red.
+A guard that cannot fire is not a guard.
+
+---
+
 ## v0.87.0 — Fold the story and it was gone
 
 Two bugs, both found by looking at a picture rather than by a test, and 1108

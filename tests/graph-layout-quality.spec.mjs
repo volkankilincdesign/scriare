@@ -437,6 +437,54 @@ export default async function run({ api, check, seedProject }) {
   say(`autoLayoutScenes (the button, including history + snap + store): ` +
       `median ${median(button).toFixed(1)} ms (${button.map((t) => t.toFixed(0)).join(", ")})`);
 
+  /* ── how tall the graph opens (v0.88.0) ──────────────────────────── */
+
+  // HIS CEILING, AND IT IS THE PREMISE RATHER THAN A NUMBER: write stories,
+  // not syntax. The graph may not take more than 40% of the column on the
+  // frame the app opens on, so the editor always holds the majority of the
+  // first thing a stranger sees.
+  //
+  // MEASURED ON THE REAL COLUMN HEIGHTS, not on invented ones. The fixed
+  // 224px it replaced was 22% of the column at 1920×1080 and 35% at
+  // 1024×720 — largest where space was tightest, which is backwards — and
+  // both of those numbers came from this story on this app, so the sizes
+  // below are the ones that were actually seen.
+  const opening = await api(() => {
+    const f = window.__scriareSplit.openingFlowHeight;
+    const columns = [996, 966, 816, 776, 684, 636, 420, 300, 180];
+    return columns.map((column) => {
+      const height = f(column);
+      return { column, height, share: Math.round((height / column) * 100) };
+    });
+  });
+  opening.forEach((r) =>
+    say(`column ${r.column}px → graph opens at ${r.height}px (${r.share}%)`),
+  );
+
+  // EVERY COLUMN, INCLUDING THE ABSURD ONES. 300px and 180px are in the list
+  // because the app sets no minimum window height, so they are reachable —
+  // and they are where the ceiling collides with the usable minimum. The
+  // ceiling wins there, which is why those rows exist rather than being
+  // quietly excluded for being inconvenient.
+  const over = opening.filter((r) => r.height / r.column > 0.4001);
+  check(
+    "the graph never opens over 40% of the column — write stories, not syntax",
+    over.length === 0,
+    over.length
+      ? over.map((r) => `${r.column}px → ${r.share}%`).join(", ")
+      : `${opening.length} column heights, worst ${Math.max(...opening.map((r) => r.share))}%`,
+  );
+
+  // AND IT IS A BUMP WHERE THERE IS ROOM, which is the other half of what he
+  // asked for. On the screens with space the graph gets more than the fixed
+  // 224px it replaced; the ceiling only takes space away on short windows.
+  const roomy = opening.filter((r) => r.column >= 800);
+  check(
+    "...and it opens larger than the old fixed height where there is room for it",
+    roomy.length > 0 && roomy.every((r) => r.height > 224),
+    roomy.map((r) => `${r.column}→${r.height}`).join(" · "),
+  );
+
   await seedProject();
   await wait(300);
 }

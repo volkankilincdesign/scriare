@@ -65,6 +65,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("../../shared/fileArgs"),
     import("./state/playGroundStore"),
     import("./state/saveFailedPromptStore"),
+    import("./components/layout/EditorGraphSplit"),
     import("./export/script/buildScript"),
     import("../../shared/script/scriptHtml"),
     import("./utils/dialogueBlocks"),
@@ -117,6 +118,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       fileArgs,
       playGroundStore,
       saveFailedPrompt,
+      editorGraphSplit,
       scriptBuilder,
       scriptHtml,
       dialogueBlocks,
@@ -168,6 +170,9 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         // v0.86.0 — the save-failed question, so a spec can answer it and so
         // the crash-exposure spec can prove it leaves nothing standing.
         __scriareSaveFailedPrompt: saveFailedPrompt.useSaveFailedPromptStore,
+        // v0.88.0 — the opening share, so the ceiling he set can be asked of
+        // the function rather than inferred from a screenshot.
+        __scriareSplit: editorGraphSplit,
         // v0.43.0 — the layout rules are pure arithmetic, so the specs that
         // cover them build graphs and read the geometry back rather than
         // measuring a picture of one.
