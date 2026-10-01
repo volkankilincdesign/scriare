@@ -70,8 +70,66 @@ its keep three times here:
 28 checks in `tests/save-safety.spec.mjs`, each confirmed to fail with the
 old behaviour put back.
 
-## Deliberately not done
+## Crash-recovery drafts: measured in v0.86.0, and declined
 
-Crash-recovery drafts (an autosave journal in app data, restored on next
-launch). Still post-launch; only worth it if something is ever lost to a
-power cut that the atomic write could not catch.
+This section used to read: *"Crash-recovery drafts (an autosave journal in
+app data, restored on next launch). Still post-launch; only worth it if
+something is ever lost to a power cut that the atomic write could not
+catch."* That is a condition, and v0.86.0 finally measured it.
+
+| | Measured |
+| --- | --- |
+| An ordinary edit, keystroke → on disk | **1.53 s** |
+| A save the filesystem refuses | says so once, names the cause, keeps the work, leaves the last good file intact |
+| The folder comes back | heals on the next keystroke, **1.4 s** |
+| A conflict standing unanswered | status stays "unsaved", dialog focus-trapped |
+
+**A journal would have insured a window a second and a half wide**, and for
+the commonest cause — a full disk — it could not have been written either,
+being on the same disk. Against that: a second copy of the file format, and
+a restore dialog a newcomer meets at the worst possible moment. Declined,
+and recorded here rather than dropped quietly.
+
+The harness is `tests/crash-exposure.spec.mjs`. It reports the numbers on
+every run and asserts only what would be a defect whatever the answer.
+
+## The hole that measurement found, fixed in v0.86.0
+
+**Closing a project after a failed save cleared it without asking**, while
+the notice still on screen read "Your work is still open, and the last saved
+version is intact". The second half stayed true; the first half became a lie
+at the moment the project closed. Four edits into a folder that had gone
+away, all four gone, no crash involved.
+
+**The old behaviour was a decision rather than an oversight**, which changed
+what the fix should be. `useCloseGuard` recorded it: "a failed save is not a
+reason to trap the writer in a window they asked to close." That is right
+about the window — quitting is theirs to do, and a modal that refuses is a
+trap. It was then applied to closing a project, where nobody is trapped. The
+rule was sound; its reach was wrong. And "do not trap them" had been read as
+"say nothing", when a question whose every answer is an exit traps no one.
+
+Shipped: one question, three answers, modelled on the conflict dialog
+because it is the same question — *Save it somewhere else* / *Keep writing* /
+*Close without saving*, no dismiss. The escape route already existed as
+`resolveConflictSaveCopy` and refused to run unless a conflict was set; it is
+`saveCopyElsewhere` now and returns whether anything was written, because a
+cancelled file picker is not a decision to lose work.
+
+**The guard lives in `closeProject`, not beside the close button.** It was
+written at the call site first and a test that called the action directly
+walked past it — as does `useOpenFromDisk`, which closes the current story to
+open another. Two of three callers would have inherited the hole.
+
+### Three mistakes in the measurement, each worth keeping
+
+1. The first failure injection reassigned `window.api.project.save` to throw,
+   measured "0 save attempts", and reported the app as never retrying.
+   `contextBridge.exposeInMainWorld` hands the page a **frozen** object: the
+   assignment did nothing and every save succeeded.
+2. The second made the folder read-only with `chmod 0o500`, and the saves went
+   through anyway — the suite runs as **root**, which bypasses permission
+   bits. A fact about the container, not the app.
+3. And one in the fix itself: the new `saveFailed` flag was set before being
+   read, so "already told them" was always true and the app's most important
+   notice would never have appeared once. It has its own control.

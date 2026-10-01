@@ -64,6 +64,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("../../shared/recentEntries"),
     import("../../shared/fileArgs"),
     import("./state/playGroundStore"),
+    import("./state/saveFailedPromptStore"),
     import("./export/script/buildScript"),
     import("../../shared/script/scriptHtml"),
     import("./utils/dialogueBlocks"),
@@ -115,6 +116,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       recentEntries,
       fileArgs,
       playGroundStore,
+      saveFailedPrompt,
       scriptBuilder,
       scriptHtml,
       dialogueBlocks,
@@ -163,6 +165,9 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         __scriareSheet: { ...sheetBuilder, ...sheetModel },
         __scriareReuse: reuseBySignature,
         __scriareUIStore: uiStore.useUIStore,
+        // v0.86.0 — the save-failed question, so a spec can answer it and so
+        // the crash-exposure spec can prove it leaves nothing standing.
+        __scriareSaveFailedPrompt: saveFailedPrompt.useSaveFailedPromptStore,
         // v0.43.0 — the layout rules are pure arithmetic, so the specs that
         // cover them build graphs and read the geometry back rather than
         // measuring a picture of one.

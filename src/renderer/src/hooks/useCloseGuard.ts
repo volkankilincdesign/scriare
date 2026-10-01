@@ -65,11 +65,29 @@ export function useCloseGuard(): void {
           return;
         }
 
-        if (store.project && store.saveStatus !== "saved") {
-          // Errors are already reported by saveNow, and a failed save is
-          // not a reason to trap the writer in a window they asked to
-          // close — the file on disk is still the last good version.
-          await store.saveNow().catch(() => {});
+        // A SAVE THE FILESYSTEM REFUSED (v0.86.0).
+        //
+        // The old comment here read: "a failed save is not a reason to trap
+        // the writer in a window they asked to close — the file on disk is
+        // still the last good version." That is still the rule and this does
+        // not break it. Quitting is a thing a person is entitled to do, and a
+        // modal that refuses is a trap.
+        //
+        // What it got wrong was treating "do not trap them" as "say nothing".
+        // Measured: four edits into a folder that had gone away, the close
+        // discarded all four, and the only thing on screen was a notice
+        // saying the work was still open. `closeProject` asks now, with three
+        // answers of which every one is an exit — including one that writes
+        // the story somewhere that works — so nobody is trapped and nobody
+        // loses an hour to a keystroke they did not know was the last.
+        //
+        // The ANSWER is what this hands the main process: "keep writing"
+        // means the window stays open, which is the whole point of the
+        // handshake existing.
+        if (store.project) {
+          const closed = await store.closeProject();
+          window.api.lifecycle.readyToClose(closed);
+          return;
         }
 
         window.api.lifecycle.readyToClose(true);

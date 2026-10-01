@@ -3419,6 +3419,54 @@ const CONTROLS = [
     expect: "a real target",
   },
 
+  // ── v0.86.0 · closing with nowhere to save ──────────────────────────
+  {
+    // THE DEFECT, PUT BACK: the close that clears the project without asking
+    // while the notice on screen says the work is still open. This is the
+    // whole of v0.86.0 in one sabotage, and it is the state the app shipped
+    // in from v0.47.0 to v0.85.0.
+    name: "a close that discards work the disk refused to take",
+    file: src("state/projectStore.ts"),
+    from: '      const { askBeforeLosingUnsavedWork } = await import("./saveFailedPromptStore");\n      const proceed = await askBeforeLosingUnsavedWork();',
+    to: "      const proceed = true;",
+    spec: "crash-exposure",
+    expect: "does not discard it without asking",
+  },
+  {
+    // The guard moved back to the button, which is where it was written
+    // first. The check calls `closeProject` directly — as `useOpenFromDisk`
+    // does — so a guard that only exists beside the close button is a guard
+    // two of the three callers walk past.
+    name: "the close guard back beside one of the three buttons that close",
+    file: src("state/projectStore.ts"),
+    from: "    if (get().project && get().saveFailed) {",
+    to: "    if (false && get().project && get().saveFailed) {",
+    spec: "crash-exposure",
+    expect: "does not discard it without asking",
+  },
+  {
+    // The escape route back to needing a conflict — the state it was in
+    // when it was called `resolveConflictSaveCopy`, reachable from exactly
+    // one dialog. Generalising it is most of what this version is.
+    name: "the way out available only from the conflict dialog again",
+    file: src("state/projectStore.ts"),
+    from: "    const from = saveConflict?.filePath ?? filePath;\n    if (!project || !from) return false;",
+    to: "    const from = saveConflict?.filePath;\n    if (!project || !from) return false;",
+    spec: "crash-exposure",
+    expect: "written somewhere that works",
+  },
+  {
+    // And the notice back to repeating. v0.47.0 made it say so once; the
+    // read-before-write order that keeps it true is a line this version
+    // rewrote, and a flag set before it is read is always "already known".
+    name: "the save-failed notice silenced by its own flag",
+    file: src("state/projectStore.ts"),
+    from: '      const alreadyKnown = get().saveFailed;\n      set({ saveStatus: "unsaved", saveFailed: true });',
+    to: '      set({ saveStatus: "unsaved", saveFailed: true });\n      const alreadyKnown = get().saveFailed;',
+    spec: "crash-exposure",
+    expect: "names a cause rather than failing silently",
+  },
+
   // THERE IS NO CONTROL FOR THE OPPOSITE — announcing a stylesheet that
   // does not exist — and the attempt is worth recording. Forcing the
   // guard true CRASHES the render rather than failing an assertion,

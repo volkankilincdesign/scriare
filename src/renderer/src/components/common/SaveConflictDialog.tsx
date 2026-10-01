@@ -17,7 +17,7 @@ import { useProjectStore } from "../../state/projectStore";
 export function SaveConflictDialog() {
   const conflict = useProjectStore((s) => s.saveConflict);
   const reload = useProjectStore((s) => s.resolveConflictReload);
-  const saveCopy = useProjectStore((s) => s.resolveConflictSaveCopy);
+  const saveCopy = useProjectStore((s) => s.saveCopyElsewhere);
   const overwrite = useProjectStore((s) => s.resolveConflictOverwrite);
 
   if (!conflict) return null;

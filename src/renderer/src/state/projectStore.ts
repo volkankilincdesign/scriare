@@ -123,6 +123,17 @@ interface ProjectState {
    */
   documentToken: number;
   saveStatus: SaveStatus;
+  /**
+   * The last save was attempted and refused by the filesystem (v0.86.0).
+   *
+   * NOT the same as `saveStatus === "unsaved"`, which is the ordinary state
+   * between a keystroke and the autosave 1.5 seconds later. This one means
+   * the app has tried and cannot: the folder is gone, the disk is full, the
+   * file is not writable. It was a module-level flag used only to stop the
+   * notice repeating every 1.5 seconds; it is state now because something
+   * else needs to read it — closing the project.
+   */
+  saveFailed: boolean;
   recentProjects: RecentProjectEntry[];
 
   isPlaying: boolean;
@@ -338,10 +349,16 @@ interface ProjectState {
   /** Throws away this session's edits and re-reads the file from disk. */
   resolveConflictReload: () => Promise<void>;
   /** Keeps both: writes this session's version somewhere else and continues there. */
-  resolveConflictSaveCopy: () => Promise<void>;
+  /** See the implementation — generalised from the conflict case in v0.86.0. */
+  saveCopyElsewhere: () => Promise<boolean>;
   /** Writes over the newer version on disk, deliberately. */
   resolveConflictOverwrite: () => Promise<void>;
-  closeProject: () => Promise<void>;
+  /**
+   * Closes the story. Returns whether it actually closed (v0.86.0) — a save
+   * the filesystem refused raises a question first, and "keep writing" is an
+   * answer the caller has to respect.
+   */
+  closeProject: () => Promise<boolean>;
 }
 
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -384,14 +401,11 @@ let saveQueued = false;
  * quitting and Ctrl+S all assumed it already meant.
  */
 let saveRun: Promise<void> | null = null;
-/**
- * Whether the last save failed. Autosave fires after every change, so a
- * folder that has gone away would otherwise raise the same notice every 1.5
- * seconds for as long as someone keeps typing — which is how a message that
- * matters becomes one people learn to dismiss. Said once, and again only
- * after a save has succeeded in between.
- */
-let lastSaveFailed = false;
+/* `lastSaveFailed` was here. It is `saveFailed` in the store now (v0.86.0),
+   for the reason given on that field: the close path has to read it, and a
+   module-level flag is reachable from nothing but this file. Its original
+   job — stopping the notice repeating every 1.5 seconds while someone keeps
+   typing into a folder that has gone away — is unchanged. */
 
 /**
  * How often a save may also refresh the recent entry's cached picture
@@ -544,6 +558,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   selectedEntityId: null,
   documentToken: 0,
   saveStatus: "saved",
+  saveFailed: false,
   recentProjects: [],
 
   isPlaying: false,
@@ -2082,7 +2097,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         return;
       }
 
-      lastSaveFailed = false;
+      // The write went through, so the next failure is news again.
+      set({ saveFailed: false });
 
       // WHICH FILE DID THIS SAVE BELONG TO? `filePath` was captured before
       // the await; the store may have moved on while the write was in
@@ -2146,9 +2162,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       // Retrying straight away would fail the same way and say so twice, so
       // the queue is dropped; the next edit schedules another autosave.
       saveQueued = false;
-      set({ saveStatus: "unsaved" });
-      const alreadyKnown = lastSaveFailed;
-      lastSaveFailed = true;
+      // READ BEFORE WRITING. The first draft of this set the flag and then
+      // asked whether it was already set, so `alreadyKnown` was always true
+      // and the notice this whole branch exists to raise would never have
+      // appeared once.
+      const alreadyKnown = get().saveFailed;
+      set({ saveStatus: "unsaved", saveFailed: true });
       if (alreadyKnown) return;
       // Imported here rather than at the top: toastStore already imports
       // this module, and a static cycle between two stores is the kind of
@@ -2216,34 +2235,54 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     });
   },
 
-  resolveConflictSaveCopy: async () => {
-    const { project, saveConflict } = get();
-    if (!project || !saveConflict) return;
+  /**
+   * Write what is in memory somewhere else, and carry on there (v0.86.0).
+   *
+   * THIS USED TO REQUIRE A CONFLICT. It was `resolveConflictSaveCopy`, and
+   * its first line returned unless `saveConflict` was set — which made the
+   * one escape route in the app reachable from exactly one dialog. The
+   * measurement that prompted v0.86.0 found the other state that needs it
+   * and cannot reach it: a save the filesystem refuses. The folder is gone,
+   * the disk is full, the file is not writable — and the work is fine, in
+   * memory, with nowhere to go.
+   *
+   * So the conflict is no longer the reason, it is just one caller. The
+   * suggested name comes from whichever path we have, and a conflict is
+   * cleared if there was one, because writing somewhere else answers it.
+   *
+   * It returns whether anything was written, which the close paths need: a
+   * writer who cancels the file dialog has not chosen to lose their work.
+   */
+  saveCopyElsewhere: async () => {
+    const { project, saveConflict, filePath } = get();
+    const from = saveConflict?.filePath ?? filePath;
+    if (!project || !from) return false;
 
     // Suggested beside the original, named for what it is. The writer can
     // put it anywhere; this only has to be a sensible default.
-    const dot = saveConflict.filePath.lastIndexOf(".");
+    const dot = from.lastIndexOf(".");
     const suggested =
-      dot > 0
-        ? `${saveConflict.filePath.slice(0, dot)} (copy)${saveConflict.filePath.slice(dot)}`
-        : `${saveConflict.filePath} (copy)`;
+      dot > 0 ? `${from.slice(0, dot)} (copy)${from.slice(dot)}` : `${from} (copy)`;
 
     const result = await window.api.project.saveCopy(
       suggested,
       JSON.stringify(project, null, 2),
     );
-    // Cancelled: the conflict stands, because nothing has been decided.
-    if (!result) return;
+    // Cancelled: nothing has been decided, so nothing changes — the conflict
+    // still stands, or the failed save is still failed.
+    if (!result) return false;
 
     // The session continues in the copy. Anything else would leave the next
-    // keystroke heading back into the same collision.
+    // keystroke heading back into the same collision, or the same dead end.
     set({
       filePath: result.filePath,
       fileStamp: result.stamp,
       saveConflict: null,
       saveStatus: "saved",
+      saveFailed: false,
       recentProjects: result.recent,
     });
+    return true;
   },
 
   resolveConflictOverwrite: async () => {
@@ -2308,6 +2347,32 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       await get().saveNow();
     }
 
+    // THE GUARD LIVES HERE, NOT IN THE BUTTON (v0.86.0).
+    //
+    // It was written in TopBar first, next to the close button, and a test
+    // that called this action directly walked straight past it — which was
+    // the useful failure: `useOpenFromDisk` calls this action too, so opening
+    // another story would have discarded unsaved work the same silent way,
+    // and any future caller would have inherited the hole. One guard at the
+    // point where the work is actually thrown away covers all three.
+    //
+    // AFTER the flush above, deliberately. `saveFailed` is set by the save
+    // that just ran, so this reads the result of trying rather than a stale
+    // opinion from a minute ago — a folder that came back while the writer
+    // was thinking must not produce a question about a problem that is over.
+    if (get().project && get().saveFailed) {
+      // Imported here rather than at the top: this store is imported by
+      // almost everything, and a static cycle is the kind of thing that
+      // works until a bundler decides otherwise — saveNow's notice does the
+      // same thing for the same reason.
+      const { askBeforeLosingUnsavedWork } = await import("./saveFailedPromptStore");
+      const proceed = await askBeforeLosingUnsavedWork();
+      // "Save it somewhere else" writes the copy and clears `saveFailed`
+      // before resolving, so by here the story is safely on disk and closing
+      // loses nothing. "Keep writing" stops the close dead.
+      if (!proceed) return false;
+    }
+
     // The one moment the cached picture is worth writing unconditionally
     // (v0.53.0). Every other refresh is throttled — see
     // RECENT_TOUCH_INTERVAL_MS — so the last few seconds of a session are
@@ -2341,7 +2406,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     saveInFlight = false;
     saveQueued = false;
     saveRun = null;
-    lastSaveFailed = false;
+    set({ saveFailed: false });
 
     clearHistory();
     set({
@@ -2357,5 +2422,6 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       playSceneId: null,
       ...historyFlags(),
     });
+    return true;
   },
 }));

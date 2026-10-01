@@ -608,6 +608,31 @@ aesthetic note come out of one look rather than two.
   rather than the app's hint colour — a fixed value that does not move
   when the theme does. The kit owns the placeholder colour now.
 
+- **v0.86.0 Crash-recovery drafts: MEASURED, AND DECLINED — and the hole the
+  measurement found instead.** The condition this item carried since v0.47.0
+  ("only worth it if something is ever lost to a power cut the atomic write
+  couldn't catch") was finally measured. An ordinary edit reaches disk in
+  **1.53 s**; a save the filesystem refuses already says so once, names the
+  cause, keeps the work, leaves the last good file intact, and heals on the
+  next keystroke **1.4 s** after the folder returns. So a journal insures a
+  window a second and a half wide — and for a full disk, the commonest cause,
+  it could not have been written either, being on the same disk. Declined on
+  the record rather than dropped.
+  **What the same measurement found:** closing a project after a failed save
+  cleared it with no question, while the notice on screen said the work was
+  still open. The existing behaviour was a DECISION ("a failed save is not a
+  reason to trap the writer in a window they asked to close") that was right
+  about the window and wrong about the project. Shipped: one question with
+  three answers, every one an exit, including `saveCopyElsewhere` — the
+  escape route that already existed and refused to run unless a conflict was
+  set. The guard went into `closeProject` rather than beside the close
+  button, because a test that called the action directly walked past it and
+  so does `useOpenFromDisk`.
+  Three mistakes in the measurement, each recorded: `window.api` is a frozen
+  contextBridge object so the first failure injection did nothing; `chmod`
+  does not stop root, so the second did nothing either; and the new flag was
+  set before being read, which would have silenced the app's most important
+  notice permanently.
 - **v0.85.0 The ✕ that removes a row.** Thirteen copies of one button in
   seven spellings, and the two that most had to agree did not: the ✕ on a
   choice row had NO hover fill while its sibling on a dialogue line used
@@ -699,7 +724,7 @@ now unblocked except for the file itself.
 than deleted. If they ever land they will not appear in the Story Graph —
 it is already tight and the map would have loading problems.
 
-1089 tests, 332 negative controls (as of v0.85.0).
+1108 tests, 336 negative controls (as of v0.86.0).
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and

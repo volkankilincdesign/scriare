@@ -51,7 +51,15 @@ export function TopBar() {
         danger: true,
       });
       if (!proceed) return;
+      await closeProject();
+      return;
     }
+
+    // A SAVE THE FILESYSTEM REFUSED is handled inside `closeProject` rather
+    // than here (v0.86.0). It was written at this call site first, and a test
+    // that called the action directly walked straight past it — which is also
+    // what `useOpenFromDisk` does. The guard belongs where the work is thrown
+    // away, not beside one of the three buttons that can throw it.
     await closeProject();
   }
 

@@ -12,6 +12,110 @@ omitting them.
 
 ---
 
+## v0.86.0 — The journal that wasn't worth building, and the hole next door
+
+He asked for crash-recovery drafts — the autosave journal the save-safety
+work deliberately left out in v0.47.0, carried on the roadmap ever since
+with one sentence attached: *only worth it if something is ever lost to a
+power cut that the atomic write could not catch.* That is a condition, and
+nobody had measured it. So the first thing built was the measurement, and
+the measurement said don't build the feature.
+
+### What the exposure actually is
+
+| | Measured |
+| --- | --- |
+| An ordinary edit, keystroke → on disk | **1.53 s** |
+| A save the filesystem refuses | says so **once**, names the cause, keeps the work, leaves the last good file intact |
+| The folder comes back | heals on the next keystroke, **1.4 s** |
+| A conflict standing unanswered | status stays "unsaved", dialog focus-trapped |
+
+**So a journal would have insured a window a second and a half wide.** And
+for the commonest cause — a full disk — it could not have been written
+either, because a journal in app data is on the same disk. It would have
+cost a second copy of the file format, a restore dialog a newcomer meets at
+the worst possible moment, and a week. Declined on the record rather than
+dropped quietly, which is what the roadmap entry now says.
+
+### The hole the measurement found instead
+
+**Close the project after a save has failed, and the app cleared it without
+asking** — while the notice still on screen read *"Your work is still open,
+and the last saved version is intact."* The second half of that sentence
+stays true. The first half becomes a lie at the moment the project closes.
+Measured: four edits into a folder that had gone away, all four gone, no
+crash involved at all.
+
+**The existing behaviour was a decision, not an oversight**, and saying so
+changes what the fix should be. `useCloseGuard` recorded it: *"a failed save
+is not a reason to trap the writer in a window they asked to close — the
+file on disk is still the last good version."* That is right about the
+window. Quitting is a thing a person is entitled to do and a modal that
+refuses is a trap. It was then applied to closing a PROJECT, where nobody is
+trapped — the writer is still in the app, two clicks from carrying on — and
+where a question costs nothing. The rule was sound and its reach was wrong.
+
+**What it also got wrong was treating "do not trap them" as "say nothing".**
+A question whose every answer is an exit traps no one.
+
+### What shipped
+
+**One question, three answers, modelled on the conflict dialog** — same
+family, same question ("we cannot save; what happens to the work?"), so the
+same shape: three full-width stacked choices, each a sentence about the work
+rather than a verb, the destructive one last and drawn as destructive. *Save
+it somewhere else* / *Keep writing* / *Close without saving*. No dismiss,
+because dismissing is the one answer that leaves the writer exactly where
+they were.
+
+**The escape route already existed and was reachable from one dialog.**
+`resolveConflictSaveCopy` returned on its first line unless a conflict was
+set, so the app's only "write it somewhere that works" was bolted to the
+conflict case. It is `saveCopyElsewhere` now, it takes whichever path there
+is, and it returns whether anything was written — because a writer who
+cancels the file picker has not chosen to lose their work, and closing anyway
+would turn a misclick into exactly the loss this is for.
+
+**The guard went into `closeProject`, not next to the close button**, and a
+test is what moved it. Written at the call site first, a check that called
+the action directly walked straight past it — and so does
+`useOpenFromDisk`, which closes the current story to open another one. Two
+of the three callers would have inherited the hole. One guard where the work
+is actually thrown away covers all three.
+
+**`lastSaveFailed` became `saveFailed` in the store.** It was a module-level
+flag whose only job was stopping the notice repeating every 1.5 seconds;
+something outside this file needs to read it now.
+
+### Three mistakes in the measurement, each one load-bearing
+
+**The first probe measured nothing and reported the app as broken.** It
+reassigned `window.api.project.save` to throw, counted "0 save attempts",
+and concluded the app never retries — because `contextBridge.exposeInMainWorld`
+hands the page a FROZEN object. The assignment did nothing, every save
+succeeded, and the check claimed they had all failed.
+
+**The second made the folder read-only, and the saves went through** — the
+suite runs as root, which bypasses permission bits. That is a fact about the
+container, not the app, and it is exactly the kind of thing that otherwise
+reads as "the guard doesn't work". The folder is removed now: root cannot
+write into a directory that does not exist, and "the folder it lives in is
+gone" is one of the four causes v0.47.0 names.
+
+**And one in the fix.** The new flag was set before being read, so
+`alreadyKnown` was always true and the notice the whole branch exists to
+raise would never have appeared once. There is a control for it now,
+because it is a one-line reordering that silences the app's single most
+important message.
+
+**One measurement was reported rather than asserted**, and the honesty is
+the point: whether a writer can type behind the conflict dialog is a
+question about focus, which v0.50.0's trap already owns. Calling the store
+directly proves the store accepts a change; it proves nothing about a
+person. The spec says so instead of pretending.
+
+---
+
 ## v0.85.0 — One ✕, one menu row, and wires that stopped being redrawn
 
 Three pieces, and the first two are the same discovery at two scales: a

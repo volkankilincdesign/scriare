@@ -8,6 +8,7 @@ import { WelcomeScreen } from "./components/welcome/WelcomeScreen";
 import { PlayRuntime } from "./runtime/PlayRuntime";
 import { ConfirmDialogHost } from "./components/common/ConfirmDialogHost";
 import { SaveConflictDialog } from "./components/common/SaveConflictDialog";
+import { SaveFailedPromptHost } from "./components/common/SaveFailedPromptHost";
 import { ToastHost } from "./components/common/ToastHost";
 import { ChoiceStylesDialog } from "./components/choices/ChoiceStylesDialog";
 import { StylesheetDialog } from "./components/layout/StylesheetDialog";
@@ -236,6 +237,7 @@ export default function App() {
       {/* Always mounted: it decides for itself whether there is a conflict, and
           it has to be able to appear over any of the above (v0.47.0). */}
       <SaveConflictDialog />
+      <SaveFailedPromptHost />
     </div>
   );
 }
