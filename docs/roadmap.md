@@ -608,6 +608,20 @@ aesthetic note come out of one look rather than two.
   rather than the app's hint colour — a fixed value that does not move
   when the theme does. The kit owns the placeholder colour now.
 
+- **v0.85.0 The ✕ that removes a row.** Thirteen copies of one button in
+  seven spellings, and the two that most had to agree did not: the ✕ on a
+  choice row had NO hover fill while its sibling on a dialogue line used
+  `--surface-3`, the colour the same version reserves for the row the
+  keyboard is on. Twelve took the kit's new `quietDanger` intent and `icon`
+  size — the latter promoted from the Variable Manager, the one site with a
+  recorded argument for its target size ("the smallest destructive control in
+  the app"). The thirteenth, an entity's alias ✕ inside a `rounded-full`
+  pill, keeps its own spelling: a square hover fill inside a round border,
+  which makes it the THIRD surface this sweep has found the kit wrong about.
+  Four findings about the checks, all four surfaced by controls — a fixture
+  with no dialogue block in it, a uniformity check that survives shrinking
+  everything, a threshold one pixel too generous, and a height measured
+  through React Flow's canvas zoom.
 - **v0.85.0 The menu row.** v0.82.0 counted the four floating panels and
   left the rows inside them: four spellings, and one difference that was not
   cosmetic — the row the keyboard is on was `--surface-2` in the slash menu
@@ -685,7 +699,7 @@ now unblocked except for the file itself.
 than deleted. If they ever land they will not appear in the Story Graph —
 it is already tight and the map would have loading problems.
 
-1083 tests, 329 negative controls (as of v0.85.0).
+1089 tests, 332 negative controls (as of v0.85.0).
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and

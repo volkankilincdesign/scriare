@@ -23,8 +23,14 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
  * palette change and `text-red-500` does not — which is the mistake
  * v0.46.0 had to go and find in Check Story.
  */
-export type ButtonIntent = "primary" | "secondary" | "ghost" | "accentGhost" | "danger";
-export type ButtonSize = "xs" | "sm" | "md";
+export type ButtonIntent =
+  | "primary"
+  | "secondary"
+  | "ghost"
+  | "accentGhost"
+  | "danger"
+  | "quietDanger";
+export type ButtonSize = "xs" | "icon" | "sm" | "md";
 
 const INTENT: Record<ButtonIntent, string> = {
   /** The one next step. At most one per dialog. */
@@ -49,6 +55,39 @@ const INTENT: Record<ButtonIntent, string> = {
    */
   danger:
     "border border-transparent bg-[var(--danger)] text-[var(--danger-text-on)] hover:bg-[var(--danger-hover)]",
+  /**
+   * Removes ONE ROW from a list — the ✕ on a choice, a dialogue line, a
+   * condition, an alias, a variable (v0.85.0).
+   *
+   * COUNTED: thirteen of these, in seven spellings. All of them quiet at
+   * rest and red on hover, and disagreeing about everything else:
+   *
+   *   three block views   px-1.5 py-0.5   hover --surface-2
+   *   GroupNode           px-1            hover --surface-2
+   *   Inspector ×3        px-1.5 (±py-1)  hover --surface-2
+   *   DialoguePanel       px-1.5 py-1     hover --surface-2
+   *   Variable Manager    px-1.5 py-1     hover --surface-2 + transition
+   *   Choice row ✕        px-1            NO hover fill
+   *   Dialogue line ✕     px-1            hover --surface-3
+   *   Choice Styles row   px-1.5          NO hover fill
+   *   An entity's alias   no padding      NO hover fill
+   *
+   * THE LAST FOUR ARE THE DEFECT, and two of them are each other's
+   * sibling: the ✕ on a choice row and the ✕ on a dialogue line are the
+   * same control on the two blocks his standing rule says must match, and
+   * one had no hover fill at all while the other used `--surface-3` —
+   * which v0.85.0 has just reserved for the row the keyboard is on. So a
+   * pointer resting on a dialogue line's ✕ now says what an arrow key
+   * says, and the choice's says nothing.
+   *
+   * NOT the filled `danger` above. That one is an action a writer chooses
+   * deliberately, in a dialog, with a confirm behind it; this is a glyph
+   * beside a row, and thirteen filled red squares down the side of a
+   * choice list would make a list of choices read as a list of warnings.
+   * Quiet at rest, red when you are actually on it.
+   */
+  quietDanger:
+    "border border-transparent bg-transparent text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]",
 };
 
 const SIZE: Record<ButtonSize, string> = {
@@ -65,6 +104,24 @@ const SIZE: Record<ButtonSize, string> = {
    * advance.
    */
   xs: "rounded px-1.5 py-0.5 text-xs",
+  /**
+   * A GLYPH'S TARGET (v0.85.0): the ✕ that removes one row from a list.
+   *
+   * Not `xs` with a different padding, because the padding is the whole
+   * point and the reasoning for it already exists in this codebase. The
+   * Variable Manager's row wrote it down when it grew its own ✕: "a real
+   * target, not a 12px glyph with no padding. This deletes a writer's work
+   * and it was the smallest destructive control in the app." That argument
+   * is true of all thirteen of them, so this size is that site's spelling
+   * promoted to the kit rather than a value invented here — and unifying on
+   * `xs` instead would have quietly shrunk the one button somebody had
+   * already thought about.
+   *
+   * A glyph has no descender and no width to speak of, so `xs`'s 2px of
+   * vertical padding leaves an 18px target for an action that cannot be
+   * undone by looking at it.
+   */
+  icon: "rounded px-1.5 py-1 text-xs",
   // There is no `lg`. The mockup drew one for the Welcome hero's
   // Continue, and then that turned out to be a <span> inside a larger
   // button — nesting a button in a button is invalid — so the size had

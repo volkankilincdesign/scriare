@@ -1,3 +1,4 @@
+import { Button } from "../common/Button";
 import { Handle, NodeResizer, Position } from "@xyflow/react";
 import type { NodeProps } from "@xyflow/react";
 import { useProjectStore } from "../../state/projectStore";
@@ -182,14 +183,16 @@ export function GroupNode({ id, data, selected }: NodeProps) {
              cleanly; this one gets the look and keeps its own spelling. */
           className="nodrag nopan min-w-0 flex-1 cursor-text bg-transparent text-xs font-semibold uppercase tracking-wide text-[var(--text-2)] outline-none placeholder:text-[var(--text-3)]"
         />
-        <button
+        <Button
           type="button"
           onClick={handleDelete}
-          className="nodrag nopan shrink-0 cursor-pointer rounded px-1 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
+          intent="quietDanger"
+          size="icon"
+          className="nodrag nopan shrink-0 cursor-pointer"
           title="Delete group (its contents move up one level)"
         >
           ✕
-        </button>
+        </Button>
       </div>
     </div>
   );

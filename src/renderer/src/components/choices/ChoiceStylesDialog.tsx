@@ -105,14 +105,16 @@ export function ChoiceStylesDialog({ onClose }: ChoiceStylesDialogProps) {
                     Default
                   </span>
                 ) : (
-                  <button
+                  <Button
                     type="button"
                     onClick={() => handleDelete(style)}
                     title="Delete this style"
-                    className="shrink-0 rounded px-1.5 text-xs text-[var(--text-3)] hover:text-[var(--danger)]"
+                    intent="quietDanger"
+                    size="icon"
+                    className="shrink-0"
                   >
                     ✕
-                  </button>
+                  </Button>
                 )}
               </div>
 

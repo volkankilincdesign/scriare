@@ -3375,6 +3375,50 @@ const CONTROLS = [
     expect: "names the hover colour",
   },
 
+  // ── v0.85.0 · the ✕ that removes a row ──────────────────────────────
+  {
+    // THE DEFECT, PUT BACK WHERE IT WAS: the ✕ on a dialogue line borrowing
+    // `--surface-3`, which v0.85.0 reserves for the row the keyboard is on.
+    // Done at that call site rather than on the kit, because the thing being
+    // guarded is a caller painting over an intent it imported — which is the
+    // way the v0.56.0 drift happened the first time.
+    name: "a row's remove button borrowing the keyboard-selection colour",
+    file: src("components/editor/DialogueLineView.tsx"),
+    from: '            className="opacity-0 transition-opacity group-hover:opacity-100"',
+    to: '            className="opacity-0 transition-opacity hover:bg-[var(--surface-3)] group-hover:opacity-100"',
+    spec: "kit",
+    expect: "borrows the colour that means",
+  },
+  {
+    // The hover fill off the intent entirely — the state the choice row's ✕
+    // and two others shipped in, where the control a writer is about to
+    // press gives no sign of being a target at all.
+    name: "a quiet remove with no fill under the pointer again",
+    file: src("components/common/Button.tsx"),
+    from: '    "border border-transparent bg-transparent text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]",',
+    to: '    "border border-transparent bg-transparent text-[var(--text-3)] hover:text-[var(--danger)]",',
+    spec: "kit",
+    expect: "says the same thing under the pointer",
+  },
+  {
+    // And the size, which is the one value in this version with a recorded
+    // argument behind it: the Variable Manager grew its own ✕ because it was
+    // "the smallest destructive control in the app". Shrinking the kit's
+    // glyph size to the text size puts that back.
+    name: "the destructive glyph shrunk to the text button's target",
+    file: src("components/common/Button.tsx"),
+    from: '  icon: "rounded px-1.5 py-1 text-xs",',
+    to: '  icon: "rounded px-1.5 py-0.5 text-xs",',
+    spec: "kit",
+    // NOT "is the same shape", which is what this control was first pointed
+    // at and which it can never fail: shrinking the kit's size shrinks all
+    // of them together, so they agree at any size. The runner's fourth-way
+    // diagnostic (v0.78.2) said so in as many words — "the sabotage DID fail
+    // 1 check; none of them contain..." — which is the message existing to
+    // tell a stale expectation apart from an unguarded claim.
+    expect: "a real target",
+  },
+
   // THERE IS NO CONTROL FOR THE OPPOSITE — announcing a stylesheet that
   // does not exist — and the attempt is worth recording. Forcing the
   // guard true CRASHES the render rather than failing an assertion,

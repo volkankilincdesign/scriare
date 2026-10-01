@@ -113,15 +113,16 @@ export function DialogueBlockView({ node, deleteNode, selected, editor }: NodeVi
           >
             + Line
           </Button>
-          <button
+          <Button
             type="button"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => deleteNode()}
             title="Remove this entire Dialogue"
-            className="rounded px-1.5 py-0.5 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
+            intent="quietDanger"
+            size="xs"
           >
             Remove block
-          </button>
+          </Button>
         </div>
       </div>
     </NodeViewWrapper>

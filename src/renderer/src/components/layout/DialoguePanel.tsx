@@ -415,14 +415,16 @@ function LineRow({
         >
           {after === "leave" ? "↪" : after === "end" ? "✓" : line.repeatable ? "↻" : "·"}
         </span>
-        <button
+        <Button
           type="button"
           onClick={onRemove}
           title="Remove this line"
-          className="shrink-0 rounded px-1.5 py-1 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
+          intent="quietDanger"
+          size="icon"
+          className="shrink-0"
         >
           ✕
-        </button>
+        </Button>
       </div>
 
       {!expanded && (

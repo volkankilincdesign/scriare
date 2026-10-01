@@ -12,9 +12,92 @@ omitting them.
 
 ---
 
-## v0.85.0 — The wires were re-routed on every keystroke, and four menus disagreed about which row fires
+## v0.85.0 — One ✕, one menu row, and wires that stopped being redrawn
 
-Two pieces, both of them "nothing moves, nothing is drawn differently" work.
+Three pieces, and the first two are the same discovery at two scales: a
+control that exists in a dozen places, agreeing about the state nobody looks
+at and disagreeing about the state that matters. The third is a measurement
+that sent the optimisation somewhere other than where it was aimed.
+
+### The ✕ that removes a row
+
+**Thirteen copies of one button, in seven spellings** — the ✕ on a choice, a
+dialogue line, a condition, an action, a variable, a chapter, an alias, and
+"Remove block" in three block headers. All of them quiet at rest and red
+under the pointer, and disagreeing about everything else:
+
+| | padding | hover fill |
+| --- | --- | --- |
+| three block views | `px-1.5 py-0.5` | `--surface-2` |
+| GroupNode | `px-1` | `--surface-2` |
+| Inspector ×3 | `px-1.5` ±`py-1` | `--surface-2` |
+| Dialogue panel | `px-1.5 py-1` | `--surface-2` |
+| Variable Manager | `px-1.5 py-1` + transition | `--surface-2` |
+| **a choice row's ✕** | `px-1` | **none** |
+| **a dialogue line's ✕** | `px-1` | **`--surface-3`** |
+| Choice Styles row | `px-1.5` | **none** |
+| an entity's alias | none | **none** |
+
+**The two in bold are each other's sibling**, which is what makes this worth
+a version rather than a tidy-up. The ✕ on a choice row and the ✕ on a
+dialogue line are the same control on the two blocks his standing rule binds
+together — and one had no hover fill at all while the other used
+`--surface-3`, the value this same version has just reserved for the row the
+keyboard is on. So a pointer resting on a dialogue line's ✕ said what an
+arrow key says, and the choice's said nothing.
+
+**The size came from the one site that had an argument behind it.** The
+Variable Manager grew its own ✕ at some point and wrote down why: *"a real
+target, not a 12px glyph with no padding. This deletes a writer's work and it
+was the smallest destructive control in the app."* That is true of all
+thirteen, so the kit's new `icon` size is that site's spelling promoted
+rather than a value invented here — and unifying on the existing `xs`
+instead would have quietly shrunk the one button somebody had already thought
+about.
+
+**Not the filled `danger` intent.** That one is an action a writer chooses
+deliberately, in a dialog, with a confirm behind it. This is a glyph beside a
+row, and thirteen filled red squares down the side of a choice list would
+make a list of choices read as a list of warnings.
+
+**Twelve of the thirteen took the kit. One did not, and that is the third
+time in this sweep.** An entity's alias ✕ lives inside a `rounded-full` pill
+with its own border and padding, so the intent's hover fill would paint a
+square inside a circle and its padding would stretch the pill around a
+glyph. It takes the colour rule and nothing else. After GroupNode's rename
+input and the Content Browser's search field, that is three surfaces this
+sweep has found the kit to be wrong about — which is why "bring it onto the
+kit" and "apply the kit's class" stay different instructions.
+
+**Four findings about the checks, and the controls found all four.**
+
+The first control went uncaught because **the fixture had a choice block in
+it and no dialogue block** — so the one sibling pair this version is about
+was never both on screen. Reverting the dialogue line's ✕ to `--surface-3`
+changed nothing a test could see. That is the fixture-avoids-the-hard-case
+failure in a check written specifically about two things disagreeing.
+
+The second went uncaught for a reason worth keeping: **"they are all the same
+shape" survives shrinking all of them.** Dropping the kit's glyph size left
+every remover agreeing with every other, and the check stayed green while the
+target got smaller. A uniformity assertion cannot guard a value, so the
+argument — a real target — is asserted as a number now.
+
+Then **the first floor was too generous**: 21px, against a shrunk button that
+measures 22. Both numbers are measured rather than reasoned — `py-1` is 26px,
+`py-0.5` is 22px — which is the only way a threshold is worth anything.
+
+And the measurement itself was wrong before that. GroupNode's ✕ reported
+**12px against its siblings' 26**, because the Story Graph draws its nodes
+inside a CSS transform and `getBoundingClientRect` returns the size after
+the canvas zoom. `offsetHeight` is the layout box, which is the thing the kit
+controls; the zoom belongs to the writer.
+
+Two selectors were also wrong on the way: matching a title beginning with
+"remove" swept in the editor toolbar's "Remove highlight", a 16px formatting
+control with nothing to do with a row, and matching every button wearing the
+red-on-hover rule swept in the three headers' "Remove block" — which removes
+a whole block, is a text button, and is allowed to be a different size.
 
 ### The menu row
 

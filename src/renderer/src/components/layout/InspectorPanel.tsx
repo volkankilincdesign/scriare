@@ -934,15 +934,22 @@ function ChoiceAccordion({
             {option.text || "Untitled choice"}
           </span>
         </button>
-        <button
+        <Button
           type="button"
           onClick={onRemove}
           disabled={removeDisabled}
           title={removeDisabled ? "Add some content before removing the last choice" : "Remove this choice"}
-          className="shrink-0 rounded px-1.5 py-1 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)] disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-[var(--text-3)]"
+          intent="quietDanger"
+          size="icon"
+          // A HARDER disabled state than the kit's, kept on purpose: the kit
+          // dims to 50%, and this one is the ✕ on the LAST choice in a
+          // block, where the control is not merely unavailable but must not
+          // read as a thing you could press. It also cancels the hover, so
+          // a pointer over it says nothing rather than saying red.
+          className="shrink-0 disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-[var(--text-3)]"
         >
           ✕
-        </button>
+        </Button>
       </div>
 
       {!expanded && (
@@ -1228,14 +1235,16 @@ function ActionRow({ action, variables, onChange, onRemove }: ActionRowProps) {
           ))}
           <option value={CREATE_VARIABLE_VALUE}>+ Create Variable</option>
         </select>
-        <button
+        <Button
           type="button"
           onClick={onRemove}
           title="Remove this action"
-          className="shrink-0 rounded px-1.5 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
+          intent="quietDanger"
+          size="icon"
+          className="shrink-0"
         >
           ✕
-        </button>
+        </Button>
       </div>
 
       {creatingVariable ? (
@@ -1362,14 +1371,16 @@ function ConditionRow({ condition, variables, onChange, onRemove }: ConditionRow
             </option>
           ))}
         </select>
-        <button
+        <Button
           type="button"
           onClick={onRemove}
           title="Remove this condition"
-          className="shrink-0 rounded px-1.5 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
+          intent="quietDanger"
+          size="icon"
+          className="shrink-0"
         >
           ✕
-        </button>
+        </Button>
       </div>
 
       <div className="flex items-center gap-1.5">

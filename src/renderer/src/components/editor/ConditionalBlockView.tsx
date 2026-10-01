@@ -1,3 +1,4 @@
+import { Button } from "../common/Button";
 import { NodeViewContent, NodeViewWrapper } from "@tiptap/react";
 import { blockTagline } from "../../narrativeBlocks/registry";
 import type { NodeViewProps } from "@tiptap/react";
@@ -114,15 +115,16 @@ export function ConditionalBlockView({ node, deleteNode, selected }: NodeViewPro
       >
         <span className="min-w-0 truncate text-xs text-[var(--text-3)]">{when}</span>
         <div className="flex shrink-0 items-center gap-1">
-          <button
+          <Button
             type="button"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => deleteNode()}
             title="Remove this Conditional — the writing inside it goes too"
-            className="rounded px-1.5 py-0.5 text-xs text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
+            intent="quietDanger"
+            size="xs"
           >
             Remove block
-          </button>
+          </Button>
         </div>
       </div>
     </NodeViewWrapper>

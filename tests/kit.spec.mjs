@@ -330,6 +330,14 @@ export default async function run({ page, api, check, seedProject, app }) {
     await w(300);
     const editor = window.__scriareEditorStore.getState().editor;
     editor.chain().focus().insertChoiceBlock().run();
+    await w(260);
+    // A DIALOGUE TOO, and it is not decoration. The ✕ on a choice row and
+    // the ✕ on a dialogue line are the pair v0.85.0 found disagreeing —
+    // one with no hover fill, one borrowing the keyboard's colour — so a
+    // fixture with only a choice in it cannot see the defect this version
+    // exists to fix. A control proved it: reverting the dialogue line's ✕
+    // went uncaught, because the line was never on screen.
+    editor.chain().focus().insertDialogueBlock().run();
     await w(320);
     const block = document.querySelector("[data-choice-block]");
     window.__scriareInspectorStore.getState().selectTarget({
@@ -451,6 +459,128 @@ export default async function run({ page, api, check, seedProject, app }) {
     "every accent button in the Inspector is one shape",
     accents.shapes?.length === 1,
     `${accents.shapes?.length} shape(s): ${(accents.shapes ?? []).join(" vs ")}`,
+  );
+
+  /* ── the ✕ that removes a row (v0.85.0) ────────────────────────── */
+
+  // COUNTED: thirteen of them, in seven spellings, and the two that most
+  // had to agree did not. The ✕ on a choice row and the ✕ on a dialogue
+  // line are the same control on the two blocks the siblings rule binds
+  // together — one had NO hover fill and the other used `--surface-3`,
+  // which v0.85.0 reserves for the row the keyboard is on.
+  //
+  // MEASURED BY WHAT IT TURNS INTO, not by what it is at rest. At rest all
+  // thirteen were already quiet `--text-3`, so a check on the resting state
+  // would have passed on the broken app — the disagreement was entirely in
+  // the hover, which is the state a writer is in when they are about to
+  // destroy something. `:hover` cannot be provoked without a real pointer,
+  // so the rule is read off the class the kit applies and the colours it
+  // names are resolved live.
+  const removers = await api(() => {
+    const live = (expr) => {
+      const probe = document.createElement("div");
+      probe.style.color = expr;
+      document.body.appendChild(probe);
+      const value = getComputedStyle(probe).color;
+      probe.remove();
+      return value;
+    };
+    const quiet = live("var(--text-3)");
+    const danger = live("var(--danger)");
+
+    // THE ✕ ITSELF, and both halves of that selector were learned by getting
+    // it wrong. Matching on a title starting with "remove" swept in the
+    // editor toolbar's "Remove highlight", which is a formatting control at
+    // 16px — nothing to do with a row. And matching every button wearing the
+    // red-on-hover rule swept in the three block headers' "Remove block",
+    // which removes a whole BLOCK and is a text button in its own right: a
+    // different control, allowed to be a different size.
+    //
+    // So: a one-glyph button that promises to go red. The red-on-hover was
+    // already universal across all thirteen before this version, so
+    // selecting on it is not circular — what is being asserted is the FILL
+    // and the shape, which is where the seven spellings disagreed.
+    const found = [...document.querySelectorAll("button")].filter(
+      (b) =>
+        (b.textContent || "").trim() === "✕" &&
+        b.className.includes("hover:text-[var(--danger)]"),
+    );
+    const shape = (b) => {
+      const s = getComputedStyle(b);
+      return `${s.paddingLeft}/${s.paddingTop}/${s.fontSize}/${s.borderRadius}`;
+    };
+    // offsetHeight, NOT getBoundingClientRect. The Story Graph draws its
+    // nodes inside a CSS transform, so a rect is the on-screen size AFTER
+    // the canvas zoom — GroupNode's ✕ measured 12px against its siblings'
+    // 26 purely because the graph was zoomed out to fit the story. The
+    // layout box is the thing the kit controls; the zoom is the writer's.
+    const heights = found.map((b) => b.offsetHeight);
+    return {
+      quiet,
+      danger,
+      count: found.length,
+      titles: found.map((b) => (b.getAttribute("title") || "").slice(0, 26)),
+      heights,
+      resting: [...new Set(found.map((b) => getComputedStyle(b).color))],
+      shapes: [...new Set(found.map(shape))],
+      // THE HOVER, WHICH IS WHERE THE DISAGREEMENT WAS. It cannot be
+      // provoked without a real pointer, so the claim is read off each
+      // rendered element's own class list — which is better than asking the
+      // kit, because it also catches a call site that imported the intent
+      // and then painted over its hover.
+      missingHover: found
+        .filter((b) => !b.className.includes("hover:bg-[var(--surface-2)]"))
+        .map((b) => (b.getAttribute("title") || "?").slice(0, 26)),
+      wrongHover: found
+        .filter((b) => b.className.includes("hover:bg-[var(--surface-3)]"))
+        .map((b) => (b.getAttribute("title") || "?").slice(0, 26)),
+    };
+  });
+
+  check(
+    "there is more than one row-remover on screen to compare",
+    removers.count >= 2,
+    `${removers.count}: ${removers.titles.join(" · ")}`,
+  );
+  check(
+    "every row-remover is quiet at rest — one colour, and it is the muted one",
+    removers.resting.length === 1 && removers.resting[0] === removers.quiet,
+    `${removers.resting.join(" vs ")} against --text-3 ${removers.quiet}`,
+  );
+  check(
+    "...and every one of them is the same shape",
+    removers.shapes.length === 1,
+    `${removers.shapes.length} shape(s): ${removers.shapes.join(" vs ")}`,
+  );
+  check(
+    "...and every one says the same thing under the pointer",
+    removers.missingHover.length === 0,
+    removers.missingHover.length
+      ? `no hover fill on: ${removers.missingHover.join(", ")}`
+      : `${removers.count} on --surface-2`,
+  );
+  check(
+    "no row-remover borrows the colour that means 'the keyboard is here'",
+    removers.wrongHover.length === 0,
+    removers.wrongHover.length ? removers.wrongHover.join(", ") : "none on --surface-3",
+  );
+  // A NUMBER, BECAUSE "ALL THE SAME SHAPE" SURVIVES SHRINKING ALL OF THEM.
+  // A control proved that twice over. Dropping the kit's glyph size to the
+  // text size leaves every remover agreeing with every other, so the shape
+  // check stayed green while the target got smaller — and the first floor
+  // written here, 21px, was then ALSO too generous: the shrunk button
+  // measures 22. Both numbers are measured rather than reasoned, which is
+  // the only way a threshold is worth anything: `py-1` is 26px and `py-0.5`
+  // is 22px, so the floor sits between them.
+  //
+  // The size is the one value in this version with an argument already
+  // recorded behind it — the Variable Manager grew its own ✕ because it was
+  // "the smallest destructive control in the app" — so the argument is what
+  // gets asserted, rather than the padding string that happens to produce it.
+  check(
+    "a row-remover is a real target, not a 12px glyph with no padding",
+    removers.heights.every((h) => h >= 24),
+    `heights ${[...new Set(removers.heights)].join(", ")}px (floor 24, and 22 is the shrunk one)`,
   );
 
   /* ── every placeholder in the app, at once (v0.84.0) ───────────── */

@@ -181,14 +181,16 @@ function VariableRow({
           writer's work and it was the smallest destructive control in the
           app.
         */}
-        <button
+        <Button
           type="button"
           onClick={onDelete}
           title={`Delete "${name}"`}
-          className="shrink-0 rounded px-1.5 py-1 text-xs text-[var(--text-3)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
+          intent="quietDanger"
+          size="icon"
+          className="shrink-0"
         >
           ✕
-        </button>
+        </Button>
       </div>
 
       {open && (

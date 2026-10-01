@@ -182,6 +182,17 @@ export function EntityEditor() {
                     )
                   }
                   title={`Stop answering to "${alias}"`}
+                  /* NOT the kit's `quietDanger` (v0.85.0), and this is the
+                     third place in this sweep where the kit is the wrong
+                     answer — after GroupNode's rename input and the Content
+                     Browser's search field.
+                     Twelve of the app's thirteen row-removers took the
+                     intent. This one lives INSIDE a `rounded-full` pill
+                     that has its own border and padding, so the intent's
+                     hover fill would paint a square inside a circle, and
+                     its padding would stretch the pill around a glyph.
+                     It takes the colour rule — quiet, red on hover — and
+                     nothing else, which is the part that was ever shared. */
                   className="text-[var(--text-3)] hover:text-[var(--danger)]"
                 >
                   ✕

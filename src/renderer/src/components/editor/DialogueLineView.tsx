@@ -1,3 +1,4 @@
+import { Button } from "../common/Button";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { NodeViewContent, NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
@@ -225,14 +226,19 @@ export function DialogueLineView({ node, editor, getPos }: NodeViewProps) {
           >
             {AFTER_MARK[after]}
           </button>
-          <button
+          <Button
             type="button"
             onClick={() => removeDialogueLine(editor, lineId)}
             title="Remove this line"
-            className="rounded px-1 text-xs text-[var(--text-3)] opacity-0 transition-opacity hover:bg-[var(--surface-3)] hover:text-[var(--danger)] group-hover:opacity-100"
+            intent="quietDanger"
+            size="icon"
+            // Its hover was `--surface-3`, which v0.85.0 reserves for the row
+            // the keyboard is on — so a pointer here said what an arrow key
+            // says. Now the same fill as every other remove in the app.
+            className="opacity-0 transition-opacity group-hover:opacity-100"
           >
             ✕
-          </button>
+          </Button>
         </span>
       </div>
 

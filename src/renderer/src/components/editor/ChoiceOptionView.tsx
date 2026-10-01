@@ -1,3 +1,4 @@
+import { Button } from "../common/Button";
 import { NodeViewContent, NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
 import { useProjectStore } from "../../state/projectStore";
@@ -94,7 +95,7 @@ export function ChoiceOptionView({ node, editor, getPos }: NodeViewProps) {
           option on its own would leave a block the schema forbids. The
           helper takes the block with it, which is also what "I removed my
           only choice" means. */}
-      <button
+      <Button
         type="button"
         contentEditable={false}
         onMouseDown={(e) => e.preventDefault()}
@@ -103,10 +104,15 @@ export function ChoiceOptionView({ node, editor, getPos }: NodeViewProps) {
           if (optionId) removeChoiceOption(editor, optionId);
         }}
         title="Remove this choice"
-        className="shrink-0 select-none rounded px-1 text-xs text-[var(--text-3)] opacity-0 transition-opacity hover:text-[var(--danger)] group-hover:opacity-100"
+        intent="quietDanger"
+        size="icon"
+        // The reveal is behavioural and stays: this ✕ appears when the row is
+        // hovered. What was wrong is that it then had NO hover fill of its
+        // own while its sibling on a dialogue line had one — see the intent.
+        className="shrink-0 select-none opacity-0 transition-opacity group-hover:opacity-100"
       >
         ✕
-      </button>
+      </Button>
     </NodeViewWrapper>
   );
 }
