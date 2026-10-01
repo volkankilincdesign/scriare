@@ -12,6 +12,40 @@ omitting them.
 
 ---
 
+## v0.88.1 — The bump that arrived as a reduction
+
+**Retaking the screenshots after shipping is what caught it.** v0.88.0's
+30% share produced a graph of 215px — nine pixels SMALLER than the fixed 224
+it replaced — on the window the app actually opens at. Electron creates it
+at 1280×800, which leaves a 716px column, and 30% of that is less than the
+old fixed number. So "bump it a couple of pixels" had arrived as a
+reduction for anyone who launches into the default window; the bump existed
+only on a maximised screen.
+
+**The check could not have caught it**, which is the more useful half. It
+asked about columns of 996, 966 and 816 — the sizes with room to spare,
+where 30% is comfortably a bump — and never about the one the app opens at.
+The easy half again, in a check written the same hour as the fix it was
+guarding.
+
+**33% now, and every launch size gains:** 236 at the default window, 269 at
+1440×900, 329 at 1920×1080. A small window still loses a little (210 at
+1024×720) and that is the premise working rather than a miss — the editor
+holds two thirds of the screen wherever it opens, which is what *write
+stories, not syntax* means when it is a number.
+
+**And the launch window is now a named case in the spec**, with a control
+that puts 30% back. A property that only holds on the screens you thought to
+ask about is not a property.
+
+**Worth stating because it is easy to misread:** the share is decided on the
+frame the app opens on and does not chase the window afterwards. Launch at
+1280×800, maximise, and the graph stays sized for 1280×800 — deliberate, for
+the reason the fold rule gives about cameras, and the reason the share had
+to suit the default window rather than the biggest one.
+
+---
+
 ## v0.88.0 — Four verdicts, and the one that was two numbers
 
 His answers to the visual sweep. Two needed no code and are recorded as

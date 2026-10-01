@@ -50,7 +50,26 @@ const STORAGE_KEY = "scriare:flowHeight";
  * ("a writer who wants to look at nothing but the map should be able to"),
  * and this does not reopen it.
  */
-const OPENING_SHARE = 0.3;
+/**
+ * 0.33 RATHER THAN 0.30, AND A RETAKE IS WHY (v0.88.1).
+ *
+ * v0.88.0 shipped 30% and the screens taken straight afterwards showed the
+ * graph at 215px — NINE PIXELS SMALLER than the 224 it replaced. The app's
+ * window opens at 1280×800, which leaves a 716px column, and 30% of that is
+ * less than the old fixed number. So on the window most people actually
+ * launch into, "bump it a couple of pixels" had arrived as a reduction; the
+ * bump only existed on a maximised screen.
+ *
+ * At 33% every launch size gains: 236 at the default window, 269 at
+ * 1440×900, 329 at 1920×1080. A small window still loses a little (210 at
+ * 1024×720) and that is the premise doing its job rather than a miss — the
+ * editor holds two thirds of the screen wherever it opens.
+ *
+ * Found by retaking the screenshots after shipping, which is the second
+ * time looking at a picture has corrected something a measurement had
+ * already "confirmed".
+ */
+const OPENING_SHARE = 0.33;
 
 export function openingFlowHeight(columnHeight: number): number {
   if (!Number.isFinite(columnHeight) || columnHeight <= 0) return DEFAULT_FLOW_HEIGHT;
@@ -119,6 +138,12 @@ export function EditorGraphSplit({ flowCollapsed, onToggleFlow }: EditorGraphSpl
    * window later does not re-run it either: the share is about the frame the
    * app opens on, and a graph that re-sized itself whenever a window moved
    * would be a panel with a mind of its own.
+   *
+   * WHICH MEANS THE LAUNCH WINDOW DECIDES IT, and that is worth saying
+   * because it is easy to misread the numbers: open the app at 1280×800 and
+   * maximise afterwards and the graph stays sized for 1280×800. That is the
+   * intended trade and it is also why the share had to suit the DEFAULT
+   * window rather than the biggest one — see OPENING_SHARE.
    */
   useEffect(() => {
     if (!neverDragged.current) return;

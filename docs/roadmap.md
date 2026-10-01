@@ -608,6 +608,14 @@ aesthetic note come out of one look rather than two.
   rather than the app's hint colour — a fixed value that does not move
   when the theme does. The kit owns the placeholder colour now.
 
+- **v0.88.1 The bump that arrived as a reduction.** Retaking the screenshots
+  after shipping caught it: v0.88.0's 30% share gave 215px on the window the
+  app actually opens at (1280×800 → a 716px column), nine pixels SMALLER
+  than the fixed 224 it replaced. The check could not have caught it — it
+  asked about columns of 996, 966 and 816, the sizes with room to spare. 33%
+  now, and every launch size gains. The launch window is a named case in the
+  spec with its own control. Also worth knowing: the share is decided on the
+  frame the app opens on and does not chase the window afterwards.
 - **v0.88.0 Four verdicts, 1 Oct.** His answers to the visual sweep.
   **The variable readout stays on camera** (it proves the conditions are
   real). **The block buttons stay as they are** — his reasoning better than
@@ -793,7 +801,7 @@ measurement gets fixed whatever the list says.** That is what v0.86.0 did —
 crash-recovery drafts were declined on the measurement and the hole the
 measurement found next door was fixed the same day.
 
-1116 tests, 341 negative controls (as of v0.88.0).
+1117 tests, 342 negative controls (as of v0.88.1).
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and

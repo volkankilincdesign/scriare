@@ -3533,6 +3533,20 @@ const CONTROLS = [
     expect: "larger than the old fixed height",
   },
 
+  {
+    // THE SHARE BACK TO 0.30, which is what v0.88.0 shipped: fine on a big
+    // screen and a nine-pixel REDUCTION on the 1280×800 window the app
+    // actually opens at. The control exists because the first version of
+    // this check only asked about columns of 800px and up, where 30% was
+    // comfortably a bump — the easy half, again.
+    name: "the opening share back to a reduction on the default window",
+    file: src("components/layout/EditorGraphSplit.tsx"),
+    from: "const OPENING_SHARE = 0.33;",
+    to: "const OPENING_SHARE = 0.3;",
+    spec: "graph-layout",
+    expect: "on the window the app actually opens at",
+  },
+
   // THERE IS NO CONTROL FOR THE OPPOSITE — announcing a stylesheet that
   // does not exist — and the attempt is worth recording. Forcing the
   // guard true CRASHES the render rather than failing an assertion,

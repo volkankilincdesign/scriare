@@ -485,6 +485,26 @@ export default async function run({ api, check, seedProject }) {
     roomy.map((r) => `${r.column}→${r.height}`).join(" · "),
   );
 
+  // THE WINDOW THE APP ACTUALLY OPENS AT, which is the case v0.88.0 got
+  // wrong and no check caught. `main/index.ts` creates the window at
+  // 1280×800, leaving a 716px column — and at a 30% share that produced
+  // 215px, NINE PIXELS SMALLER than the fixed height it replaced. "Bump it
+  // a couple of pixels" had arrived as a reduction on the window most
+  // people launch into, and the screens taken after shipping are what
+  // showed it. A check against 996 and 816 passed the whole time, because
+  // the sizes it was asked about were the ones with room to spare.
+  const LAUNCH_COLUMN = 716;
+  const atLaunch = await api(
+    (column) => window.__scriareSplit.openingFlowHeight(column),
+    LAUNCH_COLUMN,
+  );
+  say(`the window the app opens at: column ${LAUNCH_COLUMN}px → graph ${atLaunch}px`);
+  check(
+    "the graph opens larger than it used to on the window the app actually opens at",
+    atLaunch > 224,
+    `${atLaunch}px against the old fixed 224 · ${Math.round((atLaunch / LAUNCH_COLUMN) * 100)}%`,
+  );
+
   await seedProject();
   await wait(300);
 }
