@@ -608,6 +608,37 @@ aesthetic note come out of one look rather than two.
   rather than the app's hint colour — a fixed value that does not move
   when the theme does. The kit owns the placeholder colour now.
 
+- **v0.85.0 The menu row.** v0.82.0 counted the four floating panels and
+  left the rows inside them: four spellings, and one difference that was not
+  cosmetic — the row the keyboard is on was `--surface-2` in the slash menu
+  and `--surface-3` in the mention menu, so "the row Enter takes" was two
+  colours depending on which menu was open, and the speaker menu had it
+  inverted (its HOVER used the selection value). Settled by argument rather
+  than taste, which is why it needed no verdict: hover and keyboard
+  selection can be on screen at once, so they must be two steps of one ramp.
+  Measured in all eight themes.
+- **v0.85.0 The wires were re-routed on every keystroke.** His brief for
+  Auto Layout was faster and smoother with no functional change, and the
+  measurement moved the work. **The three suspects this file has carried
+  since September are not there**: zero chapter-box overlaps (including
+  from five hand-dragged overlapping boxes), zero escaped scenes, zero
+  stacked cards, and the identical result to the pixel whatever mess it
+  starts from. 14 of 70 wires run right to left, which is the loops. And
+  the layout is not the slow part — it is 15–24 ms against the wire
+  router's 86–92, which nobody had ever put a number on. The router's four
+  rip-up passes are not waste (each re-routes the worst quarter by how much
+  they run ALONGSIDE another wire, which is the v0.73.0 distinction), so
+  what was wrong is how OFTEN it ran: the route memo was keyed on
+  `project`, a new object after every store write, so every letter of prose
+  re-routed every wire. Its own comment said "keyed on the COMMITTED
+  geometry", which is what it meant and not what it did — word for word the
+  comment v0.51.0 found on the nodes memo. Fixed with a stated signature
+  and v0.51.0's own reuse mechanism. **The claim could not be checked by
+  looking at the wires**, because re-routing unchanged geometry produces
+  byte-identical paths, so the first version of that check passed on a
+  broken build; the router counts its own calls now, and the spec reports 0
+  routes for a rename and 1 for a move.
+
 **The spreadsheet export's schema is settled** — see
 `docs/spreadsheet-export.md`, decided 28 Sep: three identifiers (an opaque
 Key, an opaque Scene ID, and a readable Ref like `15.D2` recomputed at
@@ -654,7 +685,7 @@ now unblocked except for the file itself.
 than deleted. If they ever land they will not appear in the Story Graph —
 it is already tight and the map would have loading problems.
 
-1063 tests, 324 negative controls (as of v0.84.0).
+1083 tests, 329 negative controls (as of v0.85.0).
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and

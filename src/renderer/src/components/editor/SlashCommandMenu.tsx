@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
-import { FLOATING_PANEL } from "../common/surfaces";
+import { FLOATING_PANEL, MENU_ITEM, MENU_ITEM_SELECTED } from "../common/surfaces";
 import type { Editor, Range } from "@tiptap/core";
 import type { NarrativeBlockDefinition } from "../../narrativeBlocks/types";
 
@@ -70,9 +70,11 @@ export const SlashCommandMenu = forwardRef<SlashCommandMenuHandle, SlashCommandM
             data-slash-item={item.id}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => selectItem(index)}
-            className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-left ${
-              index === selectedIndex ? "bg-[var(--surface-2)]" : ""
-            }`}
+            // v0.85.0 — the kit's row. Its selected colour was `--surface-2`,
+            // one step off the panel and the same value the context menu
+            // uses for HOVER, so this menu and the mention menu disagreed
+            // about the row Enter takes.
+            className={`${MENU_ITEM} ${index === selectedIndex ? MENU_ITEM_SELECTED : ""}`}
           >
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded border border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--text-2)]">
               {item.icon}

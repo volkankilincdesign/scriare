@@ -650,11 +650,77 @@ export function routeDragged(
   return { paths, labels };
 }
 
+/**
+ * Everything `routeWires` reads, as one string (v0.85.0).
+ *
+ * WHY THIS LIVES HERE, beside the function it describes. It is a promise
+ * about what the router looks at, and a promise kept in another file is a
+ * promise that drifts: add a field to the routing and forget this, and the
+ * caller reuses a stale set of wires with no error anywhere. The two belong
+ * in one place so that changing one puts the other on screen.
+ *
+ * MEASURED, WHICH IS WHY IT EXISTS. The router costs 91.5 ms on a 32-scene
+ * story with 70 wires — five times the whole of Auto Layout — and FlowPanel
+ * asked for it again on every change to `project`. `project` is a new object
+ * after every store write, so typing one letter of prose re-routed every
+ * wire in the story. The same shape as v0.51.0's finding, one layer out.
+ *
+ * A wire's geometry depends on a box's position and size, and a link's two
+ * ends and its ordinal. Prose, titles, speakers, conditions, variables,
+ * notes and the whole content tree are absent from that list, which is the
+ * point: they are most of what a writer changes.
+ *
+ * Deliberately a string rather than a deep compare. It is built from
+ * primitives, it costs a fraction of a millisecond on this story, and it
+ * slots into the `reuseBySignature` mechanism v0.51.0 already uses for
+ * nodes and edges — tested directly rather than through a timing harness,
+ * because this container's clock cannot resolve an edit and identity reuse
+ * has the same answer on every machine.
+ */
+export function routeSignature(boxes: AnchorBox[], links: AnchorLink[]): string {
+  // SORTED, because neither array has a guaranteed order: the boxes are the
+  // scenes and then the collapsed groups, and a scene reordered in the
+  // content tree without moving on the canvas must not read as a change. An
+  // unsorted signature would still be correct — it would just miss cheap
+  // reuse, which is the failure mode nobody notices.
+  const b = boxes
+    .map((x) => `${x.id}@${x.x},${x.y},${x.width},${x.height}`)
+    .sort()
+    .join("|");
+  const l = links
+    .map((x) => `${x.id}:${x.source}>${x.target}#${x.ordinal}`)
+    .sort()
+    .join("|");
+  return `${b}~${l}`;
+}
+
+/**
+ * How many times the router has run (v0.85.0).
+ *
+ * ONE INTEGER, AND IT IS HERE BECAUSE THE CLAIM CANNOT BE OBSERVED ANY
+ * OTHER WAY. The thing v0.85.0 fixes is how OFTEN this function runs, and
+ * re-running it on unchanged geometry produces byte-identical paths — so
+ * comparing the wires on screen before and after an edit cannot tell a
+ * fixed build from a broken one. The first version of that check did
+ * exactly this and passed on both.
+ *
+ * Reading the clock instead would make the guarantee depend on the machine,
+ * which is the mistake v0.78.2 found in this project's own timing checks:
+ * on a loaded container the floor is ten times the effect.
+ *
+ * So the count is the evidence. It costs one increment, it is never read by
+ * the app, and it is deliberately not behind a build flag — a counter that
+ * only exists in the test build is a counter that can be true in the test
+ * build and false in the one that ships.
+ */
+export const routeStats = { calls: 0 };
+
 export function routeWires(
   boxes: AnchorBox[],
   links: AnchorLink[],
   options: RouteOptions = {},
 ): RouteResult {
+  routeStats.calls += 1;
   const t0 = now();
   const budgetMs = options.budgetMs ?? 400;
   const maxPasses = options.passes ?? 4;

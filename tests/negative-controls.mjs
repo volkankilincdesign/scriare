@@ -3297,6 +3297,84 @@ const CONTROLS = [
     expect: "the app's own hint colour",
   },
 
+  // ── v0.85.0 · the wire router's key ─────────────────────────────────
+  {
+    // THE STATE IT SHIPPED IN for twelve versions: the router called
+    // directly, so every change to `project` re-routed every wire in the
+    // story. This is the control that matters, because it is the only one
+    // that can tell a fixed build from a broken one — the wires themselves
+    // are identical either way.
+    name: "the whole story re-routed on every keystroke again",
+    file: src("components/graph/FlowPanel.tsx"),
+    from:
+      '    return reuseBySignature(routeCache.current, "routes", routeSignature(boxes, links), () => {\n' +
+      "      const result = routeWires(boxes, links);\n" +
+      "      return { paths: result.paths, labels: result.labels };\n" +
+      "    });",
+    to:
+      "    const result = routeWires(boxes, links);\n" +
+      "    return { paths: result.paths, labels: result.labels };",
+    spec: "perf",
+    expect: "does not re-route the story",
+  },
+  {
+    // The signature blind to one field — `ordinal`, which decides which
+    // slot a wire leaves a scene from. Chosen over `x` deliberately: moving
+    // a scene is the case everyone thinks of and would be caught by almost
+    // any check, while two choices out of one scene swapping order is the
+    // one that would ship.
+    name: "a route key that cannot tell choice 1 from choice 2",
+    file: src("utils/wireRouter.ts"),
+    from: "    .map((x) => `${x.id}:${x.source}>${x.target}#${x.ordinal}`)",
+    to: "    .map((x) => `${x.id}:${x.source}>${x.target}`)",
+    spec: "perf",
+    expect: "every change that CAN move a wire changes the key",
+  },
+  {
+    // And the sort removed, which is the cheap-reuse half rather than the
+    // correctness half: the key stays right and starts missing hits when
+    // the content tree is reordered without anything moving.
+    name: "a route key that depends on the order the boxes arrive in",
+    file: src("utils/wireRouter.ts"),
+    from:
+      "  const b = boxes\n" +
+      "    .map((x) => `${x.id}@${x.x},${x.y},${x.width},${x.height}`)\n" +
+      "    .sort()\n" +
+      "    .join(\"|\");",
+    to:
+      "  const b = boxes\n" +
+      "    .map((x) => `${x.id}@${x.x},${x.y},${x.width},${x.height}`)\n" +
+      "    .join(\"|\");",
+    spec: "perf",
+    expect: "not a change the router has to answer",
+  },
+
+  // ── v0.85.0 · the menu row ──────────────────────────────────────────
+  {
+    // THE STATE THE SLASH MENU SHIPPED IN: the row the keyboard is on
+    // painted one step off the panel instead of two, which is also the
+    // colour its siblings use for HOVER. Done on the kit rather than at
+    // that one call site, because the claim this version makes is that the
+    // separation belongs to the row shape.
+    name: "the row the keyboard is on painted the same as a hover",
+    file: src("components/common/surfaces.ts"),
+    from: 'export const MENU_ITEM_SELECTED = "bg-[var(--surface-3)]";',
+    to: 'export const MENU_ITEM_SELECTED = "bg-[var(--surface-2)]";',
+    spec: "surfaces",
+    expect: "three different colours in every theme",
+  },
+  {
+    // And the hover taken off the row shape, which is what every one of the
+    // four menus did differently before this: two had one, two had none,
+    // and the two that had one disagreed about the colour.
+    name: "a menu row with no hover of its own again",
+    file: src("components/common/surfaces.ts"),
+    from: '"flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-[var(--surface-2)]"',
+    to: '"flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors"',
+    spec: "surfaces",
+    expect: "names the hover colour",
+  },
+
   // THERE IS NO CONTROL FOR THE OPPOSITE — announcing a stylesheet that
   // does not exist — and the attempt is worth recording. Forcing the
   // guard true CRASHES the render rather than failing an assertion,

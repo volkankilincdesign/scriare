@@ -370,6 +370,110 @@ export default async function run({ page, api, check, seedProject }) {
     `kept live: ${reuse.keptAfterPrune}, dropped dead: ${reuse.droppedAfterPrune}`,
   );
 
+  /* ── the wire router's key, by the same argument (v0.85.0) ─────── */
+
+  // ONE LAYER OUT, AND IT BELONGS HERE FOR THE SAME REASON. The router
+  // costs 91.5 ms on a 32-scene story with 70 wires — five times the whole
+  // of Auto Layout — and FlowPanel asked for it again on every change to
+  // `project`, which is a new object after every store write. So typing one
+  // letter of prose re-routed every wire in the story.
+  //
+  // The claim is "a change that cannot move a wire does not re-route", and
+  // the only honest way to check it on this container is to ask the
+  // signature: the floor measured at the top of this file is ten times the
+  // size of the effect.
+  const sig = await api(() => {
+    const { routeSignature } = window.__scriareWires;
+    const boxes = [
+      { id: "s1", x: 0, y: 0, width: 180, height: 72 },
+      { id: "s2", x: 300, y: 0, width: 180, height: 72 },
+    ];
+    const links = [{ id: "e1", source: "s1", target: "s2", ordinal: 1 }];
+    const base = routeSignature(boxes, links);
+    return {
+      base,
+      // Neither array arrives in a guaranteed order — the boxes are the
+      // scenes and then the collapsed groups, and the content tree can be
+      // reordered without anything moving on the canvas.
+      reordered: routeSignature([boxes[1], boxes[0]], links),
+      // What MUST change it, one field at a time, because a signature that
+      // misses one is a stale wire nobody can explain.
+      moved: routeSignature([{ ...boxes[0], x: 18 }, boxes[1]], links),
+      resized: routeSignature([{ ...boxes[0], width: 200 }, boxes[1]], links),
+      added: routeSignature([...boxes, { id: "s3", x: 600, y: 0, width: 180, height: 72 }], links),
+      removed: routeSignature([boxes[0]], links),
+      retargeted: routeSignature(boxes, [{ ...links[0], target: "s1" }]),
+      reordinalled: routeSignature(boxes, [{ ...links[0], ordinal: 2 }]),
+      unlinked: routeSignature(boxes, []),
+    };
+  });
+
+  check(
+    "reordering the boxes is not a change the router has to answer",
+    sig.reordered === sig.base,
+    sig.reordered === sig.base ? "same key" : "the key moved when nothing did",
+  );
+  // ONE NAMED FIELD AT A TIME. "They all differ from the base" would pass
+  // with any single one of them reading the wrong property, and a signature
+  // blind to `ordinal` draws two wires out of one scene in the wrong order
+  // with nothing on screen to explain it.
+  const mustDiffer = ["moved", "resized", "added", "removed", "retargeted", "reordinalled", "unlinked"];
+  const missed = mustDiffer.filter((k) => sig[k] === sig.base);
+  check(
+    "every change that CAN move a wire changes the key",
+    missed.length === 0,
+    missed.length ? `missed: ${missed.join(", ")}` : `${mustDiffer.length} checked: ${mustDiffer.join(", ")}`,
+  );
+
+  // AND THE REAL PANEL, not only the pure function. The checks above prove
+  // the key is right; this proves the canvas is USING it — the gap v0.51.0's
+  // lesson names, where a utility is tested in itself and the call site that
+  // was supposed to adopt it never does.
+  //
+  // COUNTED, NOT COMPARED, and the first version of this check got it wrong
+  // in a way worth recording: it read the drawn wire's `d` attribute before
+  // and after a rename and asserted it was unchanged. That passes on a
+  // BROKEN build too, because re-routing unchanged geometry produces
+  // byte-identical paths — which is the entire point of the fix. "The wires
+  // did not move" is not evidence that the router did not run.
+  const live = await api(async () => {
+    const w = (ms) => new Promise((r) => setTimeout(r, ms));
+    const store = () => window.__scriareProjectStore.getState();
+    const scene = store().project.scenes[0];
+    const calls = () => window.__scriareWires.routeStats.calls;
+
+    // Settle first: mounting the graph routes once, legitimately.
+    await w(320);
+    const start = calls();
+
+    // A rename, through the store the editor writes to. Prose and a title
+    // are the same case here — neither is geometry — and a title is the one
+    // a spec can drive without going through ProseMirror.
+    store().renameScene(scene.id, `${scene.title} — edited`);
+    await w(300);
+    const afterTitle = calls();
+
+    // ...and then a move, which MUST route, so a pass cannot mean "the
+    // router never runs at all".
+    store().updateScenePosition(scene.id, {
+      x: scene.position.x + 180,
+      y: scene.position.y + 90,
+    });
+    await w(320);
+    return { start, afterTitle, afterMove: calls() };
+  });
+
+  check(
+    "an edit that cannot move a wire does not re-route the story",
+    live.afterTitle === live.start,
+    `${live.afterTitle - live.start} route(s) for one rename`,
+  );
+  check(
+    "...and moving a scene still does — the control, inline",
+    live.afterMove > live.afterTitle,
+    `${live.afterMove - live.afterTitle} route(s) for one move`,
+  );
+
   await seedProject();
   await wait(300);
 }

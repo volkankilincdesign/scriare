@@ -58,3 +58,46 @@
  */
 export const FLOATING_PANEL =
   "rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-[shadow:var(--shadow-floating)]";
+
+/**
+ * A row inside one of those menus (v0.85.0).
+ *
+ * v0.82.0 counted the panels and left the rows alone, and the rows had the
+ * same problem one level down. Four menus, four spellings — all
+ * `px-3 py-1.5 text-left`, differing in the gap, in whether the row is a
+ * flex box at all, and in the one thing that is not cosmetic:
+ *
+ *   SlashCommandMenu    selected  --surface-2      hover  (none)
+ *   MentionMenu         selected  --surface-3      hover  (none)
+ *   SpeakerMenu         selected  (accent text)    hover  --surface-3
+ *   ContentContextMenu  selected  (n/a)            hover  --surface-2
+ *
+ * SO "THE ROW YOU ARE ABOUT TO PICK" WAS TWO DIFFERENT COLOURS, and which
+ * one you got depended on which menu you were in — in the slash menu and
+ * the mention menu, which a writer can open within seconds of each other on
+ * the same line.
+ *
+ * THE RULE IS NOT A PREFERENCE, and that is why it could be settled without
+ * asking. Hover and keyboard-selection can be on screen AT THE SAME TIME: a
+ * mouse resting over row one while the arrow keys sit on row three. If both
+ * are painted the same, nothing on screen says which row Enter will take.
+ * So they have to be two steps of the same ramp, and all eight themes
+ * define `--surface` → `--surface-2` → `--surface-3` evenly spaced, with
+ * the panel itself on `--surface`:
+ *
+ *   hover     --surface-2   one step off the panel — "the pointer is here"
+ *   selected  --surface-3   two steps — "this is the one that fires"
+ *
+ * Selection is the louder of the two on purpose. It is the one that acts on
+ * a key press, and it is the one a writer navigating by keyboard has to find
+ * without moving their hand to the mouse.
+ *
+ * Class strings rather than a component, for the reason FLOATING_PANEL
+ * gives: only the row's shape repeats. What is inside one — an icon, a
+ * tagline, a speaker's name, a danger colour — differs in every menu.
+ */
+export const MENU_ITEM =
+  "flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-[var(--surface-2)]";
+
+/** The row the keyboard is on. Applied in addition to `MENU_ITEM`. */
+export const MENU_ITEM_SELECTED = "bg-[var(--surface-3)]";

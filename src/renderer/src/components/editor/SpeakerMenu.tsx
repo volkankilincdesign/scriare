@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { FLOATING_PANEL } from "../common/surfaces";
+import { FLOATING_PANEL, MENU_ITEM } from "../common/surfaces";
 import type { Editor } from "@tiptap/react";
 import { Icon } from "../common/Icon";
 import { useProjectStore } from "../../state/projectStore";
@@ -126,9 +126,14 @@ function Row({
       type="button"
       onMouseDown={(e) => e.preventDefault()}
       onClick={onSelect}
-      className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-[var(--surface-3)] ${
-        active ? "text-[var(--accent)]" : "text-[var(--text-2)]"
-      }`}
+      // v0.85.0 — the kit's row. Its HOVER was `--surface-3`, which is the
+      // value reserved for the row the keyboard is on, so a pointer resting
+      // anywhere in this menu looked like a selection.
+      //
+      // `active` here is not keyboard selection — it is "this is the speaker
+      // already set", which is a fact about the line rather than about where
+      // the keyboard is. It stays the accent and the tick.
+      className={`${MENU_ITEM} ${active ? "text-[var(--accent)]" : "text-[var(--text-2)]"}`}
       {...(rest as Record<string, string>)}
     >
       <Icon name={icon} className="h-3.5 w-3.5 shrink-0" />

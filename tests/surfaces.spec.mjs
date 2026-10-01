@@ -211,6 +211,102 @@ export default async function run({ api, check, seedProject }) {
     `labelled: ${kept.labelled}`,
   );
 
+  /* ── the row inside the panel (v0.85.0) ──────────────────────────── */
+
+  // v0.82.0 COUNTED THE PANELS AND LEFT THE ROWS. One level down, the same
+  // four menus had four spellings of a row, and one of the differences was
+  // not cosmetic: the row the keyboard is on was `--surface-2` in the slash
+  // menu and `--surface-3` in the mention menu, so "the one Enter takes"
+  // was two different colours depending on which menu was open — and a
+  // writer can open both on the same line within seconds.
+  //
+  // THE PROPERTY IS A THREE-WAY SEPARATION, and it is a property rather
+  // than a preference because hover and selection can be on screen at the
+  // same time: a pointer resting on row one while the arrows sit on row
+  // three. If they are painted alike, nothing says which row fires.
+  //
+  // EVERY THEME, because a ramp that separates in the dark ones and
+  // collapses in Daylight is exactly the failure this would have, and the
+  // theme list comes from the app rather than from a copy kept here.
+  const themeIds = await api(() => window.__scriareThemes.THEMES.map((t) => t.id ?? t));
+  const rows = [];
+  for (const id of themeIds) {
+    await setTheme(id);
+    await wait(120);
+    rows.push({
+      theme: id,
+      ...(await api(() => {
+        const S = window.__scriareSurfaces;
+        const host = document.createElement("div");
+        host.className = S.FLOATING_PANEL;
+        document.body.appendChild(host);
+
+        const plain = document.createElement("button");
+        plain.className = S.MENU_ITEM;
+        const picked = document.createElement("button");
+        picked.className = `${S.MENU_ITEM} ${S.MENU_ITEM_SELECTED}`;
+        host.append(plain, picked);
+
+        // A hover cannot be provoked without a real pointer, so the colour
+        // is read from the token and the class is separately asserted to
+        // name that token. The two halves together are the whole claim.
+        const probe = document.createElement("div");
+        probe.style.background = "var(--surface-2)";
+        host.appendChild(probe);
+
+        // SNAPSHOT BEFORE REMOVING. getComputedStyle hands back a LIVE
+        // object — read it after the element is gone and every value is the
+        // document default. v0.82.0 lost an afternoon to that.
+        const out = {
+          panel: getComputedStyle(host).backgroundColor,
+          plain: getComputedStyle(plain).backgroundColor,
+          picked: getComputedStyle(picked).backgroundColor,
+          hover: getComputedStyle(probe).backgroundColor,
+          namesHover: S.MENU_ITEM.includes("hover:bg-[var(--surface-2)]"),
+        };
+        host.remove();
+        return out;
+      })),
+    });
+  }
+
+  check(
+    "every theme was walked for this",
+    rows.length >= 8,
+    `${rows.length} themes: ${rows.map((r) => r.theme).join(", ")}`,
+  );
+  const collapsed = rows.filter(
+    (r) => r.picked === r.panel || r.picked === r.hover || r.hover === r.panel,
+  );
+  check(
+    "a menu row, its hover and its selection are three different colours in every theme",
+    collapsed.length === 0,
+    collapsed.length
+      ? collapsed.map((r) => `${r.theme}: panel ${r.panel} / hover ${r.hover} / picked ${r.picked}`).join(" · ")
+      : `e.g. ${rows[0].theme} ${rows[0].panel} → ${rows[0].hover} → ${rows[0].picked}`,
+  );
+  // TRANSPARENT, NOT "THE PANEL'S COLOUR". The first version of this check
+  // asserted `plain === panel` and went red in all eight themes, which was
+  // a finding about the check: a row that paints nothing computes as
+  // `rgba(0, 0, 0, 0)` and lets the panel show through, so it LOOKS like the
+  // panel and does not read like it. Comparing the two would also have
+  // passed a row that hard-coded the panel's own colour, which is the thing
+  // four of this app's fields were doing wrong two versions ago.
+  const opaque = rows.filter((r) => !/^rgba\(0, 0, 0, 0\)$|^transparent$/.test(r.plain));
+  check(
+    "...and an unselected row adds no fill of its own over the panel",
+    opaque.length === 0,
+    opaque.length ? opaque.map((r) => `${r.theme}: ${r.plain}`).join(", ") : "all eight paint nothing",
+  );
+  check(
+    "the kit's row is what names the hover colour, not its callers",
+    rows.every((r) => r.namesHover === true),
+    `${rows.filter((r) => r.namesHover).length}/${rows.length}`,
+  );
+
+  await setTheme("dark");
+  await wait(120);
+
   // Left as the next spec would want to find it — the runner's contract.
   await seedProject();
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { FLOATING_PANEL } from "../common/surfaces";
+import { FLOATING_PANEL, MENU_ITEM } from "../common/surfaces";
 
 export interface ContentMenuItem {
   label: string;
@@ -57,7 +57,10 @@ export function ContentContextMenu({ x, y, items, onClose }: ContentContextMenuP
           // destructive buttons — a right-click menu's "Delete" item is the
           // same kind of destructive affordance ConfirmDialogHost/FrameNode
           // already read the theme token for.
-          className={`block w-full px-3 py-1.5 text-left text-sm hover:bg-[var(--surface-2)] ${
+          // v0.85.0 — the kit's row. This one's hover was already right;
+          // what it did not have was the flex shape, so a menu item here
+          // could never carry an icon the way its three siblings do.
+          className={`${MENU_ITEM} ${
             item.danger ? "text-[var(--danger)]" : "text-[var(--text)]"
           }`}
         >

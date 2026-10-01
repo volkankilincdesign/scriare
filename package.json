@@ -1,6 +1,6 @@
 {
   "name": "scriare",
-  "version": "0.84.0",
+  "version": "0.85.0",
   "description": "A writing-first workspace for branching narratives.",
   "main": "./out/main/index.js",
   "author": {

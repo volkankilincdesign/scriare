@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
-import { FLOATING_PANEL } from "../common/surfaces";
+import { FLOATING_PANEL, MENU_ITEM, MENU_ITEM_SELECTED } from "../common/surfaces";
 import type { Editor, Range } from "@tiptap/core";
 import { Icon } from "../common/Icon";
 import { ENTITY_LABEL } from "../../types/entities";
@@ -114,8 +114,11 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(
               onMouseDown={(e) => e.preventDefault()}
               onMouseEnter={() => setSelectedIndex(index)}
               onClick={(e) => selectItem(index, e.shiftKey)}
-              className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors ${
-                active ? "bg-[var(--surface-3)] text-[var(--text)]" : "text-[var(--text-2)]"
+              // v0.85.0 — the kit's row. This one already had the right
+              // selected colour; it is here so that there is one spelling
+              // rather than one correct spelling and three others.
+              className={`${MENU_ITEM} ${
+                active ? `${MENU_ITEM_SELECTED} text-[var(--text)]` : "text-[var(--text-2)]"
               }`}
             >
               <Icon

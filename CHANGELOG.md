@@ -12,6 +12,142 @@ omitting them.
 
 ---
 
+## v0.85.0 — The wires were re-routed on every keystroke, and four menus disagreed about which row fires
+
+Two pieces, both of them "nothing moves, nothing is drawn differently" work.
+
+### The menu row
+
+**v0.82.0 counted the panels and left the rows alone.** One level down, the
+same four menus had four spellings of a row — all `px-3 py-1.5 text-left`,
+differing in the gap, in whether the row was a flex box at all, and in one
+thing that is not cosmetic:
+
+| | selected | hover |
+| --- | --- | --- |
+| Slash menu | `--surface-2` | — |
+| Mention menu | `--surface-3` | — |
+| Speaker menu | accent text | `--surface-3` |
+| Content context menu | n/a | `--surface-2` |
+
+**So "the row Enter takes" was two different colours**, and which one a
+writer got depended on which menu was open — the slash menu and the mention
+menu, which can both be opened on the same line within seconds of each
+other. The speaker menu had it inverted: its HOVER used the value reserved
+for selection, so a pointer resting anywhere in it looked like a choice
+already made.
+
+**The rule could be settled by argument rather than taste**, which is why
+this did not need his eye. Hover and keyboard-selection can be on screen at
+the same time — a pointer on row one while the arrows sit on row three — so
+if they are painted alike nothing on screen says which row fires. They have
+to be two steps of one ramp, and all eight themes define `--surface` →
+`--surface-2` → `--surface-3` evenly spaced with the panel itself on
+`--surface`. Hover is one step off the panel; selection is two, because it
+is the one that acts on a key press and the one a writer navigating by
+keyboard has to find without reaching for the mouse.
+
+**Measured in all eight themes, because a ramp that separates in the dark
+ones and collapses in Daylight is exactly the failure this would have.**
+The theme list comes from the app rather than a copy kept in the test.
+
+**And one finding about the new check.** It first asserted that an
+unselected row is "the panel's colour" and went red in all eight themes — a
+row that paints nothing computes as `rgba(0, 0, 0, 0)` and lets the panel
+show through, so it looks like the panel and does not read like it.
+Comparing the two would also have passed a row that hard-coded the panel's
+own fill, which is precisely what four of this app's fields were doing wrong
+one version ago.
+
+### The wires
+
+Nothing moves, nothing is drawn differently, and the story's map stops
+being rebuilt when nobody has touched it. His instruction for this pass was
+to optimise Auto Layout without changing any functionality, and the first
+move was a measurement rather than a fix — which turned out to matter,
+because the measurement pointed somewhere else entirely.
+
+**The three suspects the roadmap had carried since September are not
+there.** Merges dragged far right, loops placed as forward edges, chapter
+boxes sized after their contents and overlapping their neighbours: measured
+on The Blue Hour, 32 scenes and 70 wires, there are zero chapter-box
+overlaps, zero scenes outside the chapter that owns them and zero stacked
+cards. It is also idempotent — started from five hand-dragged overlapping
+boxes, Auto Layout produces the identical result to the pixel. 14 of 70
+wires run right to left, which is the loops, and a story that sends the
+reader back has to be drawn somehow. So nothing was moved, which is what he
+asked for; the numbers are in `claude/auto-layout-measurement.md` and in a
+harness that reports them on every run.
+
+**And the layout is not the slow part.** `computeGraphLayout` is 15–24 ms.
+The button, with history and the grid snap and the store write, is about
+20. v0.73.0's wire router on the result is **86–92 ms** — five times the
+whole of Auto Layout, and nobody had ever put a number on it.
+
+**The router's four rip-up passes are not waste, and that is why this
+version is not about them.** Each pass re-routes the worst quarter of wires
+by how much they run ALONGSIDE another wire, which is the distinction the
+whole router exists to make — parallel lines that overlap read as one line,
+which was his report in v0.73.0. Cutting passes buys speed by making the
+picture worse. That is a functional change and it was off the table.
+
+**What was wrong is how often it ran.** `FlowPanel`'s route memo was keyed
+on `project`, and `project` is a new object after every store write — so
+every letter of prose, every speaker, every condition re-routed every wire
+in the story. The comment above it said it was "keyed on the COMMITTED
+geometry", which is what it meant and not what it did. That is word for
+word the comment v0.51.0 found on the nodes memo, one layer further out,
+wrong in the same way for the same reason.
+
+**A wire's geometry is a box's position and size and a link's two ends and
+its ordinal.** Prose, titles, speakers, conditions, variables, notes and
+the whole content tree are absent from that list, which is the point: they
+are most of what a writer changes. `routeSignature` states it, and
+v0.51.0's `reuseBySignature` hands back the previous wires when none of it
+moved. The signature lives beside the router rather than beside the caller,
+because it is a promise about what the router reads and a promise kept in
+another file drifts.
+
+**The claim could not be checked the obvious way, and the obvious way
+passed.** The first version of the live check read the drawn wire's path
+before and after a rename and asserted it was unchanged — which is true on
+a BROKEN build as well, because re-routing unchanged geometry produces
+byte-identical paths. That is the entire point of the fix, and it makes the
+output useless as evidence. "The wires did not move" does not mean the
+router did not run.
+
+**So the router counts its own calls**, one integer, never read by the app
+and deliberately not behind a build flag — a counter that exists only in
+the test build can be true there and false in the one that ships. The spec
+now reports **0 routes for a rename and 1 for a move**, which is a sentence
+with the same answer on every machine. Reading the clock instead would have
+made the guarantee depend on the container, which is exactly the mistake
+v0.78.2 found in this project's own timing checks: on a loaded box the floor
+is ten times the effect.
+
+**Three controls, and the first is the one that earns its keep.** Calling
+the router directly again — the state the file shipped in for twelve
+versions — and the count check goes red while every wire on screen stays
+identical. The second removes `ordinal` from the key, chosen over position
+deliberately: moving a scene is the case anyone would think to test, and two
+choices out of one scene swapping order is the case that would ship. The
+third removes the sort, which is the cheap-reuse half rather than the
+correctness half — the key stays right and starts missing hits when the
+content tree is reordered without anything moving.
+
+**Two findings about the measurement harness, both the same mistake.** It
+reported three green chapter-box checks against a story with "0 drawn
+chapters" — the count read the *stored* rectangle, while a folder is drawn
+when it has one **or when it holds at least one scene**, with a box derived
+from those scenes. All five chapters had been drawn the whole time and the
+checks were measuring nothing. The pass written to fix that then drew
+chapters that were already drawn and produced numbers identical to the first
+pass to the pixel, which is what caught the first mistake. Every box check
+states what it looked at now, so a vacuous pass is visible without reading
+the fixture.
+
+---
+
 ## v0.84.0 — The Inspector, counted
 
 The UI sweep's first real panel. The method is v0.56.0's and has not

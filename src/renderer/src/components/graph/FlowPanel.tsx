@@ -28,7 +28,7 @@ import {
   SCENE_NODE_WIDTH,
   snapRect,
 } from "../../utils/graphConstants";
-import { routeDragged, routeWires } from "../../utils/wireRouter";
+import { routeDragged, routeSignature, routeWires } from "../../utils/wireRouter";
 import {
   COLLAPSED_GROUP_SIZE,
   contentIndex,
@@ -597,7 +597,33 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
    * are exactly the things a wire can end at. An open chapter box is not an
    * obstacle: it is a container, its scenes are inside it, and a wire
    * crossing its border crosses a label rather than a thing.
+   *
+   * "KEYED ON THE COMMITTED GEOMETRY" WAS NOT TRUE (v0.85.0). It said
+   * `project` and meant geometry, and `project` is a new object after every
+   * store write — so every letter of prose, every speaker, every condition
+   * re-routed every wire in the story. Measured: 91.5 ms on a 32-scene
+   * story with 70 wires, which is five times the whole of Auto Layout and
+   * the largest single thing in a keystroke. The sentence above is exactly
+   * the comment v0.51.0 found on the nodes memo, one layer out, and it was
+   * wrong in the same way for the same reason.
+   *
+   * So the geometry is now stated rather than implied: `routeSignature`
+   * lists what the router reads, and `reuseBySignature` hands back the
+   * previous wires when none of it moved. The signature is built next to the
+   * router, so a change to what routing depends on puts the promise about it
+   * on screen. The boxes and links are still built every render — that is a
+   * walk over 32 scenes and a map over an existing array, a fraction of a
+   * millisecond against the 91 it decides whether to spend.
+   *
+   * Nothing here draws differently. Same inputs, same wires, same labels;
+   * the only change is how often the question is asked.
    */
+  const routeCache = useRef(
+    newSignatureCache<{
+      paths: Map<string, string>;
+      labels: Map<string, { x: number; y: number }>;
+    }>(),
+  );
   const routes = useMemo(() => {
     const empty = {
       paths: new Map<string, string>(),
@@ -631,8 +657,13 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
       target: edge.target,
       ordinal: (edge.data as { ordinal?: number } | undefined)?.ordinal ?? 0,
     }));
-    const result = routeWires(boxes, links);
-    return { paths: result.paths, labels: result.labels };
+    // ONE KEY, not one per wire. The router solves the whole board at once —
+    // a wire's path depends on where every other wire went — so there is
+    // nothing to reuse per wire, and the cache holds a single entry.
+    return reuseBySignature(routeCache.current, "routes", routeSignature(boxes, links), () => {
+      const result = routeWires(boxes, links);
+      return { paths: result.paths, labels: result.labels };
+    });
   }, [project, edgesBase]);
 
   const dragging = Boolean(frameDrag || sceneDrag || frameResize);
