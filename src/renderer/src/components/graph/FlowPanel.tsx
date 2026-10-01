@@ -570,6 +570,91 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
     [project],
   );
 
+  /**
+   * Fold every chapter and the map was gone (v0.87.0).
+   *
+   * MEASURED, from a screenshot and then from the DOM: with all five
+   * chapters of The Blue Hour folded, the graph holds 5 collapsed group
+   * nodes and 11 bundled edges, and not one of them is on screen. The
+   * blocks are drawn where their chapters were; the camera is still framing
+   * the area thirty-two scene cards used to occupy, which after folding
+   * contains nothing at all. A writer folds a story to see its shape and
+   * gets an empty canvas — and the shot the roadmap plans for the video,
+   * four chapter boxes and then one unfolds, cannot be taken without
+   * hunting for them with the fit-view button first.
+   *
+   * THE RULE IS DELIBERATELY NARROW, for `straightenRuns`' reason: a camera
+   * that re-frames on every fold would yank the view away from a writer who
+   * folded one distant chapter while working on another, which is a worse
+   * fault than the one being fixed because it happens constantly rather
+   * than occasionally. So this re-fits ONLY when the fold left nothing
+   * visible — when the node bounds and the viewport no longer intersect at
+   * all. Fold a chapter you are looking at and nothing moves.
+   *
+   * Keyed on which groups are folded rather than on `project`, so that
+   * typing a word does not run it.
+   */
+  const foldSignature = groupsNow
+    .filter((g) => g.collapsed)
+    .map((g) => g.id)
+    .sort()
+    .join("|");
+  const lastFold = useRef(foldSignature);
+  useEffect(() => {
+    if (lastFold.current === foldSignature) return;
+    lastFold.current = foldSignature;
+    const instance = flowInstanceRef.current;
+    if (!instance) return;
+
+    // A TIMER, NOT A FRAME, and the distinction is the whole of it. The
+    // first version used `requestAnimationFrame` and the check still found
+    // nothing on screen: React Flow replaces the node set and then MEASURES
+    // it, and a frame callback runs before that measuring pass, so the
+    // bounds read there are the ones being replaced.
+    //
+    // THE DURATION IS NOT THE MECHANISM, which a control proved by failing
+    // to fail: at `0` this works exactly as well as at `120`. So the number
+    // is slack rather than necessity — kept small and kept honest about
+    // being arbitrary, because a comment claiming 120ms was needed would be
+    // a claim nothing in this file can support.
+    const id = window.setTimeout(() => {
+      const flow = flowInstanceRef.current;
+      if (!flow) return;
+      const nodes = flow.getNodes();
+      if (nodes.length === 0) return;
+
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      for (const n of nodes) {
+        const w = n.measured?.width ?? n.width ?? SCENE_NODE_WIDTH;
+        const h = n.measured?.height ?? n.height ?? SCENE_NODE_HEIGHT;
+        minX = Math.min(minX, n.position.x);
+        minY = Math.min(minY, n.position.y);
+        maxX = Math.max(maxX, n.position.x + w);
+        maxY = Math.max(maxY, n.position.y + h);
+      }
+
+      // The visible rectangle, in the same coordinates the nodes live in.
+      const { x, y, zoom } = flow.getViewport();
+      // `containerRef` is the graph's visible rectangle — the element
+      // <ReactFlow> fills — so it is what "is anything on screen" means.
+      const box = containerRef.current?.getBoundingClientRect();
+      if (!box || zoom <= 0) return;
+      const viewMinX = -x / zoom;
+      const viewMinY = -y / zoom;
+      const viewMaxX = viewMinX + box.width / zoom;
+      const viewMaxY = viewMinY + box.height / zoom;
+
+      const intersects =
+        maxX > viewMinX && minX < viewMaxX && maxY > viewMinY && minY < viewMaxY;
+      if (intersects) return;
+      flow.fitView({ duration: CAMERA_FIT_DURATION_MS, padding: 0.2 });
+    }, 120);
+    return () => window.clearTimeout(id);
+  }, [foldSignature]);
+
   /** The live drag offset a scene inherits from whichever group is carrying it. */
   function groupOffsetFor(sceneId: string): DragOffset | undefined {
     if (!frameDrag) return undefined;

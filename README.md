@@ -208,7 +208,7 @@ lives in.
 
 ## Status
 
-**v0.86.0 — in active development, and usable.** The editor, graph,
+**v0.87.0 — in active development, and usable.** The editor, graph,
 runtime, entities, notes, variables, validation, search and **export** are
 all real, and the app now builds a Windows installer. See
 [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest list of what
@@ -228,8 +228,8 @@ screen. Clicking it copies the version, your platform and the engine
 underneath — paste that into the report and neither of us has to guess
 which build you were on.
 
-**1108 automated tests** run against the real packaged application, and
-**336 negative controls**: each one breaks a specific line of the shipped
+**1112 automated tests** run against the real packaged application, and
+**338 negative controls**: each one breaks a specific line of the shipped
 source on purpose and checks that a named assertion fails. Two that had
 been reporting green were fixed in v0.78.2. One was a **false alarm since
 v0.60.0** — the sabotage worked and the check caught it every time, but the
@@ -245,7 +245,7 @@ current rather than historical: a full sweep finished at v0.81.3 with all
 309 caught, no stale controls and nothing found. It is the first complete
 pass since v0.78.2, and it took about two and a half hours in groups
 because each control is a full production rebuild plus a spec run. The
-twenty-seven added since were watched individually as they were written, which
+twenty-nine added since were watched individually as they were written, which
 is the standing rule — a control nobody has seen fail is not evidence of
 anything.
 

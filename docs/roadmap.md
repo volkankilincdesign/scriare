@@ -608,6 +608,28 @@ aesthetic note come out of one look rather than two.
   rather than the app's hint colour — a fixed value that does not move
   when the theme does. The kit owns the placeholder colour now.
 
+- **v0.87.0 Fold the story and it was gone.** The visual sweep's half that is
+  Claude's: every surface photographed from the shipped build with the REAL
+  Blue Hour loaded. Two bugs, both found by looking at a picture rather than
+  by a test, and 1108 tests were green over the first.
+  **(1)** Fold every chapter and the graph showed an empty canvas — five
+  blocks and eleven bundled wires existed, drawn where their chapters had
+  been, while the camera went on framing the area thirty-two cards used to
+  fill. Fixed with a deliberately narrow rule (re-frame ONLY when the fold
+  left nothing visible), after a first version using `requestAnimationFrame`
+  changed nothing because React Flow measures the new node set after the
+  frame callback runs.
+  **(2)** `tools/shots.mjs` was photographing a three-scene fixture of its
+  own, also called The Blue Hour, and injecting empty blocks into the open
+  scene — so the first Play Mode shot showed a blank fourth option under the
+  three he wrote, a defect that existed only in the photograph.
+  **Four judgements were NOT decided** and are recorded in
+  `claude/visual-sweep-findings.md`: the graph's default height, the block
+  buttons inverting to the heaviest control in the toolbar on light themes,
+  the variable readout on camera, and the theme a stranger lands on. Also
+  recorded there: his story uses 28 Choices, 12 Conditionals and **zero
+  Dialogue blocks** — the one thing Twine structurally cannot do is the one
+  thing the demo story does not demonstrate.
 - **v0.86.0 Crash-recovery drafts: MEASURED, AND DECLINED — and the hole the
   measurement found instead.** The condition this item carried since v0.47.0
   ("only worth it if something is ever lost to a power cut the atomic write
@@ -755,7 +777,7 @@ measurement gets fixed whatever the list says.** That is what v0.86.0 did —
 crash-recovery drafts were declined on the measurement and the hole the
 measurement found next door was fixed the same day.
 
-1108 tests, 336 negative controls (as of v0.86.0).
+1112 tests, 338 negative controls (as of v0.87.0).
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and

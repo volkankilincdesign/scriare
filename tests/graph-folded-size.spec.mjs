@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+
 /**
  * A folded group keeps the size it will unfold to (v0.43.0, reported).
  *
@@ -154,6 +156,97 @@ export default async function ({ page, api, check, seedProject }) {
     );
   });
   check("...with its own scenes still inside it", contains === true, `contains: ${contains}`);
+
+  /* ── fold everything, and look for it (v0.87.0) ─────────────────── */
+
+  // FOUND IN A SCREENSHOT, not by a test, which is the second time that has
+  // happened on this surface. With every chapter of the real story folded,
+  // the graph held five collapsed blocks and eleven bundled wires and showed
+  // an empty canvas: the blocks are drawn where their chapters were, and the
+  // camera was still framing the area thirty-two scene cards used to fill.
+  //
+  // ASSERTED AS "ON SCREEN", NOT AS "EXISTS". The nodes existed the whole
+  // time — a check that counted them passed on the broken build, which is
+  // exactly the trap v0.85.0's route memo set. What was wrong is where the
+  // camera was pointing, so the measurement is each node's rectangle against
+  // the graph's own rectangle, in screen pixels.
+  const onScreen = () =>
+    api(() => {
+      const surface = document.querySelector(".react-flow");
+      if (!surface) return { nodes: 0, visible: 0 };
+      const box = surface.getBoundingClientRect();
+      const nodes = [...document.querySelectorAll(".react-flow__node")];
+      const visible = nodes.filter((n) => {
+        const r = n.getBoundingClientRect();
+        return (
+          r.width > 0 &&
+          r.right > box.left &&
+          r.left < box.right &&
+          r.bottom > box.top &&
+          r.top < box.bottom
+        );
+      });
+      return { nodes: nodes.length, visible: visible.length };
+    });
+
+  // THE REAL STORY FOR THIS ONE, and the reason is the fixture above. It has
+  // three scenes in one chapter, so folding it moves the content a few dozen
+  // pixels and the camera never loses sight of it — the check would pass on
+  // the broken build. The defect appears when folding collapses a wide story
+  // into blocks far from where the camera is framing, which needs a story
+  // with some width to it: thirty-two scenes across five chapters.
+  const loaded = await api(async (json) => {
+    const w = (ms) => new Promise((r) => setTimeout(r, ms));
+    const project = window.__scriareProjectTypes.normalizeProject(JSON.parse(json));
+    window.__scriareProjectStore.setState({ project, filePath: null, saveStatus: "saved" });
+    await w(500);
+    // Frame it the way a writer would find it, so the camera starts where
+    // the unfolded story is.
+    document.querySelector(".react-flow__controls-fitview")?.click();
+    await w(700);
+    return { scenes: project.scenes.length };
+  }, await readFile(new URL("./fixtures/the-blue-hour.scriare", import.meta.url), "utf-8"));
+
+  check(
+    "the big story is loaded, so folding has somewhere to go wrong",
+    loaded.scenes >= 30,
+    `${loaded.scenes} scenes`,
+  );
+
+  const framedBefore = await onScreen();
+  check(
+    "the graph has something on screen to start with",
+    framedBefore.visible > 0,
+    `${framedBefore.visible} of ${framedBefore.nodes} nodes visible`,
+  );
+
+  // Every group folded, through the store rather than by clicking each
+  // caret: what is being tested is where the camera ends up, and the gesture
+  // that folds a chapter is already covered above.
+  const folded = await api(() => {
+    const store = window.__scriareProjectStore.getState();
+    const groups = window.__scriareGroupUtils.graphGroups(
+      store.project.content,
+      store.project.scenes,
+    );
+    groups.forEach((g) => store.toggleFolderCollapsed(g.id));
+    return groups.length;
+  });
+  // The re-fit runs on the frame after the fold and animates, so this waits
+  // for the animation rather than for the state.
+  await wait(900);
+  const framedAfter = await onScreen();
+
+  check(
+    "folding every chapter actually folds them",
+    folded >= 1 && framedAfter.nodes > 0 && framedAfter.nodes < framedBefore.nodes,
+    `${folded} folded · ${framedBefore.nodes} nodes → ${framedAfter.nodes}`,
+  );
+  check(
+    "...and the folded story is still on screen, not off in the margin",
+    framedAfter.visible === framedAfter.nodes,
+    `${framedAfter.visible} of ${framedAfter.nodes} blocks visible`,
+  );
 
   await api(() => window.__scriareSelectionStore?.setState({ graphIds: [] }));
   await seedProject();

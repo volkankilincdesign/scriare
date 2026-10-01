@@ -3467,6 +3467,36 @@ const CONTROLS = [
     expect: "names a cause rather than failing silently",
   },
 
+  // ── v0.87.0 · the folded graph ──────────────────────────────────────
+  {
+    // THE DEFECT, PUT BACK: the camera stays where the unfolded story was,
+    // so folding every chapter shows an empty canvas. Found in a screenshot
+    // of the real story, not by a test, which is the second time that has
+    // happened on this surface.
+    name: "fold every chapter and the map goes off the edge again",
+    file: src("components/graph/FlowPanel.tsx"),
+    from: "      const intersects =\n        maxX > viewMinX && minX < viewMaxX && maxY > viewMinY && minY < viewMaxY;\n      if (intersects) return;",
+    to: "      return;",
+    spec: "graph-folded",
+    expect: "still on screen, not off in the margin",
+  },
+  {
+    // THE FRAME CALLBACK, which is what this was written as first: it runs
+    // before React Flow measures the new node set, so it re-frames the nodes
+    // being replaced and the camera stays where it was.
+    //
+    // NOT the duration. A control that changed `120` to `0` would not go red
+    // — measured — because the number is slack and the mechanism is being a
+    // task rather than a frame. Pointing this at the thing that actually
+    // matters is the difference between a control and a decoration.
+    name: "the re-fit running before the new nodes are measured",
+    file: src("components/graph/FlowPanel.tsx"),
+    from: "    const id = window.setTimeout(() => {",
+    to: "    const id = window.requestAnimationFrame(() => {",
+    spec: "graph-folded",
+    expect: "still on screen, not off in the margin",
+  },
+
   // THERE IS NO CONTROL FOR THE OPPOSITE — announcing a stylesheet that
   // does not exist — and the attempt is worth recording. Forcing the
   // guard true CRASHES the render rather than failing an assertion,

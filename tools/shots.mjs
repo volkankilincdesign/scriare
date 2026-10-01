@@ -20,7 +20,7 @@
  * drives (window.__scriare*) exist only in that build, and it launches
  * whatever is in out/ rather than the sources.
  */
-import { mkdir, rm } from "node:fs/promises";
+import { mkdir, readFile, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { _electron } from "playwright-core";
@@ -61,8 +61,54 @@ const noProject = () =>
     window.__scriareProjectStore.setState({ project: null, filePath: null });
   });
 
-/** A story with enough in it that every surface has something to draw. */
+/**
+ * HIS ACTUAL STORY, not a stand-in for it (v0.86.0).
+ *
+ * This built a three-scene fixture by hand and called it "The Blue Hour",
+ * which is the name of the real thing — 32 scenes, five chapters, 70 choice
+ * options with destinations — that has been sitting in `tests/fixtures`
+ * since v0.64.0 and is what the video will be shot with.
+ *
+ * The difference matters most in exactly the shot that matters most. On
+ * three scenes the Story Graph is a toy: two wires, no chapter boxes, no
+ * merges, nothing for v0.73.0's router to route around. The visual sweep
+ * exists to answer "how does this look", and a graph with three cards in it
+ * cannot answer that question for a graph with thirty-two.
+ *
+ * The stub is kept as the fallback rather than deleted: this script has to
+ * run on a checkout where the fixture has moved or been renamed, and a
+ * screenshot run that dies on a missing file is a screenshot run nobody
+ * does.
+ */
 async function loadStory() {
+  const fixture = join(root, "tests/fixtures/the-blue-hour.scriare");
+  let raw = null;
+  try {
+    raw = await readFile(fixture, "utf-8");
+  } catch {
+    console.log("  (no fixture at tests/fixtures — falling back to the built-in stub)");
+  }
+
+  if (raw) {
+    await page.evaluate(async (json) => {
+      const w = (ms) => new Promise((r) => setTimeout(r, ms));
+      const project = window.__scriareProjectTypes.normalizeProject(JSON.parse(json));
+      window.__scriareProjectStore.setState({ project, filePath: null, saveStatus: "saved" });
+      await w(320);
+      // The story's own opening, rather than whichever scene happens to be
+      // first in the array — this is the screen a reader starts on.
+      const start = project.startSceneId ?? project.scenes[0]?.id;
+      if (start) window.__scriareProjectStore.getState().selectScene(start);
+      await w(320);
+    }, raw);
+    const loaded = await page.evaluate(() => {
+      const p = window.__scriareProjectStore.getState().project;
+      return { name: p?.name, scenes: p?.scenes.length ?? 0 };
+    });
+    console.log(`  ${loaded.name} — ${loaded.scenes} scenes`);
+    return true;
+  }
+
   await page.evaluate(async () => {
     const w = (ms) => new Promise((r) => setTimeout(r, ms));
     const now = new Date().toISOString();
@@ -109,14 +155,6 @@ async function loadStory() {
             order: 1,
             content: { type: "doc", content: [para("Cold, and further than it looked.")] },
           },
-          {
-            id: "s3",
-            title: "The Long Way Back",
-            position: { x: 320, y: 90 },
-            frameId: null,
-            order: 2,
-            content: { type: "doc", content: [para("Nothing has moved.")] },
-          },
         ],
         content: [],
         favorites: [],
@@ -128,9 +166,28 @@ async function loadStory() {
     window.__scriareProjectStore.getState().selectScene("s1");
     await w(280);
   });
+  return false;
 }
 
-async function addBlocks() {
+/**
+ * Puts one of each block in the open scene — ONLY when the story has none
+ * (v0.86.0).
+ *
+ * It used to run unconditionally, which was right while the fixture was a
+ * three-scene stub with no blocks in it. Against the real story it writes an
+ * EMPTY Choice, Dialogue and Conditional into the opening scene, and an
+ * empty choice renders to a reader as a box containing "…". So the first
+ * Play Mode screenshot showed his opening page with a fourth, blank option
+ * under the three he wrote — a defect that existed only in the photograph,
+ * which is the worst kind to hand somebody who is judging how the app looks.
+ */
+async function addBlocks(real) {
+  if (real) {
+    const has = await page.evaluate(
+      () => document.querySelectorAll("[data-choice-block], [data-dialogue-block]").length,
+    );
+    if (has > 0) return;
+  }
   await page.evaluate(async () => {
     const w = (ms) => new Promise((r) => setTimeout(r, ms));
     const editor = window.__scriareEditorStore.getState().editor;
@@ -164,10 +221,39 @@ await run("welcome", async () => {
 /* ── the writing surface ────────────────────────────────────────── */
 await run("editor", async () => {
   await size(1280, 860);
-  await loadStory();
+  const real = await loadStory();
   await shot("editor-prose");
-  await addBlocks();
+
+  // HIS BLOCKS, NOT MINE (v0.86.0). This used to insert one of each and
+  // photograph the result, which on the real story meant writing three EMPTY
+  // blocks into his opening page — and an empty choice renders as a box
+  // containing "…". The story already uses two of the three (28 scenes with
+  // a Choice, 12 with a Conditional), so the honest picture of "what a
+  // scene with blocks in it looks like" is a scene he wrote.
+  if (real) {
+    await page.evaluate(async () => {
+      const w = (ms) => new Promise((r) => setTimeout(r, ms));
+      window.__scriareProjectStore.getState().selectScene("s08");
+      await w(420);
+    });
+  }
+  await addBlocks(real);
   await shot("editor-blocks");
+
+  // THE THIRD BLOCK, WHICH HIS STORY DOES NOT USE. Zero Dialogue blocks in
+  // thirty-two scenes — so this is the one place the screenshot has to
+  // invent, and it is labelled as invented rather than passed off as his.
+  if (real) {
+    await page.evaluate(async () => {
+      const w = (ms) => new Promise((r) => setTimeout(r, ms));
+      const editor = window.__scriareEditorStore.getState().editor;
+      editor.commands.focus("end");
+      editor.chain().focus().insertDialogueBlock().run();
+      await w(300);
+      editor.commands.blur();
+    });
+    await shot("editor-dialogue-inserted");
+  }
 });
 
 /* ── every dialog, one after another ────────────────────────────── */
@@ -198,8 +284,8 @@ await run("dialogs", async () => {
 await run("light", async () => {
   await size(1280, 860);
   await theme("light");
-  await loadStory();
-  await addBlocks();
+  const real = await loadStory();
+  await addBlocks(real);
   await shot("light-editor");
   await openUI("openHelp");
   await shot("light-help");
@@ -215,8 +301,8 @@ await run("light", async () => {
 /* ── a narrow window ────────────────────────────────────────────── */
 await run("narrow", async () => {
   await size(1024, 720);
-  await loadStory();
-  await addBlocks();
+  const real = await loadStory();
+  await addBlocks(real);
   await shot("narrow-editor");
   await openUI("openHelp");
   await shot("narrow-help");
@@ -224,11 +310,58 @@ await run("narrow", async () => {
   await size(1280, 860);
 });
 
+/* ── the Story Graph ────────────────────────────────────────────── */
+
+// THE SHOT THE VIDEO OPENS WITH, and this script did not take it (v0.86.0).
+// Fifteen screens and not one of the graph — which was defensible while the
+// fixture was three scenes, because a graph with three cards in it is not a
+// picture of anything. On the real story it is the surface most likely to
+// look wrong and the one a stranger forms an opinion from first.
+//
+// Three states, because they are three different claims: as the story sits,
+// after Auto Layout has had its say, and folded — which is how the roadmap
+// says to film it, since thirty-two cards at once is noise on video.
+await run("graph", async () => {
+  await size(1440, 900);
+  await loadStory();
+
+  // The graph shares the column with the editor and opens on a toggle found
+  // by its title, the way perf.spec drives it — a label is a sturdier handle
+  // here than a class, because this one is asserted by name elsewhere.
+  const expand = page.locator('[title="Expand Story Graph"]');
+  if (await expand.count()) {
+    await expand.first().click();
+    await page.waitForTimeout(700);
+  }
+  await shot("graph-as-found");
+
+  await page.evaluate(() => window.__scriareProjectStore.getState().autoLayoutScenes());
+  await page.waitForTimeout(900);
+  await shot("graph-auto-layout");
+
+  // Folded: every chapter down to a block. The roadmap's note for the video
+  // is four boxes and then one unfolds, so this is the "before" of that shot.
+  const folded = await page.evaluate(() => {
+    const store = window.__scriareProjectStore.getState();
+    const groups = window.__scriareGroupUtils.graphGroups(
+      store.project.content,
+      store.project.scenes,
+    );
+    groups.forEach((g) => store.toggleFolderCollapsed(g.id));
+    return groups.length;
+  });
+  console.log(`  folded ${folded} chapter(s)`);
+  await page.waitForTimeout(800);
+  await shot("graph-folded");
+
+  await size(1280, 860);
+});
+
 /* ── Play Mode ──────────────────────────────────────────────────── */
 await run("play", async () => {
   await size(1280, 860);
-  await loadStory();
-  await addBlocks();
+  const real = await loadStory();
+  await addBlocks(real);
   await page.evaluate(() => window.__scriareProjectStore.getState().startPlay());
   await shot("play-night");
   await page.evaluate(() => window.__scriarePlayGround.getState().setGround("paper"));

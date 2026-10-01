@@ -12,6 +12,71 @@ omitting them.
 
 ---
 
+## v0.87.0 — Fold the story and it was gone
+
+Two bugs, both found by looking at a picture rather than by a test, and 1108
+tests were green over the first of them. That is the second time the Story
+Graph has given up something this way, and it is the standing argument for
+the looking pass: a test asserts what somebody thought to assert, and a
+screenshot shows what is there.
+
+**Fold every chapter and the graph went blank.** The blocks were there the
+whole time — five of them, with eleven bundled wires — drawn where their
+chapters had been while the camera went on framing the area thirty-two scene
+cards used to fill. A writer folds a story to see its shape and got an empty
+canvas, and the shot the roadmap plans for the video (four chapter boxes,
+then one unfolds) could not be taken without hunting with the fit-view
+button first.
+
+**The rule is deliberately narrow**, for the reason `straightenRuns` gives
+about its own: the camera re-frames ONLY when the fold left nothing visible.
+A camera that re-framed on every fold would yank the view away from a writer
+who folded one distant chapter while working on another — which is a worse
+fault than the one being fixed, because it would happen constantly rather
+than occasionally.
+
+**Two things the controls taught while fixing it.** The first version used
+`requestAnimationFrame` and changed nothing, because React Flow replaces the
+node set and then MEASURES it: a frame callback runs before that pass, so it
+re-frames the nodes being replaced. And the comment then claimed the 120ms
+timer was necessary — a control refused to go red at `0`, which proves the
+number is slack and the mechanism is being a task rather than a frame. The
+comment says that now, and the control points at the thing that matters
+instead of at the thing that was easy to sabotage.
+
+**The check asserts "on screen", not "exists".** Counting the nodes passes
+on the broken build — they were all there. What was wrong is where the
+camera was pointing, so the measurement is each node's rectangle against the
+graph's own, in screen pixels. And it runs against the REAL story: on the
+three-scene fixture folding moves the content a few dozen pixels, the camera
+never loses sight of it, and the check passes on a broken build. The defect
+needs a story with some width to it.
+
+**And the screenshot tool was photographing a story that does not exist.**
+`tools/shots.mjs` built its own three-scene fixture, also called The Blue
+Hour, while the real one — 32 scenes, five chapters, 70 choices — sat in
+`tests/fixtures` where the script-export spec has loaded it since v0.64.0.
+Every screen it had ever produced was a picture of a story with two wires in
+it, which is why the Story Graph looked fine in them.
+
+It was also inserting an empty Choice, Dialogue and Conditional into
+whichever scene was open, so the first Play Mode screenshot showed the
+opening page with a fourth, blank option under the three the writer wrote —
+**a defect that existed only in the photograph**, which is the worst kind to
+hand somebody who is judging how the app looks. The tool now loads the real
+story, falls back to its stub only if that file moves, injects nothing into
+a story that already has blocks, and photographs the Story Graph, which in
+fifteen screens it had never done.
+
+**What this version does not decide.** Four things the sweep turned up are
+judgements rather than defects and are recorded in
+`claude/visual-sweep-findings.md` untouched: the graph's default height, the
+block buttons inverting to the heaviest control in the toolbar on light
+themes, whether the variable readout belongs on camera, and which theme a
+stranger should land on. A measurement is not a mandate.
+
+---
+
 ## v0.86.0 — The journal that wasn't worth building, and the hole next door
 
 He asked for crash-recovery drafts — the autosave journal the save-safety
