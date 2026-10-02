@@ -1,11 +1,52 @@
 # Scriare — direction and roadmap
 
-Agreed with Volkan, 13 Sep 2026. Updated after v0.78.1.
+Agreed with Volkan, 13 Sep 2026. **Updated after v0.88.1, on 2 Oct, with
+every open item re-checked against the source rather than against this
+file** — which is how four entries listed as unbuilt turned out to be
+shipped and one listed as shipped turned out to be contradicted two
+sections earlier.
 
 **No calendar dates in this file, on purpose.** Launch happens when the
 launch list is done, which could be sooner than any date would suggest.
 Everything is sized in *sessions* (one working block with Claude) so the
 order stays honest when the pace changes.
+
+## What is actually left
+
+The short version, so nobody has to read to the Milestones section to find
+it. Verified 2 Oct.
+
+**Nothing on the launch list is Claude's to build any more.** Export,
+installer, script export, spreadsheet export, the Dialogue, Custom CSS,
+Find & Replace, the named player, the story language, Check Story's speaker
+rule — all shipped. The standing open-gaps list is down from five to one,
+and that one (images in scenes) is a dated decision to wait for evidence
+from real use, not an unbuilt feature.
+
+**His, and only his:**
+
+1. **Record the video.** The script is current as of 2 Oct.
+2. **The story's ending** — a written *End of Act One*, not a scene that
+   ran out of choices. The 32 scenes exist; this condition is unverified.
+3. **Assemble the case study** — screenshots from his own story, the README
+   image, the AI-credit line.
+4. **Two installer confirmations** — that the uninstaller works, and what
+   SmartScreen actually says, so the README can quote it.
+5. **Two outstanding verdicts** — whether Overcast reads as the mid-tone it
+   was meant to be, and whether Night's body text reads washed.
+
+**Claude's, and none of it blocking:**
+
+- **Run Check Story on the 32-scene file.** This is the second condition the
+  demo story was defined by and nobody has run it. If it reports anything, it
+  is story work for him, so it is worth running before he sits down to record.
+- **Swap the fixture** so the suite and the screenshot tool load the file with
+  the conversations in it. Until then every test and every screenshot runs
+  against a story missing the headline feature.
+- **Retake the screenshot set** at v0.88.1, on Daylight, from that file — for
+  the case study and for anything public.
+- **`GroupNode`'s two fold triangles**, the last residue of the UI sweep. A
+  shared local constant, not the kit.
 
 ## What Scriare is for
 
@@ -995,7 +1036,12 @@ No dates. Sizes are sessions; the order is what matters.
      option is an edge only if it leaves*, which yields two new warnings
      ("this conversation cannot be left", "this line can never be said")
      and leaves reachability more accurate than before.
-  3. **Custom CSS on export.** Committed to — his words, "now or later,
+  3. ~~**Custom CSS on export.**~~ — **shipped as v0.80.0**, and all three
+     of the commitments below were honoured: the class names are a
+     published contract in `export.md`, the contrast check samples the
+     finished file rather than the tokens, and the resolution order is
+     stated. The notes are kept as they were written. Committed to — his
+     words, "now or later,
      we are going to implement a custom CSS" — and deliberately last,
      because it is the only one of the three where the honest sentence is
      "Twine already does this". Three things it commits us to (G2): the
@@ -1010,8 +1056,15 @@ Export (v0.48.0) — both from the launch list — the audit pass
 (v0.49.0), its own two data-loss bugs (v0.49.1), tier 4 (v0.50.0),
 tier 3 (v0.51.0), tier 5 plus the repository tidy (v0.52.0), and the
 Welcome screen (v0.53.0–v0.54.0). **The v0.48.0 audit is closed.**
-Everything left is the launch list — and of the five items on it, only
-the installer is Claude's to build.
+
+**Re-checked against the source on 2 Oct, and the line above is now out of
+date in the best way: all three of his own ideas are shipped, and every
+item on the launch list that was ever Claude's to build is built.** What is
+left on the launch list is his own work — the story's ending, the
+recording, the case-study assembly — plus two small confirmations named in
+the Launch section. The five audit gaps that were the standing open-gaps
+list are down to one, images in scenes, and that one is a dated decision to
+wait for evidence rather than an unbuilt feature.
 
 ### The colour question, settled
 
@@ -1044,15 +1097,30 @@ before a story exists that needs it.
 ### Also in flight
 
 - **His verdict on the eight themes.** All eight ship; the picker is in
-  Settings. Open questions he raised: whether **Overcast** reads as the
-  mid-tone it was meant to be (it comes out closer to "light app with a
-  slate frame"), and which theme the app should DEFAULT to for a stranger.
+  Settings. The default question is **answered: Daylight, v0.88.0** — the
+  prose sits best on it of the three light themes photographed, and it is
+  now what a stranger lands on. *Note for anyone testing this: it will not
+  appear in an install that already has a stored theme.* Still open:
+  whether **Overcast** reads as the mid-tone it was meant to be (it comes
+  out closer to "light app with a slate frame").
 - **His verdict on Paper and Night.** New with v0.48.0, and the two things
   worth his eye: whether Night's body text at 11.4:1 reads washed (it was
   pulled down from 15:1 deliberately, to stop halation on a phone), and
   whether the accent doing double duty as the speaker-name colour is enough
   of a signal or whether speaker names want weight instead.
-- **Auto Layout, round two.** His words in September: "we will need to
+- ~~**Auto Layout, round two.**~~ **Closed 1 Oct, and the measurement is
+  why.** It was taken before anything was changed — recorded in
+  `auto-layout-measurement.md` — and **none of the three suspects below
+  reproduced** on the real 32-scene story. The merge ranking, the loops and
+  the group sizing were all behaving. The defect that did exist was next
+  door, found by the same pass, and fixed; the rewrite the section was
+  bracing for was never needed. This is the second time this month that
+  measuring first turned a planned rebuild into a small fix, which is the
+  argument for the rule rather than an anecdote about it. The notes below
+  are kept because the suspects were reasonable and the record of a wrong
+  prediction is worth more than its deletion.
+
+  His words in September: "we will need to
   investigate the behaviour of the Auto Layout further." v0.43.0 fixed the
   ranking; what to look at next is how it handles merges, loops, and
   chapter boxes whose contents are laid out before the box is sized.
@@ -1090,31 +1158,52 @@ before a story exists that needs it.
    second-instance handler, macOS open-file, and a launch-time path the
    renderer asks for. The README states the SmartScreen warning rather than
    pretending it will not appear. Still positioned behind the playable
-   export link, which needs no install and raises no warning. **Awaiting
-   his run on Windows** — the artifact cannot be built on this machine.
+   export link, which needs no install and raises no warning. **He ran the
+   build on Windows on 27 Sep and it produced an artifact**, so this is
+   shipped rather than pending — the line that said otherwise contradicted
+   the Next-agreed section and was read back as a blocker on 2 Oct, which
+   is how it was caught. **Two small confirmations are genuinely left**, and
+   only he can do them: that the uninstaller works, and exactly what
+   SmartScreen says, so the README can quote it rather than paraphrase.
 3. **The demo story** — a **vertical slice**, 30–40 scenes, decided 17 Sep;
    full scope and the two risks it carries in `claude/demo-story.md`. He
    writes it; Claude supplies a structural scaffold at most, never prose.
-   The two things that decide whether it reads as a slice or as abandoned:
-   a written ending (*End of Act One*, not a scene that ran out of choices)
-   and a clean Check Story report. Film the graph FOLDED — four chapter
-   boxes, then one unfolds — or a 35-scene map is noise on video.
-   `other_materials/what-the-ledger-says.json` is a 13-scene reference for
-   voice and structure, not a replacement.
-4. **The video.** Script and shot list are written; this is recording time.
-   The theme picker is now a good ten seconds of it, and so is exporting
-   the story and opening it in a browser — which is the shot that explains
-   what the app is for faster than any narration.
+
+   **Written, as of 2 Oct: The Blue Hour, 32 scenes in five chapters, 70
+   choice options, and three Dialogue blocks** — s11 *Deniz In The Yard* (4
+   lines), s15 *The Big Table* (6), s20 *Hikmet's Office* (5), with
+   conditions and variable effects on the lines rather than decoration. The
+   scope is met. **The two conditions the slice was defined by have not been
+   verified**, and they are what is actually left on this item: a written
+   ending (*End of Act One*, not a scene that ran out of choices) and a
+   clean Check Story report on the 32-scene file. Nobody has run the second.
+
+   **One mechanical gap underneath it:** the file the test suite and the
+   screenshot tool load is `tests/fixtures/the-blue-hour.scriare`, which has
+   no Dialogue blocks. The conversations live only in `The Blue Hour — With
+   Conversations.scriare`. Until the fixture is swapped, every screenshot
+   and every test runs against a story missing the headline feature.
+
+   Film the graph FOLDED — five chapter boxes, then one unfolds — or a
+   32-scene map is noise on video. The old pointer here to
+   `other_materials/what-the-ledger-says.json` is dead; that file does not
+   exist and the 13-scene reference draft is now
+   `docs/demo-story-draft.md`, kept and labelled superseded.
+4. **The video.** **Script rewritten for v0.88.1 on 2 Oct** — the Dialogue
+   block is beat 5, export is beat 8, Daylight is on camera with Night for
+   Play Mode, and the gate at `resolve >= 3` in *The Count Is Called* means
+   beats 6 and 7 are one demonstration. It is in `docs/video-script.md`.
+   This is recording time, and the recording is his.
 5. **Case study finishing** — screenshots from his own story, the README
-   image, and the AI-credit line, which is his call.
+   image, and the AI-credit line, which is his call. The current screenshot
+   set is at an older version, on Dark, and on the file with no dialogue in
+   it, so it needs retaking before it can serve this.
 
 **Optional, if 2 lands cleanly:**
 
-- **CSS tab** (SugarCube-style stylesheet for the exported build). *~2
-  sessions*, and now unblocked: the class contract exists and is documented
-  in `claude/export.md`, and the exported page is built from tokens
-  specifically so one override recolours everything. It must apply to Play
-  Mode too, or a writer is styling blind.
+- ~~**CSS tab**~~ (SugarCube-style stylesheet for the exported build) —
+  **shipped as v0.80.0**, including the part that was the real condition:
+  it applies to Play Mode too, so a writer is not styling blind.
 - ~~**Script export**~~ — **shipped in v0.64.0**, and it took rather more
   than the half session it was sized at, most of it spent finding three
   ways the tests were passing for the wrong reason.
@@ -1137,14 +1226,21 @@ Nothing here blocks the launch, and nothing here gets started before it.
   at a scale the demo won't reach.
 - **Ink / Twine export.** *1–2 sessions each*, and lossy — which means
   documenting what doesn't survive the trip.
-- **Find & Replace.** Needs its own undo story and a preview first.
-- **A named player.** The printed name is hard-coded "You"; a project
-  setting ("Detective", "Ben") belongs with the other story settings.
-- **A story's language.** The exported page ships with no `lang`, because
-  `lang="en"` would be wrong for a story in any other language and a wrong
-  one is worse than none. A project setting solves it in one line.
-- **Check Story and speakers.** A line attributed to a deleted character
-  silently becomes narration.
+- ~~**Find & Replace.**~~ **Shipped as v0.79.0**, with the undo story and
+  the preview that this entry said it needed first, and a one-call-per-match
+  shape chosen over the classic Replace/Replace All pair. v0.79.1 then
+  softened the preview's strike-through after he looked at it in his own
+  story and said the red read as an alarm.
+- ~~**A named player.**~~ **Built** — `playerName` is a project setting and
+  `playerLabel` resolves it, so `PLAYER_SPEAKER_LABEL` is the fallback
+  rather than the only answer. Verified in the source on 2 Oct, not taken
+  from this file.
+- ~~**A story's language.**~~ **Built** — the project carries a language and
+  the exported page emits `lang`. Verified in `export/pageTemplate.ts` on
+  2 Oct.
+- ~~**Check Story and speakers.**~~ **Built** — `storyCheck.ts` reads
+  speakers, so a line attributed to a deleted character is reported rather
+  than silently becoming narration.
 - ~~**Choice Style defaults are dark-theme colours.**~~ **Corrected while
   building Export.** `DEFAULT_CHOICE_BOX` was never a hex: it is
   `var(--surface-2-translucent)` / `var(--border)`, written in variables in
@@ -1160,10 +1256,30 @@ Nothing here blocks the launch, and nothing here gets started before it.
   floating menus~~ (v0.82.0), ~~Project Settings' doors~~ (v0.83.0),
   ~~the Content Browser's buttons~~ and ~~the Inspector's field stack,
   its accent buttons and the app's placeholder colour~~ (v0.84.0).
-  WHAT IS LEFT: the content context menu (v0.18.0, the oldest version
-  note in the codebase), the slash-command menu, `GroupNode` (v0.28.0),
-  and the editor's three block views — which share a button with the
-  Inspector and so were half-swept by v0.84.0 already.
+  **Re-counted against the source on 2 Oct, and this list is almost
+  empty.** The content context menu and the slash-command menu both carry
+  `MENU_ITEM` as of v0.85.0 — on a raw `<button>`, which is correct, since a
+  menu row is a row and not a Button. All five block views
+  (`ChoiceBlockView`, `ChoiceOptionView`, `ConditionalBlockView`,
+  `DialogueBlockView`, `DialogueLineView`) import the kit, and the first four
+  have no hand-rolled control left at all.
+
+  WHAT IS LEFT, precisely two things, neither urgent: **`GroupNode`'s fold
+  and unfold triangles** — two raw buttons carrying the same class string
+  verbatim, which want a shared local constant rather than the kit, because
+  `nodrag nopan` is React Flow's vocabulary and the kit cannot express it.
+  And `GroupNode`'s rename input, already documented above as correctly
+  differing. That is the whole residue.
+
+  **A control worth recording, because it corrected me rather than the
+  code.** Counting raw `<button>` elements flagged one in
+  `DialogueLineView` that its sibling `ChoiceOptionView` does not have,
+  which looked like a siblings-rule violation. It is the `after` toggle
+  (stay / leave / end) — a control with no Choice counterpart, because a
+  choice always leaves and a dialogue line may not. The siblings rule
+  explicitly permits a behavioural difference, so the count could not tell a
+  missed sweep from a rule working as written. A raw-element count is a lead,
+  not a finding.
 
   **The line this sweep keeps proving:** "bring it onto the kit" is not
   the same instruction as "apply the kit's class". Three surfaces so far
@@ -1187,9 +1303,14 @@ Nothing here blocks the launch, and nothing here gets started before it.
   is what read as "the top and bottom are cut off". The two baked SVG
   variants are gone from the renderer; the OS icon is still a fixed asset,
   as it must be.
-- **Crash-recovery drafts** — the autosave journal deliberately left out of
-  the save-safety work. Only worth it if he ever loses something to a power
-  cut that the atomic write couldn't catch.
+- ~~**Crash-recovery drafts**~~ — **asked for, and declined on the numbers**,
+  which is the more useful outcome. The exposure was measured rather than
+  assumed: the atomic write already covers the power-cut case, and what the
+  measurement did turn up was a real defect next door — the app could discard
+  work the filesystem had refused to save without asking. That became the
+  save-failed dialogue with its three answers (*save it somewhere else* /
+  *keep writing* / *close without saving*). The journal itself is not built
+  and should not be unless a loss happens that the atomic write cannot catch.
 
 ## The launch itself
 
@@ -1212,12 +1333,15 @@ reading ground is content, and a tool that ships the author's working
 environment as the reader's has confused the two. That is the same argument
 about authoring tools, pointed at typography instead of at graphs.
 
-Worth saying out loud in the case study: 567 tests against the real packaged
-app, every load-bearing one confirmed to fail on a deliberately broken
-build. Most solo projects can't claim that; most professional ones can't
-either — and v0.49.0 is the honest footnote to it, because a green suite of
-411 checks had nothing to say about six different ways the app could lose a
-writer's work.
+Worth saying out loud in the case study: **1117 tests against the real
+packaged app and 342 negative controls**, every load-bearing assertion
+confirmed to fail on a deliberately broken build. Most solo projects can't
+claim that; most professional ones can't either — and v0.49.0 is the honest
+footnote to it, because a green suite of 411 checks had nothing to say about
+six different ways the app could lose a writer's work. v0.87.0 is the second
+footnote, and a better one: 1108 tests were green over a Story Graph that
+went blank when you folded every chapter, and the defect was found by looking
+at a picture. A test asserts what somebody thought to assert.
 
 A one-page brief for talking about the app publicly — what it is, why it
 exists, lines that can be used in a tease — lives in
