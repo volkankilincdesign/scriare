@@ -2,7 +2,12 @@
 
 Paste this into any new chat to bring it up to speed on what Scriare is,
 why it exists, and where it stands. Written to be short enough to read
-whole.
+whole. For how it compares to Twine, articy:draft and Ink, read
+`positioning.md` alongside it.
+
+**Current as of v0.88.1.** Two earlier copies of this brief had drifted —
+one stuck at v0.40.x, one at v0.60.0 — and both were wrong about export,
+which has shipped. If you find a copy saying either, it is stale.
 
 ## What it is
 
@@ -34,27 +39,38 @@ Narrative designers and game writers — people who write branching dialogue
 and interactive fiction for a living or want to. Specifically the ones who
 are writers first and technical second.
 
-## How it works — the five things that matter
+## How it works — the six things that matter
 
 1. **Choice Blocks live in the paragraph flow.** You type `/choice` where
    the branch happens. Each option's label is *ordinary text* — so
    everything the toolbar does to a sentence (bold, colour, a character
    mention) it does to a choice. No separate editor, no modal.
-2. **The Story Graph is derived, never drawn.** It's built from the
+2. **Dialogue Blocks hold a whole conversation as one object.** Player
+   lines with the reply under each, who answers, whether the conversation
+   stays open or ends, conditions and effects per line — all on the page,
+   all editable in place. This is the thing Twine's data model has no
+   room for, and it is the headline feature.
+3. **The Story Graph is derived, never drawn.** It's built from the
    documents. Scenes, groups (which are the same objects as the folders in
    the sidebar — one hierarchy, not two), connections labelled by choice
-   number, with the text on hover.
-3. **Characters and Locations are references, not copies.** Type `@` to
+   number, with the text on hover. Auto Layout tidies it; folding a chapter
+   shows the story's shape.
+4. **Characters and Locations are references, not copies.** Type `@` to
    mention one. Nothing stores her name — only who she is — so renaming her
    rewrites nothing and changes everything. `@` at the head of a line says
    who is *speaking*.
-4. **Logic with no syntax anywhere.** Variables, conditions on choices
-   (hide it, or lock it with the reason shown), effects. Every one is a
-   dropdown or a toggle. There is no expression field in the entire app.
-5. **Play Mode and Check Story.** Play renders the scene exactly as
-   written, with live variables and real endings. Check finds unreachable
-   scenes, dead links, gates that can never open, and takes you to the one
-   that broke.
+5. **Logic with no syntax anywhere.** Variables, conditions on choices and
+   dialogue lines (hide it, or lock it with the reason shown), effects.
+   Every one is a dropdown or a toggle. There is no expression field in the
+   entire app.
+6. **Play Mode, Check Story, and three exports.** Play renders the scene
+   exactly as written, with live variables and real endings, on the same
+   reading grounds the export ships — so a rehearsal is a rehearsal of the
+   finished file. Check finds unreachable scenes, dead links and gates that
+   can never open, and takes you to the one that broke. Export produces a
+   self-contained single-file HTML build with a documented class contract
+   and a writer-editable stylesheet, a Script export for read-throughs, and
+   a spreadsheet export for translation and VO.
 
 ## The rules the interface follows
 
@@ -69,22 +85,35 @@ different:
 - **Colour is reserved for the writer.** The interface is monochrome; hue
   belongs to the story (Choice Styles), not the chrome. Depth does the work
   instead — the page is a sheet on a desk, controls carry a lit edge.
+- **The siblings rule.** Anything drawn for the Dialogue block is drawn for
+  the Choice block, and the reverse, unless the difference is behavioural.
+- **A theme is the writer's room; a ground is the reader's page.** Eight
+  themes for the editor, two grounds (Paper and Night) for the story.
 - **Nothing asks you to stop writing and go configure something.**
 
 ## Where it stands
 
-**v0.60.0 — in active development and genuinely usable.** The editor,
-graph, runtime, entities, notes, variables, validation, search, export and
-the Welcome screen are all real and in daily use. Play Mode reads on the
-same grounds the export ships, so a rehearsal is a rehearsal of the
-finished file.
+**v0.88.1 — in active development and genuinely usable.** The editor, the
+Dialogue and Choice blocks, graph with auto layout and folding, runtime,
+entities, notes, variables, validation, search, all three exports, the
+stylesheet, preferences and the Welcome screen are real and in daily use on
+a 32-scene demo story.
 
-**626 automated tests** run against the real packaged application, and
-**131 negative controls** — each breaks a line of the shipped source on
-purpose and checks that a named assertion fails. A test that has never been
-seen to fail proves nothing.
+**1117 automated tests** run against the real packaged application, and
+**342 negative controls** — each breaks a specific line of the shipped
+source on purpose and checks that a *named* assertion fails. A test that
+has never been seen to fail proves nothing, and a control that passes is a
+finding about the test, not a clean bill of health.
 
-**Not built yet:** a packaged installer, and the demo story itself.
+**Not built yet:** a packaged installer (the app runs from source or an
+unpacked build), and images in scenes — postponed past launch on purpose,
+to be decided on evidence from real use rather than because a list says so.
+
+**The known gap before the launch video:** the committed fixture the test
+suite and screenshot tool load has no Dialogue blocks in it. Three real
+conversations exist in the working copy of the demo story and are not yet
+the fixture, so every screenshot currently shows a story without the
+headline feature in it.
 
 ## Built with
 
@@ -96,18 +125,19 @@ React Flow · Playwright. Single developer, built with Claude as a pair.
 - "Write stories, not syntax."
 - "A branching-narrative editor for people who came to write."
 - "Type `/choice` and keep going. The map draws itself."
-- "Every branching tool makes you stop writing to do structure. This one
-  doesn't."
-- "No syntax anywhere. Where a choice goes, what it requires, what it
-  changes — all dropdowns."
+- "A whole conversation, on the page, as one thing."
+- "No expression field in the entire app."
 - "Rename a character once. Every sentence follows, because no sentence
   ever stored her name."
 
 ## Honest caveats to keep in mind while teasing
 
-- No installer yet — it runs from source. That is the next build item.
-- No demo story yet, so there is nothing to hand someone to play. It is the
-  one launch item nobody else can do.
+- No installer yet — it runs from source or an unpacked build. Export
+  shipped, so the front door is a playable HTML file that needs nothing
+  installed, but the app itself still does.
+- The demo story exists and is written; what is missing is the video, the
+  case-study page and the dialogue-bearing fixture. Those are the launch
+  items nobody else can do.
 - It's a portfolio project by one person, not a company. That's a strength
   in how it's framed (a designer who builds his own tools), not something
   to hide.

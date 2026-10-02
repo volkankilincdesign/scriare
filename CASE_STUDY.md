@@ -341,6 +341,13 @@ than they look.
 - **No block-based editor.** Choice blocks, callouts, quotes and dividers
   are all typed straight through. Paragraphs are still paragraphs. The
   moment writing becomes card-shuffling, the bet is lost.
+- **No images in scenes**, and the reason is the useful part. It was costed,
+  found cheap, and postponed anyway — because the question is whether a
+  writer wants them, and nobody has used the app on a real story long enough
+  to say. The position it set is the one that governs everything after
+  launch: *features are decided on evidence, not on the list.* The single
+  exception is a defect found by measurement, which gets fixed whatever the
+  list says.
 
 ---
 
@@ -390,8 +397,8 @@ cheaper than confidence.
 ---
 
 *Scriare is built with Electron, React, TypeScript, Tiptap/ProseMirror and
-React Flow. 768 automated tests run against the real packaged application,
-with 189 negative controls — each one breaks a specific line of the shipped
+React Flow. 1117 automated tests run against the real packaged application,
+with 342 negative controls — each one breaks a specific line of the shipped
 source and checks that a named assertion fails. Every load-bearing
 assertion has been seen to fail on a deliberately broken build. The full
 release history is in [CHANGELOG.md](CHANGELOG.md).*
