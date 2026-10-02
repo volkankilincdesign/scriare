@@ -12,6 +12,75 @@ omitting them.
 
 ---
 
+## v0.88.2 — The condition nobody had run
+
+**The demo story was scoped on 17 Sep with two conditions attached**, and the
+second — a clean Check Story report — had never been run against it. The
+story has been written since; the condition sat in `demo-story.md` unchecked
+while fifteen versions shipped past it. A condition nobody runs is a wish.
+
+**The fixture is clean. The file he is actually writing in is not.**
+`the-blue-hour.scriare`, which the suite and the screenshot tool load,
+reports **0 problems** across 32 scenes, 70 choices, 4 endings and 3299
+words, every scene reachable from the start.
+`the-blue-hour-conversations.scriare` — the same story plus the three
+Dialogue blocks — reports **one problem**, and it is real: in *The Big
+Table*, a dialogue line marked **leave** has no destination. Check Story's
+own words: *this line leaves the scene but doesn't say where to.*
+
+**One line out of fifteen, and the shape of the mistake is in the data.** Of
+the fifteen dialogue lines in the story, three are marked `leave`; two name a
+scene (*The Big Table* → s17, *Hikmet's Office* → s21) and one names nothing.
+Its neighbours in the same conversation are `stay` and `end`. So the fix is
+his and it is a choice rather than a repair: give the line a destination, or
+mark it `stay` like the lines around it. **Nothing here guesses which**,
+because inventing a destination in somebody else's story is not a bug fix.
+
+**Two warnings that matter more than they look**, both the same kind. A
+locked option tells the reader WHY it is locked, and when the variable has no
+display name the reader is shown the variable's own name. *The Count Is
+Called* shows `resolve`; *Hikmet's Office* shows `knows_roster`. The second
+is the one that bites: **`knows_roster` sits in the shot the video script
+plans for beat 7** — a locked choice with its reason on screen for three full
+seconds. Display names are a minute of work and they are the difference
+between that frame reading as a tool and reading as a debug build.
+
+**What is asserted and what is only reported.** The launch condition is
+asserted against the file the suite loads; the conversations file is reported
+rather than asserted. A red suite over a line of his prose that nobody has
+rewritten yet trains people to ignore the runner, which costs more than the
+warning is worth — and when the fixture is swapped the assertion follows it.
+Warnings are logged and never asserted, on `perf.spec`'s precedent: an
+unreachable scene can be a mistake or a chapter not yet wired, and
+`check(name, true)` beside a number nobody can interpret is a pass in a
+costume.
+
+**On the ending condition, which this does NOT verify.** Check Story counts
+four endings and names them — *The Vote Carries*, *The Vote Fails*, *The Gate
+At Four*, *The List* — and it cannot tell a written *End of Act One* from a
+scene that ran out of choices, because both are scenes with no outgoing link.
+The titles are logged for him to read and nothing claims the first condition
+is met. Measuring what is measurable and naming which half is left beats
+asserting the whole.
+
+**The new check's failure arm was seen on real data rather than sabotaged.**
+The problem count went red on the conversations file the first time it ran,
+which is a better demonstration than a synthetic break. The control added
+instead covers the other load-bearing arm — reachability — by stopping the
+walk after the start scene, so the number is proved to come from the real
+graph rather than from a constant that happens to match 32.
+
+**And the run turned up two dead controls**, which is the finding nobody
+asked for. `the graph allowed to take half the opening screen` and `the
+opening height fixed again` both pointed at source that v0.88.0 and v0.88.1
+changed underneath them — one at `OPENING_SHARE = 0.3` when the constant is
+now `0.33`, the other at a `const wanted` line that had become a `return`.
+Neither could ever have gone red. Both repaired, both now caught. **The
+runner found them itself**, in the pre-flight of an unrelated control, which
+is the whole reason it reports staleness as a failure rather than a skip.
+
+---
+
 ## v0.88.1 — The bump that arrived as a reduction
 
 **Retaking the screenshots after shipping is what caught it.** v0.88.0's

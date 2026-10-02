@@ -1,0 +1,5451 @@
+{
+  "id": "the-blue-hour",
+  "name": "The Blue Hour",
+  "createdAt": "2026-09-27T22:24:40.690Z",
+  "updatedAt": "2026-10-01T06:40:33.562Z",
+  "startSceneId": "s01",
+  "scenes": [
+    {
+      "id": "s01",
+      "title": "The Blue Hour",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_indigo-does-not-look"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Indigo does not look blue in the vat. It looks like old bronze, like something left out in the weather, and it only turns when you lift the cloth into the air. Eleven years and you still watch for it."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_the-sixth-vat-of"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The sixth vat of "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "entityId": "e-vat-floor",
+                  "label": "the floor"
+                }
+              },
+              {
+                "type": "text",
+                "text": " is yours tonight. It is yours every night."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_three-hours-until-the"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Three hours until the vote. Someone has chalked the time on the door frame and rubbed it out again, badly."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-arithmetic",
+              "textAlign": null,
+              "lineId": "t_eleven-years-say-it"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Eleven years. Say it as a number and it sounds like an achievement. Say it as a rate — eleven years, one floor, one vat — and it sounds like a sentence handed down."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_work-the-cloth-does"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "speaker": null,
+                  "optionId": "c_work-the-cloth-does",
+                  "targetSceneId": "s02",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Work. The cloth does not care about the vote."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "speaker": null,
+                  "optionId": "c_go-and-find-nesrin",
+                  "targetSceneId": "s03",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Go and find Nesrin."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "speaker": null,
+                  "optionId": "c_let-the-voice-finish",
+                  "targetSceneId": "s06",
+                  "actions": [
+                    {
+                      "id": "act-3",
+                      "variableId": "v-voices",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Let the voice finish."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 108,
+        "y": 126
+      },
+      "titleKey": "s_the-blue-hour"
+    },
+    {
+      "id": "s02",
+      "title": "The Sixth Vat",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_you-lift-the-sheet"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "You lift. The sheet comes up bronze and goes blue in the space of a breath, the way it has forty thousand times, and your shoulders know the weight before your eyes know the colour."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-hands",
+              "lineId": "t_left-hand-under-right"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Left hand under, right hand over. Turn at the wrist, not the elbow. You have not thought about this in nine years."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-hands",
+              "lineId": "t_we-can-do-this"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "We can do this somewhere else. That is what nobody is saying tonight. We can do this in the new plant, in another country, in a machine. The hands are not the argument. The hands were never the argument."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_keep-working-stop-put"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_keep-working",
+                  "targetSceneId": "s05",
+                  "actions": [
+                    {
+                      "id": "act-6",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Keep working."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_stop-put-the-sheet",
+                  "targetSceneId": "s03",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Stop. Put the sheet down."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 108,
+        "y": 270
+      },
+      "titleKey": "s_the-sixth-vat"
+    },
+    {
+      "id": "s03",
+      "title": "What Nesrin Wants",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_nesrin-is-at-the"
+            },
+            "content": [
+              {
+                "type": "mention",
+                "attrs": {
+                  "entityId": "e-nesrin",
+                  "label": "Nesrin"
+                }
+              },
+              {
+                "type": "text",
+                "text": " is at the end of the row with a clipboard she does not need. She has known the count since Tuesday. The clipboard is for the people who need to see her holding something."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-nesrin",
+              "lineId": "t_eleven-years-you-have"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Eleven years you have been here. That is longer than me. When you say a thing on that floor, people put their hands down and listen, and I need you to say a thing."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-arithmetic",
+              "lineId": "t_she-is-not-wrong"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "She is not wrong about the listening. That is the part that is inconvenient."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_what-thing-i-am"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_what-thing",
+                  "targetSceneId": "s04",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"What thing?\""
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_i-am-not-a",
+                  "targetSceneId": "s05",
+                  "actions": [
+                    {
+                      "id": "act-b",
+                      "variableId": "v-resolve",
+                      "operation": "subtract",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"I am not a speaker. Find someone else.\""
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_how-short-are-you",
+                  "targetSceneId": "s04",
+                  "actions": [
+                    {
+                      "id": "act-d",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"How short are you?\""
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 108,
+        "y": 432
+      },
+      "titleKey": "s_what-nesrin-wants"
+    },
+    {
+      "id": "s04",
+      "title": "Nesrin Presses",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-nesrin",
+              "lineId": "t_nine-short-nine-out"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Nine short. Nine, out of a hundred and forty. And I know six of the nine by name and they are all people who will do what you do."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_she-says-it-flatly"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "She says it flatly, the way you would read a gauge. No pleading in it. That is why it works."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-arithmetic",
+              "lineId": "t_nine-is-not-a"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Nine is not a wall. Nine is a door with a bad hinge."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_i-will-think-about"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_i-will-think-about",
+                  "targetSceneId": "s05",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"I will think about it.\""
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_give-me-the-six",
+                  "targetSceneId": "s08",
+                  "actions": [
+                    {
+                      "id": "act-h",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Give me the six names.\""
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_you-are-going-to",
+                  "targetSceneId": "s08",
+                  "actions": [
+                    {
+                      "id": "act-j",
+                      "variableId": "v-resolve",
+                      "operation": "subtract",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"You are going to get people fired.\""
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 108,
+        "y": 576
+      },
+      "titleKey": "s_nesrin-presses"
+    },
+    {
+      "id": "s05",
+      "title": "The Boy Who Does Not Know",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_deniz-is-nineteen-and"
+            },
+            "content": [
+              {
+                "type": "mention",
+                "attrs": {
+                  "entityId": "e-deniz",
+                  "label": "Deniz"
+                }
+              },
+              {
+                "type": "text",
+                "text": " is nineteen and has been here five weeks and is still proud of the blue in the creases of his knuckles. He holds it up to people like a badge. Nobody has told him it never comes out."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-deniz",
+              "lineId": "t_is-something-happening"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Is something happening tonight? Everyone keeps stopping talking when I come over."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-arithmetic",
+              "lineId": "t_tell-him-do-not"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Tell him. Do not tell him. Either way he finds out at eleven with everyone else, and either way he has five weeks of seniority and no idea what that number means."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_there-is-a-vote"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_there-is-a-vote",
+                  "targetSceneId": "s08",
+                  "actions": [
+                    {
+                      "id": "act-m",
+                      "variableId": "v-warned",
+                      "operation": "set",
+                      "value": true
+                    },
+                    {
+                      "id": "act-n",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"There is a vote. You get one.\""
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_nothing-go-and-check",
+                  "targetSceneId": "s08",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Nothing. Go and check the third vat.\""
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_say-nothing-at-all",
+                  "targetSceneId": "s06",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Say nothing at all."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 108,
+        "y": 720
+      },
+      "titleKey": "s_the-boy-who-does"
+    },
+    {
+      "id": "s06",
+      "title": "Appetite",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-appetite",
+              "lineId": "t_here-is-what-nobody"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Here is what nobody will say out loud, so I will. You are tired. Not tonight-tired. Eleven-years-tired, the kind that has moved into the joints and started paying rent."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-appetite",
+              "lineId": "t_there-is-a-version"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "There is a version of tonight where you say nothing, and the vote fails, and in March you are somewhere warm with a clipboard of your own. Nobody would even blame you. They would not know there was anything to blame you for."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-arithmetic",
+              "lineId": "t_note-the-phrasing-nobo"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Note the phrasing. \"Nobody would know\" is not the same argument as \"nothing wrong happened\", and it is doing all the work in that sentence."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_listen-to-the-rest"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_listen-to-the-rest",
+                  "targetSceneId": "s07",
+                  "actions": [
+                    {
+                      "id": "act-s",
+                      "variableId": "v-voices",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Listen to the rest of it."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_go-back-to-the",
+                  "targetSceneId": "s02",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Go back to the vat."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 108,
+        "y": 864
+      },
+      "titleKey": "s_appetite"
+    },
+    {
+      "id": "s07",
+      "title": "Hikmet Comes Down",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_hikmet-does-not-come"
+            },
+            "content": [
+              {
+                "type": "mention",
+                "attrs": {
+                  "entityId": "e-hikmet",
+                  "label": "Hikmet"
+                }
+              },
+              {
+                "type": "text",
+                "text": " does not come down to the floor. He has an office with a window onto it, which is the point of the window."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_he-comes-down"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "He comes down."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-hikmet",
+              "lineId": "t_walk-with-me-a"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Walk with me a minute. Not about tonight. Well — about tonight, but not about tonight."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-hikmet",
+              "lineId": "t_there-is-a-supervisor"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "There is a supervisor's post at the new plant. Two of them. I have been asked for names and I have been sitting on the paper for a week because I did not want to hand it in with the wrong name on it."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-arithmetic",
+              "lineId": "t_he-is-telling-the"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "He is telling the truth about the paper. That is what makes the rest of it hard to hear clearly."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_say-the-rest-of"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_say-the-rest-of",
+                  "targetSceneId": "s08",
+                  "actions": [
+                    {
+                      "id": "act-w",
+                      "variableId": "v-offer",
+                      "operation": "set",
+                      "value": true
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Say the rest of it.\""
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_not-tonight-hikmet",
+                  "targetSceneId": "s08",
+                  "actions": [
+                    {
+                      "id": "act-y",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Not tonight, Hikmet.\""
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 108,
+        "y": 1008
+      },
+      "titleKey": "s_hikmet-comes-down"
+    },
+    {
+      "id": "s08",
+      "title": "The Corridor",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_the-corridor-between-t"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The corridor between the floor and the rest of it smells of wet stone and steam and, faintly, of the canteen's one pot of tea, which has been on since four and tastes like it."
+              }
+            ]
+          },
+          {
+            "type": "conditionalBlock",
+            "attrs": {
+              "blockId": "cb-12",
+              "conditions": [
+                {
+                  "id": "cnd-11",
+                  "variableId": "v-offer",
+                  "comparator": "eq",
+                  "value": true
+                }
+              ]
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": "e-arithmetic",
+                  "lineId": "t_two-supervisor-s-posts"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Two supervisor's posts. He said two. He did not say how many names he had already written."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "conditionalBlock",
+            "attrs": {
+              "blockId": "cb-14",
+              "conditions": [
+                {
+                  "id": "cnd-13",
+                  "variableId": "v-warned",
+                  "comparator": "eq",
+                  "value": true
+                }
+              ]
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": "e-hands",
+                  "lineId": "t_the-boy-is-somewhere"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "The boy is somewhere behind you, knowing something for the first time. That is on you now."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_three-hours-you-could"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Three hours. You could spend them anywhere in this building."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_the-drying-yard-the"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_the-drying-yard-the",
+                  "targetSceneId": "s09",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "The drying yard. The air is better."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_the-canteen-everyone-i",
+                  "targetSceneId": "s14",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "The canteen. Everyone is there."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_the-gate-house-hikmet",
+                  "targetSceneId": "s19",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "The gate house. Hikmet's office is above it."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 108,
+        "y": 1152
+      },
+      "titleKey": "s_the-corridor"
+    },
+    {
+      "id": "s09",
+      "title": "The Drying Yard",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_the-yard-is-four"
+            },
+            "content": [
+              {
+                "type": "mention",
+                "attrs": {
+                  "entityId": "e-drying-yard",
+                  "label": "The yard"
+                }
+              },
+              {
+                "type": "text",
+                "text": " is four storeys of hanging cloth and no roof. On a still night the sheets do not move at all and you can walk between them like corridors. Tonight there is a little wind and the whole yard is breathing."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_blue-above-you-blue"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Blue above you, blue on both sides, and the sky going the same colour on its own schedule."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-hands",
+              "lineId": "t_this-is-the-good"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "This is the good part. Do not let them talk you out of remembering that there was a good part."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_walk-the-rows-someone"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_walk-the-rows",
+                  "targetSceneId": "s10",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Walk the rows."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_someone-is-already-out",
+                  "targetSceneId": "s11",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Someone is already out here."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_go-back-inside",
+                  "targetSceneId": "s08",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Go back inside."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 612,
+        "y": 126
+      },
+      "titleKey": "s_the-drying-yard"
+    },
+    {
+      "id": "s10",
+      "title": "What The Sheets Know",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_four-thousand-metres-o"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Four thousand metres of cotton, and you can tell which vat each one came out of by standing under it. Not by looking. By the smell of the sizing and the way it takes the light."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-hands",
+              "lineId": "t_that-is-not-a"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "That is not a skill anyone wrote down. It is not on a form. When this floor closes it does not go anywhere — it does not transfer, it does not get packed in a crate. It stops."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-arithmetic",
+              "lineId": "t_correct-and-worth-prec"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Correct, and worth precisely nothing at the vote. Sentiment is not a count. Nine is a count."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-hands",
+              "lineId": "t_i-did-not-say"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "I did not say it was worth anything. I said it stops."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_stand-there-a-while"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_stand-there-a-while",
+                  "targetSceneId": "s13",
+                  "actions": [
+                    {
+                      "id": "act-1d",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 1
+                    },
+                    {
+                      "id": "act-1e",
+                      "variableId": "v-voices",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Stand there a while longer."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_go-and-find-nesrin-2",
+                  "targetSceneId": "s15",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Go and find Nesrin's six."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 468,
+        "y": 270
+      },
+      "titleKey": "s_what-the-sheets-know"
+    },
+    {
+      "id": "s11",
+      "title": "Deniz In The Yard",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_deniz-is-sitting-on"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Deniz is sitting on an upturned crate with his sleeves pushed up, looking at his hands."
+              }
+            ]
+          },
+          {
+            "type": "conditionalBlock",
+            "attrs": {
+              "blockId": "cb-1j",
+              "conditions": [
+                {
+                  "id": "cnd-1i",
+                  "variableId": "v-warned",
+                  "comparator": "eq",
+                  "value": true
+                }
+              ]
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": "e-deniz",
+                  "lineId": "t_you-told-me-there"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "You told me there was a vote and then you walked off. That is worse than not telling me."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "conditionalBlock",
+            "attrs": {
+              "blockId": "cb-1l",
+              "conditions": [
+                {
+                  "id": "cnd-1k",
+                  "variableId": "v-warned",
+                  "comparator": "eq",
+                  "value": true,
+                  "negate": true
+                }
+              ]
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": "e-deniz",
+                  "lineId": "t_nobody-will-tell-me"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Nobody will tell me anything. I asked Nesrin and she asked me how old I was."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-arithmetic",
+              "lineId": "t_he-is-asking-you"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "He is asking you to make him old enough. You cannot. But you can make him informed, which is the only part that is in your gift."
+              }
+            ]
+          },
+          {
+            "type": "dialogueBlock",
+            "attrs": {
+              "blockId": "b_what-have-they-actuall"
+            },
+            "content": [
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_what-have-they-actuall",
+                  "speaker": "@player",
+                  "reply": "That there is a meeting. That I should come if I want. Nobody says what it is a meeting about.",
+                  "replySpeaker": "e-deniz",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "conditions": [],
+                  "actions": [],
+                  "whenUnmet": "hide",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"What have they actually told you?\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_how-long-have-you",
+                  "speaker": "@player",
+                  "reply": "Five weeks on Thursday. Everyone keeps saying that number back to me like it answers something.",
+                  "replySpeaker": "e-deniz",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": true,
+                  "conditions": [],
+                  "actions": [],
+                  "whenUnmet": "hide",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"How long have you been here?\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_five-weeks-is-the",
+                  "speaker": "@player",
+                  "reply": "Then say it plainly, because I have had a whole shift of people not saying it plainly.",
+                  "replySpeaker": "e-deniz",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "conditions": [],
+                  "actions": [
+                    {
+                      "id": "act-1o",
+                      "variableId": "v-warned",
+                      "operation": "set",
+                      "value": true
+                    },
+                    {
+                      "id": "act-1p",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "whenUnmet": "hide",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Five weeks is the whole of your case, and it is against you.\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_sit-with-it-a",
+                  "speaker": "@player",
+                  "reply": "He sits with it. It is the first quiet either of you has had tonight.",
+                  "replySpeaker": null,
+                  "after": "end",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "conditions": [],
+                  "actions": [
+                    {
+                      "id": "act-1r",
+                      "variableId": "v-voices",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "whenUnmet": "hide",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Sit with it a minute.\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_somewhere-behind-the-s"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Somewhere behind the sheets a door goes, and the yard remembers it is a place people walk through."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_tell-him-everything-al"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_tell-him-everything-al",
+                  "targetSceneId": "s12",
+                  "actions": [
+                    {
+                      "id": "act-1u",
+                      "variableId": "v-warned",
+                      "operation": "set",
+                      "value": true
+                    },
+                    {
+                      "id": "act-1v",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Tell him everything. All of it."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_five-weeks-vote-howeve",
+                  "targetSceneId": "s13",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Five weeks. Vote however the room votes.\""
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_go-home-deniz",
+                  "targetSceneId": "s13",
+                  "actions": [
+                    {
+                      "id": "act-1y",
+                      "variableId": "v-resolve",
+                      "operation": "subtract",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Go home, Deniz.\""
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 738,
+        "y": 270
+      },
+      "titleKey": "s_deniz-in-the-yard"
+    },
+    {
+      "id": "s12",
+      "title": "What You Tell Deniz",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_you-tell-him-the"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "You tell him the floor is closing. You tell him the new plant is four hundred kilometres away and that nobody has been offered a transfer in writing. You tell him what a strike vote is and what it costs and that five weeks of service means he loses the least and is therefore the cheapest person in the building to sacrifice."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_he-listens-the-whole"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "He listens the whole way through without once saying \"but\"."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-deniz",
+              "lineId": "t_so-what-do-i"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "So what do I do?"
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_you-vote-that-is"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_you-vote-that-is",
+                  "targetSceneId": "s13",
+                  "actions": [
+                    {
+                      "id": "act-21",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"You vote. That is the whole of it.\""
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_you-go-home-and",
+                  "targetSceneId": "s13",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"You go home and I never said any of this.\""
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 738,
+        "y": 432
+      },
+      "titleKey": "s_what-you-tell-deniz"
+    },
+    {
+      "id": "s13",
+      "title": "The Wind Drops",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_the-wind-drops-and"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The wind drops and the whole yard stops moving at once, four storeys of cloth going still together, and for about two seconds it is the quietest place in the city."
+              }
+            ]
+          },
+          {
+            "type": "conditionalBlock",
+            "attrs": {
+              "blockId": "cb-26",
+              "conditions": [
+                {
+                  "id": "cnd-25",
+                  "variableId": "v-resolve",
+                  "comparator": "gte",
+                  "value": 3
+                }
+              ]
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": "e-hands",
+                  "lineId": "t_something-in-you-has"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Something in you has finished arguing. You notice it the way you notice a machine stopping — by the silence where the noise was."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_two-hours"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Two hours."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_the-canteen-the-gate"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_the-canteen",
+                  "targetSceneId": "s14",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "The canteen."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_the-gate-house",
+                  "targetSceneId": "s19",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "The gate house."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_straight-to-the-floor",
+                  "targetSceneId": "s25",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Straight to the floor. Wait it out."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 612,
+        "y": 576
+      },
+      "titleKey": "s_the-wind-drops"
+    },
+    {
+      "id": "s14",
+      "title": "The Canteen",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_the-canteen-has-nine"
+            },
+            "content": [
+              {
+                "type": "mention",
+                "attrs": {
+                  "entityId": "e-canteen",
+                  "label": "The canteen"
+                }
+              },
+              {
+                "type": "text",
+                "text": " has nine tables and tonight they have been pushed into three. That is a thing that happens by itself, without anybody deciding it, and it tells you the count better than Nesrin's clipboard does."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-arithmetic",
+              "lineId": "t_big-table-they-are"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Big table: they are voting yes and want to be seen doing it. Middle table: undecided, sitting with their backs to the big one. Small table by the urn: four men who have already decided no and would rather not discuss it."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_sit-at-the-big"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_sit-at-the-big",
+                  "targetSceneId": "s15",
+                  "actions": [
+                    {
+                      "id": "act-2b",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Sit at the big table."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_sit-at-the-middle",
+                  "targetSceneId": "s16",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Sit at the middle table."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_sit-by-the-urn",
+                  "targetSceneId": "s17",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Sit by the urn."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_get-tea-and-leave",
+                  "targetSceneId": "s18",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Get tea and leave."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 1224,
+        "y": 126
+      },
+      "titleKey": "s_the-canteen"
+    },
+    {
+      "id": "s15",
+      "title": "The Big Table",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_nesrin-does-not-look"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Nesrin does not look up when you sit down, which is deliberate, and everyone at the table notices, which is also deliberate."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_six-of-you-here"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Six of you here. Six is not nine."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-nesrin",
+              "textAlign": null,
+              "lineId": "t_there-seems-to-be"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": " There seems to be a missalignment, isn't there?"
+              }
+            ]
+          },
+          {
+            "type": "dialogueBlock",
+            "attrs": {
+              "blockId": "b_how-short-are-you"
+            },
+            "content": [
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_how-short-are-you",
+                  "speaker": "@player",
+                  "reply": "Nine. Out of a hundred and forty, which is the part that should embarrass somebody.",
+                  "replySpeaker": "e-nesrin",
+                  "after": "leave",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"How short are you, exactly?\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_who-are-the-six",
+                  "speaker": "@player",
+                  "reply": "People who will do what you do, once you have done it. That is all six of them are.",
+                  "replySpeaker": "e-nesrin",
+                  "after": "end",
+                  "targetSceneId": null,
+                  "repeatable": true,
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Who are the six?\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_you-have-been-counting",
+                  "speaker": "@player",
+                  "reply": "He can count. What he has not done is say a number out loud to anyone, and that is the only thing left that matters.",
+                  "replySpeaker": "e-arithmetic",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "actions": [
+                    {
+                      "id": "act-2j",
+                      "variableId": "v-voices",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"You have been counting all night.\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_and-if-it-fails",
+                  "speaker": "@player",
+                  "reply": "She has not let herself finish that sentence, and you have just made her start it.",
+                  "replySpeaker": "e-arithmetic",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "actions": [],
+                  "conditions": [
+                    {
+                      "id": "cnd-2l",
+                      "variableId": "v-resolve",
+                      "comparator": "gte",
+                      "value": 2
+                    }
+                  ],
+                  "whenUnmet": "lock",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"And if it fails?\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_then-say-the-number",
+                  "speaker": "@player",
+                  "reply": "Nesrin looks up for the first time since you sat down. Good. Sit there and look like you meant it.",
+                  "replySpeaker": "e-nesrin",
+                  "after": "end",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "actions": [
+                    {
+                      "id": "act-2n",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 2
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Then say the number out loud. I will back you.\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_get-up-and-go",
+                  "speaker": "@player",
+                  "reply": "",
+                  "replySpeaker": null,
+                  "after": "leave",
+                  "targetSceneId": "s17",
+                  "repeatable": false,
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Get up and go and find the tea."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_the-table-goes-back"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The table goes back to the thing it was arguing about before you sat down, which is the rota, because the rota is always safer."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_nine-you-are-nine"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "speaker": null,
+                  "optionId": "c_nine-you-are-nine",
+                  "targetSceneId": "s18",
+                  "actions": [
+                    {
+                      "id": "act-2r",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 2
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Nine. You are nine short.\""
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "speaker": null,
+                  "optionId": "c_say-nothing-and-drink",
+                  "targetSceneId": "s18",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Say nothing and drink the tea."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "speaker": null,
+                  "optionId": "c_then-find-nine-people",
+                  "targetSceneId": "s18",
+                  "actions": [
+                    {
+                      "id": "act-2u",
+                      "variableId": "v-resolve",
+                      "operation": "subtract",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Then find nine people who are not me.\""
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 1080,
+        "y": 270
+      },
+      "titleKey": "s_the-big-table"
+    },
+    {
+      "id": "s16",
+      "title": "Arithmetic Runs The Numbers",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_the-middle-table-is"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The middle table is the honest one. Nobody at it is pretending."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-arithmetic",
+              "lineId": "t_here-is-the-sum"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Here is the sum, and it is not close. A strike costs each of you about nineteen days' pay before anyone blinks. The closure costs each of you everything after March. Nineteen days against everything after March is not a difficult sum and every person at this table has already done it."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_so-why-are-they"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "So why are they sitting here?"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-arithmetic",
+              "lineId": "t_because-a-sum-is"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Because a sum is not a reason to be brave. It never has been. I can tell you what the numbers say. I cannot make anybody stand up."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_say-the-sum-out"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_say-the-sum-out",
+                  "targetSceneId": "s18",
+                  "actions": [
+                    {
+                      "id": "act-2x",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 2
+                    },
+                    {
+                      "id": "act-2y",
+                      "variableId": "v-voices",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Say the sum out loud to the table."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_keep-it-to-yourself",
+                  "targetSceneId": "s18",
+                  "actions": [
+                    {
+                      "id": "act-30",
+                      "variableId": "v-voices",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Keep it to yourself."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 1350,
+        "y": 270
+      },
+      "titleKey": "s_arithmetic-runs-the-nu"
+    },
+    {
+      "id": "s17",
+      "title": "By The Urn",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_the-four-by-the"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The four by the urn make room without being asked, which is its own kind of recruitment."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_one-of-them-has"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "One of them has thirty-one years. He does not say anything for a long time and then he says: \"I have been on two. Won one. The one we won, they closed us anyway, four years later, and quietly, so nobody marched.\""
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-appetite",
+              "lineId": "t_he-is-not-lying"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "He is not lying and he is not arguing. He is the most dangerous person in this room."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-arithmetic",
+              "lineId": "t_he-is-also-the"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "He is also the only person tonight who has told you a true thing at his own expense. File that somewhere."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_four-years-is-four"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_four-years-is-four",
+                  "targetSceneId": "s18",
+                  "actions": [
+                    {
+                      "id": "act-33",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Four years is four years.\""
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_so-what-was-the",
+                  "targetSceneId": "s18",
+                  "actions": [
+                    {
+                      "id": "act-35",
+                      "variableId": "v-resolve",
+                      "operation": "subtract",
+                      "value": 2
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"So what was the point.\""
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_just-listen",
+                  "targetSceneId": "s18",
+                  "actions": [
+                    {
+                      "id": "act-37",
+                      "variableId": "v-voices",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Just listen."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 1620,
+        "y": 270
+      },
+      "titleKey": "s_by-the-urn"
+    },
+    {
+      "id": "s18",
+      "title": "The Tea Runs Out",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_the-urn-gives-out"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The urn gives out at half past nine with a noise like a cough, and the argument about who was supposed to refill it is the loudest anyone gets all night."
+              }
+            ]
+          },
+          {
+            "type": "conditionalBlock",
+            "attrs": {
+              "blockId": "cb-3b",
+              "conditions": [
+                {
+                  "id": "cnd-3a",
+                  "variableId": "v-offer",
+                  "comparator": "eq",
+                  "value": true
+                }
+              ]
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": "e-arithmetic",
+                  "lineId": "t_hikmet-s-word-for"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Hikmet's word for it was \"post\". Not job. Post. A post is a thing you are put at."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_an-hour-and-a"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "An hour and a half."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_the-gate-house-the"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_the-gate-house-2",
+                  "targetSceneId": "s19",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "The gate house."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_the-yard",
+                  "targetSceneId": "s09",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "The yard."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_go-down-to-the",
+                  "targetSceneId": "s25",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Go down to the floor."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 1224,
+        "y": 432
+      },
+      "titleKey": "s_the-tea-runs-out"
+    },
+    {
+      "id": "s19",
+      "title": "The Gate House",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_the-gate-house-is"
+            },
+            "content": [
+              {
+                "type": "mention",
+                "attrs": {
+                  "entityId": "e-gate-house",
+                  "label": "The gate house"
+                }
+              },
+              {
+                "type": "text",
+                "text": " is a booth, a barrier, a kettle and a stairway up to the office. Erdal has worked the gate for twenty-six years and has voted in every ballot this building has ever held and has never once said which way."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_he-nods-at-you"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "He nods at you. The stairs are behind him and he does not move out of the way, exactly, but he does not stand in it either."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_go-up-stay-down"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_go-up",
+                  "targetSceneId": "s20",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Go up."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_stay-down-here-and",
+                  "targetSceneId": "s24",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Stay down here and talk to Erdal."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_look-at-the-gate",
+                  "targetSceneId": "s24",
+                  "actions": [
+                    {
+                      "id": "act-3i",
+                      "variableId": "v-voices",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Look at the gate itself."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 1962,
+        "y": 126
+      },
+      "titleKey": "s_the-gate-house"
+    },
+    {
+      "id": "s20",
+      "title": "Hikmet's Office",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_the-office-is-above"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The office is above the gate so that the foreman sees who comes and goes. Nobody has ever pretended otherwise. Hikmet has hung a calendar over the window that looks at the road and left the one over the floor uncovered."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_p7ht28y4"
+            }
+          },
+          {
+            "type": "conditionalBlock",
+            "attrs": {
+              "blockId": "cb-3m",
+              "conditions": [
+                {
+                  "id": "cnd-3l",
+                  "variableId": "v-offer",
+                  "comparator": "eq",
+                  "value": true
+                }
+              ]
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": "e-hikmet",
+                  "textAlign": null,
+                  "lineId": "t_you-came-up-good"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "You came up. Good. I was not going to ask twice."
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": "e-hikmet",
+                  "textAlign": null,
+                  "lineId": "t_sit-i-have-something"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Sit. I have something to say and I would rather say it here than on the floor."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "dialogueBlock",
+            "attrs": {
+              "blockId": "b_say-it-here-then"
+            },
+            "content": [
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_say-it-here-then",
+                  "speaker": "@player",
+                  "reply": "I will. I would rather you heard it from me than from a letter with the company's name at the top.",
+                  "replySpeaker": "e-hikmet",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Say it here, then.\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_how-long-have-you-2",
+                  "speaker": "@player",
+                  "reply": "Long enough that answering honestly costs me something. Which is why I am answering.",
+                  "replySpeaker": "e-hikmet",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": true,
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"How long have you known?\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_three-weeks-by-the",
+                  "speaker": "@player",
+                  "reply": "He does not correct you. That is the confirmation.",
+                  "replySpeaker": "e-arithmetic",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "actions": [
+                    {
+                      "id": "act-3s",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [
+                    {
+                      "id": "cnd-3r",
+                      "variableId": "v-roster",
+                      "comparator": "eq",
+                      "value": true
+                    }
+                  ],
+                  "whenUnmet": "lock",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Three weeks, by the date on that roster.\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_is-there-paper-on",
+                  "speaker": "@player",
+                  "reply": "",
+                  "replySpeaker": null,
+                  "after": "leave",
+                  "targetSceneId": "s21",
+                  "repeatable": false,
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Is there paper on your desk with names on it?\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_go-on-then-the",
+                  "speaker": "@player",
+                  "reply": "Right. Sit properly, because this is the part where you stop being someone I talk to on the floor.",
+                  "replySpeaker": "e-hikmet",
+                  "after": "end",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Go on then. The offer.\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_the-calendar-over-the"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The calendar over the window moves a little whenever a lorry goes past on the road, and neither of you looks at it."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_listen-to-the-offer"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "speaker": null,
+                  "optionId": "c_listen-to-the-offer",
+                  "targetSceneId": "s22",
+                  "actions": [
+                    {
+                      "id": "act-3x",
+                      "variableId": "v-offer",
+                      "operation": "set",
+                      "value": true
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Listen to the offer."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "speaker": null,
+                  "optionId": "c_is-there-paper-on",
+                  "targetSceneId": "s21",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Is there paper on your desk with names on it?\""
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "speaker": null,
+                  "optionId": "c_leave-go-back-down",
+                  "targetSceneId": "s24",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Leave. Go back down."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 1962,
+        "y": 270
+      },
+      "titleKey": "s_hikmet-s-office"
+    },
+    {
+      "id": "s21",
+      "title": "The Roster",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_he-does-not-hide"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "He does not hide it, which is almost worse. He turns it round so you can read it."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_it-is-a-staffing"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "It is a staffing roster for the new plant. It is dated three weeks ago. It has a hundred and six names on it and not one of them is from this floor, and at the bottom there are two lines under a heading that reads SUPERVISORY — TBC."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-arithmetic",
+              "lineId": "t_three-weeks-the-vote"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Three weeks. The vote is tonight and this is dated three weeks ago. Every conversation anyone has had in this building since the first of the month has been about a decision that was already made."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-hands",
+              "lineId": "t_you-are-looking-at"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "You are looking at the two blank lines. Look at the hundred and six."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_two-blanks-and-a"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_two-blanks-and-a",
+                  "targetSceneId": "s22",
+                  "actions": [
+                    {
+                      "id": "act-42",
+                      "variableId": "v-roster",
+                      "operation": "set",
+                      "value": true
+                    },
+                    {
+                      "id": "act-43",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 2
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Two blanks and a hundred and six names.\""
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_what-do-i-have",
+                  "targetSceneId": "s22",
+                  "actions": [
+                    {
+                      "id": "act-45",
+                      "variableId": "v-roster",
+                      "operation": "set",
+                      "value": true
+                    },
+                    {
+                      "id": "act-46",
+                      "variableId": "v-resolve",
+                      "operation": "subtract",
+                      "value": 2
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"What do I have to do to be on one of those lines?\""
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 1962,
+        "y": 432
+      },
+      "titleKey": "s_the-roster"
+    },
+    {
+      "id": "s22",
+      "title": "The Offer, Said Plainly",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-hikmet",
+              "lineId": "t_two-posts-you-are"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Two posts. You are qualified, which is true, and there are perhaps nine other people in this building who are also qualified, which I am telling you so you do not think I am flattering you."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-hikmet",
+              "lineId": "t_if-the-vote-carries"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "If the vote carries, there is no new plant to supervise for a year and the two posts go to people who did not shut the old one down. That is not a threat. It is the sequence of events."
+              }
+            ]
+          },
+          {
+            "type": "conditionalBlock",
+            "attrs": {
+              "blockId": "cb-4a",
+              "conditions": [
+                {
+                  "id": "cnd-49",
+                  "variableId": "v-roster",
+                  "comparator": "eq",
+                  "value": true
+                }
+              ]
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": "e-arithmetic",
+                  "lineId": "t_he-says-if-the"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "He says \"if the vote carries\" while a three-week-old roster sits face up between you. He has not lied once tonight. He has simply arranged the true things in an order."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_and-if-i-give"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_and-if-i-give",
+                  "targetSceneId": "s23",
+                  "actions": [
+                    {
+                      "id": "act-4b",
+                      "variableId": "v-resolve",
+                      "operation": "subtract",
+                      "value": 3
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"And if I give you the names of the six?\""
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_no",
+                  "targetSceneId": "s24",
+                  "actions": [
+                    {
+                      "id": "act-4d",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 3
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"No.\""
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_i-will-see-you",
+                  "targetSceneId": "s24",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"I will see you at eleven.\""
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 1962,
+        "y": 576
+      },
+      "titleKey": "s_the-offer-said-plainly"
+    },
+    {
+      "id": "s23",
+      "title": "The Drawer",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_hikmet-is-quiet-for"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Hikmet is quiet for long enough that you hear the barrier go up and down twice."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-hikmet",
+              "lineId": "t_i-did-not-ask"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "I did not ask you for that."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-arithmetic",
+              "lineId": "t_he-did-not-note"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "He did not. Note who said it first. Note that he has not said no."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_there-is-a-drawer"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "There is a drawer in that desk and you both know what goes in it and neither of you has had to name it."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_give-him-the-six"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_give-him-the-six",
+                  "targetSceneId": "s32",
+                  "actions": [
+                    {
+                      "id": "act-4h",
+                      "variableId": "v-resolve",
+                      "operation": "subtract",
+                      "value": 5
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Give him the six names."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_forget-i-said-it",
+                  "targetSceneId": "s24",
+                  "actions": [
+                    {
+                      "id": "act-4j",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Forget I said it.\""
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 1962,
+        "y": 720
+      },
+      "titleKey": "s_the-drawer"
+    },
+    {
+      "id": "s24",
+      "title": "Four O'Clock, Still",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_the-clock-in-the"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The clock in the gate house stopped at four o'clock some time in the nineties and nobody has ever fixed it, and every single person in this building tells the time by it anyway — not by what it says, but by how long they have been looking at it."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_forty-minutes"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Forty minutes."
+              }
+            ]
+          },
+          {
+            "type": "conditionalBlock",
+            "attrs": {
+              "blockId": "cb-4n",
+              "conditions": [
+                {
+                  "id": "cnd-4m",
+                  "variableId": "v-resolve",
+                  "comparator": "lte",
+                  "value": 0
+                }
+              ]
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": "e-appetite",
+                  "lineId": "t_you-could-walk-out"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "You could walk out under that barrier right now and be home before the count. There would be no scene. There would not even be a conversation about it, ever, by anyone."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_go-down-to-the"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_go-down-to-the-2",
+                  "targetSceneId": "s25",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Go down to the floor."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_walk-out-under-the",
+                  "targetSceneId": "s31",
+                  "actions": [],
+                  "conditions": [
+                    {
+                      "id": "cnd-4p",
+                      "variableId": "v-resolve",
+                      "comparator": "lte",
+                      "value": 1
+                    }
+                  ],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Walk out under the barrier."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 1962,
+        "y": 864
+      },
+      "titleKey": "s_four-o-clock-still"
+    },
+    {
+      "id": "s25",
+      "title": "The Floor Fills",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_they-come-down-in"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "They come down in ones and twos and then all at once, and the floor takes a hundred and forty people the way it takes anything — badly, with everyone standing where the heat is least."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_the-vats-are-lidded"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The vats are lidded. You have never seen all six lidded at the same time before. It looks like the room is asleep."
+              }
+            ]
+          },
+          {
+            "type": "conditionalBlock",
+            "attrs": {
+              "blockId": "cb-4t",
+              "conditions": [
+                {
+                  "id": "cnd-4s",
+                  "variableId": "v-warned",
+                  "comparator": "eq",
+                  "value": true
+                }
+              ]
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": null,
+                  "lineId": "t_deniz-has-found-a"
+                },
+                "content": [
+                  {
+                    "type": "mention",
+                    "attrs": {
+                      "entityId": "e-deniz",
+                      "label": "Deniz"
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "text": " has found a place near the front, which is not where a five-week man stands, and he is standing in it anyway."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_take-your-place"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_take-your-place",
+                  "targetSceneId": "s26",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Take your place."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 2610,
+        "y": 126
+      },
+      "titleKey": "s_the-floor-fills"
+    },
+    {
+      "id": "s26",
+      "title": "The Count Is Called",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_nesrin-does-not-make"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Nesrin does not make a speech. She reads the resolution, she reads the rule about the two-thirds, and she asks whether anyone wishes to be heard before the hands go up."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_the-silence-is-eleven"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The silence is eleven seconds long. You know because Arithmetic counts it."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-arithmetic",
+              "textAlign": null,
+              "lineId": "t_eleven-nine-short-and"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Eleven. Nine short and eleven seconds of nobody. Those two numbers are the same number."
+              }
+            ]
+          },
+          {
+            "type": "conditionalBlock",
+            "attrs": {
+              "blockId": "cb-4x",
+              "conditions": [
+                {
+                  "id": "cnd-4w",
+                  "variableId": "v-voices",
+                  "comparator": "gte",
+                  "value": 3
+                }
+              ]
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": "e-hands",
+                  "textAlign": null,
+                  "lineId": "t_all-three-of-us"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "All three of us have had our turn tonight. That is unusual. It generally means the thing is genuinely difficult and not that you are indecisive."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_raise-your-hand-and"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "speaker": null,
+                  "optionId": "c_raise-your-hand-and",
+                  "targetSceneId": "s27",
+                  "actions": [],
+                  "conditions": [
+                    {
+                      "id": "cnd-4y",
+                      "variableId": "v-resolve",
+                      "comparator": "gte",
+                      "value": 3
+                    }
+                  ],
+                  "whenUnmet": "lock",
+                  "lockReason": "You don't have enough resolve to click",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Raise your hand and ask to be heard."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "speaker": null,
+                  "optionId": "c_stand-there",
+                  "targetSceneId": "s28",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Stand there."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "speaker": null,
+                  "optionId": "c_leave-now-before-the",
+                  "targetSceneId": "s31",
+                  "actions": [
+                    {
+                      "id": "act-51",
+                      "variableId": "v-resolve",
+                      "operation": "subtract",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Leave now, before the hands go up."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 2610,
+        "y": 270
+      },
+      "titleKey": "s_the-count-is-called"
+    },
+    {
+      "id": "s27",
+      "title": "You Ask To Be Heard",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_your-voice-comes-out"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Your voice comes out of you at the wrong volume for the room and you have to start the sentence again, which as it turns out is the most persuasive thing you do all night, because a hundred and forty people watch a man who is not good at this decide to do it anyway."
+              }
+            ]
+          },
+          {
+            "type": "conditionalBlock",
+            "attrs": {
+              "blockId": "cb-55",
+              "conditions": [
+                {
+                  "id": "cnd-54",
+                  "variableId": "v-roster",
+                  "comparator": "eq",
+                  "value": true
+                }
+              ]
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": null,
+                  "lineId": "t_you-tell-them-about"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "You tell them about the roster. The date on it. A hundred and six names and two blank lines. You watch the middle table's faces do the arithmetic that Arithmetic already did."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "conditionalBlock",
+            "attrs": {
+              "blockId": "cb-57",
+              "conditions": [
+                {
+                  "id": "cnd-56",
+                  "variableId": "v-roster",
+                  "comparator": "eq",
+                  "value": true,
+                  "negate": true
+                }
+              ]
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": null,
+                  "lineId": "t_you-do-not-have"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "You do not have the roster. You have eleven years and a room that has stopped moving, and you say the only true thing you are certain of: that nobody has offered anybody a transfer in writing, and that they have had three months to do it."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_then-you-stop-talking"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Then you stop talking, which is the second most persuasive thing you do."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_the-hands-go-up"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_the-hands-go-up",
+                  "targetSceneId": "s29",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "The hands go up."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 2340,
+        "y": 432
+      },
+      "titleKey": "s_you-ask-to-be"
+    },
+    {
+      "id": "s28",
+      "title": "You Stand There",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_the-eleven-seconds-end"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The eleven seconds end. Nesrin asks for hands."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_you-raise-yours-so"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "You raise yours. So do ninety-something others, and ninety-something is not two-thirds of a hundred and forty, and everyone in the room can do that sum without being told."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-arithmetic",
+              "lineId": "t_ninety-four-nine-short"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Ninety-four. Nine short. Precisely, exactly, arithmetically nine short. I would like it recorded that I told you the number at nine o'clock."
+              }
+            ]
+          },
+          {
+            "type": "conditionalBlock",
+            "attrs": {
+              "blockId": "cb-5b",
+              "conditions": [
+                {
+                  "id": "cnd-5a",
+                  "variableId": "v-offer",
+                  "comparator": "eq",
+                  "value": true
+                }
+              ]
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": null,
+                  "lineId": "t_hikmet-is-at-the"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Hikmet is at the back by the stairs and he does not look at you, and that is the moment you understand that the post was never going to be yours either."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_watch-the-room-empty"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_watch-the-room-empty",
+                  "targetSceneId": "s30",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Watch the room empty."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 2610,
+        "y": 432
+      },
+      "titleKey": "s_you-stand-there"
+    },
+    {
+      "id": "s29",
+      "title": "The Vote Carries",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_a-hundred-and-nine"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "A hundred and nine hands. Two-thirds is ninety-four."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_nobody-cheers-that-is"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Nobody cheers. That is the thing nobody tells you about a vote that carries — the room goes quieter, not louder, because every person in it has just agreed to be poorer for a while and they are all doing their own sums about how much."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_nesrin-writes-the-numb"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Nesrin writes the number on the same door frame where the time was chalked, and does not rub it out."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_outside-the-yard-is"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Outside, the yard is four storeys of cloth and no wind at all, and the sheets hang exactly still, and none of them will come down tomorrow."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-arithmetic",
+              "lineId": "t_whatever-happens-in-ma"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Whatever happens in March, it now happens to a hundred and forty people at once instead of to a hundred and forty people separately. That is the entire difference and it is not a small one."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_end-of-the-blue"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "— END OF THE BLUE HOUR —"
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 2340,
+        "y": 576
+      },
+      "titleKey": "s_the-vote-carries"
+    },
+    {
+      "id": "s30",
+      "title": "The Vote Fails",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_ninety-four-nine-short-2"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Ninety-four. Nine short."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_the-room-empties-in"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The room empties in about four minutes, which is faster than a shift change, and nobody stands around in the corridor the way they do on an ordinary night."
+              }
+            ]
+          },
+          {
+            "type": "conditionalBlock",
+            "attrs": {
+              "blockId": "cb-5f",
+              "conditions": [
+                {
+                  "id": "cnd-5e",
+                  "variableId": "v-warned",
+                  "comparator": "eq",
+                  "value": true
+                }
+              ]
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": null,
+                  "lineId": "t_deniz-waits-for-you"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Deniz waits for you by the sixth vat. He does not ask anything. He has learned, in one night, the specific thing this building teaches."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_you-lift-the-lid"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "You lift the lid on your vat because somebody has to in the morning anyway. Bronze, not blue. It only turns in the air."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-arithmetic",
+              "lineId": "t_nineteen-days-pay-that"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Nineteen days' pay that nobody will now lose. I will keep saying the number because it is the only honest thing I have. It does not help. It is still true."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_end-of-the-blue-2"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "— END OF THE BLUE HOUR —"
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 2610,
+        "y": 576
+      },
+      "titleKey": "s_the-vote-fails"
+    },
+    {
+      "id": "s31",
+      "title": "The Gate At Four",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_erdal-raises-the-barri"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Erdal raises the barrier without being asked, which he would do for anyone, and says goodnight, which he says to everyone."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_behind-you-the-floor"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Behind you the floor is filling up and you can hear it through two walls — a hundred and forty people moving at once sounds like weather."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_the-clock-in-the-2"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The clock in the gate house says four o'clock. It has said four o'clock since before you worked here and it will say four o'clock after."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-appetite",
+              "lineId": "t_this-was-allowed-nobod"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "This was allowed. Nobody will ever ask. You will know the count by tomorrow noon and you will not have been part of it either way, and that will be true for the rest of your life in a very small, very quiet way."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-hands",
+              "lineId": "t_left-hand-under-right-2"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Left hand under. Right hand over. Turn at the wrist."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_end-of-the-blue-3"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "— END OF THE BLUE HOUR —"
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 2880,
+        "y": 432
+      },
+      "titleKey": "s_the-gate-at-four"
+    },
+    {
+      "id": "s32",
+      "title": "The List",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_six-names-you-say"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Six names. You say them once, evenly, and Hikmet writes none of them down while you are in the room, which is a courtesy of a kind."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_the-vote-fails-by"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The vote fails by a wider margin than anyone expected, and four people are not on the roster in March, and two of them are on the list you gave and two of them are not, and you will never find out why."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_in-april-you-have"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "In April you have a post and a window that looks onto a floor."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_nesrin-goes-somewhere"
+            },
+            "content": [
+              {
+                "type": "mention",
+                "attrs": {
+                  "entityId": "e-nesrin",
+                  "label": "Nesrin"
+                }
+              },
+              {
+                "type": "text",
+                "text": " goes somewhere else. You hear about it from someone who heard about it."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-appetite",
+              "lineId": "t_nobody-found-out-i"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Nobody found out. I told you nobody would find out. I want to point out that I was right about that, and that being right about it has turned out to be the worst part."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_end-of-the-blue-4"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "— END OF THE BLUE HOUR —"
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 2880,
+        "y": 126
+      },
+      "titleKey": "s_the-list"
+    }
+  ],
+  "content": [
+    {
+      "id": "g-floor",
+      "kind": "folder",
+      "name": "I — The Vat Floor",
+      "category": "story",
+      "parentId": null,
+      "order": 0,
+      "rect": {
+        "x": 72,
+        "y": 72,
+        "width": 270,
+        "height": 1170
+      }
+    },
+    {
+      "id": "g-yard",
+      "kind": "folder",
+      "name": "II — The Drying Yard",
+      "category": "story",
+      "parentId": null,
+      "order": 1,
+      "rect": {
+        "x": 450,
+        "y": 72,
+        "width": 504,
+        "height": 576
+      }
+    },
+    {
+      "id": "g-canteen",
+      "kind": "folder",
+      "name": "III — The Canteen",
+      "category": "story",
+      "parentId": null,
+      "order": 2,
+      "rect": {
+        "x": 1062,
+        "y": 72,
+        "width": 774,
+        "height": 432
+      }
+    },
+    {
+      "id": "g-gate",
+      "kind": "folder",
+      "name": "IV — The Gate House",
+      "category": "story",
+      "parentId": null,
+      "order": 3,
+      "rect": {
+        "x": 1944,
+        "y": 72,
+        "width": 252,
+        "height": 864
+      }
+    },
+    {
+      "id": "g-vote",
+      "kind": "folder",
+      "name": "V — The Vote",
+      "category": "story",
+      "parentId": null,
+      "order": 4,
+      "rect": {
+        "x": 2304,
+        "y": 72,
+        "width": 774,
+        "height": 576
+      }
+    },
+    {
+      "id": "s01",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-floor",
+      "order": 9
+    },
+    {
+      "id": "s02",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-floor",
+      "order": 8
+    },
+    {
+      "id": "s03",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-floor",
+      "order": 2
+    },
+    {
+      "id": "s04",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-floor",
+      "order": 3
+    },
+    {
+      "id": "s05",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-floor",
+      "order": 4
+    },
+    {
+      "id": "s06",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-floor",
+      "order": 5
+    },
+    {
+      "id": "s07",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-floor",
+      "order": 10
+    },
+    {
+      "id": "s08",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-floor",
+      "order": 7
+    },
+    {
+      "id": "s09",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-yard",
+      "order": 0
+    },
+    {
+      "id": "s10",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-yard",
+      "order": 1
+    },
+    {
+      "id": "s11",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-yard",
+      "order": 2
+    },
+    {
+      "id": "s12",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-yard",
+      "order": 3
+    },
+    {
+      "id": "s13",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-yard",
+      "order": 4
+    },
+    {
+      "id": "s14",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-canteen",
+      "order": 0
+    },
+    {
+      "id": "s15",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-canteen",
+      "order": 1
+    },
+    {
+      "id": "s16",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-canteen",
+      "order": 2
+    },
+    {
+      "id": "s17",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-canteen",
+      "order": 3
+    },
+    {
+      "id": "s18",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-canteen",
+      "order": 4
+    },
+    {
+      "id": "s19",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-gate",
+      "order": 0
+    },
+    {
+      "id": "s20",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-gate",
+      "order": 1
+    },
+    {
+      "id": "s21",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-gate",
+      "order": 2
+    },
+    {
+      "id": "s22",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-gate",
+      "order": 3
+    },
+    {
+      "id": "s23",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-gate",
+      "order": 4
+    },
+    {
+      "id": "s24",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-gate",
+      "order": 5
+    },
+    {
+      "id": "s25",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-vote",
+      "order": 0
+    },
+    {
+      "id": "s26",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-vote",
+      "order": 1
+    },
+    {
+      "id": "s27",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-vote",
+      "order": 2
+    },
+    {
+      "id": "s28",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-vote",
+      "order": 3
+    },
+    {
+      "id": "s29",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-vote",
+      "order": 4
+    },
+    {
+      "id": "s30",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-vote",
+      "order": 5
+    },
+    {
+      "id": "s31",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-vote",
+      "order": 6
+    },
+    {
+      "id": "s32",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-vote",
+      "order": 7
+    },
+    {
+      "id": "e-nesrin",
+      "kind": "leaf",
+      "refType": "character",
+      "category": "characters",
+      "parentId": null,
+      "order": 0
+    },
+    {
+      "id": "e-hikmet",
+      "kind": "leaf",
+      "refType": "character",
+      "category": "characters",
+      "parentId": null,
+      "order": 1
+    },
+    {
+      "id": "e-deniz",
+      "kind": "leaf",
+      "refType": "character",
+      "category": "characters",
+      "parentId": null,
+      "order": 2
+    },
+    {
+      "id": "e-arithmetic",
+      "kind": "leaf",
+      "refType": "character",
+      "category": "characters",
+      "parentId": null,
+      "order": 3
+    },
+    {
+      "id": "e-hands",
+      "kind": "leaf",
+      "refType": "character",
+      "category": "characters",
+      "parentId": null,
+      "order": 4
+    },
+    {
+      "id": "e-appetite",
+      "kind": "leaf",
+      "refType": "character",
+      "category": "characters",
+      "parentId": null,
+      "order": 5
+    },
+    {
+      "id": "e-vat-floor",
+      "kind": "leaf",
+      "refType": "location",
+      "category": "locations",
+      "parentId": null,
+      "order": 6
+    },
+    {
+      "id": "e-drying-yard",
+      "kind": "leaf",
+      "refType": "location",
+      "category": "locations",
+      "parentId": null,
+      "order": 7
+    },
+    {
+      "id": "e-canteen",
+      "kind": "leaf",
+      "refType": "location",
+      "category": "locations",
+      "parentId": null,
+      "order": 8
+    },
+    {
+      "id": "e-gate-house",
+      "kind": "leaf",
+      "refType": "location",
+      "category": "locations",
+      "parentId": null,
+      "order": 9
+    },
+    {
+      "id": "e-note-voices",
+      "kind": "leaf",
+      "refType": "note",
+      "category": "notes",
+      "parentId": null,
+      "order": 10
+    }
+  ],
+  "favorites": [],
+  "variables": [
+    {
+      "id": "v-resolve",
+      "name": "resolve",
+      "type": "number",
+      "defaultValue": 0,
+      "description": "How firmly you have landed anywhere. Speaking at the vote needs 3."
+    },
+    {
+      "id": "v-offer",
+      "name": "hikmet_offer",
+      "type": "boolean",
+      "defaultValue": false,
+      "description": "Hikmet has named the supervisor's job out loud."
+    },
+    {
+      "id": "v-roster",
+      "name": "knows_roster",
+      "type": "boolean",
+      "defaultValue": false,
+      "description": "You have seen the staffing list for the new plant."
+    },
+    {
+      "id": "v-warned",
+      "name": "deniz_warned",
+      "type": "boolean",
+      "defaultValue": false,
+      "description": "Deniz knows what tonight is."
+    },
+    {
+      "id": "v-voices",
+      "name": "voices_heard",
+      "type": "number",
+      "defaultValue": 0,
+      "description": "How many times you have let one of them finish."
+    }
+  ],
+  "choiceStyles": [
+    {
+      "id": "default",
+      "name": "Default",
+      "box": {
+        "fill": "var(--surface-2-translucent)",
+        "border": "var(--border)",
+        "borderWidth": 1,
+        "radius": 6
+      }
+    },
+    {
+      "id": "cs-voice",
+      "name": "Inner Voice",
+      "box": {
+        "fill": null,
+        "border": "var(--accent)",
+        "borderWidth": 1,
+        "radius": 2
+      }
+    }
+  ],
+  "entities": [
+    {
+      "id": "e-nesrin",
+      "kind": "character",
+      "name": "Nesrin Aydın",
+      "aliases": [
+        "Nesrin"
+      ],
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Organiser. Fourteen years, all of them on the third and fourth vats."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Counts before she argues. Has known the number since Tuesday and has not told anyone it, because a number said too early is a number people start planning around."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Her surname is here on purpose: it is the test case for Turkish folding — searching \"aydin\" has to find \"Aydın\"."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "e-hikmet",
+      "kind": "character",
+      "name": "Hikmet Bal",
+      "aliases": [
+        "Hikmet",
+        "the foreman"
+      ],
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Foreman. Nineteen years, six of them on the floor and thirteen above it."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Does not lie at any point in this story. Arranges true things in an order, which the writer should treat as a different offence and not a lesser one."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "e-deniz",
+      "kind": "character",
+      "name": "Deniz",
+      "aliases": [
+        "the boy"
+      ],
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Nineteen. Five weeks in. Still proud of the blue in his knuckles."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Exists so that something can be done TO someone by the player's inaction rather than their action."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "e-arithmetic",
+      "kind": "character",
+      "name": "ARITHMETIC",
+      "aliases": [
+        "Arithmetic"
+      ],
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Inner voice. Counts. Is almost always correct and almost never sufficient."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Register: flat, declarative, faintly pleased with itself. Never uses a metaphor. Says numbers out loud."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "e-hands",
+      "kind": "character",
+      "name": "THE HANDS",
+      "aliases": [
+        "The Hands",
+        "Hands"
+      ],
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Inner voice. Eleven years of muscle memory with opinions."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Register: sensory, present tense, short sentences. Talks about weight, temperature, the wrist. Never argues about money."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "e-appetite",
+      "kind": "character",
+      "name": "APPETITE",
+      "aliases": [
+        "Appetite"
+      ],
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Inner voice. Self-interest, stated without shame, which is what makes it persuasive."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Register: reasonable, warm, second person. Always offers the player a way out that costs nothing visible."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "e-vat-floor",
+      "kind": "location",
+      "name": "The Vat Floor",
+      "aliases": [
+        "the floor",
+        "sixth vat"
+      ],
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Six indigo vats, sunk to the rim. Wet stone, steam, the smell of sizing."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Indigo is bronze in the vat and only turns blue in the air. The whole story is in that sentence and the writer should not explain it twice."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "e-drying-yard",
+      "kind": "location",
+      "name": "The Drying Yard",
+      "aliases": [
+        "the yard"
+      ],
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Four storeys of hanging cloth and no roof. On a still night you can walk between the sheets like corridors."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "e-canteen",
+      "kind": "location",
+      "name": "The Canteen",
+      "aliases": [
+        "canteen"
+      ],
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Nine tables, pushed into three tonight. One urn, on since four."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The table arrangement is the vote count. Nobody decided it."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "e-gate-house",
+      "kind": "location",
+      "name": "The Gate House",
+      "aliases": [
+        "the gate",
+        "gate house"
+      ],
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Booth, barrier, kettle, stairway up to the foreman's office. A clock stopped at four o'clock since the nineties."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "e-note-voices",
+      "kind": "note",
+      "name": "On the three voices",
+      "aliases": [
+        "voices",
+        "inner voices"
+      ],
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Writer-only note — this page cannot be mentioned in the story, which is the point of Notes."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "ARITHMETIC is right and useless. THE HANDS is true and irrelevant. APPETITE is honest and corrosive. If two of them agree in a scene, the third should be the one the player is choosing against."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "None of them should ever tell the player what to do. They describe; the player decides. The moment a voice says \"you should\", it stops being a faculty and becomes a hint system."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "stylesheet": "asdfsdf",
+  "language": "en"
+}

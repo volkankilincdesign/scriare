@@ -29,6 +29,20 @@ const mainScript = (p) => join(root, "src/main", p);
 
 const CONTROLS = [
   {
+    // The demo-story check asserts the launch condition against the real
+    // 32-scene story. Its problem-count arm was seen red on real data the
+    // first time it ran (the conversations file has one unlinked dialogue
+    // line), so that arm is demonstrated rather than sabotaged. This control
+    // covers the OTHER load-bearing arm — that the reachability number comes
+    // from the real walk and is not a constant that happens to match.
+    name: "a reachability walk that stops at the start scene",
+    file: src("utils/storyCheck.ts"),
+    from: "          reachable.add(next);\n          queue.push(next);",
+    to: "          reachable.add(next);",
+    spec: "demo-story-check",
+    expect: "every scene is reachable from the start",
+  },
+  {
     name: "a comparator that is off by one",
     file: src("export/pageRuntime.ts"),
     from: 'case "gte": result = a >= b; break;',
@@ -3517,7 +3531,7 @@ const CONTROLS = [
     // the third time), and the share is now the thing the check guards.
     name: "the graph allowed to take half the opening screen",
     file: src("components/layout/EditorGraphSplit.tsx"),
-    from: "const OPENING_SHARE = 0.3;",
+    from: "const OPENING_SHARE = 0.33;",
     to: "const OPENING_SHARE = 0.5;",
     spec: "graph-layout",
     expect: "never opens over 40%",
@@ -3527,8 +3541,8 @@ const CONTROLS = [
     // 22% of the column on a big screen and 35% on a small one.
     name: "the opening height fixed again, largest where space is tightest",
     file: src("components/layout/EditorGraphSplit.tsx"),
-    from: "  const wanted = Math.round(columnHeight * OPENING_SHARE);",
-    to: "  const wanted = DEFAULT_FLOW_HEIGHT;",
+    from: "  return Math.round(columnHeight * OPENING_SHARE);",
+    to: "  return DEFAULT_FLOW_HEIGHT;",
     spec: "graph-layout",
     expect: "larger than the old fixed height",
   },
