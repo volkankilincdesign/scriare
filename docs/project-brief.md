@@ -5,7 +5,7 @@ why it exists, and where it stands. Written to be short enough to read
 whole. For how it compares to Twine, articy:draft and Ink, read
 `positioning.md` alongside it.
 
-**Current as of v0.88.3.** Two earlier copies of this brief had drifted —
+**Current as of v0.88.4.** Two earlier copies of this brief had drifted —
 one stuck at v0.40.x, one at v0.60.0 — and both were wrong about export,
 which has shipped. If you find a copy saying either, it is stale.
 
@@ -93,14 +93,14 @@ different:
 
 ## Where it stands
 
-**v0.88.3 — in active development and genuinely usable.** The editor, the
+**v0.88.4 — in active development and genuinely usable.** The editor, the
 Dialogue and Choice blocks, graph with auto layout and folding, runtime,
 entities, notes, variables, validation, search, all three exports, the
 stylesheet, preferences and the Welcome screen are real and in daily use on
 a 32-scene demo story.
 
-**1124 automated tests** run against the real packaged application, and
-**346 negative controls** — each breaks a specific line of the shipped
+**1129 automated tests** run against the real packaged application, and
+**347 negative controls** — each breaks a specific line of the shipped
 source on purpose and checks that a *named* assertion fails. A test that
 has never been seen to fail proves nothing, and a control that passes is a
 finding about the test, not a clean bill of health.

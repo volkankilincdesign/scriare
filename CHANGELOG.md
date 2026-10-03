@@ -18,6 +18,60 @@ omitting them.
 
 ---
 
+## v0.88.4 — Two triangles nobody had clicked, and a set shot on the wrong ground
+
+**The app-wide UI sweep is closed.** The last residue was `GroupNode`'s fold
+and unfold triangles — two raw buttons, one in each branch of the file,
+carrying the same class string verbatim. They are one `FoldToggle` component
+now, deliberately NOT a kit `Button`: `nodrag nopan` is React Flow's own
+vocabulary for "a control, not a handle to drag the node by", and the kit
+cannot express it. Fourth surface in this sweep where the kit was the wrong
+answer, and the reason is recorded beside it.
+
+**The tidy was the small half. Nothing had ever clicked them.** Every fold
+test in the suite — here and in `groups.spec` — called
+`toggleFolderCollapsed` on the store directly, which exercises the action and
+says nothing about the control. The buttons could have been unrendered, wired
+to the wrong folder, or swallowed by React Flow's drag handling, and all 1124
+checks would have stayed green. That is the shape of the Welcome screen's
+dead link in v0.81.0, which eight negative controls were green over: **a door
+tested where it was convenient rather than where it was at risk.** Five
+checks now click the real thing in both states, with a control that renders a
+triangle which does nothing.
+
+**And the screenshot set was photographing the wrong theme.** The whole point
+of the v0.88.x retake was to show the app a stranger installs, and the first
+picture of the new set came out on **Dark**, the default until v0.88.0. Two
+causes, both fixed. The run inherited whatever theme the Electron profile had
+stored, so it photographed a returning user's app rather than a new one; it
+clears the stored key and asks the store for `DEFAULT_THEME` before the first
+shot. And the light group's restore line said `theme("dark")` in so many
+words — correct when written, silently wrong since v0.88.0 — so every group
+after it was shot on a theme nobody lands on. It reads `DEFAULT_THEME` now,
+so neither can go stale when the default moves again.
+
+**This is the fourth time a picture has found what the suite could not**, and
+the pattern is worth naming rather than celebrating: v0.81.0's dead link,
+v0.87.0's blank folded graph and its photographs of a three-scene stub,
+v0.88.1's nine-pixel reduction, and now a whole image set taken on the wrong
+ground. None were things anybody thought to assert, because all of them are
+about what is *there* rather than what was *specified*.
+
+**One thing is reported and not fixed, because it is his call.** The folded
+graph shot — the five chapter boxes the roadmap wants for the video — comes
+out as a thin strip of specks in a mostly empty panel. v0.87.0's rule
+re-frames the camera ONLY when a fold leaves nothing visible, and here the
+blocks are technically visible in the top-left corner, so it holds. That rule
+was right and its reasoning stands: a camera that re-framed on every fold
+would be a worse fault, because it would happen constantly rather than
+occasionally. But **visible and legible are not the same test**, and the shot
+the video needs is currently not takeable without reaching for fit-view by
+hand. Whether the rule should widen from *nothing visible* to *almost nothing
+visible* is a design decision, not a defect, so it is written down rather
+than acted on.
+
+---
+
 ## v0.88.3 — The swap, and the check that had never measured what it said
 
 **The fixture is now the story with the conversations in it.** One file,

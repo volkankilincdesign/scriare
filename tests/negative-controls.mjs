@@ -29,6 +29,19 @@ const mainScript = (p) => join(root, "src/main", p);
 
 const CONTROLS = [
   {
+    // v0.88.4. The fold triangles were untested at the DOM level until this
+    // version — every fold test called the store action directly, so the
+    // control itself was never exercised. This proves the new checks reach
+    // the button rather than the action behind it: a triangle that renders,
+    // looks right and does nothing must fail them.
+    name: "a fold triangle that renders and does nothing",
+    file: src("components/graph/GroupNode.tsx"),
+    from: "      onClick={onToggle}\n      data-fold-toggle={collapsed ? \"unfold\" : \"fold\"}",
+    to: "      onClick={() => {}}\n      data-fold-toggle={collapsed ? \"unfold\" : \"fold\"}",
+    spec: "graph-folded-size",
+    expect: "clicking it folds the chapter",
+  },
+  {
     // v0.88.3. The demo-story check asserts that the story's problems are a
     // SUBSET of a known-open list, so that a new defect fails while the one
     // known defect — his prose to fix — does not hold the suite red. The risk

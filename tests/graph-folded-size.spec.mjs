@@ -248,6 +248,65 @@ export default async function ({ page, api, check, seedProject }) {
     `${framedAfter.visible} of ${framedAfter.nodes} blocks visible`,
   );
 
+  /* ── the triangles nobody had ever clicked (v0.88.4) ──────────────── */
+
+  // UNTIL THIS VERSION, NOTHING IN THE SUITE CLICKED THEM. Every fold test
+  // here and in groups.spec called `toggleFolderCollapsed` on the store
+  // directly, which tests the action and says nothing about the control —
+  // so the buttons could have been unrendered, wired to the wrong folder,
+  // or swallowed by React Flow's own drag handling, and all 1124 checks
+  // would have stayed green. That is the shape of the Welcome screen's dead
+  // link in v0.81.0, which eight negative controls were green over: a door
+  // tested where it was convenient rather than where it was at risk.
+  //
+  // Found while collapsing the two buttons onto one component, which is
+  // the only reason anybody looked.
+  await seed();
+  await wait(600);
+  await api(() => document.querySelector(".react-flow__controls-fitview")?.click());
+  await wait(600);
+
+  const clickFoldToggle = (which) =>
+    api((w) => {
+      const el = document.querySelector(
+        `.react-flow__node[data-id="ch"] [data-fold-toggle="${w}"]`,
+      );
+      if (!el) return { found: false, collapsed: null };
+      el.click();
+      return { found: true };
+    }, which);
+
+  const isCollapsed = () =>
+    api(() => {
+      const p = window.__scriareProjectStore.getState().project;
+      return Boolean(p.content.find((n) => n.id === "ch")?.collapsed);
+    });
+
+  check("an unfolded chapter draws a fold triangle", (await clickFoldToggle("fold")).found);
+  await wait(400);
+  check("clicking it folds the chapter", (await isCollapsed()) === true, "collapsed after click");
+
+  const unfoldClick = await clickFoldToggle("unfold");
+  check("a folded chapter draws an unfold triangle", unfoldClick.found);
+  await wait(400);
+  check("clicking that one unfolds it again", (await isCollapsed()) === false, "open after click");
+
+  // Both branches render the same component, so the thing worth asserting
+  // is that they are NOT both present at once — a fold control on a folded
+  // box would mean the collapsed flag never reached it.
+  const bothAtOnce = await api(() => {
+    const node = document.querySelector('.react-flow__node[data-id="ch"]');
+    return {
+      fold: Boolean(node?.querySelector('[data-fold-toggle="fold"]')),
+      unfold: Boolean(node?.querySelector('[data-fold-toggle="unfold"]')),
+    };
+  });
+  check(
+    "a chapter shows one triangle, not both",
+    bothAtOnce.fold !== bothAtOnce.unfold,
+    `fold: ${bothAtOnce.fold}, unfold: ${bothAtOnce.unfold}`,
+  );
+
   await api(() => window.__scriareSelectionStore?.setState({ graphIds: [] }));
   await seedProject();
   await wait(300);

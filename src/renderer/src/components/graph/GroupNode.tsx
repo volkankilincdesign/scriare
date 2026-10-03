@@ -40,6 +40,45 @@ interface GroupNodeData {
  */
 const HANDLE_STYLE = { opacity: 0, pointerEvents: "none" as const };
 
+/**
+ * The fold triangle, once (v0.88.4).
+ *
+ * This was the last thing the app-wide UI sweep had left: two raw buttons,
+ * one in each branch of this file, carrying the SAME class string verbatim.
+ * It is deliberately NOT a kit `Button` — `nodrag nopan` is React Flow's own
+ * vocabulary for "this is a control, not a handle to drag the node by", and
+ * the kit has no way to express it. The sweep's standing lesson applies here
+ * in its own small way: "bring it onto the kit" is not the same instruction
+ * as "apply the kit's class", and three surfaces before this one were right
+ * to differ. So this is a shared LOCAL component rather than a shared global
+ * one.
+ *
+ * A component rather than a shared class string, because the glyph, the
+ * tooltip and the class all follow from the same `collapsed` flag — sharing
+ * only the string would have left three things to keep in step instead of
+ * one.
+ *
+ * `data-fold-toggle` exists because, until v0.88.4, NOTHING clicked these.
+ * Every fold test in the suite called `toggleFolderCollapsed` on the store
+ * directly, so the buttons could have been unrendered, wired to the wrong
+ * id, or swallowed by React Flow's drag and the whole suite would have
+ * stayed green — the same shape as the Welcome screen's dead link in
+ * v0.81.0, which eight controls were green over.
+ */
+function FoldToggle({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      data-fold-toggle={collapsed ? "unfold" : "fold"}
+      className="nodrag nopan shrink-0 cursor-pointer rounded px-0.5 text-[10px] text-[var(--text-3)] hover:text-[var(--text)]"
+      title={collapsed ? "Unfold group" : "Fold group"}
+    >
+      {collapsed ? "\u25b8" : "\u25be"}
+    </button>
+  );
+}
+
 export function GroupNode({ id, data, selected }: NodeProps) {
   const { name, collapsed, sceneCount, onResize, onResizeEnd } = data as GroupNodeData;
   const renameFolder = useProjectStore((s) => s.renameFolder);
@@ -73,14 +112,7 @@ export function GroupNode({ id, data, selected }: NodeProps) {
         <Handle type="target" position={Position.Left} style={HANDLE_STYLE} />
         <Handle type="source" position={Position.Right} style={HANDLE_STYLE} />
         <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => toggleFolderCollapsed(id)}
-            className="nodrag nopan shrink-0 cursor-pointer rounded px-0.5 text-[10px] text-[var(--text-3)] hover:text-[var(--text)]"
-            title="Unfold group"
-          >
-            ▸
-          </button>
+          <FoldToggle collapsed onToggle={() => toggleFolderCollapsed(id)} />
           <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[var(--text)]">
             {label}
           </span>
@@ -127,14 +159,7 @@ export function GroupNode({ id, data, selected }: NodeProps) {
         }}
       />
       <div className="flex items-center gap-1 rounded-t-md bg-[var(--surface-translucent)] px-2 py-1">
-        <button
-          type="button"
-          onClick={() => toggleFolderCollapsed(id)}
-          className="nodrag nopan shrink-0 cursor-pointer rounded px-0.5 text-[10px] text-[var(--text-3)] hover:text-[var(--text)]"
-          title="Fold group"
-        >
-          ▾
-        </button>
+        <FoldToggle collapsed={false} onToggle={() => toggleFolderCollapsed(id)} />
         {/* `nodrag nopan` rather than a stopPropagation on mousedown, which
             is what this had and why dragging across the name moved the
             whole group instead of selecting a word of it.

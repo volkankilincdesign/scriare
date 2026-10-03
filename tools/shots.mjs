@@ -42,6 +42,30 @@ const page = await app.firstWindow();
 await page.waitForFunction(() => Boolean(window.__scriareProjectStore), null, { timeout: 15000 });
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * START ON THE THEME A STRANGER STARTS ON (v0.88.4).
+ *
+ * This ran on whatever theme the Electron profile happened to have stored,
+ * which on any machine that has opened the app before is NOT the default.
+ * The whole point of the v0.88.x retake was to photograph the app a stranger
+ * installs, and the first picture of the new set came out on Dark — the
+ * default until v0.88.0 — which is exactly the thing the set was retaken to
+ * stop doing. Clearing the stored key and asking the store for DEFAULT_THEME
+ * means this cannot drift again when the default changes.
+ */
+await page.evaluate(() => {
+  try {
+    window.localStorage.removeItem("scriare.theme");
+  } catch {
+    // A blocked storage is not a reason to stop; the setTheme below still
+    // puts the window on the right ground for the shots.
+  }
+  const t = window.__scriareThemes;
+  t.useThemeStore.getState().setTheme(t.DEFAULT_THEME);
+});
+await wait(250);
+
 const shot = async (name) => {
   await wait(320);
   await page.screenshot({ path: join(out, `${name}.png`) });
@@ -295,7 +319,15 @@ await run("light", async () => {
   await closeUI("closeStylesheet");
   await theme("daylight");
   await shot("daylight-editor");
-  await theme("dark");
+  // BACK TO THE APP'S OWN DEFAULT, asked for rather than named. This line
+  // said `theme("dark")` until v0.88.4 — correct when Dark was the default
+  // and silently wrong from v0.88.0, when Daylight became it. Every group
+  // after this one was therefore being photographed on a theme a stranger
+  // never sees. Read from the store so it cannot go stale a second time.
+  await page.evaluate(() => {
+    const store = window.__scriareThemes.useThemeStore;
+    store.getState().setTheme(window.__scriareThemes.DEFAULT_THEME);
+  });
 });
 
 /* ── a narrow window ────────────────────────────────────────────── */
