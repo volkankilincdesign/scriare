@@ -1,13 +1,15 @@
 # Scriare — positioning against the alternatives
 
-Written 1 Oct 2026, at **v0.88.1**. Companion to `SCRIARE_BRIEF.md`:
-the brief says what Scriare *is*, this says what it is *instead of*.
-Paste this into a branding or marketing chat — it is the one input that
-chat cannot reconstruct from the repo.
+Written 1 Oct 2026, current at **v0.88.3**. Companion to
+`project-brief.md`: the brief says what Scriare *is*, this says what it is
+*instead of*. Paste this into a branding or marketing chat — it is the one
+input that chat cannot reconstruct from the repo.
 
-> **Note:** `SCRIARE_BRIEF.md` is stale as of this writing — it says
-> v0.40.x, 261 tests, and "no export yet". All three are wrong now.
-> Trust this file's numbers over that one's until it is refreshed.
+> **Note, kept because it is the reason this file exists:** when this was
+> written the brief was three versions stale and still said "no export
+> yet". It was rewritten the same day and both now carry their version at
+> the top, so a stale copy can be spotted rather than believed. The brief
+> used to live loose as `SCRIARE_BRIEF.md`; it is `project-brief.md` here.
 
 ---
 

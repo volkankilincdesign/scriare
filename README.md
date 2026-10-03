@@ -208,9 +208,10 @@ lives in.
 
 ## Status
 
-**v0.88.1 — in active development, and usable.** The editor, graph,
-runtime, entities, notes, variables, validation, search and **export** are
-all real, and the app now builds a Windows installer. See
+**v0.88.3 — in active development, and usable.** The editor, graph,
+runtime, the Choice and Dialogue blocks, auto layout and folding, entities,
+notes, variables, validation, search, the stylesheet and all three
+**exports** are real, and the app builds a Windows installer. See
 [CASE_STUDY.md](CASE_STUDY.md#whats-unresolved) for the honest list of what
 is still missing.
 

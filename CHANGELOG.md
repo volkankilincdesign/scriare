@@ -2,9 +2,15 @@
 
 Every released version of Scriare, newest first.
 
-Entries are one or two sentences. The reasoning behind the bigger decisions
-is in [CASE_STUDY.md](CASE_STUDY.md); the long-form notes each release was
-originally written with are preserved in this file's history.
+**Entries are long on purpose, and this note used to claim the opposite.**
+It said "one or two sentences" while the file grew past a quarter of a
+megabyte — because what is worth keeping about a release is rarely the
+change itself but what the change turned out to be: the suspect that did not
+reproduce, the control that refused to go red, the comment that had been
+wrong since v0.73.0. Those paragraphs are the raw material
+[CASE_STUDY.md](CASE_STUDY.md) is assembled from, so shortening them here
+would mean writing them twice. Read the newest few; the rest is an
+archive.
 
 Versions are not dated — the project was built in a continuous run rather
 than on a release schedule, and inventing dates would be worse than

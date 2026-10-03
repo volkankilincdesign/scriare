@@ -847,7 +847,7 @@ measurement gets fixed whatever the list says.** That is what v0.86.0 did —
 crash-recovery drafts were declined on the measurement and the hole the
 measurement found next door was fixed the same day.
 
-1117 tests, 342 negative controls (as of v0.88.1).
+1124 tests, 346 negative controls (as of v0.88.3).
 
 **An honest note about v0.42–v0.46, kept because it was right.** Five
 versions, none of them on the launch list. They were real improvements and
@@ -1344,8 +1344,8 @@ reading ground is content, and a tool that ships the author's working
 environment as the reader's has confused the two. That is the same argument
 about authoring tools, pointed at typography instead of at graphs.
 
-Worth saying out loud in the case study: **1117 tests against the real
-packaged app and 342 negative controls**, every load-bearing assertion
+Worth saying out loud in the case study: **1124 tests against the real
+packaged app and 346 negative controls**, every load-bearing assertion
 confirmed to fail on a deliberately broken build. Most solo projects can't
 claim that; most professional ones can't either — and v0.49.0 is the honest
 footnote to it, because a green suite of 411 checks had nothing to say about

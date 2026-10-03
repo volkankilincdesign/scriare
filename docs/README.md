@@ -4,7 +4,7 @@ These are the documents for Scriare — the reasoning behind decisions, written 
 
 **The project workspace is the source of truth; this folder is the mirror, refreshed at release time.** If a document here and one in the project disagree, the project is right and this copy is stale. `CHANGELOG.md` and `CASE_STUDY.md` at the repository root are the narrative companion to these, and are not mirrors — they live only in the repository.
 
-As of v0.88.1 this folder is also where the launch material lives. It used to sit loose in `other_materials/`, where the brief drifted three versions out of date without anyone noticing, so it was merged in here.
+As of v0.88.3 this folder is also where the launch material lives. It used to sit loose in `other_materials/`, where the brief drifted three versions out of date without anyone noticing, so it was merged in here.
 
 ## Direction
 
