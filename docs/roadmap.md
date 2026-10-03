@@ -40,9 +40,14 @@ from real use, not an unbuilt feature.
 - **Run Check Story on the 32-scene file.** This is the second condition the
   demo story was defined by and nobody has run it. If it reports anything, it
   is story work for him, so it is worth running before he sits down to record.
-- **Swap the fixture** so the suite and the screenshot tool load the file with
-  the conversations in it. Until then every test and every screenshot runs
-  against a story missing the headline feature.
+- ~~**Swap the fixture**~~ — **done in v0.88.3.** One file now, carrying all
+  three conversations. It failed a check on the first run and the cause was
+  not the swap: `graph-layout-quality`'s router block had been measuring the
+  file's stored card positions crossed with five synthetic overlapping
+  chapter boxes, under a heading that said "after the layout". It routes the
+  laid-out geometry now. **v0.85.0's router figure moves with it** — 62 ms,
+  not 86–92, because that number came from the same hybrid state; the
+  conclusion it supported, that the router is the larger half, survives.
 - **Retake the screenshot set** at v0.88.1, on Daylight, from that file — for
   the case study and for anything public.
 - **`GroupNode`'s two fold triangles**, the last residue of the UI sweep. A
@@ -1178,11 +1183,17 @@ before a story exists that needs it.
    ending (*End of Act One*, not a scene that ran out of choices) and a
    clean Check Story report on the 32-scene file. Nobody has run the second.
 
-   **One mechanical gap underneath it:** the file the test suite and the
-   screenshot tool load is `tests/fixtures/the-blue-hour.scriare`, which has
-   no Dialogue blocks. The conversations live only in `The Blue Hour — With
-   Conversations.scriare`. Until the fixture is swapped, every screenshot
-   and every test runs against a story missing the headline feature.
+   **The mechanical gap is closed (v0.88.3):** `tests/fixtures/the-blue-hour.scriare`
+   IS the story with the conversations now, so the suite and the screenshot
+   tool finally run against the headline feature. What the swap left behind
+   is one real defect in the prose — a dialogue line in *The Big Table*
+   marked `leave` with nowhere to go — carried on a one-entry known-open list
+   in `demo-story-check.spec.mjs` so a NEW problem fails the suite while that
+   one does not. It is his to fix, and the entry comes out when he does.
+   Two warnings sit beside it: a locked option shows the reader the raw
+   variable name, `resolve` in *The Count Is Called* and `knows_roster` in
+   *Hikmet's Office* — and `knows_roster` is in the frame beat 7 holds for
+   three seconds.
 
    Film the graph FOLDED — five chapter boxes, then one unfolds — or a
    32-scene map is noise on video. The old pointer here to

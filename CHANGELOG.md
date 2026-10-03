@@ -12,6 +12,71 @@ omitting them.
 
 ---
 
+## v0.88.3 — The swap, and the check that had never measured what it said
+
+**The fixture is now the story with the conversations in it.** One file,
+`tests/fixtures/the-blue-hour.scriare`, carrying all three Dialogue blocks;
+the separate conversations copy is gone. Every consumer — three specs, the
+screenshot tool, three probes — names that path, so nothing needed
+repointing. Until now every test and every screenshot ran against a story
+missing the feature the whole positioning rests on.
+
+**And it immediately failed a check, for a reason that took three
+measurements to find.** `graph-layout-quality` reported 22 of 70 wires
+falling back to curves and the router five times slower. **My first
+explanation was wrong twice over.** Timing, I said: the budget is wall-clock
+and the machine was loaded. A control refuted it — 22 exactly, three runs
+running. Then the dialogue edges, I said, changing dagre's ranking. A probe
+refuted that too: both the layout and the wire set are built from
+`extractChoices` alone, so neither sees a dialogue exit, and routing the
+laid-out geometry of either file takes ~60 ms with nothing failing.
+
+**What it actually was:** the router block read the STORED project, which at
+that point in the spec is the file's own saved scene positions crossed with
+five deliberately overlapping 460×360 chapter boxes written a few lines
+above — because `measure()` is the pure function and never writes a layout
+back to the store. So a block headed *the cost that lands AFTER the layout*
+measured a state that was neither the file as found nor the laid-out result,
+and the assertion under it was not about this story: it was about wherever
+the writer last left his cards, plus a synthetic mess. It passed for a year
+and went red the moment the fixture changed — **not because the swap broke
+it, but because the swap revealed it had never measured what it said.** It
+routes the laid-out geometry now and passes at 62 ms, all 70 wires.
+
+**A number in the roadmap moves with it.** v0.85.0 recorded the router at
+86–92 ms against a 15–24 ms layout, and that figure came from the same
+hybrid state. On the laid-out geometry it is 62 ms. The conclusion it
+supported — the router is the larger half, and that is where an optimisation
+would live — survives; only the magnitude was wrong.
+
+**The control that failed was the most useful thing here.** The first
+sabotage cut `budgetMs` to 1 and was NOT caught, which is a finding about
+the mechanism: that budget bounds the rip-up passes, and the initial routing
+pass runs before it is ever consulted. So a fallback curve is not "the
+budget being spent" — a sentence both the spec and this project have carried
+since v0.73.0 — it is A* failing to find a path within its expansion cap
+after widening the fence twice. The comment is corrected and the control
+starves the cap instead.
+
+**Check Story's spec is one story now, with a known-open list.** The fixture
+carries the one real defect the v0.88.2 run found: a dialogue line in *The
+Big Table* marked `leave` with nowhere to go. Asserting zero problems would
+hold the suite red over a line of his prose, which trains people to ignore
+the runner; dropping the assertion loses the condition. So the assertion is
+that the problem set is a **subset** of a list named in the spec, with the
+scene in it — a new problem anywhere fails, the known one is reported loudly
+every run, and when he fixes it the spec still passes because a shrinking
+subset is still a subset. A second check demands every entry on that list
+still be reported, because the failure mode of a subset assertion is that it
+also passes when the detector dies. Both arms have controls, and both are
+caught.
+
+**A known-issue list is only honest while it is short, explicit and
+shrinking.** One entry, named in code, with the reason. If it ever grows,
+that is the signal to stop adding to it rather than to keep going.
+
+---
+
 ## v0.88.2 — The condition nobody had run
 
 **The demo story was scoped on 17 Sep with two conditions attached**, and the

@@ -29,6 +29,52 @@ const mainScript = (p) => join(root, "src/main", p);
 
 const CONTROLS = [
   {
+    // v0.88.3. The demo-story check asserts that the story's problems are a
+    // SUBSET of a known-open list, so that a new defect fails while the one
+    // known defect — his prose to fix — does not hold the suite red. The risk
+    // of a subset assertion is that it also passes when the detector dies, so
+    // a second check demands every entry on the list still be reported. This
+    // starves that one: stop reporting a dialogue line that leaves nowhere and
+    // the known entry goes quiet.
+    name: "a dialogue line that leaves nowhere, reported as nothing",
+    file: src("utils/storyCheck.ts"),
+    from: '              kind: "unlinked-choice",\n              severity: "problem",\n              title: where,\n              detail: "This line leaves the scene but doesn\'t say where to.",',
+    to: '              kind: "unlinked-choice",\n              severity: "warning",\n              title: where,\n              detail: "This line leaves the scene but doesn\'t say where to.",',
+    spec: "demo-story-check",
+    expect: "every entry on the known-open list is still a real problem",
+  },
+  {
+    // And the other arm: a problem the list does NOT name must fail the spec.
+    // Promoting the unnamed-variable warning is the smallest sabotage that
+    // produces two of them in this story.
+    name: "a warning promoted to a problem nobody listed",
+    file: src("utils/storyCheck.ts"),
+    from: '      kind: "unnamed-variable-shown",\n      severity: "warning",',
+    to: '      kind: "unnamed-variable-shown",\n      severity: "problem",',
+    spec: "demo-story-check",
+    expect: "no problem that is not already known",
+  },
+  {
+    // v0.88.3. The budget assertion in graph-layout-quality was, until this
+    // version, measured over the file's stored positions plus five synthetic
+    // overlapping chapter boxes — so it asserted something about an
+    // artificial hybrid rather than about the laid-out story, and it passed
+    // for a year. Now that it routes over the laid-out geometry, this proves
+    // the assertion still has teeth. The FIRST sabotage tried here cut
+    // `budgetMs` to 1 and was NOT caught, which was the useful half: that
+    // budget bounds the rip-up passes only, and the initial routing pass runs
+    // before it is ever consulted. So a fallback curve is not "the budget
+    // being spent" — a sentence both this file and the spec used to carry —
+    // it is A* failing to find a path within its expansion cap. That is what
+    // this starves instead.
+    name: "an expansion cap too small to find a path",
+    file: src("utils/wireRouter.ts"),
+    from: "  const budgetExpansions = 120000;",
+    to: "  const budgetExpansions = 20;",
+    spec: "graph-layout",
+    expect: "outruns the router's budget",
+  },
+  {
     // The demo-story check asserts the launch condition against the real
     // 32-scene story. Its problem-count arm was seen red on real data the
     // first time it ran (the conversations file has one unlinked dialogue

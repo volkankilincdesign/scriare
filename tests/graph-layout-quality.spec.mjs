@@ -349,10 +349,31 @@ export default async function run({ api, check, seedProject }) {
   //
   // The router reports its own `stats`, so this reads them rather than
   // timing it from outside and attributing the wait to whatever was nearby.
+  //
+  // IT ROUTES OVER THE LAID-OUT GEOMETRY, and that is a correction made on
+  // 3 Oct rather than the original design. This block used to read the
+  // STORED project — which at this point in the spec is the file's own saved
+  // scene positions crossed with the five deliberately overlapping 460×360
+  // chapter boxes written above, because `measure()` is the pure function and
+  // never writes a layout back to the store. So the heading "the cost that
+  // lands AFTER the layout" described a state that was neither the file as
+  // found nor the laid-out result, and the budget assertion underneath it was
+  // not about this story: it was about wherever the writer happened to leave
+  // his cards, plus a synthetic mess.
+  //
+  // It passed for a year and went red the moment the fixture was swapped for
+  // the same story with three Dialogue blocks in it — not because dialogue
+  // costs anything, but because that file was saved with the cards in
+  // different places. 22 of 70 wires fell back to a curve on the hybrid
+  // state; on the laid-out geometry BOTH files route all 70 in ~55 ms. The
+  // swap did not break this check, it revealed that the check had never
+  // measured what it said.
   const router = await api(() => {
-    const project = window.__scriareProjectStore.getState().project;
     const G = window.__scriareGraphConstants;
     const groups = window.__scriareGroupUtils;
+    const project = window.__scriareAutoLayout.computeGraphLayout(
+      window.__scriareProjectStore.getState().project,
+    );
     const boxes = [
       ...project.scenes.map((s) => ({
         id: s.id,
@@ -407,9 +428,14 @@ export default async function run({ api, check, seedProject }) {
       `— the router is the larger half`,
   );
 
-  // A wire the router gave up on falls back to a curve, which is the one
-  // visible symptom of the budget being spent — worth an assertion rather
-  // than a number, because a story this size should never reach it.
+  // A wire the router gave up on falls back to a curve. This comment used to
+  // call that "the budget being spent", and that is wrong: `budgetMs` bounds
+  // the rip-up passes, and the initial routing pass runs before it is
+  // consulted. A fallback curve means A* could not find a path within its
+  // expansion cap after widening the fence twice — a harder failure than
+  // running out of time, and worth an assertion rather than a number because
+  // a story this size should never reach it. Found by a control that refused
+  // to go red when `budgetMs` was cut to 1.
   check(
     "no wire on this story outruns the router's budget",
     worst.failed === 0,

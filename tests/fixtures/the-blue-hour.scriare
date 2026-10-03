@@ -1,8 +1,8 @@
 {
   "id": "the-blue-hour",
   "name": "The Blue Hour",
-  "createdAt": "2026-09-27T14:22:12.431Z",
-  "updatedAt": "2026-09-27T14:22:12.431Z",
+  "createdAt": "2026-09-27T22:24:40.690Z",
+  "updatedAt": "2026-10-01T06:40:33.562Z",
   "startSceneId": "s01",
   "scenes": [
     {
@@ -14,7 +14,9 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_indigo-does-not-look"
             },
             "content": [
               {
@@ -26,7 +28,9 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_the-sixth-vat-of"
             },
             "content": [
               {
@@ -49,7 +53,9 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_three-hours-until-the"
             },
             "content": [
               {
@@ -61,7 +67,9 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-arithmetic"
+              "speaker": "e-arithmetic",
+              "textAlign": null,
+              "lineId": "t_eleven-years-say-it"
             },
             "content": [
               {
@@ -73,19 +81,20 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-5"
+              "blockId": "b_work-the-cloth-does"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-1",
+                  "speaker": null,
+                  "optionId": "c_work-the-cloth-does",
                   "targetSceneId": "s02",
                   "actions": [],
                   "conditions": [],
                   "whenUnmet": "hide",
-                  "style": null,
-                  "speaker": null
+                  "lockReason": "",
+                  "style": null
                 },
                 "content": [
                   {
@@ -97,13 +106,14 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-2",
+                  "speaker": null,
+                  "optionId": "c_go-and-find-nesrin",
                   "targetSceneId": "s03",
                   "actions": [],
                   "conditions": [],
                   "whenUnmet": "hide",
-                  "style": null,
-                  "speaker": null
+                  "lockReason": "",
+                  "style": null
                 },
                 "content": [
                   {
@@ -115,7 +125,8 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-4",
+                  "speaker": null,
+                  "optionId": "c_let-the-voice-finish",
                   "targetSceneId": "s06",
                   "actions": [
                     {
@@ -127,8 +138,8 @@
                   ],
                   "conditions": [],
                   "whenUnmet": "hide",
-                  "style": null,
-                  "speaker": null
+                  "lockReason": "",
+                  "style": null
                 },
                 "content": [
                   {
@@ -142,9 +153,10 @@
         ]
       },
       "position": {
-        "x": 0,
-        "y": 0
-      }
+        "x": 108,
+        "y": 126
+      },
+      "titleKey": "s_the-blue-hour"
     },
     {
       "id": "s02",
@@ -155,7 +167,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_you-lift-the-sheet"
             },
             "content": [
               {
@@ -167,7 +180,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-hands"
+              "speaker": "e-hands",
+              "lineId": "t_left-hand-under-right"
             },
             "content": [
               {
@@ -179,7 +193,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-hands"
+              "speaker": "e-hands",
+              "lineId": "t_we-can-do-this"
             },
             "content": [
               {
@@ -191,13 +206,13 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-9"
+              "blockId": "b_keep-working-stop-put"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-7",
+                  "optionId": "c_keep-working",
                   "targetSceneId": "s05",
                   "actions": [
                     {
@@ -222,7 +237,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-8",
+                  "optionId": "c_stop-put-the-sheet",
                   "targetSceneId": "s03",
                   "actions": [],
                   "conditions": [],
@@ -242,9 +257,10 @@
         ]
       },
       "position": {
-        "x": 0,
-        "y": 216
-      }
+        "x": 108,
+        "y": 270
+      },
+      "titleKey": "s_the-sixth-vat"
     },
     {
       "id": "s03",
@@ -255,7 +271,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_nesrin-is-at-the"
             },
             "content": [
               {
@@ -274,7 +291,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-nesrin"
+              "speaker": "e-nesrin",
+              "lineId": "t_eleven-years-you-have"
             },
             "content": [
               {
@@ -286,7 +304,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-arithmetic"
+              "speaker": "e-arithmetic",
+              "lineId": "t_she-is-not-wrong"
             },
             "content": [
               {
@@ -298,13 +317,13 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-f"
+              "blockId": "b_what-thing-i-am"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-a",
+                  "optionId": "c_what-thing",
                   "targetSceneId": "s04",
                   "actions": [],
                   "conditions": [],
@@ -322,7 +341,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-c",
+                  "optionId": "c_i-am-not-a",
                   "targetSceneId": "s05",
                   "actions": [
                     {
@@ -347,7 +366,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-e",
+                  "optionId": "c_how-short-are-you",
                   "targetSceneId": "s04",
                   "actions": [
                     {
@@ -374,9 +393,10 @@
         ]
       },
       "position": {
-        "x": 0,
+        "x": 108,
         "y": 432
-      }
+      },
+      "titleKey": "s_what-nesrin-wants"
     },
     {
       "id": "s04",
@@ -387,7 +407,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-nesrin"
+              "speaker": "e-nesrin",
+              "lineId": "t_nine-short-nine-out"
             },
             "content": [
               {
@@ -399,7 +420,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_she-says-it-flatly"
             },
             "content": [
               {
@@ -411,7 +433,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-arithmetic"
+              "speaker": "e-arithmetic",
+              "lineId": "t_nine-is-not-a"
             },
             "content": [
               {
@@ -423,13 +446,13 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-l"
+              "blockId": "b_i-will-think-about"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-g",
+                  "optionId": "c_i-will-think-about",
                   "targetSceneId": "s05",
                   "actions": [],
                   "conditions": [],
@@ -447,7 +470,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-i",
+                  "optionId": "c_give-me-the-six",
                   "targetSceneId": "s08",
                   "actions": [
                     {
@@ -472,7 +495,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-k",
+                  "optionId": "c_you-are-going-to",
                   "targetSceneId": "s08",
                   "actions": [
                     {
@@ -499,9 +522,10 @@
         ]
       },
       "position": {
-        "x": 0,
-        "y": 648
-      }
+        "x": 108,
+        "y": 576
+      },
+      "titleKey": "s_nesrin-presses"
     },
     {
       "id": "s05",
@@ -512,7 +536,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_deniz-is-nineteen-and"
             },
             "content": [
               {
@@ -531,7 +556,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-deniz"
+              "speaker": "e-deniz",
+              "lineId": "t_is-something-happening"
             },
             "content": [
               {
@@ -543,7 +569,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-arithmetic"
+              "speaker": "e-arithmetic",
+              "lineId": "t_tell-him-do-not"
             },
             "content": [
               {
@@ -555,13 +582,13 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-r"
+              "blockId": "b_there-is-a-vote"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-o",
+                  "optionId": "c_there-is-a-vote",
                   "targetSceneId": "s08",
                   "actions": [
                     {
@@ -592,7 +619,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-p",
+                  "optionId": "c_nothing-go-and-check",
                   "targetSceneId": "s08",
                   "actions": [],
                   "conditions": [],
@@ -610,7 +637,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-q",
+                  "optionId": "c_say-nothing-at-all",
                   "targetSceneId": "s06",
                   "actions": [],
                   "conditions": [],
@@ -630,9 +657,10 @@
         ]
       },
       "position": {
-        "x": 0,
-        "y": 864
-      }
+        "x": 108,
+        "y": 720
+      },
+      "titleKey": "s_the-boy-who-does"
     },
     {
       "id": "s06",
@@ -643,7 +671,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-appetite"
+              "speaker": "e-appetite",
+              "lineId": "t_here-is-what-nobody"
             },
             "content": [
               {
@@ -655,7 +684,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-appetite"
+              "speaker": "e-appetite",
+              "lineId": "t_there-is-a-version"
             },
             "content": [
               {
@@ -667,7 +697,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-arithmetic"
+              "speaker": "e-arithmetic",
+              "lineId": "t_note-the-phrasing-nobo"
             },
             "content": [
               {
@@ -679,13 +710,13 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-v"
+              "blockId": "b_listen-to-the-rest"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-t",
+                  "optionId": "c_listen-to-the-rest",
                   "targetSceneId": "s07",
                   "actions": [
                     {
@@ -710,7 +741,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-u",
+                  "optionId": "c_go-back-to-the",
                   "targetSceneId": "s02",
                   "actions": [],
                   "conditions": [],
@@ -730,9 +761,10 @@
         ]
       },
       "position": {
-        "x": 0,
-        "y": 1080
-      }
+        "x": 108,
+        "y": 864
+      },
+      "titleKey": "s_appetite"
     },
     {
       "id": "s07",
@@ -743,7 +775,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_hikmet-does-not-come"
             },
             "content": [
               {
@@ -762,7 +795,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_he-comes-down"
             },
             "content": [
               {
@@ -774,7 +808,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-hikmet"
+              "speaker": "e-hikmet",
+              "lineId": "t_walk-with-me-a"
             },
             "content": [
               {
@@ -786,7 +821,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-hikmet"
+              "speaker": "e-hikmet",
+              "lineId": "t_there-is-a-supervisor"
             },
             "content": [
               {
@@ -798,7 +834,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-arithmetic"
+              "speaker": "e-arithmetic",
+              "lineId": "t_he-is-telling-the"
             },
             "content": [
               {
@@ -810,13 +847,13 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-10"
+              "blockId": "b_say-the-rest-of"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-x",
+                  "optionId": "c_say-the-rest-of",
                   "targetSceneId": "s08",
                   "actions": [
                     {
@@ -841,7 +878,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-z",
+                  "optionId": "c_not-tonight-hikmet",
                   "targetSceneId": "s08",
                   "actions": [
                     {
@@ -868,9 +905,10 @@
         ]
       },
       "position": {
-        "x": 0,
-        "y": 1296
-      }
+        "x": 108,
+        "y": 1008
+      },
+      "titleKey": "s_hikmet-comes-down"
     },
     {
       "id": "s08",
@@ -881,7 +919,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_the-corridor-between-t"
             },
             "content": [
               {
@@ -907,7 +946,8 @@
               {
                 "type": "paragraph",
                 "attrs": {
-                  "speaker": "e-arithmetic"
+                  "speaker": "e-arithmetic",
+                  "lineId": "t_two-supervisor-s-posts"
                 },
                 "content": [
                   {
@@ -935,7 +975,8 @@
               {
                 "type": "paragraph",
                 "attrs": {
-                  "speaker": "e-hands"
+                  "speaker": "e-hands",
+                  "lineId": "t_the-boy-is-somewhere"
                 },
                 "content": [
                   {
@@ -949,7 +990,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_three-hours-you-could"
             },
             "content": [
               {
@@ -961,13 +1003,13 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-18"
+              "blockId": "b_the-drying-yard-the"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-15",
+                  "optionId": "c_the-drying-yard-the",
                   "targetSceneId": "s09",
                   "actions": [],
                   "conditions": [],
@@ -985,7 +1027,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-16",
+                  "optionId": "c_the-canteen-everyone-i",
                   "targetSceneId": "s14",
                   "actions": [],
                   "conditions": [],
@@ -1003,7 +1045,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-17",
+                  "optionId": "c_the-gate-house-hikmet",
                   "targetSceneId": "s19",
                   "actions": [],
                   "conditions": [],
@@ -1023,9 +1065,10 @@
         ]
       },
       "position": {
-        "x": 0,
-        "y": 1512
-      }
+        "x": 108,
+        "y": 1152
+      },
+      "titleKey": "s_the-corridor"
     },
     {
       "id": "s09",
@@ -1036,7 +1079,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_the-yard-is-four"
             },
             "content": [
               {
@@ -1055,7 +1099,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_blue-above-you-blue"
             },
             "content": [
               {
@@ -1067,7 +1112,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-hands"
+              "speaker": "e-hands",
+              "lineId": "t_this-is-the-good"
             },
             "content": [
               {
@@ -1079,13 +1125,13 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-1c"
+              "blockId": "b_walk-the-rows-someone"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-19",
+                  "optionId": "c_walk-the-rows",
                   "targetSceneId": "s10",
                   "actions": [],
                   "conditions": [],
@@ -1103,7 +1149,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-1a",
+                  "optionId": "c_someone-is-already-out",
                   "targetSceneId": "s11",
                   "actions": [],
                   "conditions": [],
@@ -1121,7 +1167,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-1b",
+                  "optionId": "c_go-back-inside",
                   "targetSceneId": "s08",
                   "actions": [],
                   "conditions": [],
@@ -1141,9 +1187,10 @@
         ]
       },
       "position": {
-        "x": 342,
-        "y": 0
-      }
+        "x": 612,
+        "y": 126
+      },
+      "titleKey": "s_the-drying-yard"
     },
     {
       "id": "s10",
@@ -1154,7 +1201,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_four-thousand-metres-o"
             },
             "content": [
               {
@@ -1166,7 +1214,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-hands"
+              "speaker": "e-hands",
+              "lineId": "t_that-is-not-a"
             },
             "content": [
               {
@@ -1178,7 +1227,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-arithmetic"
+              "speaker": "e-arithmetic",
+              "lineId": "t_correct-and-worth-prec"
             },
             "content": [
               {
@@ -1190,7 +1240,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-hands"
+              "speaker": "e-hands",
+              "lineId": "t_i-did-not-say"
             },
             "content": [
               {
@@ -1202,13 +1253,13 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-1h"
+              "blockId": "b_stand-there-a-while"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-1f",
+                  "optionId": "c_stand-there-a-while",
                   "targetSceneId": "s13",
                   "actions": [
                     {
@@ -1239,7 +1290,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-1g",
+                  "optionId": "c_go-and-find-nesrin-2",
                   "targetSceneId": "s15",
                   "actions": [],
                   "conditions": [],
@@ -1259,9 +1310,10 @@
         ]
       },
       "position": {
-        "x": 342,
-        "y": 216
-      }
+        "x": 468,
+        "y": 270
+      },
+      "titleKey": "s_what-the-sheets-know"
     },
     {
       "id": "s11",
@@ -1272,7 +1324,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_deniz-is-sitting-on"
             },
             "content": [
               {
@@ -1298,7 +1351,8 @@
               {
                 "type": "paragraph",
                 "attrs": {
-                  "speaker": "e-deniz"
+                  "speaker": "e-deniz",
+                  "lineId": "t_you-told-me-there"
                 },
                 "content": [
                   {
@@ -1327,7 +1381,8 @@
               {
                 "type": "paragraph",
                 "attrs": {
-                  "speaker": "e-deniz"
+                  "speaker": "e-deniz",
+                  "lineId": "t_nobody-will-tell-me"
                 },
                 "content": [
                   {
@@ -1341,7 +1396,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-arithmetic"
+              "speaker": "e-arithmetic",
+              "lineId": "t_he-is-asking-you"
             },
             "content": [
               {
@@ -1351,25 +1407,154 @@
             ]
           },
           {
-            "type": "choiceBlock",
+            "type": "dialogueBlock",
             "attrs": {
-              "blockId": "blk-1s"
+              "blockId": "b_what-have-they-actuall"
             },
             "content": [
               {
-                "type": "choiceOption",
+                "type": "dialogueLine",
                 "attrs": {
-                  "optionId": "opt-1o",
-                  "targetSceneId": "s12",
+                  "lineId": "d_what-have-they-actuall",
+                  "speaker": "@player",
+                  "reply": "That there is a meeting. That I should come if I want. Nobody says what it is a meeting about.",
+                  "replySpeaker": "e-deniz",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "conditions": [],
+                  "actions": [],
+                  "whenUnmet": "hide",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"What have they actually told you?\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_how-long-have-you",
+                  "speaker": "@player",
+                  "reply": "Five weeks on Thursday. Everyone keeps saying that number back to me like it answers something.",
+                  "replySpeaker": "e-deniz",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": true,
+                  "conditions": [],
+                  "actions": [],
+                  "whenUnmet": "hide",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"How long have you been here?\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_five-weeks-is-the",
+                  "speaker": "@player",
+                  "reply": "Then say it plainly, because I have had a whole shift of people not saying it plainly.",
+                  "replySpeaker": "e-deniz",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "conditions": [],
                   "actions": [
                     {
-                      "id": "act-1m",
+                      "id": "act-1o",
                       "variableId": "v-warned",
                       "operation": "set",
                       "value": true
                     },
                     {
-                      "id": "act-1n",
+                      "id": "act-1p",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "whenUnmet": "hide",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Five weeks is the whole of your case, and it is against you.\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_sit-with-it-a",
+                  "speaker": "@player",
+                  "reply": "He sits with it. It is the first quiet either of you has had tonight.",
+                  "replySpeaker": null,
+                  "after": "end",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "conditions": [],
+                  "actions": [
+                    {
+                      "id": "act-1r",
+                      "variableId": "v-voices",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "whenUnmet": "hide",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Sit with it a minute.\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "lineId": "t_somewhere-behind-the-s"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Somewhere behind the sheets a door goes, and the yard remembers it is a place people walk through."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_tell-him-everything-al"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "c_tell-him-everything-al",
+                  "targetSceneId": "s12",
+                  "actions": [
+                    {
+                      "id": "act-1u",
+                      "variableId": "v-warned",
+                      "operation": "set",
+                      "value": true
+                    },
+                    {
+                      "id": "act-1v",
                       "variableId": "v-resolve",
                       "operation": "add",
                       "value": 1
@@ -1390,7 +1575,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-1p",
+                  "optionId": "c_five-weeks-vote-howeve",
                   "targetSceneId": "s13",
                   "actions": [],
                   "conditions": [],
@@ -1408,11 +1593,11 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-1r",
+                  "optionId": "c_go-home-deniz",
                   "targetSceneId": "s13",
                   "actions": [
                     {
-                      "id": "act-1q",
+                      "id": "act-1y",
                       "variableId": "v-resolve",
                       "operation": "subtract",
                       "value": 1
@@ -1435,9 +1620,10 @@
         ]
       },
       "position": {
-        "x": 342,
-        "y": 432
-      }
+        "x": 738,
+        "y": 270
+      },
+      "titleKey": "s_deniz-in-the-yard"
     },
     {
       "id": "s12",
@@ -1448,7 +1634,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_you-tell-him-the"
             },
             "content": [
               {
@@ -1460,7 +1647,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_he-listens-the-whole"
             },
             "content": [
               {
@@ -1472,7 +1660,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-deniz"
+              "speaker": "e-deniz",
+              "lineId": "t_so-what-do-i"
             },
             "content": [
               {
@@ -1484,17 +1673,17 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-1w"
+              "blockId": "b_you-vote-that-is"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-1u",
+                  "optionId": "c_you-vote-that-is",
                   "targetSceneId": "s13",
                   "actions": [
                     {
-                      "id": "act-1t",
+                      "id": "act-21",
                       "variableId": "v-resolve",
                       "operation": "add",
                       "value": 1
@@ -1515,7 +1704,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-1v",
+                  "optionId": "c_you-go-home-and",
                   "targetSceneId": "s13",
                   "actions": [],
                   "conditions": [],
@@ -1535,9 +1724,10 @@
         ]
       },
       "position": {
-        "x": 342,
-        "y": 648
-      }
+        "x": 738,
+        "y": 432
+      },
+      "titleKey": "s_what-you-tell-deniz"
     },
     {
       "id": "s13",
@@ -1548,7 +1738,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_the-wind-drops-and"
             },
             "content": [
               {
@@ -1560,10 +1751,10 @@
           {
             "type": "conditionalBlock",
             "attrs": {
-              "blockId": "cb-1y",
+              "blockId": "cb-26",
               "conditions": [
                 {
-                  "id": "cnd-1x",
+                  "id": "cnd-25",
                   "variableId": "v-resolve",
                   "comparator": "gte",
                   "value": 3
@@ -1574,7 +1765,8 @@
               {
                 "type": "paragraph",
                 "attrs": {
-                  "speaker": "e-hands"
+                  "speaker": "e-hands",
+                  "lineId": "t_something-in-you-has"
                 },
                 "content": [
                   {
@@ -1588,7 +1780,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_two-hours"
             },
             "content": [
               {
@@ -1600,13 +1793,13 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-22"
+              "blockId": "b_the-canteen-the-gate"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-1z",
+                  "optionId": "c_the-canteen",
                   "targetSceneId": "s14",
                   "actions": [],
                   "conditions": [],
@@ -1624,7 +1817,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-20",
+                  "optionId": "c_the-gate-house",
                   "targetSceneId": "s19",
                   "actions": [],
                   "conditions": [],
@@ -1642,7 +1835,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-21",
+                  "optionId": "c_straight-to-the-floor",
                   "targetSceneId": "s25",
                   "actions": [],
                   "conditions": [],
@@ -1662,9 +1855,10 @@
         ]
       },
       "position": {
-        "x": 342,
-        "y": 864
-      }
+        "x": 612,
+        "y": 576
+      },
+      "titleKey": "s_the-wind-drops"
     },
     {
       "id": "s14",
@@ -1675,7 +1869,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_the-canteen-has-nine"
             },
             "content": [
               {
@@ -1694,7 +1889,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-arithmetic"
+              "speaker": "e-arithmetic",
+              "lineId": "t_big-table-they-are"
             },
             "content": [
               {
@@ -1706,17 +1902,17 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-28"
+              "blockId": "b_sit-at-the-big"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-24",
+                  "optionId": "c_sit-at-the-big",
                   "targetSceneId": "s15",
                   "actions": [
                     {
-                      "id": "act-23",
+                      "id": "act-2b",
                       "variableId": "v-resolve",
                       "operation": "add",
                       "value": 1
@@ -1737,7 +1933,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-25",
+                  "optionId": "c_sit-at-the-middle",
                   "targetSceneId": "s16",
                   "actions": [],
                   "conditions": [],
@@ -1755,7 +1951,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-26",
+                  "optionId": "c_sit-by-the-urn",
                   "targetSceneId": "s17",
                   "actions": [],
                   "conditions": [],
@@ -1773,7 +1969,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-27",
+                  "optionId": "c_get-tea-and-leave",
                   "targetSceneId": "s18",
                   "actions": [],
                   "conditions": [],
@@ -1793,9 +1989,10 @@
         ]
       },
       "position": {
-        "x": 684,
-        "y": 0
-      }
+        "x": 1224,
+        "y": 126
+      },
+      "titleKey": "s_the-canteen"
     },
     {
       "id": "s15",
@@ -1806,7 +2003,9 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_nesrin-does-not-look"
             },
             "content": [
               {
@@ -1818,7 +2017,9 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_six-of-you-here"
             },
             "content": [
               {
@@ -1830,29 +2031,142 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-nesrin"
+              "speaker": "e-nesrin",
+              "textAlign": null,
+              "lineId": "t_there-seems-to-be"
             },
             "content": [
               {
                 "type": "text",
-                "text": "He can count. He has been counting all night. What he has not done is say a number out loud to anyone, and that is the only thing left that matters."
+                "text": " There seems to be a missalignment, isn't there?"
               }
             ]
           },
           {
-            "type": "choiceBlock",
+            "type": "dialogueBlock",
             "attrs": {
-              "blockId": "blk-2e"
+              "blockId": "b_how-short-are-you"
             },
             "content": [
               {
-                "type": "choiceOption",
+                "type": "dialogueLine",
                 "attrs": {
-                  "optionId": "opt-2a",
-                  "targetSceneId": "s18",
+                  "lineId": "d_how-short-are-you",
+                  "speaker": "@player",
+                  "reply": "Nine. Out of a hundred and forty, which is the part that should embarrass somebody.",
+                  "replySpeaker": "e-nesrin",
+                  "after": "leave",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"How short are you, exactly?\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_who-are-the-six",
+                  "speaker": "@player",
+                  "reply": "People who will do what you do, once you have done it. That is all six of them are.",
+                  "replySpeaker": "e-nesrin",
+                  "after": "end",
+                  "targetSceneId": null,
+                  "repeatable": true,
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Who are the six?\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_you-have-been-counting",
+                  "speaker": "@player",
+                  "reply": "He can count. What he has not done is say a number out loud to anyone, and that is the only thing left that matters.",
+                  "replySpeaker": "e-arithmetic",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": false,
                   "actions": [
                     {
-                      "id": "act-29",
+                      "id": "act-2j",
+                      "variableId": "v-voices",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"You have been counting all night.\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_and-if-it-fails",
+                  "speaker": "@player",
+                  "reply": "She has not let herself finish that sentence, and you have just made her start it.",
+                  "replySpeaker": "e-arithmetic",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "actions": [],
+                  "conditions": [
+                    {
+                      "id": "cnd-2l",
+                      "variableId": "v-resolve",
+                      "comparator": "gte",
+                      "value": 2
+                    }
+                  ],
+                  "whenUnmet": "lock",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"And if it fails?\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_then-say-the-number",
+                  "speaker": "@player",
+                  "reply": "Nesrin looks up for the first time since you sat down. Good. Sit there and look like you meant it.",
+                  "replySpeaker": "e-nesrin",
+                  "after": "end",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "actions": [
+                    {
+                      "id": "act-2n",
                       "variableId": "v-resolve",
                       "operation": "add",
                       "value": 2
@@ -1860,8 +2174,79 @@
                   ],
                   "conditions": [],
                   "whenUnmet": "hide",
-                  "style": null,
-                  "speaker": null
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Then say the number out loud. I will back you.\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_get-up-and-go",
+                  "speaker": "@player",
+                  "reply": "",
+                  "replySpeaker": null,
+                  "after": "leave",
+                  "targetSceneId": "s17",
+                  "repeatable": false,
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Get up and go and find the tea."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_the-table-goes-back"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The table goes back to the thing it was arguing about before you sat down, which is the rota, because the rota is always safer."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b_nine-you-are-nine"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "speaker": null,
+                  "optionId": "c_nine-you-are-nine",
+                  "targetSceneId": "s18",
+                  "actions": [
+                    {
+                      "id": "act-2r",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 2
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
                 },
                 "content": [
                   {
@@ -1873,13 +2258,14 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-2b",
+                  "speaker": null,
+                  "optionId": "c_say-nothing-and-drink",
                   "targetSceneId": "s18",
                   "actions": [],
                   "conditions": [],
                   "whenUnmet": "hide",
-                  "style": null,
-                  "speaker": null
+                  "lockReason": "",
+                  "style": null
                 },
                 "content": [
                   {
@@ -1891,11 +2277,12 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-2d",
+                  "speaker": null,
+                  "optionId": "c_then-find-nine-people",
                   "targetSceneId": "s18",
                   "actions": [
                     {
-                      "id": "act-2c",
+                      "id": "act-2u",
                       "variableId": "v-resolve",
                       "operation": "subtract",
                       "value": 1
@@ -1903,8 +2290,8 @@
                   ],
                   "conditions": [],
                   "whenUnmet": "hide",
-                  "style": null,
-                  "speaker": null
+                  "lockReason": "",
+                  "style": null
                 },
                 "content": [
                   {
@@ -1918,9 +2305,10 @@
         ]
       },
       "position": {
-        "x": 684,
-        "y": 216
-      }
+        "x": 1080,
+        "y": 270
+      },
+      "titleKey": "s_the-big-table"
     },
     {
       "id": "s16",
@@ -1931,7 +2319,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_the-middle-table-is"
             },
             "content": [
               {
@@ -1943,7 +2332,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-arithmetic"
+              "speaker": "e-arithmetic",
+              "lineId": "t_here-is-the-sum"
             },
             "content": [
               {
@@ -1955,7 +2345,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_so-why-are-they"
             },
             "content": [
               {
@@ -1967,7 +2358,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-arithmetic"
+              "speaker": "e-arithmetic",
+              "lineId": "t_because-a-sum-is"
             },
             "content": [
               {
@@ -1979,23 +2371,23 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-2k"
+              "blockId": "b_say-the-sum-out"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-2h",
+                  "optionId": "c_say-the-sum-out",
                   "targetSceneId": "s18",
                   "actions": [
                     {
-                      "id": "act-2f",
+                      "id": "act-2x",
                       "variableId": "v-resolve",
                       "operation": "add",
                       "value": 2
                     },
                     {
-                      "id": "act-2g",
+                      "id": "act-2y",
                       "variableId": "v-voices",
                       "operation": "add",
                       "value": 1
@@ -2016,11 +2408,11 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-2j",
+                  "optionId": "c_keep-it-to-yourself",
                   "targetSceneId": "s18",
                   "actions": [
                     {
-                      "id": "act-2i",
+                      "id": "act-30",
                       "variableId": "v-voices",
                       "operation": "add",
                       "value": 1
@@ -2043,9 +2435,10 @@
         ]
       },
       "position": {
-        "x": 684,
-        "y": 432
-      }
+        "x": 1350,
+        "y": 270
+      },
+      "titleKey": "s_arithmetic-runs-the-nu"
     },
     {
       "id": "s17",
@@ -2056,7 +2449,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_the-four-by-the"
             },
             "content": [
               {
@@ -2068,7 +2462,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_one-of-them-has"
             },
             "content": [
               {
@@ -2080,7 +2475,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-appetite"
+              "speaker": "e-appetite",
+              "lineId": "t_he-is-not-lying"
             },
             "content": [
               {
@@ -2092,7 +2488,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-arithmetic"
+              "speaker": "e-arithmetic",
+              "lineId": "t_he-is-also-the"
             },
             "content": [
               {
@@ -2104,17 +2501,17 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-2r"
+              "blockId": "b_four-years-is-four"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-2m",
+                  "optionId": "c_four-years-is-four",
                   "targetSceneId": "s18",
                   "actions": [
                     {
-                      "id": "act-2l",
+                      "id": "act-33",
                       "variableId": "v-resolve",
                       "operation": "add",
                       "value": 1
@@ -2135,11 +2532,11 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-2o",
+                  "optionId": "c_so-what-was-the",
                   "targetSceneId": "s18",
                   "actions": [
                     {
-                      "id": "act-2n",
+                      "id": "act-35",
                       "variableId": "v-resolve",
                       "operation": "subtract",
                       "value": 2
@@ -2160,11 +2557,11 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-2q",
+                  "optionId": "c_just-listen",
                   "targetSceneId": "s18",
                   "actions": [
                     {
-                      "id": "act-2p",
+                      "id": "act-37",
                       "variableId": "v-voices",
                       "operation": "add",
                       "value": 1
@@ -2187,9 +2584,10 @@
         ]
       },
       "position": {
-        "x": 684,
-        "y": 648
-      }
+        "x": 1620,
+        "y": 270
+      },
+      "titleKey": "s_by-the-urn"
     },
     {
       "id": "s18",
@@ -2200,7 +2598,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_the-urn-gives-out"
             },
             "content": [
               {
@@ -2212,10 +2611,10 @@
           {
             "type": "conditionalBlock",
             "attrs": {
-              "blockId": "cb-2t",
+              "blockId": "cb-3b",
               "conditions": [
                 {
-                  "id": "cnd-2s",
+                  "id": "cnd-3a",
                   "variableId": "v-offer",
                   "comparator": "eq",
                   "value": true
@@ -2226,7 +2625,8 @@
               {
                 "type": "paragraph",
                 "attrs": {
-                  "speaker": "e-arithmetic"
+                  "speaker": "e-arithmetic",
+                  "lineId": "t_hikmet-s-word-for"
                 },
                 "content": [
                   {
@@ -2240,7 +2640,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_an-hour-and-a"
             },
             "content": [
               {
@@ -2252,13 +2653,13 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-2x"
+              "blockId": "b_the-gate-house-the"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-2u",
+                  "optionId": "c_the-gate-house-2",
                   "targetSceneId": "s19",
                   "actions": [],
                   "conditions": [],
@@ -2276,7 +2677,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-2v",
+                  "optionId": "c_the-yard",
                   "targetSceneId": "s09",
                   "actions": [],
                   "conditions": [],
@@ -2294,7 +2695,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-2w",
+                  "optionId": "c_go-down-to-the",
                   "targetSceneId": "s25",
                   "actions": [],
                   "conditions": [],
@@ -2314,9 +2715,10 @@
         ]
       },
       "position": {
-        "x": 684,
-        "y": 864
-      }
+        "x": 1224,
+        "y": 432
+      },
+      "titleKey": "s_the-tea-runs-out"
     },
     {
       "id": "s19",
@@ -2327,7 +2729,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_the-gate-house-is"
             },
             "content": [
               {
@@ -2346,7 +2749,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_he-nods-at-you"
             },
             "content": [
               {
@@ -2358,13 +2762,13 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-32"
+              "blockId": "b_go-up-stay-down"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-2y",
+                  "optionId": "c_go-up",
                   "targetSceneId": "s20",
                   "actions": [],
                   "conditions": [],
@@ -2382,7 +2786,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-2z",
+                  "optionId": "c_stay-down-here-and",
                   "targetSceneId": "s24",
                   "actions": [],
                   "conditions": [],
@@ -2400,11 +2804,11 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-31",
+                  "optionId": "c_look-at-the-gate",
                   "targetSceneId": "s24",
                   "actions": [
                     {
-                      "id": "act-30",
+                      "id": "act-3i",
                       "variableId": "v-voices",
                       "operation": "add",
                       "value": 1
@@ -2427,9 +2831,10 @@
         ]
       },
       "position": {
-        "x": 1026,
-        "y": 0
-      }
+        "x": 1962,
+        "y": 126
+      },
+      "titleKey": "s_the-gate-house"
     },
     {
       "id": "s20",
@@ -2440,7 +2845,9 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_the-office-is-above"
             },
             "content": [
               {
@@ -2450,12 +2857,20 @@
             ]
           },
           {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_p7ht28y4"
+            }
+          },
+          {
             "type": "conditionalBlock",
             "attrs": {
-              "blockId": "cb-34",
+              "blockId": "cb-3m",
               "conditions": [
                 {
-                  "id": "cnd-33",
+                  "id": "cnd-3l",
                   "variableId": "v-offer",
                   "comparator": "eq",
                   "value": true
@@ -2466,7 +2881,9 @@
               {
                 "type": "paragraph",
                 "attrs": {
-                  "speaker": "e-hikmet"
+                  "speaker": "e-hikmet",
+                  "textAlign": null,
+                  "lineId": "t_you-came-up-good"
                 },
                 "content": [
                   {
@@ -2474,28 +2891,13 @@
                     "text": "You came up. Good. I was not going to ask twice."
                   }
                 ]
-              }
-            ]
-          },
-          {
-            "type": "conditionalBlock",
-            "attrs": {
-              "blockId": "cb-36",
-              "conditions": [
-                {
-                  "id": "cnd-35",
-                  "variableId": "v-offer",
-                  "comparator": "eq",
-                  "value": true,
-                  "negate": true
-                }
-              ]
-            },
-            "content": [
+              },
               {
                 "type": "paragraph",
                 "attrs": {
-                  "speaker": "e-hikmet"
+                  "speaker": "e-hikmet",
+                  "textAlign": null,
+                  "lineId": "t_sit-i-have-something"
                 },
                 "content": [
                   {
@@ -2507,19 +2909,171 @@
             ]
           },
           {
+            "type": "dialogueBlock",
+            "attrs": {
+              "blockId": "b_say-it-here-then"
+            },
+            "content": [
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_say-it-here-then",
+                  "speaker": "@player",
+                  "reply": "I will. I would rather you heard it from me than from a letter with the company's name at the top.",
+                  "replySpeaker": "e-hikmet",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Say it here, then.\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_how-long-have-you-2",
+                  "speaker": "@player",
+                  "reply": "Long enough that answering honestly costs me something. Which is why I am answering.",
+                  "replySpeaker": "e-hikmet",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": true,
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"How long have you known?\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_three-weeks-by-the",
+                  "speaker": "@player",
+                  "reply": "He does not correct you. That is the confirmation.",
+                  "replySpeaker": "e-arithmetic",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "actions": [
+                    {
+                      "id": "act-3s",
+                      "variableId": "v-resolve",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [
+                    {
+                      "id": "cnd-3r",
+                      "variableId": "v-roster",
+                      "comparator": "eq",
+                      "value": true
+                    }
+                  ],
+                  "whenUnmet": "lock",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Three weeks, by the date on that roster.\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_is-there-paper-on",
+                  "speaker": "@player",
+                  "reply": "",
+                  "replySpeaker": null,
+                  "after": "leave",
+                  "targetSceneId": "s21",
+                  "repeatable": false,
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Is there paper on your desk with names on it?\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d_go-on-then-the",
+                  "speaker": "@player",
+                  "reply": "Right. Sit properly, because this is the part where you stop being someone I talk to on the floor.",
+                  "replySpeaker": "e-hikmet",
+                  "after": "end",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Go on then. The offer.\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_the-calendar-over-the"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The calendar over the window moves a little whenever a lorry goes past on the road, and neither of you looks at it."
+              }
+            ]
+          },
+          {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-3b"
+              "blockId": "b_listen-to-the-offer"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-38",
+                  "speaker": null,
+                  "optionId": "c_listen-to-the-offer",
                   "targetSceneId": "s22",
                   "actions": [
                     {
-                      "id": "act-37",
+                      "id": "act-3x",
                       "variableId": "v-offer",
                       "operation": "set",
                       "value": true
@@ -2527,8 +3081,8 @@
                   ],
                   "conditions": [],
                   "whenUnmet": "hide",
-                  "style": null,
-                  "speaker": null
+                  "lockReason": "",
+                  "style": null
                 },
                 "content": [
                   {
@@ -2540,13 +3094,14 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-39",
+                  "speaker": null,
+                  "optionId": "c_is-there-paper-on",
                   "targetSceneId": "s21",
                   "actions": [],
                   "conditions": [],
                   "whenUnmet": "hide",
-                  "style": null,
-                  "speaker": null
+                  "lockReason": "",
+                  "style": null
                 },
                 "content": [
                   {
@@ -2558,13 +3113,14 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-3a",
+                  "speaker": null,
+                  "optionId": "c_leave-go-back-down",
                   "targetSceneId": "s24",
                   "actions": [],
                   "conditions": [],
                   "whenUnmet": "hide",
-                  "style": null,
-                  "speaker": null
+                  "lockReason": "",
+                  "style": null
                 },
                 "content": [
                   {
@@ -2578,9 +3134,10 @@
         ]
       },
       "position": {
-        "x": 1026,
-        "y": 216
-      }
+        "x": 1962,
+        "y": 270
+      },
+      "titleKey": "s_hikmet-s-office"
     },
     {
       "id": "s21",
@@ -2591,7 +3148,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_he-does-not-hide"
             },
             "content": [
               {
@@ -2603,7 +3161,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_it-is-a-staffing"
             },
             "content": [
               {
@@ -2615,7 +3174,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-arithmetic"
+              "speaker": "e-arithmetic",
+              "lineId": "t_three-weeks-the-vote"
             },
             "content": [
               {
@@ -2627,7 +3187,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-hands"
+              "speaker": "e-hands",
+              "lineId": "t_you-are-looking-at"
             },
             "content": [
               {
@@ -2639,23 +3200,23 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-3i"
+              "blockId": "b_two-blanks-and-a"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-3e",
+                  "optionId": "c_two-blanks-and-a",
                   "targetSceneId": "s22",
                   "actions": [
                     {
-                      "id": "act-3c",
+                      "id": "act-42",
                       "variableId": "v-roster",
                       "operation": "set",
                       "value": true
                     },
                     {
-                      "id": "act-3d",
+                      "id": "act-43",
                       "variableId": "v-resolve",
                       "operation": "add",
                       "value": 2
@@ -2676,17 +3237,17 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-3h",
+                  "optionId": "c_what-do-i-have",
                   "targetSceneId": "s22",
                   "actions": [
                     {
-                      "id": "act-3f",
+                      "id": "act-45",
                       "variableId": "v-roster",
                       "operation": "set",
                       "value": true
                     },
                     {
-                      "id": "act-3g",
+                      "id": "act-46",
                       "variableId": "v-resolve",
                       "operation": "subtract",
                       "value": 2
@@ -2709,9 +3270,10 @@
         ]
       },
       "position": {
-        "x": 1026,
+        "x": 1962,
         "y": 432
-      }
+      },
+      "titleKey": "s_the-roster"
     },
     {
       "id": "s22",
@@ -2722,7 +3284,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-hikmet"
+              "speaker": "e-hikmet",
+              "lineId": "t_two-posts-you-are"
             },
             "content": [
               {
@@ -2734,7 +3297,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-hikmet"
+              "speaker": "e-hikmet",
+              "lineId": "t_if-the-vote-carries"
             },
             "content": [
               {
@@ -2746,10 +3310,10 @@
           {
             "type": "conditionalBlock",
             "attrs": {
-              "blockId": "cb-3k",
+              "blockId": "cb-4a",
               "conditions": [
                 {
-                  "id": "cnd-3j",
+                  "id": "cnd-49",
                   "variableId": "v-roster",
                   "comparator": "eq",
                   "value": true
@@ -2760,7 +3324,8 @@
               {
                 "type": "paragraph",
                 "attrs": {
-                  "speaker": "e-arithmetic"
+                  "speaker": "e-arithmetic",
+                  "lineId": "t_he-says-if-the"
                 },
                 "content": [
                   {
@@ -2774,17 +3339,17 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-3q"
+              "blockId": "b_and-if-i-give"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-3m",
+                  "optionId": "c_and-if-i-give",
                   "targetSceneId": "s23",
                   "actions": [
                     {
-                      "id": "act-3l",
+                      "id": "act-4b",
                       "variableId": "v-resolve",
                       "operation": "subtract",
                       "value": 3
@@ -2805,11 +3370,11 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-3o",
+                  "optionId": "c_no",
                   "targetSceneId": "s24",
                   "actions": [
                     {
-                      "id": "act-3n",
+                      "id": "act-4d",
                       "variableId": "v-resolve",
                       "operation": "add",
                       "value": 3
@@ -2830,7 +3395,7 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-3p",
+                  "optionId": "c_i-will-see-you",
                   "targetSceneId": "s24",
                   "actions": [],
                   "conditions": [],
@@ -2850,9 +3415,10 @@
         ]
       },
       "position": {
-        "x": 1026,
-        "y": 648
-      }
+        "x": 1962,
+        "y": 576
+      },
+      "titleKey": "s_the-offer-said-plainly"
     },
     {
       "id": "s23",
@@ -2863,7 +3429,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_hikmet-is-quiet-for"
             },
             "content": [
               {
@@ -2875,7 +3442,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-hikmet"
+              "speaker": "e-hikmet",
+              "lineId": "t_i-did-not-ask"
             },
             "content": [
               {
@@ -2887,7 +3455,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-arithmetic"
+              "speaker": "e-arithmetic",
+              "lineId": "t_he-did-not-note"
             },
             "content": [
               {
@@ -2899,7 +3468,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_there-is-a-drawer"
             },
             "content": [
               {
@@ -2911,17 +3481,17 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-3v"
+              "blockId": "b_give-him-the-six"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-3s",
+                  "optionId": "c_give-him-the-six",
                   "targetSceneId": "s32",
                   "actions": [
                     {
-                      "id": "act-3r",
+                      "id": "act-4h",
                       "variableId": "v-resolve",
                       "operation": "subtract",
                       "value": 5
@@ -2942,11 +3512,11 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-3u",
+                  "optionId": "c_forget-i-said-it",
                   "targetSceneId": "s24",
                   "actions": [
                     {
-                      "id": "act-3t",
+                      "id": "act-4j",
                       "variableId": "v-resolve",
                       "operation": "add",
                       "value": 1
@@ -2969,9 +3539,10 @@
         ]
       },
       "position": {
-        "x": 1026,
-        "y": 864
-      }
+        "x": 1962,
+        "y": 720
+      },
+      "titleKey": "s_the-drawer"
     },
     {
       "id": "s24",
@@ -2982,7 +3553,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_the-clock-in-the"
             },
             "content": [
               {
@@ -2994,7 +3566,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_forty-minutes"
             },
             "content": [
               {
@@ -3006,10 +3579,10 @@
           {
             "type": "conditionalBlock",
             "attrs": {
-              "blockId": "cb-3x",
+              "blockId": "cb-4n",
               "conditions": [
                 {
-                  "id": "cnd-3w",
+                  "id": "cnd-4m",
                   "variableId": "v-resolve",
                   "comparator": "lte",
                   "value": 0
@@ -3020,7 +3593,8 @@
               {
                 "type": "paragraph",
                 "attrs": {
-                  "speaker": "e-appetite"
+                  "speaker": "e-appetite",
+                  "lineId": "t_you-could-walk-out"
                 },
                 "content": [
                   {
@@ -3034,13 +3608,13 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-41"
+              "blockId": "b_go-down-to-the"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-3y",
+                  "optionId": "c_go-down-to-the-2",
                   "targetSceneId": "s25",
                   "actions": [],
                   "conditions": [],
@@ -3058,12 +3632,12 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-40",
+                  "optionId": "c_walk-out-under-the",
                   "targetSceneId": "s31",
                   "actions": [],
                   "conditions": [
                     {
-                      "id": "cnd-3z",
+                      "id": "cnd-4p",
                       "variableId": "v-resolve",
                       "comparator": "lte",
                       "value": 1
@@ -3085,9 +3659,10 @@
         ]
       },
       "position": {
-        "x": 1026,
-        "y": 1080
-      }
+        "x": 1962,
+        "y": 864
+      },
+      "titleKey": "s_four-o-clock-still"
     },
     {
       "id": "s25",
@@ -3098,7 +3673,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_they-come-down-in"
             },
             "content": [
               {
@@ -3110,7 +3686,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_the-vats-are-lidded"
             },
             "content": [
               {
@@ -3122,10 +3699,10 @@
           {
             "type": "conditionalBlock",
             "attrs": {
-              "blockId": "cb-43",
+              "blockId": "cb-4t",
               "conditions": [
                 {
-                  "id": "cnd-42",
+                  "id": "cnd-4s",
                   "variableId": "v-warned",
                   "comparator": "eq",
                   "value": true
@@ -3136,7 +3713,8 @@
               {
                 "type": "paragraph",
                 "attrs": {
-                  "speaker": null
+                  "speaker": null,
+                  "lineId": "t_deniz-has-found-a"
                 },
                 "content": [
                   {
@@ -3157,13 +3735,13 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-45"
+              "blockId": "b_take-your-place"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-44",
+                  "optionId": "c_take-your-place",
                   "targetSceneId": "s26",
                   "actions": [],
                   "conditions": [],
@@ -3183,9 +3761,10 @@
         ]
       },
       "position": {
-        "x": 1368,
-        "y": 0
-      }
+        "x": 2610,
+        "y": 126
+      },
+      "titleKey": "s_the-floor-fills"
     },
     {
       "id": "s26",
@@ -3196,7 +3775,9 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_nesrin-does-not-make"
             },
             "content": [
               {
@@ -3208,7 +3789,9 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_the-silence-is-eleven"
             },
             "content": [
               {
@@ -3220,7 +3803,9 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-arithmetic"
+              "speaker": "e-arithmetic",
+              "textAlign": null,
+              "lineId": "t_eleven-nine-short-and"
             },
             "content": [
               {
@@ -3232,10 +3817,10 @@
           {
             "type": "conditionalBlock",
             "attrs": {
-              "blockId": "cb-47",
+              "blockId": "cb-4x",
               "conditions": [
                 {
-                  "id": "cnd-46",
+                  "id": "cnd-4w",
                   "variableId": "v-voices",
                   "comparator": "gte",
                   "value": 3
@@ -3246,7 +3831,9 @@
               {
                 "type": "paragraph",
                 "attrs": {
-                  "speaker": "e-hands"
+                  "speaker": "e-hands",
+                  "textAlign": null,
+                  "lineId": "t_all-three-of-us"
                 },
                 "content": [
                   {
@@ -3260,26 +3847,27 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-4d"
+              "blockId": "b_raise-your-hand-and"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-49",
+                  "speaker": null,
+                  "optionId": "c_raise-your-hand-and",
                   "targetSceneId": "s27",
                   "actions": [],
                   "conditions": [
                     {
-                      "id": "cnd-48",
+                      "id": "cnd-4y",
                       "variableId": "v-resolve",
                       "comparator": "gte",
                       "value": 3
                     }
                   ],
                   "whenUnmet": "lock",
-                  "style": null,
-                  "speaker": null
+                  "lockReason": "You don't have enough resolve to click",
+                  "style": null
                 },
                 "content": [
                   {
@@ -3291,13 +3879,14 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-4a",
+                  "speaker": null,
+                  "optionId": "c_stand-there",
                   "targetSceneId": "s28",
                   "actions": [],
                   "conditions": [],
                   "whenUnmet": "hide",
-                  "style": null,
-                  "speaker": null
+                  "lockReason": "",
+                  "style": null
                 },
                 "content": [
                   {
@@ -3309,11 +3898,12 @@
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-4c",
+                  "speaker": null,
+                  "optionId": "c_leave-now-before-the",
                   "targetSceneId": "s31",
                   "actions": [
                     {
-                      "id": "act-4b",
+                      "id": "act-51",
                       "variableId": "v-resolve",
                       "operation": "subtract",
                       "value": 1
@@ -3321,8 +3911,8 @@
                   ],
                   "conditions": [],
                   "whenUnmet": "hide",
-                  "style": null,
-                  "speaker": null
+                  "lockReason": "",
+                  "style": null
                 },
                 "content": [
                   {
@@ -3336,9 +3926,10 @@
         ]
       },
       "position": {
-        "x": 1368,
-        "y": 216
-      }
+        "x": 2610,
+        "y": 270
+      },
+      "titleKey": "s_the-count-is-called"
     },
     {
       "id": "s27",
@@ -3349,7 +3940,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_your-voice-comes-out"
             },
             "content": [
               {
@@ -3361,10 +3953,10 @@
           {
             "type": "conditionalBlock",
             "attrs": {
-              "blockId": "cb-4f",
+              "blockId": "cb-55",
               "conditions": [
                 {
-                  "id": "cnd-4e",
+                  "id": "cnd-54",
                   "variableId": "v-roster",
                   "comparator": "eq",
                   "value": true
@@ -3375,7 +3967,8 @@
               {
                 "type": "paragraph",
                 "attrs": {
-                  "speaker": null
+                  "speaker": null,
+                  "lineId": "t_you-tell-them-about"
                 },
                 "content": [
                   {
@@ -3389,10 +3982,10 @@
           {
             "type": "conditionalBlock",
             "attrs": {
-              "blockId": "cb-4h",
+              "blockId": "cb-57",
               "conditions": [
                 {
-                  "id": "cnd-4g",
+                  "id": "cnd-56",
                   "variableId": "v-roster",
                   "comparator": "eq",
                   "value": true,
@@ -3404,7 +3997,8 @@
               {
                 "type": "paragraph",
                 "attrs": {
-                  "speaker": null
+                  "speaker": null,
+                  "lineId": "t_you-do-not-have"
                 },
                 "content": [
                   {
@@ -3418,7 +4012,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_then-you-stop-talking"
             },
             "content": [
               {
@@ -3430,13 +4025,13 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-4j"
+              "blockId": "b_the-hands-go-up"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-4i",
+                  "optionId": "c_the-hands-go-up",
                   "targetSceneId": "s29",
                   "actions": [],
                   "conditions": [],
@@ -3456,9 +4051,10 @@
         ]
       },
       "position": {
-        "x": 1368,
+        "x": 2340,
         "y": 432
-      }
+      },
+      "titleKey": "s_you-ask-to-be"
     },
     {
       "id": "s28",
@@ -3469,7 +4065,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_the-eleven-seconds-end"
             },
             "content": [
               {
@@ -3481,7 +4078,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_you-raise-yours-so"
             },
             "content": [
               {
@@ -3493,7 +4091,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-arithmetic"
+              "speaker": "e-arithmetic",
+              "lineId": "t_ninety-four-nine-short"
             },
             "content": [
               {
@@ -3505,10 +4104,10 @@
           {
             "type": "conditionalBlock",
             "attrs": {
-              "blockId": "cb-4l",
+              "blockId": "cb-5b",
               "conditions": [
                 {
-                  "id": "cnd-4k",
+                  "id": "cnd-5a",
                   "variableId": "v-offer",
                   "comparator": "eq",
                   "value": true
@@ -3519,7 +4118,8 @@
               {
                 "type": "paragraph",
                 "attrs": {
-                  "speaker": null
+                  "speaker": null,
+                  "lineId": "t_hikmet-is-at-the"
                 },
                 "content": [
                   {
@@ -3533,13 +4133,13 @@
           {
             "type": "choiceBlock",
             "attrs": {
-              "blockId": "blk-4n"
+              "blockId": "b_watch-the-room-empty"
             },
             "content": [
               {
                 "type": "choiceOption",
                 "attrs": {
-                  "optionId": "opt-4m",
+                  "optionId": "c_watch-the-room-empty",
                   "targetSceneId": "s30",
                   "actions": [],
                   "conditions": [],
@@ -3559,9 +4159,10 @@
         ]
       },
       "position": {
-        "x": 1368,
-        "y": 648
-      }
+        "x": 2610,
+        "y": 432
+      },
+      "titleKey": "s_you-stand-there"
     },
     {
       "id": "s29",
@@ -3572,7 +4173,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_a-hundred-and-nine"
             },
             "content": [
               {
@@ -3584,7 +4186,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_nobody-cheers-that-is"
             },
             "content": [
               {
@@ -3596,7 +4199,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_nesrin-writes-the-numb"
             },
             "content": [
               {
@@ -3608,7 +4212,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_outside-the-yard-is"
             },
             "content": [
               {
@@ -3620,7 +4225,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-arithmetic"
+              "speaker": "e-arithmetic",
+              "lineId": "t_whatever-happens-in-ma"
             },
             "content": [
               {
@@ -3632,7 +4238,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_end-of-the-blue"
             },
             "content": [
               {
@@ -3644,9 +4251,10 @@
         ]
       },
       "position": {
-        "x": 1368,
-        "y": 864
-      }
+        "x": 2340,
+        "y": 576
+      },
+      "titleKey": "s_the-vote-carries"
     },
     {
       "id": "s30",
@@ -3657,7 +4265,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_ninety-four-nine-short-2"
             },
             "content": [
               {
@@ -3669,7 +4278,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_the-room-empties-in"
             },
             "content": [
               {
@@ -3681,10 +4291,10 @@
           {
             "type": "conditionalBlock",
             "attrs": {
-              "blockId": "cb-4p",
+              "blockId": "cb-5f",
               "conditions": [
                 {
-                  "id": "cnd-4o",
+                  "id": "cnd-5e",
                   "variableId": "v-warned",
                   "comparator": "eq",
                   "value": true
@@ -3695,7 +4305,8 @@
               {
                 "type": "paragraph",
                 "attrs": {
-                  "speaker": null
+                  "speaker": null,
+                  "lineId": "t_deniz-waits-for-you"
                 },
                 "content": [
                   {
@@ -3709,7 +4320,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_you-lift-the-lid"
             },
             "content": [
               {
@@ -3721,7 +4333,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-arithmetic"
+              "speaker": "e-arithmetic",
+              "lineId": "t_nineteen-days-pay-that"
             },
             "content": [
               {
@@ -3733,7 +4346,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_end-of-the-blue-2"
             },
             "content": [
               {
@@ -3745,9 +4359,10 @@
         ]
       },
       "position": {
-        "x": 1368,
-        "y": 1080
-      }
+        "x": 2610,
+        "y": 576
+      },
+      "titleKey": "s_the-vote-fails"
     },
     {
       "id": "s31",
@@ -3758,7 +4373,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_erdal-raises-the-barri"
             },
             "content": [
               {
@@ -3770,7 +4386,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_behind-you-the-floor"
             },
             "content": [
               {
@@ -3782,7 +4399,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_the-clock-in-the-2"
             },
             "content": [
               {
@@ -3794,7 +4412,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-appetite"
+              "speaker": "e-appetite",
+              "lineId": "t_this-was-allowed-nobod"
             },
             "content": [
               {
@@ -3806,7 +4425,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-hands"
+              "speaker": "e-hands",
+              "lineId": "t_left-hand-under-right-2"
             },
             "content": [
               {
@@ -3818,7 +4438,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_end-of-the-blue-3"
             },
             "content": [
               {
@@ -3830,9 +4451,10 @@
         ]
       },
       "position": {
-        "x": 1368,
-        "y": 1296
-      }
+        "x": 2880,
+        "y": 432
+      },
+      "titleKey": "s_the-gate-at-four"
     },
     {
       "id": "s32",
@@ -3843,7 +4465,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_six-names-you-say"
             },
             "content": [
               {
@@ -3855,7 +4478,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_the-vote-fails-by"
             },
             "content": [
               {
@@ -3867,7 +4491,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_in-april-you-have"
             },
             "content": [
               {
@@ -3879,7 +4504,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_nesrin-goes-somewhere"
             },
             "content": [
               {
@@ -3898,7 +4524,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": "e-appetite"
+              "speaker": "e-appetite",
+              "lineId": "t_nobody-found-out-i"
             },
             "content": [
               {
@@ -3910,7 +4537,8 @@
           {
             "type": "paragraph",
             "attrs": {
-              "speaker": null
+              "speaker": null,
+              "lineId": "t_end-of-the-blue-4"
             },
             "content": [
               {
@@ -3922,9 +4550,10 @@
         ]
       },
       "position": {
-        "x": 1368,
-        "y": 1512
-      }
+        "x": 2880,
+        "y": 126
+      },
+      "titleKey": "s_the-list"
     }
   ],
   "content": [
@@ -3934,7 +4563,13 @@
       "name": "I — The Vat Floor",
       "category": "story",
       "parentId": null,
-      "order": 0
+      "order": 0,
+      "rect": {
+        "x": 72,
+        "y": 72,
+        "width": 270,
+        "height": 1170
+      }
     },
     {
       "id": "g-yard",
@@ -3942,7 +4577,13 @@
       "name": "II — The Drying Yard",
       "category": "story",
       "parentId": null,
-      "order": 1
+      "order": 1,
+      "rect": {
+        "x": 450,
+        "y": 72,
+        "width": 504,
+        "height": 576
+      }
     },
     {
       "id": "g-canteen",
@@ -3950,7 +4591,13 @@
       "name": "III — The Canteen",
       "category": "story",
       "parentId": null,
-      "order": 2
+      "order": 2,
+      "rect": {
+        "x": 1062,
+        "y": 72,
+        "width": 774,
+        "height": 432
+      }
     },
     {
       "id": "g-gate",
@@ -3958,7 +4605,13 @@
       "name": "IV — The Gate House",
       "category": "story",
       "parentId": null,
-      "order": 3
+      "order": 3,
+      "rect": {
+        "x": 1944,
+        "y": 72,
+        "width": 252,
+        "height": 864
+      }
     },
     {
       "id": "g-vote",
@@ -3966,7 +4619,13 @@
       "name": "V — The Vote",
       "category": "story",
       "parentId": null,
-      "order": 4
+      "order": 4,
+      "rect": {
+        "x": 2304,
+        "y": 72,
+        "width": 774,
+        "height": 576
+      }
     },
     {
       "id": "s01",
@@ -3974,7 +4633,7 @@
       "refType": "scene",
       "category": "story",
       "parentId": "g-floor",
-      "order": 0
+      "order": 9
     },
     {
       "id": "s02",
@@ -3982,7 +4641,7 @@
       "refType": "scene",
       "category": "story",
       "parentId": "g-floor",
-      "order": 1
+      "order": 8
     },
     {
       "id": "s03",
@@ -4022,7 +4681,7 @@
       "refType": "scene",
       "category": "story",
       "parentId": "g-floor",
-      "order": 6
+      "order": 10
     },
     {
       "id": "s08",
@@ -4786,5 +5445,7 @@
         ]
       }
     }
-  ]
+  ],
+  "stylesheet": "asdfsdf",
+  "language": "en"
 }
