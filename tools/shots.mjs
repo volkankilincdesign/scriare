@@ -105,7 +105,7 @@ const noProject = () =>
  * does.
  */
 async function loadStory() {
-  const fixture = join(root, "tests/fixtures/the-blue-hour.scriare");
+  const fixture = join(root, "tests/fixtures/feature-tour.scriare");
   let raw = null;
   try {
     raw = await readFile(fixture, "utf-8");

@@ -94,7 +94,7 @@ export default async function run({ page, api, check, seedProject, app }) {
 
   // ── the fixture ───────────────────────────────────────────────────────
   const fixture = path.join(out, "The Blue Hour.scriare");
-  await fs.writeFile(fixture, await fs.readFile(new URL("./fixtures/the-blue-hour.scriare", import.meta.url)));
+  await fs.writeFile(fixture, await fs.readFile(new URL("./fixtures/feature-tour.scriare", import.meta.url)));
 
   await api(async (p) => {
     await window.__scriareProjectStore.getState().openRecentProject(p);
@@ -102,7 +102,7 @@ export default async function run({ page, api, check, seedProject, app }) {
   await wait(400);
 
   const opened = await api(() => window.__scriareProjectStore.getState().project?.name ?? null);
-  check("the fixture is open", opened === "The Blue Hour", String(opened));
+  check("the fixture is open", opened === "Feature Tour", String(opened));
 
   // ── the save dialog answers with a path instead of a person ───────────
   await app.evaluate(({ dialog }, directory) => {
@@ -156,7 +156,7 @@ export default async function run({ page, api, check, seedProject, app }) {
 
   check(
     "every scene reaches the page",
-    ["The Blue Hour", "The Sixth Vat", "The Gate House", "The List", "The Vote Carries"].every((t) =>
+    ["Start Here", "A Conversation", "Gated Prose", "A Merge", "Ending — Early Exit"].every((t) =>
       pdfText.includes(t.toUpperCase()),
     ),
     `${pages.length} pages of it`,
@@ -170,15 +170,42 @@ export default async function run({ page, api, check, seedProject, app }) {
   const shared = pages.filter(
     (p) => (p.match(/^\s*\d+\.\s+[A-ZÇĞİÖŞÜ][A-ZÇĞİÖŞÜ' ,]+$/gm) ?? []).length >= 2,
   ).length;
+  // The bar dropped from 7 to 3 with the fixture in v0.88.5: twelve scenes
+  // cannot fill as many pages as thirty-two did. What it asserts is
+  // unchanged — scenes share a page rather than each starting a fresh one,
+  // which is the v0.65.0 change this guards.
   check(
     "pages carry more than one scene, instead of one scene each",
-    shared >= 7,
+    shared >= 3,
     `${shared} of ${pages.length} pages hold two or more scenes`,
   );
 
+  // THE TWO COUNTS MUST AGREE (v0.88.5). The cover page said four endings
+  // while Check Story said three, because this builder called any scene
+  // without a Choice Block an ending and a conversation can leave a scene
+  // too. It stayed hidden while every conversation in the fixture sat in a
+  // scene that also had choices. Asserted here rather than only fixed,
+  // because the failure mode is silent: nobody reports a stats line, they
+  // just believe it.
+  const agreed = await api(() => {
+    const project = window.__scriareProjectStore.getState().project;
+    return {
+      check: window.__scriareStoryCheck.checkStory(project).stats.endings,
+      script: window.__scriareBuildScript(project, {
+        layout: "screenplay",
+        showConditions: true,
+      }).stats.endings,
+    };
+  });
   check(
-    "the cast list names the inner voices as speakers",
-    ["ARITHMETIC", "THE HANDS", "APPETITE", "Nesrin Aydın"].every((n) => pdfText.includes(n)),
+    "the script's ending count agrees with Check Story's",
+    agreed.check === agreed.script,
+    `Check Story ${agreed.check} · script ${agreed.script}`,
+  );
+
+  check(
+    "the cast list names every speaker, the player included",
+    ["Traveller", "Mara Vance", "The Archivist"].every((n) => pdfText.includes(n)),
   );
 
   // ── the page ends, which is the whole point of the pagination work ────
@@ -211,7 +238,7 @@ export default async function run({ page, api, check, seedProject, app }) {
     strandedChoices.join(" | ") || "none of them do",
   );
 
-  const strandedCue = lastLines.filter((l) => /^(ARITHMETIC|THE HANDS|APPETITE|HIKMET BAL|NESRİN AYDIN|NESRIN AYDIN|DENIZ|YOU)$/.test(l.trim()));
+  const strandedCue = lastLines.filter((l) => /^(TRAVELLER|MARA VANCE|THE ARCHIVIST)$/.test(l.trim()));
   check(
     "...nor on a character's name with their line overleaf",
     strandedCue.length === 0,
@@ -221,17 +248,17 @@ export default async function run({ page, api, check, seedProject, app }) {
   // ── conditions, and the choices a player never sees ───────────────────
   check(
     "a locked choice prints the reason it is locked",
-    /locked unless\s+resolve is at least 3/.test(pdfText.replace(/\s+/g, " ")),
-    "the vote's one gated line",
+    /locked unless\s+has the key is true/.test(pdfText.replace(/\s+/g, " ")),
+    "the gated door in Gated Prose",
   );
   check(
     "a HIDDEN choice is printed anyway — a line left out is a line nobody records",
-    pdfText.includes("Walk out under the barrier") &&
+    pdfText.includes("Mention what you admitted downstairs") &&
       /not shown to the player/.test(pdfText),
   );
   check(
     "gated prose says what gates it",
-    /IF\s+hikmet_offer is true/.test(pdfText.replace(/\s+/g, " ")),
+    /IF\s+told the truth is true/.test(pdfText.replace(/\s+/g, " ")),
   );
 
   // ── the checkbox, off ─────────────────────────────────────────────────
@@ -239,16 +266,16 @@ export default async function run({ page, api, check, seedProject, app }) {
   const cleanText = execFileSync("pdftotext", ["-layout", clean.filePath, "-"], { encoding: "utf-8" });
   check(
     "with conditions off, none of them print",
-    !/locked unless|only if|hikmet_offer/.test(cleanText),
+    !/locked unless|only if|not shown to the player/.test(cleanText),
     "clean reading script",
   );
   check(
     "...but the gated prose is still there, because it is part of the story",
-    cleanText.includes("He said two"),
+    cleanText.includes("You told her you were lost"),
   );
   check(
     "...and so is the hidden choice",
-    cleanText.includes("Walk out under the barrier"),
+    cleanText.includes("Mention what you admitted downstairs"),
   );
 
   // ── the page rules, measured against a control ───────────────────────
@@ -432,11 +459,11 @@ export default async function run({ page, api, check, seedProject, app }) {
 
   check(
     "Word gets the same story the PDF got",
-    ["THE GATE HOUSE", "THE OFFER, SAID PLAINLY", "THE VOTE CARRIES"].every((t) => text.includes(t)),
+    ["A CONVERSATION", "GATED PROSE", "A MERGE"].every((t) => text.includes(t)),
   );
   check(
     "...and the same locked choice, worded the same way",
-    text.replace(/\s+/g, " ").includes("locked unless resolve is at least 3"),
+    text.replace(/\s+/g, " ").includes("locked unless has the key is true"),
     "one phrasing, shared by both renderers",
   );
 
@@ -466,17 +493,17 @@ export default async function run({ page, api, check, seedProject, app }) {
         .join(""),
       keeps: /<w:keepNext\s*\/>/.test(chunk),
     }));
-  const cues = paragraphs.filter((p) => /^(ARITHMETIC|THE HANDS|APPETITE|HIKMET BAL|DENIZ|YOU)$/.test(p.text.trim()));
+  const cues = paragraphs.filter((p) => /^(TRAVELLER|MARA VANCE|THE ARCHIVIST)$/.test(p.text.trim()));
   check(
     "every character cue in the Word file holds on to its line",
-    cues.length > 20 && cues.every((c) => c.keeps),
+    cues.length >= 8 && cues.every((c) => c.keeps),
     `${cues.filter((c) => c.keeps).length}/${cues.length} cues keep the next paragraph`,
   );
   check("...and to keep a paragraph's lines together", keepLines > 100, `${keepLines} keepLines`);
   check(
     "...and to start every chapter on a fresh page",
-    pageBreaks === 5,
-    `${pageBreaks} page breaks for 5 chapters`,
+    pageBreaks === 3,
+    `${pageBreaks} page breaks for 3 chapters`,
   );
 
   // ── put it back ───────────────────────────────────────────────────────

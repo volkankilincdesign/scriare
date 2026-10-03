@@ -18,6 +18,61 @@ omitting them.
 
 ---
 
+## v0.88.5 — The fixture is a placeholder, and the swap found another disagreement
+
+**The Blue Hour is out of the repository.** He broke his own copy editing it
+and asked for it gone, so the fixture is now `feature-tour.scriare` — a
+GENERATED placeholder whose entire job is to contain one of everything:
+twelve scenes in three chapters, eight Choice Blocks across eighteen
+options, a six-line conversation, two Conditional Blocks, three variables, a
+set/add/toggle apiece, hide-when-unmet and lock-with-reason, a loop, a
+merge, three endings, five entities, three Choice Styles, a stylesheet, an
+author, a language and a named player. `tools/build-feature-tour.mjs`
+produces it, so it can be regrown rather than repaired.
+
+**Its prose is deliberately flat.** A placeholder that reads well is a
+placeholder people keep, and this one exists to be replaced by his demo
+story. Every scene says which feature it demonstrates, which makes opening
+it a tour of the app rather than a read.
+
+**And the swap immediately found two parts of the app disagreeing about the
+same story.** The script export's cover page said FOUR endings; Check Story
+said three. The script builder counted any scene without a Choice Block as
+an ending — and a conversation can leave a scene, which Check Story has
+known since v0.66.0 (*an option is an edge only if it leaves*). It stayed
+invisible for twenty-four versions because every conversation in The Blue
+Hour sat in a scene that ALSO had a Choice Block. The placeholder has one
+that does not, and the two numbers disagreed on the first run. Fixed to
+count what leaves, asserted so they cannot drift apart again, and
+controlled.
+
+**That is the second defect this fixture has surfaced in two versions**, after
+v0.88.3's router check that had never measured what it said. Neither was
+caused by the swap; both were revealed by it. A fixture that is one real
+story is a fixture that only ever asks the questions that story happens to
+raise.
+
+**What the swap COST, stated rather than buried.** `graph-layout-quality`
+existed to measure Auto Layout at the size it "started to shatter" — thirty
+two scenes, five chapters, seventy options. Twelve scenes do not stress it,
+so that spec now measures shape rather than scale: overlaps, escaped scenes,
+stacked cards and idempotence are defects at any size and are still asserted,
+but **nobody should read a green run there as "Auto Layout holds on a big
+story" any more, because it no longer asks.** `graph-folded-size` lost the
+same coverage. Nothing else in the suite picks it up. The honest fix is a
+generated stress fixture, and it is not built.
+
+**Everything else moved by content rather than by meaning.** `script-export`
+had thirteen assertions written against The Blue Hour's own scenes, speakers
+and gates; each was re-aimed at the placeholder's equivalents, and the three
+thresholds that scaled with the story (shared pages, character cues, chapter
+page breaks) were re-measured rather than guessed. The known-open list in
+`demo-story-check` is now empty, which is the right state for a generated
+fixture: a problem in it is a defect in the generator, and there is nothing
+to excuse.
+
+---
+
 ## v0.88.4 — Two triangles nobody had clicked, and a set shot on the wrong ground
 
 **The app-wide UI sweep is closed.** The last residue was `GroupNode`'s fold

@@ -194,7 +194,7 @@ export default async function ({ page, api, check, seedProject }) {
   // pixels and the camera never loses sight of it — the check would pass on
   // the broken build. The defect appears when folding collapses a wide story
   // into blocks far from where the camera is framing, which needs a story
-  // with some width to it: thirty-two scenes across five chapters.
+  // with some width to it: twelve scenes across three chapters since v0.88.5.
   const loaded = await api(async (json) => {
     const w = (ms) => new Promise((r) => setTimeout(r, ms));
     const project = window.__scriareProjectTypes.normalizeProject(JSON.parse(json));
@@ -204,13 +204,21 @@ export default async function ({ page, api, check, seedProject }) {
     // the unfolded story is.
     document.querySelector(".react-flow__controls-fitview")?.click();
     await w(700);
-    return { scenes: project.scenes.length };
-  }, await readFile(new URL("./fixtures/the-blue-hour.scriare", import.meta.url), "utf-8"));
+    return {
+      scenes: project.scenes.length,
+      folders: project.content.filter((n) => n.kind === "folder").length,
+    };
+  }, await readFile(new URL("./fixtures/feature-tour.scriare", import.meta.url), "utf-8"));
 
+  // The threshold dropped from 30 to 10 in v0.88.5, when the fixture became
+  // Feature Tour. Worth stating rather than quietly editing the number: this
+  // spec is about a MULTI-CHAPTER story folding without the camera losing it,
+  // and three chapters over twelve scenes still exercises that. What it no
+  // longer exercises is scale, and nothing else in the suite picks that up.
   check(
-    "the big story is loaded, so folding has somewhere to go wrong",
-    loaded.scenes >= 30,
-    `${loaded.scenes} scenes`,
+    "a multi-chapter story is loaded, so folding has somewhere to go wrong",
+    loaded.scenes >= 10 && loaded.folders >= 3,
+    `${loaded.scenes} scenes, ${loaded.folders} chapters`,
   );
 
   const framedBefore = await onScreen();

@@ -274,7 +274,38 @@ export function buildScript(
   }
 
   const allScenes = chapters.flatMap((c) => c.scenes);
-  const endings = allScenes.filter((s) => !s.blocks.some((b) => b.kind === "choices")).length;
+
+  /**
+   * An ending is a scene NOTHING LEAVES — v0.88.5, and it used to be "a
+   * scene with no choices block", which is a different thing.
+   *
+   * A conversation can leave a scene: a dialogue line with `after: "leave"`
+   * and a destination is an exit, and Check Story has counted it as one
+   * since v0.66.0 (`an option is an edge only if it leaves`). This counted
+   * any scene without a Choice Block as an ending, so a scene whose only
+   * way out was a conversation was reported as one. The cover page said
+   * four endings where Check Story said three.
+   *
+   * It stayed invisible while the fixture was a story whose three
+   * conversations all sat in scenes that ALSO had a Choice Block. The
+   * placeholder that replaced it has one that does not, and the two numbers
+   * disagreed on the first run. Two parts of the app counting the same
+   * story differently is the kind of thing nobody reports as a bug; they
+   * just quietly trust the wrong one.
+   *
+   * A choice that goes nowhere does not count as leaving either, which
+   * matches Check Story again — it reports that as a problem, and a scene
+   * whose only exit is broken is not a way out.
+   */
+  const leaves = (scene: (typeof allScenes)[number]): boolean =>
+    scene.blocks.some((b) =>
+      b.kind === "choices"
+        ? b.options.some((o) => Boolean(o.target))
+        : b.kind === "dialogue"
+          ? b.lines.some((l) => l.after === "leave" && Boolean(l.target))
+          : false,
+    );
+  const endings = allScenes.filter((s) => !leaves(s)).length;
 
   return {
     title: project.name || "Untitled Story",

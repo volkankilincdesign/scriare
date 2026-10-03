@@ -3,52 +3,45 @@ import os from "node:os";
 import path from "node:path";
 
 /**
- * Check Story on the demo story (v0.88.2, rewritten for the fixture swap in
- * v0.88.3).
+ * The fixture, checked (v0.88.2; re-aimed at Feature Tour in v0.88.5).
  *
- * THIS SPEC EXISTS BECAUSE OF A CONDITION, NOT A FEATURE. `demo-story.md`
- * scoped the demo story as a vertical slice on 17 Sep and named the two
- * things that decide whether it reads as a slice or as abandoned: a written
- * ending, and a clean Check Story report. The story has been written — 32
- * scenes in five chapters, three conversations — and nobody had run the
- * second condition against it until v0.88.2.
+ * WHAT THIS WAS FOR. `demo-story.md` scoped the demo story as a vertical
+ * slice on 17 Sep and named two conditions: a written ending, and a clean
+ * Check Story report. Nobody had run the second against it until v0.88.2,
+ * which found a real defect — a dialogue line marked `leave` with nowhere
+ * to go.
  *
- * ONE FIXTURE NOW. v0.88.2 checked two files because the conversations lived
- * outside the suite; v0.88.3 made the conversations story THE fixture, so
- * there is one story and the comparison is gone. `story-check.spec.mjs`
- * covers the RULES on small hand-built graphs, which is the right shape for a
- * rule. This runs the real validator over the real story, which is the only
- * thing that can answer the condition.
+ * WHAT IT IS FOR NOW. The demo story left the repository in v0.88.5 and the
+ * fixture is `feature-tour.scriare`, a generated placeholder whose whole
+ * purpose is to contain one of everything. So this spec stopped being a
+ * launch condition and became the guard on that purpose: the fixture opens,
+ * carries every block type, reaches every scene, ends somewhere, and
+ * reports nothing to fix. Four specs and the screenshot tool load this file;
+ * if it quietly loses a block type, all of them become reports on less than
+ * they claim. That is not hypothetical — it is what the suite did for a
+ * month with a story that had no Dialogue block in it.
  *
- * THE KNOWN-OPEN LIST IS THE INTERESTING PART. The story has one real defect
- * — a dialogue line in *The Big Table* marked `leave` with nowhere to go —
- * and fixing it means rewriting his prose, which is his and not mine. The
- * choice was between asserting zero problems (a red suite over a line nobody
- * has rewritten, which trains people to ignore the runner) and dropping the
- * assertion (which loses the condition). Neither. The assertion is that the
- * problem set is a SUBSET of a list named here, in code, with the scene in
- * it. So:
+ * `story-check.spec.mjs` covers Check Story's RULES on small hand-built
+ * graphs, which is the right shape for a rule. This runs the real validator
+ * over the real fixture, which is the only thing that can say the fixture is
+ * sound.
  *
- *   - a NEW problem anywhere in the story fails the spec, which is the point;
- *   - the known one is reported loudly every run, so it cannot be forgotten;
- *   - and when he fixes it the spec still passes, because a shrinking subset
- *     is still a subset — then the entry comes out of the list.
- *
- * A known-issue list is only honest while it is short, explicit, and shrinks.
- * If it ever grows, that is the signal to stop adding to it.
+ * THE KNOWN-OPEN LIST stays, empty. It earned its place when the fixture was
+ * the writer's own prose and one defect was his to fix rather than the
+ * suite's to go red over: the assertion is that the problem set is a SUBSET
+ * of a list named in code, so a NEW problem fails while a known one does
+ * not, and a second check demands every listed entry still be reported, so
+ * the list cannot rot into furniture. With a generated fixture there is
+ * nothing to excuse, and an entry added here now has to be argued for.
  *
  * WHAT IS ONLY REPORTED: warnings. On `perf.spec`'s precedent that a number
  * with no agreed threshold is documentation — an unreachable scene can be a
  * mistake or a chapter not yet wired, and `check(name, true)` beside a count
- * nobody can interpret is a pass in a costume. HIS judgement closes a
- * warning; mine cannot.
+ * nobody can interpret is a pass in a costume.
  *
- * ON THE ENDING CONDITION, WHICH THIS DOES NOT VERIFY: Check Story counts
- * endings and cannot tell a written *End of Act One* from a scene that ran
- * out of choices, because both are scenes with no outgoing link. So the
- * count and the TITLES are logged for him to read, and nothing here claims
- * the first condition is met. Measuring what is measurable and naming which
- * half is left beats asserting the whole.
+ * ON ENDINGS: Check Story counts them and cannot tell a written ending from
+ * a scene that ran out of choices, because both are scenes with no outgoing
+ * link. The count and the titles are logged; nothing here claims more.
  */
 
 /**
@@ -56,14 +49,18 @@ import path from "node:path";
  * Remove an entry when it is fixed; think hard before adding one.
  */
 const KNOWN_OPEN = [
-  { kind: "unlinked-choice", title: "The Big Table" },
+  // EMPTY, AND THAT IS THE POINT. It held one entry while the fixture was
+  // the writer's own story and the defect was a line of his prose. The
+  // fixture is a generated placeholder now, so a problem in it is a defect
+  // in the generator and there is nothing to excuse. Keep it empty: an entry
+  // added here has to be argued for.
 ];
 
 export default async function run({ api, check, seedProject }) {
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "scriare-demo-check-"));
-  const file = path.join(dir, "the-blue-hour.scriare");
-  await fs.writeFile(file, await fs.readFile(new URL("./fixtures/the-blue-hour.scriare", import.meta.url)));
+  const file = path.join(dir, "feature-tour.scriare");
+  await fs.writeFile(file, await fs.readFile(new URL("./fixtures/feature-tour.scriare", import.meta.url)));
 
   await api(async (p) => {
     await window.__scriareProjectStore.getState().openRecentProject(p);
@@ -105,7 +102,7 @@ export default async function run({ api, check, seedProject }) {
     };
   });
 
-  check("the demo story opens as a project", out.opened === true, JSON.stringify(out).slice(0, 160));
+  check("the fixture opens", out.opened === true, JSON.stringify(out).slice(0, 160));
   if (!out.opened) return;
 
   const problems = out.issues.filter((i) => i.severity === "problem");
@@ -153,11 +150,14 @@ export default async function run({ api, check, seedProject }) {
 
   check("the story has at least one ending", out.stats.endings >= 1, `endings: ${out.stats.endings}`);
 
-  // The swap is what this spec is now guarding as much as the condition: a
-  // fixture without the Dialogue blocks would make every screenshot and
-  // every other spec a report on the wrong story.
-  check("the fixture is the story WITH the conversations in it",
-    out.blocks.dialogues >= 3, `${out.blocks.dialogues} dialogue blocks`);
+  // THE FIXTURE'S OWN JOB, asserted. Feature Tour exists to exercise every
+  // part of the app, and a fixture quietly missing a block type would make
+  // every spec that loads it a report on less than it claims — which is
+  // exactly how the suite spent a month photographing and testing a story
+  // with no Dialogue block in it.
+  check("the fixture carries every block type",
+    out.blocks.choices >= 1 && out.blocks.dialogues >= 1 && out.blocks.conditionals >= 1,
+    `${out.blocks.choices} choice · ${out.blocks.dialogues} dialogue · ${out.blocks.conditionals} conditional`);
 
   // ------------------------------------------------------------ put it back
   //

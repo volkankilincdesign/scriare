@@ -29,6 +29,19 @@ const mainScript = (p) => join(root, "src/main", p);
 
 const CONTROLS = [
   {
+    // v0.88.5. The script's cover page counted any scene without a Choice
+    // Block as an ending, so a scene whose only way out was a conversation
+    // was reported as one and the number disagreed with Check Story's. The
+    // two agree now and the spec asserts it; this proves that assertion can
+    // still tell them apart.
+    name: "a script that calls a conversation's scene an ending",
+    file: src("export/script/buildScript.ts"),
+    from: "        : b.kind === \"dialogue\"\n          ? b.lines.some((l) => l.after === \"leave\" && Boolean(l.target))",
+    to: "        : b.kind === \"dialogue\"\n          ? false && b.lines.some((l) => l.after === \"leave\" && Boolean(l.target))",
+    spec: "script-export",
+    expect: "ending count agrees with Check Story",
+  },
+  {
     // v0.88.4. The fold triangles were untested at the DOM level until this
     // version — every fold test called the store action directly, so the
     // control itself was never exercised. This proves the new checks reach

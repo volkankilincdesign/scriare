@@ -1,0 +1,2006 @@
+{
+  "id": "feature-tour",
+  "name": "Feature Tour",
+  "author": "Scriare",
+  "language": "en",
+  "playerName": "Traveller",
+  "stylesheet": "/* Your own CSS ships with the story and wins over the app's.\n   This one only tints the choice labels, so you can see it working\n   in Play Mode and in the exported page. Delete it and nothing\n   else changes. */\n.scriare-choice { letter-spacing: 0.01em; }\n.scriare-ending { font-style: italic; }",
+  "createdAt": "2026-10-03T08:39:31.953Z",
+  "updatedAt": "2026-10-03T08:39:31.953Z",
+  "startSceneId": "s01",
+  "scenes": [
+    {
+      "id": "s01",
+      "title": "Start Here",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_this-is-a-placeholder-"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "This is a placeholder story. Every scene in it demonstrates one part of the app and says which, so you can open any of them and see that thing working."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_prose-carries-marks"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Prose carries marks: "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "bold"
+              },
+              {
+                "type": "text",
+                "text": ", "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "italic"
+                  }
+                ],
+                "text": "italic"
+              },
+              {
+                "type": "text",
+                "text": ", "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "underline"
+                  }
+                ],
+                "text": "underline"
+              },
+              {
+                "type": "text",
+                "text": ", "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "textStyle",
+                    "attrs": {
+                      "color": "#7a5cff"
+                    }
+                  }
+                ],
+                "text": "colour"
+              },
+              {
+                "type": "text",
+                "text": " and "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "highlight",
+                    "attrs": {
+                      "color": "#ffe08a"
+                    }
+                  }
+                ],
+                "text": "highlight"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_mentions-line"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "It also carries mentions: "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "entityId": "e-mara",
+                  "label": "Mara Vance"
+                }
+              },
+              {
+                "type": "text",
+                "text": " is waiting in "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "entityId": "e-reading-room",
+                  "label": "The Reading Room"
+                }
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          },
+          {
+            "type": "callout",
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": null,
+                  "textAlign": null,
+                  "lineId": "t_a-callout-use-it-for-t"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "A callout. Use it for the aside that is not part of the scene."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_below-is-a-choice-bloc"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Below is a Choice Block. It sits in the paragraph flow — the page does not stop being a page because the story branches."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b-start"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "o-start-1",
+                  "targetSceneId": "s02",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Go through to the basics."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "o-start-2",
+                  "targetSceneId": "s05",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": {
+                    "fill": "transparent",
+                    "border": "var(--border-faint)",
+                    "borderWidth": 1,
+                    "radius": 14
+                  },
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Skip ahead to the logic."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "o-start-3",
+                  "targetSceneId": "s02",
+                  "actions": [
+                    {
+                      "id": "a1",
+                      "variableId": "v-lamps",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Light a lamp and go through."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 110,
+        "y": 120
+      },
+      "titleKey": "title_s01"
+    },
+    {
+      "id": "s02",
+      "title": "Prose and Marks",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "heading",
+            "attrs": {
+              "level": 2,
+              "textAlign": null,
+              "lineId": "h_a-heading"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "A heading"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_headings-quotes-rules-"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Headings, quotes, rules, lists and callouts are all ordinary blocks. Nothing here is special to this app."
+              }
+            ]
+          },
+          {
+            "type": "blockquote",
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": null,
+                  "textAlign": null,
+                  "lineId": "t_a-blockquote-for-the-t"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "A blockquote, for the thing somebody else said."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "bulletList",
+            "content": [
+              {
+                "type": "listItem",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "speaker": null,
+                      "textAlign": null,
+                      "lineId": "t_a-bulleted-list"
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "A bulleted list."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "speaker": null,
+                      "textAlign": null,
+                      "lineId": "t_which-has-three-items"
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Which has three items."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "speaker": null,
+                      "textAlign": null,
+                      "lineId": "t_because-two-looked-acc"
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Because two looked accidental."
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "orderedList",
+            "attrs": {
+              "start": 1
+            },
+            "content": [
+              {
+                "type": "listItem",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "speaker": null,
+                      "textAlign": null,
+                      "lineId": "t_a-numbered-list"
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "A numbered list."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "speaker": null,
+                      "textAlign": null,
+                      "lineId": "t_same-idea"
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Same idea."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "speaker": null,
+                      "textAlign": null,
+                      "lineId": "t_different-marker"
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Different marker."
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": "center",
+              "lineId": "t_a-line-can-also-be-att"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "A line can also be attributed to a speaker, which is the next scene."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b-prose"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "o-prose-1",
+                  "targetSceneId": "s03",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "On to the conversation."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 110,
+        "y": 270
+      },
+      "titleKey": "title_s02"
+    },
+    {
+      "id": "s03",
+      "title": "A Conversation",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_speaker-attribution-pu"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Speaker attribution puts a name in front of a line, and the name is a reference rather than text:"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-mara",
+              "textAlign": null,
+              "lineId": "t_the-lamps-are-not-lit-"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The lamps are not lit. Nobody has been up here in a while."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": "e-archivist",
+              "textAlign": null,
+              "lineId": "t_then-we-should-start-a"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Then we should start at the bottom."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_below-is-a-dialogue-bl"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Below is a Dialogue Block: a whole conversation as one object on the page. Each line is something you can say, with the reply underneath it."
+              }
+            ]
+          },
+          {
+            "type": "dialogueBlock",
+            "attrs": {
+              "blockId": "b-talk"
+            },
+            "content": [
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d-1",
+                  "speaker": "@player",
+                  "reply": "A reading room, mostly. The stair above it is the part people remember.",
+                  "replySpeaker": "e-mara",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "conditions": [],
+                  "actions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"What is this place?\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d-2",
+                  "speaker": "@player",
+                  "reply": "Still a stair. Still above us.",
+                  "replySpeaker": "e-mara",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": true,
+                  "conditions": [],
+                  "actions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Ask again about the stair.\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d-3",
+                  "speaker": "@player",
+                  "reply": "That is the first useful thing anybody has said today.",
+                  "replySpeaker": "e-mara",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "conditions": [],
+                  "actions": [
+                    {
+                      "id": "a2",
+                      "variableId": "v-truth",
+                      "operation": "set",
+                      "value": true
+                    }
+                  ],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"I will tell you the truth: I am lost.\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d-4",
+                  "speaker": "@player",
+                  "reply": "Not until you have lit something.",
+                  "replySpeaker": "e-mara",
+                  "after": "stay",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "conditions": [
+                    {
+                      "id": "c1",
+                      "variableId": "v-lamps",
+                      "comparator": "gte",
+                      "value": 1
+                    }
+                  ],
+                  "actions": [],
+                  "whenUnmet": "lock",
+                  "lockReason": "Light a lamp first.",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Give me the key.\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d-5",
+                  "speaker": "@player",
+                  "reply": "",
+                  "replySpeaker": null,
+                  "after": "leave",
+                  "targetSceneId": "s04",
+                  "repeatable": false,
+                  "conditions": [],
+                  "actions": [
+                    {
+                      "id": "a3",
+                      "variableId": "v-lamps",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Let us go up.\""
+                  }
+                ]
+              },
+              {
+                "type": "dialogueLine",
+                "attrs": {
+                  "lineId": "d-6",
+                  "speaker": "@player",
+                  "reply": "The silence is comfortable enough.",
+                  "replySpeaker": null,
+                  "after": "end",
+                  "targetSceneId": null,
+                  "repeatable": false,
+                  "conditions": [],
+                  "actions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "\"Say nothing and wait.\""
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 110,
+        "y": 420
+      },
+      "titleKey": "title_s03"
+    },
+    {
+      "id": "s04",
+      "title": "Gated Prose",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_a-conditional-block-hi"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "A Conditional Block hides prose rather than a choice. The paragraph below only appears if you told the truth in the conversation."
+              }
+            ]
+          },
+          {
+            "type": "conditionalBlock",
+            "attrs": {
+              "blockId": "b-cond",
+              "conditions": [
+                {
+                  "id": "c2",
+                  "variableId": "v-truth",
+                  "comparator": "eq",
+                  "value": true
+                }
+              ]
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": null,
+                  "textAlign": null,
+                  "lineId": "t_you-told-her-you-were-"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "You told her you were lost, and she has not mentioned it since. That is its own kind of answer."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_the-choices-below-use-"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The choices below use the other half of the same idea: one is hidden when its condition fails, one is shown locked with the reason visible."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b-gated"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "o-gate-1",
+                  "targetSceneId": "s05",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Take the stair."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "o-gate-2",
+                  "targetSceneId": "s05",
+                  "actions": [],
+                  "conditions": [
+                    {
+                      "id": "c3",
+                      "variableId": "v-truth",
+                      "comparator": "eq",
+                      "value": true
+                    }
+                  ],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Mention what you admitted downstairs."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "o-gate-3",
+                  "targetSceneId": "s12",
+                  "actions": [],
+                  "conditions": [
+                    {
+                      "id": "c4",
+                      "variableId": "v-key",
+                      "comparator": "eq",
+                      "value": true
+                    }
+                  ],
+                  "whenUnmet": "lock",
+                  "lockReason": "You do not have the key.",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Open the locked door."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 110,
+        "y": 570
+      },
+      "titleKey": "title_s04"
+    },
+    {
+      "id": "s05",
+      "title": "Variables",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_stair-line"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "You are on "
+              },
+              {
+                "type": "mention",
+                "attrs": {
+                  "entityId": "e-stair",
+                  "label": "The Lantern Stair"
+                }
+              },
+              {
+                "type": "text",
+                "text": ". Every choice here changes a variable, and Play Mode shows the values as they change."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_set-add-and-toggle-are"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Set, add and toggle are the three operations. There is no expression field anywhere in this app — each of these was built from two dropdowns and a number."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b-vars"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "o-var-1",
+                  "targetSceneId": "s06",
+                  "actions": [
+                    {
+                      "id": "a4",
+                      "variableId": "v-lamps",
+                      "operation": "add",
+                      "value": 1
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Light another lamp. (adds 1)"
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "o-var-2",
+                  "targetSceneId": "s06",
+                  "actions": [
+                    {
+                      "id": "a5",
+                      "variableId": "v-key",
+                      "operation": "set",
+                      "value": true
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": {
+                    "fill": "rgba(170, 60, 50, 0.14)",
+                    "border": "rgba(170, 60, 50, 0.55)",
+                    "borderWidth": 1,
+                    "radius": 6
+                  },
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Take the key from the hook. (sets true)"
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "o-var-3",
+                  "targetSceneId": "s06",
+                  "actions": [
+                    {
+                      "id": "a6",
+                      "variableId": "v-truth",
+                      "operation": "toggle"
+                    }
+                  ],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Change your mind about the truth. (toggles)"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 530,
+        "y": 120
+      },
+      "titleKey": "title_s05"
+    },
+    {
+      "id": "s06",
+      "title": "Locked and Hidden",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_the-same-condition-can"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The same condition can hide a choice or lock it. Hiding is for a choice that should not exist yet; locking is for one the reader should know they have not earned."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b-lock"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "o-lock-1",
+                  "targetSceneId": "s07",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Carry on up."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "o-lock-2",
+                  "targetSceneId": "s08",
+                  "actions": [],
+                  "conditions": [
+                    {
+                      "id": "c5",
+                      "variableId": "v-key",
+                      "comparator": "eq",
+                      "value": true
+                    }
+                  ],
+                  "whenUnmet": "lock",
+                  "lockReason": "The cabinet needs the key.",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Unlock the cabinet."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "o-lock-3",
+                  "targetSceneId": "s08",
+                  "actions": [],
+                  "conditions": [
+                    {
+                      "id": "c6",
+                      "variableId": "v-lamps",
+                      "comparator": "gte",
+                      "value": 2
+                    }
+                  ],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Something only a well-lit stair would show you."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 530,
+        "y": 270
+      },
+      "titleKey": "title_s06"
+    },
+    {
+      "id": "s07",
+      "title": "A Loop Back",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_this-scene-leads-back-"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "This scene leads back to an earlier one, which makes the story a graph rather than a tree. Check Story reports that the story loops and refuses to invent a longest route, because a loop does not have one."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b-loop"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "o-loop-1",
+                  "targetSceneId": "s05",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Go back down to the variables."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "o-loop-2",
+                  "targetSceneId": "s08",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Carry on to the merge."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 530,
+        "y": 420
+      },
+      "titleKey": "title_s07"
+    },
+    {
+      "id": "s08",
+      "title": "A Merge",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_three-scenes-lead-here"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Three scenes lead here. A merge is the case a layout engine gets wrong most often, which is why there is one in the placeholder."
+              }
+            ]
+          },
+          {
+            "type": "blockquote",
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": null,
+                  "textAlign": null,
+                  "lineId": "t_several-routes-one-roo"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Several routes, one room."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b-merge"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "o-merge-1",
+                  "targetSceneId": "s09",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Take the long way."
+                  }
+                ]
+              },
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "o-merge-2",
+                  "targetSceneId": "s11",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Leave now."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 530,
+        "y": 570
+      },
+      "titleKey": "title_s08"
+    },
+    {
+      "id": "s09",
+      "title": "The Long Way",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_a-plain-scene-with-one"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "A plain scene with one way out, so the shortest-route number has something to be shorter than."
+              }
+            ]
+          },
+          {
+            "type": "choiceBlock",
+            "attrs": {
+              "blockId": "b-long"
+            },
+            "content": [
+              {
+                "type": "choiceOption",
+                "attrs": {
+                  "optionId": "o-long-1",
+                  "targetSceneId": "s10",
+                  "actions": [],
+                  "conditions": [],
+                  "whenUnmet": "hide",
+                  "lockReason": "",
+                  "style": null,
+                  "speaker": null
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Keep going."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 950,
+        "y": 120
+      },
+      "titleKey": "title_s09"
+    },
+    {
+      "id": "s10",
+      "title": "Ending — Everything Seen",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "heading",
+            "attrs": {
+              "level": 2,
+              "textAlign": null,
+              "lineId": "h_end-of-the-tour"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "End of the tour"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_a-scene-with-no-outgoi"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "A scene with no outgoing choice is an ending. There are three here so the endings count has something to count, and one of them is behind a condition."
+              }
+            ]
+          },
+          {
+            "type": "conditionalBlock",
+            "attrs": {
+              "blockId": "b-end-cond",
+              "conditions": [
+                {
+                  "id": "c7",
+                  "variableId": "v-lamps",
+                  "comparator": "gte",
+                  "value": 3
+                }
+              ]
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "speaker": null,
+                  "textAlign": null,
+                  "lineId": "t_three-lamps-are-lit-be"
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Three lamps are lit behind you and the stair is visible all the way down."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 950,
+        "y": 270
+      },
+      "titleKey": "title_s10"
+    },
+    {
+      "id": "s11",
+      "title": "Ending — Early Exit",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_you-left-before-the-la"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "You left before the lamps were lit. This ending is reachable in three moves, which is what makes the shortest-route number interesting."
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 950,
+        "y": 420
+      },
+      "titleKey": "title_s11"
+    },
+    {
+      "id": "s12",
+      "title": "Ending — The Locked Door",
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_reachable-only-with-th"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Reachable only with the key, from the gated choice in chapter one. An ending behind a condition is the thing worth checking in Play Mode."
+              }
+            ]
+          }
+        ]
+      },
+      "position": {
+        "x": 950,
+        "y": 570
+      },
+      "titleKey": "title_s12"
+    }
+  ],
+  "content": [
+    {
+      "id": "g-basics",
+      "kind": "folder",
+      "name": "I — The Basics",
+      "category": "story",
+      "parentId": null,
+      "order": 0,
+      "rect": {
+        "x": 72,
+        "y": 72,
+        "width": 300,
+        "height": 720
+      }
+    },
+    {
+      "id": "s01",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-basics",
+      "order": 0
+    },
+    {
+      "id": "s02",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-basics",
+      "order": 1
+    },
+    {
+      "id": "s03",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-basics",
+      "order": 2
+    },
+    {
+      "id": "s04",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-basics",
+      "order": 3
+    },
+    {
+      "id": "g-logic",
+      "kind": "folder",
+      "name": "II — Logic",
+      "category": "story",
+      "parentId": null,
+      "order": 1,
+      "rect": {
+        "x": 492,
+        "y": 72,
+        "width": 300,
+        "height": 720
+      }
+    },
+    {
+      "id": "s05",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-logic",
+      "order": 0
+    },
+    {
+      "id": "s06",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-logic",
+      "order": 1
+    },
+    {
+      "id": "s07",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-logic",
+      "order": 2
+    },
+    {
+      "id": "s08",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-logic",
+      "order": 3
+    },
+    {
+      "id": "g-ends",
+      "kind": "folder",
+      "name": "III — Ends",
+      "category": "story",
+      "parentId": null,
+      "order": 2,
+      "rect": {
+        "x": 912,
+        "y": 72,
+        "width": 300,
+        "height": 720
+      }
+    },
+    {
+      "id": "s09",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-ends",
+      "order": 0
+    },
+    {
+      "id": "s10",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-ends",
+      "order": 1
+    },
+    {
+      "id": "s11",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-ends",
+      "order": 2
+    },
+    {
+      "id": "s12",
+      "kind": "leaf",
+      "refType": "scene",
+      "category": "story",
+      "parentId": "g-ends",
+      "order": 3
+    },
+    {
+      "id": "e-mara",
+      "kind": "leaf",
+      "refType": "entity",
+      "category": "characters",
+      "parentId": null,
+      "order": 0
+    },
+    {
+      "id": "e-archivist",
+      "kind": "leaf",
+      "refType": "entity",
+      "category": "characters",
+      "parentId": null,
+      "order": 1
+    },
+    {
+      "id": "e-reading-room",
+      "kind": "leaf",
+      "refType": "entity",
+      "category": "locations",
+      "parentId": null,
+      "order": 2
+    },
+    {
+      "id": "e-stair",
+      "kind": "leaf",
+      "refType": "entity",
+      "category": "locations",
+      "parentId": null,
+      "order": 3
+    },
+    {
+      "id": "e-note-how",
+      "kind": "leaf",
+      "refType": "entity",
+      "category": "notes",
+      "parentId": null,
+      "order": 4
+    }
+  ],
+  "favorites": [
+    {
+      "id": "s03",
+      "refType": "scene"
+    }
+  ],
+  "variables": [
+    {
+      "id": "v-lamps",
+      "name": "lamps lit",
+      "type": "number",
+      "defaultValue": 0,
+      "description": "Counts up. Three of them open the last ending."
+    },
+    {
+      "id": "v-key",
+      "name": "has the key",
+      "type": "boolean",
+      "defaultValue": false,
+      "description": "Set in chapter two. Gates one choice and one ending."
+    },
+    {
+      "id": "v-truth",
+      "name": "told the truth",
+      "type": "boolean",
+      "defaultValue": false,
+      "description": "Toggled in the conversation. Changes nothing except which prose appears."
+    }
+  ],
+  "choiceStyles": [
+    {
+      "id": "default",
+      "name": "Default",
+      "box": {
+        "fill": "var(--surface-2-translucent)",
+        "border": "var(--border)",
+        "borderWidth": 1,
+        "radius": 6
+      }
+    },
+    {
+      "id": "style-risk",
+      "name": "Risk",
+      "box": {
+        "fill": "rgba(170, 60, 50, 0.14)",
+        "border": "rgba(170, 60, 50, 0.55)",
+        "borderWidth": 1,
+        "radius": 6
+      }
+    },
+    {
+      "id": "style-quiet",
+      "name": "Quiet",
+      "box": {
+        "fill": "transparent",
+        "border": "var(--border-faint)",
+        "borderWidth": 1,
+        "radius": 14
+      }
+    }
+  ],
+  "entities": [
+    {
+      "id": "e-mara",
+      "kind": "character",
+      "name": "Mara Vance",
+      "aliases": [
+        "Mara"
+      ],
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_a-character-so-the-edi"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "A character, so the editor has something to attribute a line to."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_she-has-an-alias-so-ty"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "She has an alias, so typing @Mara finds her as well as her full name. Rename her in this panel and every sentence in the story follows, because nothing anywhere stored her name — only who she is."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "e-archivist",
+      "kind": "character",
+      "name": "The Archivist",
+      "aliases": [],
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_a-second-character-so-"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "A second character, so speaker attribution has somebody to swap to."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "e-reading-room",
+      "kind": "location",
+      "name": "The Reading Room",
+      "aliases": [
+        "the room"
+      ],
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_a-location-locations-c"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "A location. Locations can be mentioned but cannot speak — the speaker picker will not offer this one."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "e-stair",
+      "kind": "location",
+      "name": "The Lantern Stair",
+      "aliases": [],
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_a-second-location-ment"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "A second location, mentioned in chapter two."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "e-note-how",
+      "kind": "note",
+      "name": "How this story is put together",
+      "aliases": [],
+      "content": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "heading",
+            "attrs": {
+              "level": 2,
+              "textAlign": null,
+              "lineId": "h_what-this-file-is"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "What this file is"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_a-placeholder-every-sc"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "A placeholder. Every scene demonstrates one part of the app and says so in its own text."
+              }
+            ]
+          },
+          {
+            "type": "bulletList",
+            "content": [
+              {
+                "type": "listItem",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "speaker": null,
+                      "textAlign": null,
+                      "lineId": "t_three-chapters-twelve-"
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Three chapters, twelve scenes, three endings — one of them behind a condition."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "speaker": null,
+                      "textAlign": null,
+                      "lineId": "t_three-variables-a-numb"
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Three variables: a number, a boolean, and a second boolean used as a key."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "speaker": null,
+                      "textAlign": null,
+                      "lineId": "t_choices-that-set-add-a"
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Choices that set, add and toggle; choices that hide; choices that lock with a reason."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "speaker": null,
+                      "textAlign": null,
+                      "lineId": "t_a-conversation-that-st"
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "A conversation that stays on the page, with a line that repeats and a line that leaves."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "speaker": null,
+                      "textAlign": null,
+                      "lineId": "t_prose-gated-behind-a-c"
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Prose gated behind a condition, a loop back to an earlier scene, and a merge."
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "speaker": null,
+              "textAlign": null,
+              "lineId": "t_a-note-is-writer-only-"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "A note is writer-only: it can mention the story, and the story cannot mention it."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
