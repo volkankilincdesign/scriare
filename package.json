@@ -124,5 +124,12 @@
       }
     ]
   },
-  "homepage": "https://volkankilinc.com"
+  "homepage": "https://volkankilinc.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/volkankilincdesign/scriare.git"
+  },
+  "bugs": {
+    "url": "https://github.com/volkankilincdesign/scriare/issues"
+  }
 }
