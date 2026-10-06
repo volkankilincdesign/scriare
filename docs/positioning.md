@@ -1,6 +1,6 @@
 # Scriare — positioning against the alternatives
 
-Written 1 Oct 2026, current at **v0.88.3**. Companion to
+Written 1 Oct 2026, current at **v0.88.5**. Companion to
 `project-brief.md`: the brief says what Scriare *is*, this says what it is
 *instead of*. Paste this into a branding or marketing chat — it is the one
 input that chat cannot reconstruct from the repo.

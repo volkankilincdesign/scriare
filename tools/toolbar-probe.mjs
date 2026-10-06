@@ -1,11 +1,19 @@
 import { _electron } from "playwright-core";
 import { readFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// The repository root, resolved from this file rather than hardcoded. These
+// three probes carried an absolute path to the container they were first
+// written in, so they ran on exactly one machine and nobody else's — this
+// repository's owner included. Caught while auditing for a public push.
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const app = await _electron.launch({
-  executablePath: "node_modules/electron/dist/electron", args: ["/root/scriare"], cwd: "/root/scriare",
+  executablePath: join(root, "node_modules/electron/dist/electron"), args: [root], cwd: root,
 });
 const page = await app.firstWindow();
 await page.waitForTimeout(2500);
-const raw = await readFile("tests/fixtures/feature-tour.scriare", "utf-8");
+const raw = await readFile(join(root, "tests/fixtures/feature-tour.scriare"), "utf-8");
 await page.evaluate(async (j) => {
   const w = (ms)=>new Promise(r=>setTimeout(r,ms));
   const p = window.__scriareProjectTypes.normalizeProject(JSON.parse(j));

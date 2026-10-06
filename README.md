@@ -355,6 +355,24 @@ anything:
   the ones the Inspector makes. The mounted document and the saved project
   can never drift apart.
 
+## Licence
+
+Scriare is **MIT licensed** — see [LICENSE](LICENSE). In plain words: use it,
+change it, build on it, ship it, commercially or not. The one condition is
+that the copyright notice travels with any copy, so whoever ends up with the
+code can see where it came from.
+
+The licence covers the **code**. The name *Scriare*, the wordmark and the logo
+are not part of it — fork the software freely, but please give your version
+its own name, so a reader can tell which one they are looking at.
+
+Scriare bundles Electron, Chromium, Node and a number of open-source
+libraries, each under its own licence; those are listed in
+[THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) and travel with the
+application.
+
+Built by Volkan Kılınç — [volkankilinc.com](https://volkankilinc.com).
+
 ## The writing
 
 The [changelog](CHANGELOG.md) lists every release, and each entry is

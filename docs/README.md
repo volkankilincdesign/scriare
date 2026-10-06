@@ -4,7 +4,7 @@ These are the documents for Scriare — the reasoning behind decisions, written 
 
 **The project workspace is the source of truth; this folder is the mirror, refreshed at release time.** If a document here and one in the project disagree, the project is right and this copy is stale. `CHANGELOG.md` and `CASE_STUDY.md` at the repository root are the narrative companion to these, and are not mirrors — they live only in the repository.
 
-As of v0.88.3 this folder is also where the launch material lives. It used to sit loose in `other_materials/`, where the brief drifted three versions out of date without anyone noticing, so it was merged in here.
+As of v0.88.5 this folder is also where the launch material lives. It used to sit loose in `other_materials/`, where the brief drifted three versions out of date without anyone noticing, so it was merged in here.
 
 ## Direction
 
@@ -43,7 +43,6 @@ As of v0.88.3 this folder is also where the launch material lives. It used to si
 - [perf-v0.51.0.md](perf-v0.51.0.md) — measuring before optimising: two of the audit's three named hot paths cost nothing, and the real bottleneck was the Story Graph rebuilding every node.
 - [auto-layout-measurement.md](auto-layout-measurement.md) — Auto Layout measured on the real 32-scene story before anything was changed, which is how three suspected faults turned out not to reproduce and the real one was found next door.
 - [visual-sweep-findings.md](visual-sweep-findings.md) — seven findings from looking at the shipped build with the real story loaded: two bugs, four decisions, and one fact about the demo story. Both bugs were found by looking at a picture while 1108 tests were green.
-- [state-of-the-app-v0.63.0.md](state-of-the-app-v0.63.0.md) — a full read of the app against the source rather than against the roadmap, taken at v0.63.0. A point-in-time snapshot; do not refresh it.
 
 ## Sprint reports
 
