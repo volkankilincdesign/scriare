@@ -18,6 +18,98 @@ omitting them.
 
 ---
 
+## v0.88.6 — Every word in the story was underlined in red, and had been for a year
+
+**The bug.** Electron's spellchecker defaults to ON, with the dictionary
+taken from the app's locale — which on Windows is the Windows display
+language. Scriare is built on a Turkish Windows. So an English story was
+being checked against a Turkish dictionary, and every word in it came back
+misspelled: "The", "tide", "had", a red line under all of them, in every
+paragraph, in a writing application, since the first build. Not one typo
+found in a year, and the first screenshot anybody took of the editor was
+ruined by it.
+
+**Why `<html lang="en">` made no difference.** The renderer has declared its
+language since the first commit, and that was the reason this took so long
+to believe. Chromium's spellchecker does not read the document's language.
+It reads the SESSION's configured languages. The page can say what it is
+written in as loudly as it likes; nothing is listening.
+
+**Why the suite could never have caught it.** A squiggle is painted by
+Chromium underneath the DOM. There is no element, no attribute, no computed
+style — nothing to query, from the renderer or from Playwright. Eleven
+hundred assertions and not one of them could see the single most visible
+thing about the editor. It was found in a screenshot, which is now the third
+time: v0.81.0's dead Help link, v0.87.0's blank folded graph, and this.
+
+**The fix is not an off switch.** `spellcheck: false` in `webPreferences` is
+one line and would have removed the red. It would also have cost a writing
+app its spellchecker to fix a bug about the spellchecker being pointed at
+the wrong dictionary. A `.scriare` has recorded which language the story is
+written in since v0.75.0 — the writer picks it in Project Settings and it
+travels with the file. That is the only honest source: the operating system
+knows what language the writer's MENUS are in, which is a different question
+and routinely a different answer.
+
+So: `src/main/spellcheck.ts` decides, `ipc/spellcheckHandlers.ts` applies,
+and `hooks/useSpellcheckLanguage.ts` watches the open story's language and
+pushes it across. One subscription to one value rather than a call at each
+of the five places a language can change, because a list of five call sites
+is a list somebody will forget to add the sixth to.
+
+**The table of language codes was written and then deleted.** The first
+version of the resolver carried a hardcoded map from each of the nineteen
+story languages to a Chromium code, written from memory — a guess about
+another project's internals dressed up as a constant, and one that rots the
+first time Electron's bundled dictionary set changes.
+`session.availableSpellCheckerLanguages` is the real answer, read at
+runtime. It is passed into the resolver as an argument, which keeps the
+decision pure and lets it be tested against dictionary sets this machine
+does not have.
+
+**Off is a legitimate answer, and it is the answer three times.** Of the
+nineteen languages Scriare offers, Chromium has no Hunspell dictionary for
+Arabic, Chinese or Japanese. The choice there is between no spellchecker and
+the wrong one, and the wrong one is what this version exists to remove. Off,
+every time — and off is also what a closed story gets, so the last story's
+dictionary is not still loaded on the Welcome screen.
+
+**A constant that looked like coverage and was not.** `PREFERRED_REGION`
+picks a region when a story names a bare language and Chromium offers
+several: `en` has four dictionaries, and picking alphabetically hands an
+English story `en-AU`, which flags "color" for most of the people writing in
+it. The first draft of that table also had `zh: "zh-CN"`. Measuring it showed
+Chromium ships no Chinese dictionary at all, so the line could never fire.
+Removed rather than left in looking useful.
+
+**What the new spec asserts, and what it deliberately does not.** It cannot
+assert a squiggle, so it does not pretend to. Every check reads
+`session.getSpellCheckerLanguages()` and `isSpellCheckerEnabled()` in the
+main process — the real session, not the handler's own return value, because
+a handler agreeing with itself proves nothing. The spine of it walks all
+nineteen languages from the app's own list (through the test bridge, not a
+copy in the spec) and states the invariant that was violated: **a story is
+never checked against a different language's dictionary.** A further check
+states that both halves of that rule were actually exercised by the run —
+sixteen got a dictionary, three got none — because a rule about a set that
+turned out to be empty is a rule nobody tested.
+
+Every check drives the project store and never `window.api`, so the hook in
+`App.tsx` is what is under test rather than the IPC behind it.
+
+**Five negative controls, all of them red.** The nearest-dictionary
+behaviour restored (the bug itself, in miniature: `ar`, `zh` and `ja` all
+resolve to `af`); English resolved to whichever English sorts first; the
+hook left unwired; a closed story leaving its dictionary loaded; and an
+unsupported language that leaves the previous dictionary in force rather
+than switching off.
+
+**If you are on a build before this one**, a shortcut to
+`Scriare.exe --lang=en-US` points Chromium at an English dictionary without
+a rebuild. It also happens to be how this diagnosis was confirmed.
+
+---
+
 ## v0.88.5 — The fixture is a placeholder, and the swap found another disagreement
 
 **The Blue Hour is out of the repository.** He broke his own copy editing it

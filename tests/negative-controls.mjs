@@ -1,5 +1,5 @@
 /**
- * Negative controls for v0.48.0 (Export) and v0.49.0 (the audit fixes).
+ * Negative controls, v0.48.0 onward — newest first.
  *
  *   node tests/negative-controls.mjs
  *
@@ -28,6 +28,70 @@ const shared = (p) => join(root, "src/shared", p);
 const mainScript = (p) => join(root, "src/main", p);
 
 const CONTROLS = [
+  {
+    // v0.88.6. THE BUG ITSELF. Electron's spellchecker defaulted to the
+    // app's locale, so on a Turkish Windows an English story was checked
+    // against a Turkish dictionary and every word in it was underlined.
+    // The resolver now answers "no dictionary" rather than "nearest
+    // dictionary"; this puts the nearest-dictionary behaviour back, which
+    // is the same mistake in miniature — a story checked against a
+    // language that is not its own.
+    name: "a story checked against the nearest dictionary rather than its own",
+    file: main("spellcheck.ts"),
+    from: '  if (!candidates.length) return { languages: [], reason: "unsupported" };',
+    to: '  if (!candidates.length) return { languages: [available[0]], reason: "region" };',
+    spec: "spellcheck-language",
+    expect: "no story is ever checked against another language's dictionary",
+  },
+  {
+    // v0.88.6. A story file carries a bare "en" and Chromium has four
+    // English dictionaries, so something has to pick. Picking the one that
+    // sorts first hands an English story en-AU, which flags "color" for
+    // most of the people writing in it — a quieter version of the same
+    // bug, and one a spec that only checked "starts with en" would miss.
+    name: "English resolved to whichever English sorts first",
+    file: main("spellcheck.ts"),
+    from: '  en: "en-US",',
+    to: '  en: "en-AU",',
+    spec: "spellcheck-language",
+    expect: "in en-US rather than whichever English sorts first",
+  },
+  {
+    // v0.88.6. Every check in that spec drives the PROJECT STORE and never
+    // window.api, precisely so that the hook is what is under test rather
+    // than the IPC. This proves it: unwire the hook and the session stops
+    // following the story.
+    name: "the spellchecker hook left unwired",
+    file: src("App.tsx"),
+    from: "  useSpellcheckLanguage();",
+    to: "  // useSpellcheckLanguage();",
+    spec: "spellcheck-language",
+    expect: "the story's own language decides the dictionary",
+  },
+  {
+    // v0.88.6. Closing a story has to put the spellchecker back to off, or
+    // the last story's dictionary is still loaded on the Welcome screen —
+    // whose project-name field is a text input. A small place, but a wrong
+    // dictionary in a small place is how this started.
+    name: "a closed story leaving its dictionary loaded",
+    file: src("hooks/useSpellcheckLanguage.ts"),
+    from: "    void spellcheck.setLanguage(language);",
+    to: "    if (language) void spellcheck.setLanguage(language);",
+    spec: "spellcheck-language",
+    expect: "closing the story turns the spellchecker off",
+  },
+  {
+    // v0.88.6. "No dictionary for this language" has to mean the
+    // spellchecker is switched OFF, not merely that no new language was
+    // set — otherwise whatever was loaded before stays loaded, which is
+    // the wrong-dictionary failure arriving by the back door.
+    name: "an unsupported language that leaves the previous dictionary in force",
+    file: main("ipc/spellcheckHandlers.ts"),
+    from: "    } else {\n      ses.setSpellCheckerEnabled(false);\n    }",
+    to: "    } else {\n      /* control: leave whatever was set */\n    }",
+    spec: "spellcheck-language",
+    expect: "turns the spellchecker off, rather than leaving the last one",
+  },
   {
     // v0.88.5. The script's cover page counted any scene without a Choice
     // Block as an ending, so a scene whose only way out was a conversation

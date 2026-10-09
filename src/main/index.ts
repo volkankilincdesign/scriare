@@ -5,6 +5,10 @@ import { registerProjectHandlers } from "./ipc/projectHandlers";
 import { registerExportHandlers } from "./ipc/exportHandlers";
 import { registerScriptHandlers } from "./ipc/scriptHandlers";
 import { registerSheetHandlers } from "./ipc/sheetHandlers";
+import {
+  registerSpellcheckHandlers,
+  disableSpellcheckUntilAStoryIsOpen,
+} from "./ipc/spellcheckHandlers";
 import { projectFileFromArgv } from "../shared/fileArgs";
 import { SHELL_GRACE_MS } from "../shared/boot";
 
@@ -162,6 +166,12 @@ function createWindow(): void {
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
       sandbox: false,
+      // Left ON, and pointed at the open story's language rather than at
+      // the operating system's — see the note beside
+      // disableSpellcheckUntilAStoryIsOpen() below. Turning it off here
+      // would also have fixed the red lines, and would have cost a
+      // writing app its spellchecker to do it.
+      spellcheck: true,
     },
   });
 
@@ -301,6 +311,19 @@ app.whenReady().then(() => {
   registerExportHandlers();
   registerScriptHandlers();
   registerSheetHandlers();
+  registerSpellcheckHandlers();
+
+  /**
+   * SPELLCHECK STARTS OFF (v0.88.6).
+   *
+   * Electron's default is on, with the dictionary taken from the app's
+   * locale — i.e. from the Windows display language. On a Turkish Windows
+   * that meant an English story checked against a Turkish dictionary, and
+   * every word in it underlined in red. The story itself knows which
+   * language it is written in; until one is open, nothing here does, so
+   * nothing is checked. See ipc/spellcheckHandlers.ts.
+   */
+  disableSpellcheckUntilAStoryIsOpen();
 
   /**
    * PULLED BY THE RENDERER, not pushed at it. A push has to guess when the

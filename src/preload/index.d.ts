@@ -1,6 +1,17 @@
 import { ElectronAPI } from "@electron-toolkit/preload";
 
 /**
+ * What the spellchecker settled on for the open story (v0.88.6).
+ * `languages` empty means it is switched off.
+ */
+export interface SpellcheckState {
+  languages: string[];
+  reason: "exact" | "region" | "unsupported" | "none";
+  /** How many dictionaries this Electron build offers. 0 means it said none. */
+  available: number;
+}
+
+/**
  * A story's shape, cached so the Welcome screen can draw its map without
  * opening it — see renderer/src/utils/recentShape.ts.
  */
@@ -181,6 +192,21 @@ export interface ScriareAPI {
       rows: number;
     } | null>;
     open: (filePath: string) => Promise<void>;
+  };
+  /**
+   * v0.88.6 — the spellchecker's dictionary, chosen from the story's own
+   * language rather than the operating system's.
+   */
+  spellcheck: {
+    /**
+     * Point the spellchecker at this BCP-47 tag. `null`, an empty tag, or
+     * a language Chromium has no dictionary for all turn it OFF — which is
+     * the right answer, because the alternative is the wrong dictionary.
+     * Returns what it settled on and why.
+     */
+    setLanguage: (tag: string | null) => Promise<SpellcheckState>;
+    /** What is in force now, without changing it. Null before the first set. */
+    state: () => Promise<SpellcheckState | null>;
   };
   /** v0.49.0 — closing the window writes what is pending first. */
   lifecycle: {

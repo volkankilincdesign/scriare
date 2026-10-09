@@ -16,6 +16,7 @@ import { HelpDialog } from "./components/layout/HelpDialog";
 import { useCloseGuard } from "./hooks/useCloseGuard";
 import { useOpenFromDisk } from "./hooks/useOpenFromDisk";
 import { useBoot } from "./hooks/useBoot";
+import { useSpellcheckLanguage } from "./hooks/useSpellcheckLanguage";
 import { Splash } from "./components/common/Splash";
 import { installFocusModality } from "./utils/focusModality";
 import { collectProjectKeys, setProjectKeyProvider } from "./utils/contentIds";
@@ -112,6 +113,14 @@ export default function App() {
 
   // Focus rings for keyboards, not for mice — see utils/focusModality.ts.
   useEffect(() => installFocusModality(), []);
+
+  /**
+   * The spellchecker's dictionary follows the open story's language
+   * (v0.88.6). Called here, above the early returns, because it has to run
+   * in the no-project branch too: closing a story has to put the
+   * spellchecker back to off, and a hook below a `return` would not.
+   */
+  useSpellcheckLanguage();
 
   /**
    * Naming a line asks the project what keys are already spoken for

@@ -75,6 +75,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./utils/wireAnchors"),
     import("./utils/wireRouter"),
     import("./utils/autoLayoutGraph"),
+    import("./types/languages"),
   ]).then(
     ([
       projectStore,
@@ -128,6 +129,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       wireAnchors,
       wireRouter,
       autoLayoutGraph,
+      languages,
     ]) => {
       Object.assign(window, {
         __scriareProjectStore: projectStore.useProjectStore,
@@ -212,6 +214,12 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         // in it, shared with the main process so the spec drives the same
         // one the app runs.
         __scriareFileArgs: fileArgs,
+        // v0.88.6 — the languages a story can say it is written in. The
+        // spellcheck spec walks all of them and asserts none of them can
+        // end up checked against another language's dictionary, so it has
+        // to walk the REAL list: a copy of it in the spec would be a copy
+        // that stops matching the day somebody adds a twentieth.
+        __scriareLanguages: languages,
       });
     },
   );

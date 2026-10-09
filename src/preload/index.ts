@@ -55,6 +55,16 @@ const api = {
     open: (filePath: string) => ipcRenderer.invoke("sheet:reveal", filePath),
   },
   /**
+   * v0.88.6 — which dictionary the spellchecker uses. The story says which
+   * language it is written in; the operating system's answer to a
+   * different question is what put a red line under every English word on
+   * a Turkish Windows.
+   */
+  spellcheck: {
+    setLanguage: (tag: string | null) => ipcRenderer.invoke("spellcheck:setLanguage", tag),
+    state: () => ipcRenderer.invoke("spellcheck:state"),
+  },
+  /**
    * v0.49.0 — the window asks before it closes, so a pending autosave is
    * written rather than discarded. See main/index.ts for the handshake.
    */
