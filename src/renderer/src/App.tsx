@@ -116,7 +116,7 @@ export default function App() {
 
   /**
    * The spellchecker's dictionary follows the open story's language
-   * (v0.88.6). Called here, above the early returns, because it has to run
+   * (v0.89.0). Called here, above the early returns, because it has to run
    * in the no-project branch too: closing a story has to put the
    * spellchecker back to off, and a hook below a `return` would not.
    */

@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useProjectStore } from "../state/projectStore";
 
 /**
- * THE SPELLCHECKER FOLLOWS THE STORY (v0.88.6).
+ * THE SPELLCHECKER FOLLOWS THE STORY (v0.89.0).
  *
  * One subscription rather than a call at each place a language could
  * change. The places are: opening a story, closing one, creating one,

@@ -1,5 +1,5 @@
 /**
- * WHICH DICTIONARY, FOR A STORY THAT SAYS WHICH LANGUAGE IT IS IN (v0.88.6).
+ * WHICH DICTIONARY, FOR A STORY THAT SAYS WHICH LANGUAGE IT IS IN (v0.89.0).
  *
  * THE BUG. Electron's spellchecker defaults to on, with the dictionary
  * chosen from the app's locale — which on Windows is the Windows display

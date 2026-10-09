@@ -29,7 +29,7 @@ const mainScript = (p) => join(root, "src/main", p);
 
 const CONTROLS = [
   {
-    // v0.88.6. THE BUG ITSELF. Electron's spellchecker defaulted to the
+    // v0.89.0. THE BUG ITSELF. Electron's spellchecker defaulted to the
     // app's locale, so on a Turkish Windows an English story was checked
     // against a Turkish dictionary and every word in it was underlined.
     // The resolver now answers "no dictionary" rather than "nearest
@@ -44,7 +44,7 @@ const CONTROLS = [
     expect: "no story is ever checked against another language's dictionary",
   },
   {
-    // v0.88.6. A story file carries a bare "en" and Chromium has four
+    // v0.89.0. A story file carries a bare "en" and Chromium has four
     // English dictionaries, so something has to pick. Picking the one that
     // sorts first hands an English story en-AU, which flags "color" for
     // most of the people writing in it — a quieter version of the same
@@ -57,7 +57,7 @@ const CONTROLS = [
     expect: "in en-US rather than whichever English sorts first",
   },
   {
-    // v0.88.6. Every check in that spec drives the PROJECT STORE and never
+    // v0.89.0. Every check in that spec drives the PROJECT STORE and never
     // window.api, precisely so that the hook is what is under test rather
     // than the IPC. This proves it: unwire the hook and the session stops
     // following the story.
@@ -69,7 +69,7 @@ const CONTROLS = [
     expect: "the story's own language decides the dictionary",
   },
   {
-    // v0.88.6. Closing a story has to put the spellchecker back to off, or
+    // v0.89.0. Closing a story has to put the spellchecker back to off, or
     // the last story's dictionary is still loaded on the Welcome screen —
     // whose project-name field is a text input. A small place, but a wrong
     // dictionary in a small place is how this started.
@@ -81,7 +81,7 @@ const CONTROLS = [
     expect: "closing the story turns the spellchecker off",
   },
   {
-    // v0.88.6. "No dictionary for this language" has to mean the
+    // v0.89.0. "No dictionary for this language" has to mean the
     // spellchecker is switched OFF, not merely that no new language was
     // set — otherwise whatever was loaded before stays loaded, which is
     // the wrong-dictionary failure arriving by the back door.

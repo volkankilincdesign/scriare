@@ -1,7 +1,7 @@
 import { ElectronAPI } from "@electron-toolkit/preload";
 
 /**
- * What the spellchecker settled on for the open story (v0.88.6).
+ * What the spellchecker settled on for the open story (v0.89.0).
  * `languages` empty means it is switched off.
  */
 export interface SpellcheckState {
@@ -194,7 +194,7 @@ export interface ScriareAPI {
     open: (filePath: string) => Promise<void>;
   };
   /**
-   * v0.88.6 — the spellchecker's dictionary, chosen from the story's own
+   * v0.89.0 — the spellchecker's dictionary, chosen from the story's own
    * language rather than the operating system's.
    */
   spellcheck: {

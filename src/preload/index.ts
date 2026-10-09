@@ -55,7 +55,7 @@ const api = {
     open: (filePath: string) => ipcRenderer.invoke("sheet:reveal", filePath),
   },
   /**
-   * v0.88.6 — which dictionary the spellchecker uses. The story says which
+   * v0.89.0 — which dictionary the spellchecker uses. The story says which
    * language it is written in; the operating system's answer to a
    * different question is what put a red line under every English word on
    * a Turkish Windows.

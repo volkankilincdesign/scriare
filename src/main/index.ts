@@ -314,7 +314,7 @@ app.whenReady().then(() => {
   registerSpellcheckHandlers();
 
   /**
-   * SPELLCHECK STARTS OFF (v0.88.6).
+   * SPELLCHECK STARTS OFF (v0.89.0).
    *
    * Electron's default is on, with the dictionary taken from the app's
    * locale — i.e. from the Windows display language. On a Turkish Windows

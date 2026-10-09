@@ -214,7 +214,7 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         // in it, shared with the main process so the spec drives the same
         // one the app runs.
         __scriareFileArgs: fileArgs,
-        // v0.88.6 — the languages a story can say it is written in. The
+        // v0.89.0 — the languages a story can say it is written in. The
         // spellcheck spec walks all of them and asserts none of them can
         // end up checked against another language's dictionary, so it has
         // to walk the REAL list: a copy of it in the spec would be a copy

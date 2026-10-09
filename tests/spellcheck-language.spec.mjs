@@ -1,5 +1,5 @@
 /**
- * THE SPELLCHECKER FOLLOWS THE STORY, NOT THE OPERATING SYSTEM (v0.88.6).
+ * THE SPELLCHECKER FOLLOWS THE STORY, NOT THE OPERATING SYSTEM (v0.89.0).
  *
  * THE BUG THIS EXISTS FOR. Electron's spellchecker defaults to on with the
  * dictionary taken from the app's locale — on Windows, the display

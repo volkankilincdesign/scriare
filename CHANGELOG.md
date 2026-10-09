@@ -18,7 +18,7 @@ omitting them.
 
 ---
 
-## v0.88.6 — Every word in the story was underlined in red, and had been for a year
+## v0.89.0 — Every word in the story was underlined in red, and had been for a year
 
 **The bug.** Electron's spellchecker defaults to ON, with the dictionary
 taken from the app's locale — which on Windows is the Windows display
@@ -103,6 +103,12 @@ resolve to `af`); English resolved to whichever English sorts first; the
 hook left unwired; a closed story leaving its dictionary loaded; and an
 unsupported language that leaves the previous dictionary in force rather
 than switching off.
+
+**Why a minor rather than a patch.** It was written as v0.88.6 and
+renumbered before release. A patch says a thing that was broken stopped being
+broken, which is true from the writer's chair — but this added a file, an IPC
+channel, a hook and a behaviour the app did not have, and semver calls added
+functionality a minor. The number should agree with the sentence.
 
 **If you are on a build before this one**, a shortcut to
 `Scriare.exe --lang=en-US` points Chromium at an English dictionary without

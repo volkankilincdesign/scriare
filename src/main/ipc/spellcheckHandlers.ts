@@ -3,7 +3,7 @@ import { resolveSpellcheckLanguage, type SpellcheckChoice } from "../spellcheck"
 
 /**
  * The session's spellchecker, pointed at the open story's language
- * (v0.88.6). The decision itself is in `../spellcheck.ts` and is pure;
+ * (v0.89.0). The decision itself is in `../spellcheck.ts` and is pure;
  * this is the part that touches Electron.
  */
 
