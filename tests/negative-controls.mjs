@@ -29,6 +29,57 @@ const mainScript = (p) => join(root, "src/main", p);
 
 const CONTROLS = [
   {
+    // v0.90.0. THE ONE THAT MATTERS. `openVariableManager` has two callers
+    // and the other one only appears once a condition editor is already
+    // open — so this button is the only way a writer who has never made a
+    // variable can make their first. An arrangement that drops it strands
+    // the feature, and the first draft of this version's top bar did
+    // exactly that before the search was run.
+    name: "the top bar's only route to variables removed",
+    file: src("components/layout/TopBar.tsx"),
+    from: "              data-open-variables",
+    to: "              data-open-variables-removed",
+    spec: "topbar-kit",
+    expect: "the only route to variables is still in the top bar",
+  },
+  {
+    // v0.90.0. The label is a symbol now, so the accessible name is the
+    // only thing left that says what it does. A glyph with no name is a
+    // button nobody can find twice.
+    name: "the glyph left without an accessible name",
+    file: src("components/layout/TopBar.tsx"),
+    from: '              aria-label="Variables"\n              data-open-variables',
+    to: '              data-open-variables',
+    spec: "topbar-kit",
+    expect: "it is named, since its label is now a symbol",
+  },
+  {
+    // v0.90.0. The alignment Volkan asked about. Every label shares one
+    // line box inside an `inline-flex items-center` button, so they share a
+    // baseline BY CONSTRUCTION — and the one thing that would break that is
+    // setting the glyph in a different face. Measured with the app's real
+    // Inter: {x}'s ink centre sits 0.5px below "Check", which is less
+    // deviation than "Export" already has from its descender, and below the
+    // whole-pixel threshold this codebase set for itself in v0.68.0. A
+    // monospace face is what this control puts back.
+    name: "the glyph set in a second typeface",
+    file: src("components/layout/TopBar.tsx"),
+    from: '              data-open-variables\n            >\n              {"{x}"}',
+    to: '              data-open-variables\n              className="font-mono"\n            >\n              {"{x}"}',
+    spec: "topbar-kit",
+    expect: "they are all in one face at one size",
+  },
+  {
+    // v0.90.0. Play was sitting between the gear and Export. A primary
+    // action belongs at the end of its group, which is where an eye stops.
+    name: "Play back in the middle of the row",
+    file: src("components/layout/TopBar.tsx"),
+    from: '        {isPlaying ? (\n          <Button intent="secondary" onClick={exitPlay}>',
+    to: '        {false ? (\n          <Button intent="secondary" onClick={exitPlay}>',
+    spec: "topbar-kit",
+    expect: "Play is the last control in the group",
+  },
+  {
     // v0.90.0. The Welcome screen centred itself by sharing out free space
     // with auto margins. Take the margin away and it goes back to sitting
     // against the top edge of a maximized window with half of it black.

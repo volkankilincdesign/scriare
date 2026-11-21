@@ -134,79 +134,108 @@ export function TopBar() {
         )}
       </div>
 
+      {/*
+        v0.90.0 — SIX HAND-WRITTEN BUTTONS BECOME THE KIT'S.
+
+        This bar used `Button` once, for Play, and hand-wrote the other six
+        from one copied class string — in an app whose Button component
+        carries a long argument about why a variant belongs in the kit
+        rather than at a call site. The copy had already drifted: it set
+        `text-[var(--text-2)]` where the component's `secondary` sets
+        `text-[var(--text)]`, so six controls here were a shade dimmer than
+        the same button everywhere else.
+
+        AND THE ROW IS REGROUPED. Two things open a place rather than doing
+        something to the story — "How Scriare works" and Project Settings —
+        so they take the kit's `ghost` intent and sit together at the left
+        of the group behind a hairline. Everything right of that line acts
+        on the story, and PLAY ENDS THE ROW: it is the primary action and it
+        was sitting between the gear and Export, which is not where an eye
+        stops.
+      */}
       <div className="flex shrink-0 items-center gap-2">
         {!isPlaying && (
-          <button
-            type="button"
-            onClick={() => useUIStore.getState().openStoryCheck()}
-            title="Check the story for dead links, unreachable scenes and the shape of its routes"
-            className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
-          >
-            Check
-          </button>
-        )}
-        {!isPlaying && (
-          <button
-            type="button"
-            onClick={openVariableManager}
-            title="Variables"
-            className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
-          >
-            𝑥 Variables
-          </button>
-        )}
-        {/* v0.81.0 — "How Scriare works". Here rather than in the editor's
-            own toolbar, where it belongs by meaning and did not fit by
-            geometry: see EditorToolbar for the row it made wrap. Beside
-            Settings because they are the same kind of control — a door to
-            a place, not an action on the story. */}
-        {!isPlaying && (
-          <button
-            type="button"
-            onClick={() => useUIStore.getState().openHelp()}
-            title="How Scriare works — what the three blocks are for"
-            aria-label="How Scriare works"
-            data-open-help
-            className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
-          >
-            ?
-          </button>
-        )}
-        {!isPlaying && (
-          <button
-            type="button"
-            onClick={() => openSettings()}
-            title="Project Settings"
-            className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
-          >
-            ⚙
-          </button>
+          <>
+            <Button
+              intent="ghost"
+              onClick={() => useUIStore.getState().openHelp()}
+              title="How Scriare works — what the three blocks are for"
+              aria-label="How Scriare works"
+              data-open-help
+            >
+              ?
+            </Button>
+            <Button
+              intent="ghost"
+              onClick={() => openSettings()}
+              title="Project Settings"
+              aria-label="Project Settings"
+            >
+              ⚙
+            </Button>
+            {/* The line between the doors and the actions. Decorative, so
+                it is hidden from the accessibility tree — a reader hears
+                the labels, which already say which is which. */}
+            <span aria-hidden="true" className="mx-0.5 h-[18px] w-px bg-[var(--border)]" />
+            {/*
+              VARIABLES IS A GLYPH NOW, AND IT STAYS IN THIS BAR.
+
+              It was "𝑥 Variables" — U+1D465, mathematical italic small x.
+              The idea was right and the execution misfired: at 14px beside
+              a word, that glyph is a multiplication sign, and a × to the
+              left of a label means "remove this" in every interface anybody
+              has used. Measured in the mockup, the misreading was never the
+              glyph itself — it was the glyph NEXT TO a label. Alone, it
+              reads as a variable again.
+
+              `{x}` rather than the bare 𝑥 because braces are the syntax a
+              writer meets in every tool that has variables, and SET IN THE
+              BAR'S OWN FACE rather than a monospace one: a second typeface
+              introduced for a single glyph, in the pass whose whole subject
+              is resting-state consistency, would be the same mistake in a
+              new costume.
+
+              IT CANNOT LEAVE THIS BAR. Searched: `openVariableManager` has
+              exactly two callers, this one and the Inspector's — and the
+              Inspector's only appears once a condition or action editor is
+              already open. There is no keyboard shortcut and no slash
+              command. So this button is the only route to variables for a
+              writer who has not made one yet, which is precisely the writer
+              who needs it.
+            */}
+            <Button
+              intent="secondary"
+              onClick={openVariableManager}
+              title="Variables"
+              aria-label="Variables"
+              data-open-variables
+            >
+              {"{x}"}
+            </Button>
+            <Button
+              intent="secondary"
+              onClick={() => useUIStore.getState().openStoryCheck()}
+              title="Check the story for dead links, unreachable scenes and the shape of its routes"
+            >
+              Check
+            </Button>
+            <Button
+              intent="secondary"
+              onClick={() => useUIStore.getState().openExport()}
+              title="Export the story as a web page anyone can read"
+            >
+              Export
+            </Button>
+          </>
         )}
         {isPlaying ? (
-          <button
-            type="button"
-            onClick={exitPlay}
-            className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)]"
-          >
+          <Button intent="secondary" onClick={exitPlay}>
             ■ Exit Play
-          </button>
+          </Button>
         ) : (
-          <Button
-            intent="primary"
-            onClick={startPlay}
-          >
+          <Button intent="primary" onClick={startPlay}>
             ▶ Play
           </Button>
-        )}
-        {!isPlaying && (
-          <button
-            type="button"
-            onClick={() => useUIStore.getState().openExport()}
-            title="Export the story as a web page anyone can read"
-            className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)]"
-          >
-            Export
-          </button>
         )}
       </div>
 
