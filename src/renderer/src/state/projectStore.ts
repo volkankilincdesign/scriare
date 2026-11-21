@@ -41,6 +41,7 @@ import { buildResume, buildStoryShape, landingFor } from "../utils/recentShape";
 import type { ResumeKind } from "../utils/recentShape";
 import type { StoredShape } from "../../../preload/index.d";
 import { useInspectorStore } from "./inspectorStore";
+import { buildPracticeProject } from "../tour/practiceStory";
 import {
   clearHistory,
   historyFlags,
@@ -185,6 +186,12 @@ interface ProjectState {
 
   loadRecent: () => Promise<void>;
   newProject: (name: string) => Promise<void>;
+  /**
+   * v0.91.0 — writes the tour's practice story into the writer's Scriare
+   * folder (no dialog) and opens it. Resolves false if it could not be
+   * written, so the tour can stop rather than point at nothing.
+   */
+  openPracticeProject: () => Promise<boolean>;
   openProject: () => Promise<void>;
   /**
    * `target` is the page to land on — the Welcome hero passes the one it
@@ -651,6 +658,44 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       recentProjects: result.recent,
       ...historyFlags(),
     });
+  },
+
+  openPracticeProject: async () => {
+    // Normalised before it is written, so the file on disk already carries
+    // the line ids and keys every later save would add — the first save
+    // after opening it is then a save of the writer's change, not a
+    // migration.
+    const project = normalizeProject(buildPracticeProject());
+    let result: Awaited<ReturnType<typeof window.api.project.createPractice>>;
+    try {
+      result = await window.api.project.createPractice(
+        JSON.stringify(project, null, 2),
+        project.name,
+      );
+    } catch {
+      // Not reportOpenFailure: nothing was being READ, and its sentences
+      // are all about a file that will not open.
+      void import("./toastStore").then(({ useToastStore }) => {
+        useToastStore
+          .getState()
+          .showNotice("The practice story couldn't be saved to your Scriare folder, so the tour can't start.");
+      });
+      return false;
+    }
+    clearHistory();
+    set({
+      project,
+      filePath: result.filePath,
+      fileStamp: result.stamp,
+      saveConflict: null,
+      selectedSceneId: project.startSceneId,
+      selectedEntityId: null,
+      documentToken: get().documentToken + 1,
+      saveStatus: "saved",
+      recentProjects: result.recent,
+      ...historyFlags(),
+    });
+    return true;
   },
 
   openProject: async () => {

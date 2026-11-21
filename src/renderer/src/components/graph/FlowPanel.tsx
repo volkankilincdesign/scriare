@@ -1325,6 +1325,7 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
   return (
     <div
       style={{ height: collapsed ? 36 : height }}
+      data-tour="graph"
       className="scriare-graph-band flex shrink-0 flex-col overflow-hidden border-t border-[var(--border-soft)] bg-[var(--surface)]"
     >
       {collapsed ? (

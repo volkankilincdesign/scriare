@@ -76,6 +76,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     import("./utils/wireRouter"),
     import("./utils/autoLayoutGraph"),
     import("./types/languages"),
+    import("./state/tourStore"),
+    import("./tour/tourSteps"),
   ]).then(
     ([
       projectStore,
@@ -130,6 +132,8 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
       wireRouter,
       autoLayoutGraph,
       languages,
+      tourStore,
+      tourSteps,
     ]) => {
       Object.assign(window, {
         __scriareProjectStore: projectStore.useProjectStore,
@@ -220,6 +224,9 @@ if (import.meta.env.DEV || import.meta.env.MODE === "test") {
         // to walk the REAL list: a copy of it in the spec would be a copy
         // that stops matching the day somebody adds a twentieth.
         __scriareLanguages: languages,
+        // v0.91.0 — the first-launch tour and its stops.
+        __scriareTourStore: tourStore.useTourStore,
+        __scriareTourStops: tourSteps.TOUR_STOPS,
       });
     },
   );

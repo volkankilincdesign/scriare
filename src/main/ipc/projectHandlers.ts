@@ -245,6 +245,49 @@ export function registerProjectHandlers(): void {
   );
 
   /**
+   * The tour's practice story (v0.91.0) — the one project the app makes
+   * WITHOUT a save dialog.
+   *
+   * The first-launch tour has to point at a real window with a real
+   * choice, a real wire and a real map in it, and a stranger on their
+   * first minute has none of those. Asking them where to save a story
+   * they did not write, before the tour has said a word, is the
+   * interruption the tour exists to remove — so it goes where New Project
+   * would have suggested anyway, the Scriare folder in Documents, and the
+   * tour's last card says so.
+   *
+   * NEVER OVER ANYTHING. "My first story.scriare" taken means
+   * "My first story 2.scriare", and so on: taking the tour twice gives two
+   * practice stories, never one that quietly replaced what somebody wrote
+   * in the first. The same rule the example story was given on 30 Sep.
+   *
+   * SCRIARE_PRACTICE_DIR exists for the test suite alone, so that running
+   * it on a writer's own machine does not leave practice stories in their
+   * Documents. Nothing in the app sets it.
+   */
+  ipcMain.handle("project:createPractice", async (_event, projectJson: string, projectName: string) => {
+    const folder = process.env.SCRIARE_PRACTICE_DIR || (await defaultProjectDirectory());
+    await fs.mkdir(folder, { recursive: true });
+    let filePath = path.join(folder, `${projectName}.${PROJECT_EXT}`);
+    for (let n = 2; ; n++) {
+      try {
+        await fs.access(filePath);
+      } catch {
+        break; // nothing there — this name is free
+      }
+      filePath = path.join(folder, `${projectName} ${n}.${PROJECT_EXT}`);
+    }
+    const outcome = await writeProjectFile(filePath, projectJson, null);
+    if (outcome.status !== "saved") throw new Error(`Could not write ${filePath}`);
+    const recent = await addRecent({
+      name: projectName,
+      filePath,
+      lastOpened: new Date().toISOString(),
+    });
+    return { filePath, recent, stamp: outcome.stamp };
+  });
+
+  /**
    * Read a project WITHOUT opening it (v0.53.1).
    *
    * Only the Welcome screen's shape backfill uses this: a story last saved

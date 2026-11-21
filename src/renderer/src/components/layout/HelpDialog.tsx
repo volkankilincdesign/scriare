@@ -4,6 +4,7 @@ import { Button } from "../common/Button";
 import { DialogHeader } from "../common/DialogHeader";
 import { STORY_BLOCKS } from "../../narrativeBlocks/registry";
 import { FAQ } from "../../help/faq";
+import { useTourStore } from "../../state/tourStore";
 import type { FaqEntry } from "../../help/faq";
 
 interface HelpDialogProps {
@@ -26,6 +27,12 @@ interface HelpDialogProps {
  * a prior for the Choice and none at all for the other two, so the top of
  * this panel is three pictures and three sentences, and the questions are
  * underneath for whoever still has one.
+ *
+ * v0.91.0 — AND THE TOUR LIVES HERE TOO. The testers needed an outline
+ * before any of this panel could land, so there is now a first-launch tour
+ * (state/tourStore.ts). This panel is still the place rather than the
+ * event; it is also where the event can be had again, which is why the
+ * tour's last card names the ?.
  *
  * NOTHING HERE IS TYPED TWICE. The blocks' sentences come from the
  * narrative-blocks registry — the same strings the toolbar tooltips, the
@@ -131,7 +138,17 @@ export function HelpDialog({ onClose }: HelpDialogProps) {
         )}
       </div>
 
-      <div className="mt-4 flex justify-end">
+      <div className="mt-4 flex items-center justify-between">
+        <Button
+          intent="accentGhost"
+          onClick={() => {
+            onClose();
+            useTourStore.getState().offer();
+          }}
+          data-help-tour
+        >
+          Take the tour
+        </Button>
         <Button intent="primary" onClick={onClose}>
           Done
         </Button>

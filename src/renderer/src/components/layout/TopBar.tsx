@@ -233,7 +233,7 @@ export function TopBar() {
             ■ Exit Play
           </Button>
         ) : (
-          <Button intent="primary" onClick={startPlay}>
+          <Button intent="primary" onClick={startPlay} data-tour="play">
             ▶ Play
           </Button>
         )}

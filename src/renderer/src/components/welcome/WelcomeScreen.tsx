@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useUIStore } from "../../state/uiStore";
 import { useProjectStore } from "../../state/projectStore";
+import { useTourStore } from "../../state/tourStore";
 import { NewProjectDialog } from "./NewProjectDialog";
 import { StoryMap } from "./StoryMap";
 import { useShapeBackfill } from "./useShapeBackfill";
@@ -282,6 +283,15 @@ const ILLUSTRATION: StoryShape = layoutToShape(
 );
 
 function EmptyShelf({ onStart }: { onStart: () => void }) {
+  // THE FIRST LAUNCH IS THIS BRANCH (v0.91.0). Nothing on the shelf is as
+  // close to "a stranger" as the app can honestly tell, so this is where
+  // the tour offers itself — once per install, and never again after it
+  // has been finished or skipped. A writer who cleared their recent list
+  // has already seen it and is not offered it twice.
+  useEffect(() => {
+    useTourStore.getState().offer(true);
+  }, []);
+
   return (
     <main className="flex flex-grow flex-col justify-center px-8">
       <div className="mx-auto w-full max-w-[var(--welcome-column)]">
@@ -350,6 +360,15 @@ function EmptyShelf({ onStart }: { onStart: () => void }) {
           newcomer" as the app can honestly get. */}
       <p className="mt-6 text-[13px] text-[var(--text-3)]">
         New to branching stories?{" "}
+        <button
+          type="button"
+          onClick={() => useTourStore.getState().offer()}
+          data-empty-shelf-tour
+          className="underline underline-offset-2 hover:text-[var(--text-2)]"
+        >
+          Take the tour
+        </button>
+        {" · "}
         <button
           type="button"
           onClick={() => useUIStore.getState().openHelp()}

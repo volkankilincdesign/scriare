@@ -1144,3 +1144,94 @@ button.scriare-dock-btn:focus-visible {
 /* The hand-written guard that used to sit here is gone: --d-considered
    is redefined under prefers-reduced-motion in motion.css, so this rule
    and every other one are covered at once. */
+
+/* The first-launch tour (v0.91.0) — direction A, "Spotlight".
+
+   The hole is one box whose shadow is the dim (see TourOverlay.tsx for why
+   a shadow rather than four rectangles or a mask). Its ring is the accent,
+   the one piece of chrome every theme gives a hue, so "look here" is the
+   same colour as selection and focus already are. --overlay is the token
+   every modal backdrop reads, so the tour dims the room exactly as much as
+   a dialog does: it is the same kind of interruption and should not look
+   like a louder one.
+
+   It travels on --d-considered, the step motion.css keeps for things that
+   move a long way across the window; the card fades on --d-settle. Both
+   collapse to 1ms under reduced motion, from the tokens. */
+.scriare-tour-hole {
+  position: fixed;
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px var(--accent), 0 0 0 9999px var(--overlay);
+  pointer-events: none;
+  /* Arriving: the RING fades in where it is; the dim is already up from the
+     welcome card, so only the accent changes. */
+  animation: scriare-tour-ring-in var(--d-settle) var(--e-standard);
+}
+
+/* Moving between stops is the only thing that slides (see canSlide). */
+.scriare-tour-hole.is-sliding {
+  transition:
+    left var(--d-considered) var(--e-standard),
+    top var(--d-considered) var(--e-standard),
+    width var(--d-considered) var(--e-standard),
+    height var(--d-considered) var(--e-standard);
+}
+
+@keyframes scriare-tour-ring-in {
+  from {
+    box-shadow: 0 0 0 2px transparent, 0 0 0 9999px var(--overlay);
+  }
+  to {
+    box-shadow: 0 0 0 2px var(--accent), 0 0 0 9999px var(--overlay);
+  }
+}
+
+.scriare-tour-dim {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+}
+
+.scriare-tour-card {
+  position: fixed;
+  padding: 18px 18px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--page);
+  box-shadow: var(--shadow-floating);
+  animation: scriare-tour-card-in var(--d-settle) var(--e-standard);
+}
+
+.scriare-tour-card.is-sliding {
+  transition:
+    left var(--d-considered) var(--e-standard),
+    top var(--d-considered) var(--e-standard);
+}
+
+.scriare-tour-card.is-centred {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes scriare-tour-card-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.scriare-tour-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  transition: width var(--d-quick) var(--e-standard), background-color var(--d-quick) var(--e-standard);
+}
+
+.scriare-tour-dot.is-on {
+  width: 16px;
+  background: var(--accent);
+}

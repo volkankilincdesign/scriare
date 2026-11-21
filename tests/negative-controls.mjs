@@ -28,6 +28,141 @@ const shared = (p) => join(root, "src/shared", p);
 const mainScript = (p) => join(root, "src/main", p);
 
 const CONTROLS = [
+  // ── v0.91.0 — the first-launch tour ─────────────────────────────────
+  {
+    // His report on the first build: the ring was drawn 6px OUTSIDE the
+    // region, and on the two panels against the window's edges it ran off
+    // the app. Put back exactly as it shipped.
+    name: "the ring drawn 6px outside the region again",
+    file: src("components/tour/TourOverlay.tsx"),
+    from: "const INSET = 2;",
+    to: "const INSET = -8;",
+    spec: "tour",
+    expect: "THE RING NEVER LEAVES THE WINDOW",
+  },
+  {
+    // ...and the same sabotage seen by the other check: 2px inside is his
+    // rule for every stop, not only the ones against an edge.
+    name: "the ring drawn flush with the region instead of 2px inside",
+    file: src("components/tour/TourOverlay.tsx"),
+    from: "const INSET = 2;",
+    to: "const INSET = 0;",
+    spec: "tour",
+    expect: "its ring sits 2px inside it, on every side",
+  },
+  {
+    // His second report: stop 1 flew in from the window's top-left corner,
+    // because the hole was born sliding and its region was still being
+    // laid out.
+    name: "the ring sliding into the first stop again",
+    file: src("components/tour/TourOverlay.tsx"),
+    from: 'className={`scriare-tour-hole ${canSlide ? "is-sliding" : ""}`}',
+    to: 'className="scriare-tour-hole is-sliding"',
+    spec: "tour",
+    expect: "STOP 1 APPEARS WHERE IT IS",
+  },
+  {
+    // The other half: fixing the arrival by turning sliding off everywhere
+    // would pass the check above and lose the movement between stops.
+    name: "the ring no longer sliding between stops",
+    file: src("components/tour/TourOverlay.tsx"),
+    from: 'className={`scriare-tour-hole ${canSlide ? "is-sliding" : ""}`}',
+    to: 'className="scriare-tour-hole"',
+    spec: "tour",
+    expect: "while moving BETWEEN stops still slides",
+  },
+  {
+    // The tour finds its regions by selector, and those components are
+    // edited all the time. A renamed anchor is a card talking about a panel
+    // nobody can see.
+    name: "the Inspector's tour anchor renamed",
+    file: src("components/layout/InspectorPanel.tsx"),
+    from: '<aside data-tour="inspector" className="scriare-panel-r',
+    to: '<aside data-tour="details" className="scriare-panel-r',
+    spec: "tour",
+    expect: "EVERY STOP LIGHTS THE REGION IT NAMES",
+  },
+  {
+    // The three block buttons have no wrapper, so the stop is the UNION of
+    // three boxes. Lighting only the first is a hole round "Choice" under a
+    // card explaining three things.
+    name: "the hole drawn round the first target only",
+    file: src("components/tour/TourOverlay.tsx"),
+    from: "  for (const selector of selectors) {",
+    to: "  for (const selector of selectors.slice(0, 1)) {",
+    spec: "tour",
+    expect: "EVERY STOP LIGHTS THE REGION IT NAMES",
+  },
+  {
+    name: "the empty shelf no longer offering the tour",
+    file: src("components/welcome/WelcomeScreen.tsx"),
+    from: "    useTourStore.getState().offer(true);",
+    to: "    void 0;",
+    spec: "tour",
+    expect: "a FIRST LAUNCH offers the tour by itself",
+  },
+  {
+    // The half of "once per install" that a guard which always fires
+    // would pass, so it gets its own control.
+    name: "the first-launch offer ignoring what the install already answered",
+    file: src("state/tourStore.ts"),
+    from: "    if (auto && readRecord() !== null) return;",
+    to: "    if (auto && false) return;",
+    spec: "tour",
+    expect: "an install that has answered is NOT offered it again",
+  },
+  {
+    // The one project written without a dialog. Never over anything.
+    name: "the practice story written over the last one",
+    file: main("ipc/projectHandlers.ts"),
+    from: "        await fs.access(filePath);\n      } catch {\n        break; // nothing there — this name is free",
+    to: "        throw new Error(\"free\");\n      } catch {\n        break; // nothing there — this name is free",
+    spec: "tour",
+    expect: "TAKING IT TWICE GIVES TWO STORIES",
+  },
+  {
+    name: "a replay making a practice story although a story is open",
+    file: src("state/tourStore.ts"),
+    from: "    if (!useProjectStore.getState().project) {",
+    to: "    if (true) {",
+    spec: "tour",
+    expect: "a replay with a story open does NOT make another practice story",
+  },
+  {
+    name: "the tour no longer opening folded panels",
+    file: src("App.tsx"),
+    from: "    if (!touring) return;\n    setPanels",
+    to: "    return;\n    setPanels",
+    spec: "tour",
+    expect: "the tour opens the panels a writer had folded away",
+  },
+  {
+    name: "the tour left standing over Play",
+    file: src("components/tour/TourOverlay.tsx"),
+    from: '    if (step >= 0 && (!hasProject || isPlaying)) end("skipped");',
+    to: '    if (step >= 0 && !hasProject) end("skipped");',
+    spec: "tour",
+    expect: "starting Play mid-tour ends the tour",
+  },
+  {
+    // Keys pressed during the tour must not reach the room. Measured
+    // against the story, not against whether a listener exists.
+    name: "the tour letting keys through to the app",
+    file: src("components/tour/TourOverlay.tsx"),
+    from: "      e.stopPropagation();\n      if (e.key === \"Escape\") {",
+    to: "      if (e.key === \"Escape\") {",
+    spec: "tour",
+    expect: "NOTHING PRESSED DURING THE TOUR REACHES THE STORY",
+  },
+  {
+    // A second vocabulary is the problem the tour exists to remove.
+    name: "the branching stop describing the blocks in its own words",
+    file: src("tour/tourSteps.ts"),
+    from: "terms: STORY_BLOCKS.map((b) => ({ term: b.title, meaning: b.description })),",
+    to: "terms: STORY_BLOCKS.map((b) => ({ term: b.title, meaning: b.tagline ?? \"\" })),",
+    spec: "tour",
+    expect: "no second vocabulary",
+  },
   {
     // v0.90.0. The app writes "…" in seventeen places and wrote "..." in
     // two. Nobody notices one of these on its own, which is exactly why a

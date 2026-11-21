@@ -16,6 +16,8 @@ const api = {
   project: {
     create: (projectJson: string, projectName: string) =>
       ipcRenderer.invoke("project:create", projectJson, projectName),
+    createPractice: (projectJson: string, projectName: string) =>
+      ipcRenderer.invoke("project:createPractice", projectJson, projectName),
     open: () => ipcRenderer.invoke("project:open"),
     openPath: (filePath: string) =>
       ipcRenderer.invoke("project:openPath", filePath),

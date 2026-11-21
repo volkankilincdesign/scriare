@@ -18,6 +18,138 @@ omitting them.
 
 ---
 
+## v0.91.0 — A tour after all
+
+**This reverses v0.81.0, on evidence, which is the rule since 1 Oct.**
+v0.81.0 argued there should be no tour: a tour teaches procedure to somebody
+who does not yet know why, Arcweave and Twine both teach at the point of use,
+and How Scriare works should be a place rather than an event. Most of the
+regular testers then got stuck in all four places a tour covers: the first
+screen, how a story branches, where things are, and what the app's nouns
+mean. The prediction was wrong. The point-of-use teaching stays (the blocks
+still explain themselves, and Help is still a place); what testers did not
+have was the outline that teaching hangs off.
+
+### The shape, chosen on a walkable mockup
+
+Three ways of pointing were drawn over the real Daylight window and walked
+stop by stop before any code: **A · Spotlight** (dim the room, cut one region
+out), **B · Pin** (no dim, a ring and a card with an arrow), **C · Guide in
+the corner** (a fixed card, the region glows). He chose **A**, the loudest,
+which fits the finding: the testers were not missing hints, they were missing
+a map.
+
+**Six stops, one per region**, his brief being "fewer steps, for the
+outlines": the page, the three block buttons, the Inspector, the Story Graph,
+the Content panel, Play. Each is a sentence or two about what the region is
+FOR. The branching stop's three lines are not written in the tour at all:
+they are the registry's own descriptions, the same sentences the toolbar
+tooltips use, because a tour that names something differently from the screen
+is a second vocabulary, and vocabulary was one of the four complaints.
+
+### The practice story
+
+The tour points at a choice, a wire and a map, and a stranger on their first
+minute has none. So **Start the tour** writes a three-scene story, *My first
+story*, into the Scriare folder in Documents and opens it. It is the one
+project the app makes **without a save dialog**, because asking a stranger
+where to save a story they did not write, before the tour has said a word, is
+the interruption the tour exists to remove. The welcome card says where it
+goes. It is theirs to keep, write in or delete (the 30 Sep rule for the
+example story), and **it is never written over anything**: taking the tour
+twice gives *My first story 2*, never a replacement for what somebody wrote
+in the first.
+
+Replaying it from the **?** with a story open runs on that story instead.
+"What is all this again" is clearest pointed at your own writing.
+
+### When it appears
+
+**Once per install**, by itself, on the empty Welcome screen, which is as
+close to "a stranger" as the app can honestly tell. Finishing and skipping are
+recorded separately (they are different answers) and both mean "do not start
+on your own again". A writer updating with stories already on the shelf is not
+interrupted. It comes back from **How Scriare works → Take the tour** and from
+a **Take the tour** link under the empty shelf.
+
+### How it is built
+
+- **The hole is one box whose shadow is the dim**, in `--overlay`, the token
+  every modal backdrop reads, so the tour interrupts exactly as loudly as a
+  dialog. It travels between stops on `--d-considered`; the card fades in on
+  `--d-settle`. Both collapse under reduced motion, from the v0.90.0 tokens,
+  with nothing hand-written.
+- **Measured every frame while open.** The panels it has just opened lay out
+  on the next frame and the graph takes its share of a column that has only
+  just been sized, so a ResizeObserver on the target would see it change
+  size and miss it being pushed sideways.
+- **The three block buttons are a union of three boxes**, because they have
+  no wrapper and adding one would change how the toolbar wraps, the v0.33.1
+  bug `toolbar.spec.mjs` still guards.
+- **It opens any panel the writer had folded**, and leaves it open: folding
+  it back would undo the layout the tour just spent a minute explaining.
+- **Nothing behind it is reachable.** The dim takes the pointer without
+  dismissing (a stranger clicking "to get rid of the grey" should not lose
+  the tour), and the card takes the keyboard in the capture phase. One trap
+  in that: stopping propagation at the window in the capture phase also stops
+  the event reaching the button whose default action it is, so Enter on a
+  focused button is let through and everything else is stopped.
+- **Play, or closing the story, ends it**, rather than leaving a dim over
+  the reader's page.
+
+### Two things he saw on the first build
+
+- **The ring ran off the app on Content and the Inspector.** It was drawn
+  6px outside each region, and a panel against the window's edge has no
+  6px to give, so the box was clamped to the window and the ring went over
+  its edge. His rule replaces it: the ring sits **2px inside the region, on
+  every stop**, which holds equally for a region in the middle of the window
+  and one against its edge, and at 2px covers no text or control. I had
+  proposed moving it inside only where a panel meets the edge, at the full
+  6px. He pointed out that 6px inside can sit over a button, and one rule
+  everywhere is easier to check than two.
+- **Stop 1 flew in from the window's top-left corner.** The hole was born
+  with its slide switched on, and stop 1's region is still being laid out
+  when it is first measured (the practice story has just opened and the
+  panels are just unfolding). Sliding is now switched on only by a move
+  between two stops. Arriving from the welcome card, the ring fades in
+  where it is and the card fades in beside it. The fix is checked on what
+  was painted: every frame's ring box from the moment Start is pressed,
+  where a slide is ~25 different boxes and an arrival is one or two.
+
+### Tests
+
+`tests/tour.spec.mjs`, 27 checks. The one that matters most walks all six
+stops on a real window and measures **the lit hole against the region the
+stop names**, covering it and tight to it, because a hole the size of the
+window also "covers" every target. Keys pressed mid-tour are measured
+against the STORY (Delete, Ctrl+Z, typing), not against whether a listener
+exists. The runner now points practice stories at a temp folder
+(`SCRIARE_PRACTICE_DIR`, set by nothing in the app), states the tour as
+already taken for every other spec (a fresh userData directory IS a first
+launch), and removes the practice stories from Recent Projects afterwards,
+since the test build shares that list with the writer's own copy.
+
+**Two of the controls refused to go red at first, and both were the
+fixture.** The key check pressed Delete and Ctrl+Z on a freshly opened
+practice story, which has no undo history and nothing selected, so neither
+key could have changed anything even if it got through. Armed with a scene
+made and selected, it still passed with every key leaking, because Delete
+that got through and Ctrl+Z that got through undo each other and the story
+comes out exactly as it went in. It now compares after each key. On the way,
+a focus trap was added to keep focus on the card and then **deleted**: its
+own control would not go red because nothing in the app ever takes focus
+from it, which makes it the second-mechanism-added-to-be-safe the roadmap
+warns about.
+
+Fourteen negative controls, all caught: the ring back outside the region, the ring flush with it, the ring sliding into stop 1, sliding switched off between stops, a renamed anchor, a hole round only the first of the
+three buttons, the shelf not offering, the offer ignoring the stored answer,
+the practice story written over the last one, a replay making a new story
+over an open one, folded panels left folded, the tour left over Play, keys
+let through, and the block lines written in the tour's own words.
+
+---
+
 ## v0.90.0 — Feel premium: a motion system, and four things I was wrong about
 
 Five directions, in the order they were agreed: a motion system, the three

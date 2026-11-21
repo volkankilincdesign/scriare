@@ -34,6 +34,12 @@ function check(name, pass, detail) {
   console.log(`  ${pass ? "✓" : "✗"} ${name}${detail ? `  — ${detail}` : ""}`);
 }
 
+// The tour's practice story (v0.91.0) is written without a dialog into the
+// Scriare folder in Documents. Pointed somewhere disposable here, so that
+// running the suite on a writer's own machine does not leave practice
+// stories in their Documents.
+const practiceDir = join(tmpdir(), `scriare-practice-${process.pid}`);
+
 const app = await _electron.launch({
   executablePath: process.env.ELECTRON_PATH ?? join(root, "node_modules/electron/dist/electron"),
   // THE PROJECT DIRECTORY, not out/main/index.js (v0.63.0). Both start the
@@ -46,6 +52,7 @@ const app = await _electron.launch({
   // suite running the app the way it runs, not a second way of starting it.
   args: [root],
   cwd: root,
+  env: { ...process.env, SCRIARE_PRACTICE_DIR: practiceDir },
 });
 const page = await app.firstWindow();
 
@@ -91,6 +98,12 @@ await page.evaluate(() => {
   // passes or fails on a splitter position someone dragged days ago. Same
   // class of leak as the collapsed panels above, found the same way.
   window.localStorage.removeItem("scriare:flowHeight");
+  // And the first-launch tour (v0.91.0), stated as already taken. A fresh
+  // userData directory IS a first launch, so without this the tour would
+  // offer itself over the empty Welcome screen and every spec after it
+  // would be clicking through a dim. tour.spec.mjs clears it to test the
+  // first launch on purpose.
+  window.localStorage.setItem("scriare:tour", "finished");
 });
 await page.reload();
 await page.waitForFunction(() => Boolean(window.__scriareProjectStore), null, { timeout: 15000 });
@@ -228,5 +241,6 @@ for (const file of specs) {
 const passed = results.filter((r) => r.pass).length;
 console.log(`\n${passed}/${results.length} passed`);
 await Promise.all(exportTempFiles.map((file) => rm(file, { force: true }).catch(() => {})));
+await rm(practiceDir, { recursive: true, force: true }).catch(() => {});
 await app.close();
 process.exit(passed === results.length ? 0 : 1);

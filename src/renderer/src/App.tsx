@@ -13,6 +13,8 @@ import { ToastHost } from "./components/common/ToastHost";
 import { ChoiceStylesDialog } from "./components/choices/ChoiceStylesDialog";
 import { StylesheetDialog } from "./components/layout/StylesheetDialog";
 import { HelpDialog } from "./components/layout/HelpDialog";
+import { TourOverlay } from "./components/tour/TourOverlay";
+import { useTourStore } from "./state/tourStore";
 import { useCloseGuard } from "./hooks/useCloseGuard";
 import { useOpenFromDisk } from "./hooks/useOpenFromDisk";
 import { useBoot } from "./hooks/useBoot";
@@ -161,6 +163,23 @@ export default function App() {
     });
   }, [findToken]);
 
+  // The tour points at all three panels, so a stop cannot be about one the
+  // writer has folded away (v0.91.0). Opened for the tour and LEFT open:
+  // folding them back afterwards would undo a layout the tour has just
+  // spent a minute explaining, and the dock buttons are where they always
+  // are for anyone who wants them shut. Same shape as Ctrl+F's reach for
+  // the Content panel above.
+  const touring = useTourStore((s) => s.active && s.step >= 0);
+  useEffect(() => {
+    if (!touring) return;
+    setPanels((current) => {
+      if (!current.content && !current.inspector && !current.flow) return current;
+      const next = { content: false, inspector: false, flow: false };
+      savePanelState(next);
+      return next;
+    });
+  }, [touring]);
+
   // Before the default state, not after it: rendering the Welcome while
   // the answers are still in flight is what flashed "no stories yet" at a
   // writer who has nine.
@@ -184,6 +203,7 @@ export default function App() {
         {helpOpen && <HelpDialog onClose={closeHelp} />}
         <ConfirmDialogHost />
         <ToastHost />
+        <TourOverlay />
       </>
     );
   }
@@ -247,6 +267,7 @@ export default function App() {
           it has to be able to appear over any of the above (v0.47.0). */}
       <SaveConflictDialog />
       <SaveFailedPromptHost />
+      <TourOverlay />
     </div>
   );
 }

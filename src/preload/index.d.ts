@@ -98,6 +98,15 @@ export interface ScriareAPI {
       recent: RecentProjectEntry[];
       stamp: FileStamp | null;
     } | null>;
+    /** v0.91.0 — the tour's practice story, written without a dialog. */
+    createPractice: (
+      projectJson: string,
+      projectName: string,
+    ) => Promise<{
+      filePath: string;
+      recent: RecentProjectEntry[];
+      stamp: FileStamp | null;
+    }>;
     open: () => Promise<{
       filePath: string;
       raw: string;

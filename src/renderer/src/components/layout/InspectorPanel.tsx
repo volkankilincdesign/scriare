@@ -83,7 +83,7 @@ export function InspectorPanel({ collapsed, onToggle }: InspectorPanelProps) {
   }
 
   return (
-    <aside className="scriare-panel-r flex w-80 shrink-0 flex-col border-l border-[var(--border-soft)] bg-[var(--surface)]">
+    <aside data-tour="inspector" className="scriare-panel-r flex w-80 shrink-0 flex-col border-l border-[var(--border-soft)] bg-[var(--surface)]">
       <div className="flex items-center gap-2.5 border-b border-[var(--border-soft)] px-4 py-3">
         <DockToggle direction="right" onClick={onToggle} title="Collapse Inspector" />
         <span className="scriare-section-label text-[var(--text-3)]">
