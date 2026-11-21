@@ -176,7 +176,7 @@ export function WelcomeScreen() {
       {recentProjects.length === 0 ? (
         <EmptyShelf onStart={() => setShowNewProjectDialog(true)} />
       ) : (
-        {/*
+        /*
           v0.90.0 — centred in the window while it fits, top-aligned and
           scrolling the moment it does not. Maximized, this screen put its
           whole composition against the top edge and left a little over half
@@ -186,7 +186,12 @@ export function WelcomeScreen() {
           share out the free space, and with twenty they compute to zero and
           nothing here has to know which case it is in. That is the whole
           reason this needs no measurement, no breakpoint and no state.
-        */}
+
+          A PLAIN BLOCK COMMENT, and not a braced JSX one. This is the
+          else-branch of a ternary, so the parentheses hold ONE expression:
+          a braced comment there parses as an object literal followed by an
+          element, which is a syntax error and was one.
+        */
         <main className="flex flex-grow flex-col overflow-y-auto px-8 pb-12 pt-7">
           <div className="scriare-welcome-column mx-auto my-auto flex w-full max-w-[var(--welcome-column)] flex-col">
           {searching ? (

@@ -271,7 +271,7 @@ body {
     transform var(--d-quick) var(--e-standard);
 }
 /* Transform and filter only — never fill or border. Those belong to the
-   writer's Choice Style, generated into the EARLIER `scriare.boxes`
+   writer's Choice Style, generated into the EARLIER scriare.boxes
    layer, and a declaration here would win over it. The same rule, for the
    same reason, as the one in styles/index.css that draws this in Play
    Mode: the two surfaces are one arrangement and this is where that is
