@@ -943,7 +943,10 @@ export function FlowPanel({ collapsed, onToggle, height = 224 }: FlowPanelProps)
           // lit one read as "this one, out of all those", rather than as the
           // only connection in the story.
           opacity: dimmed ? 0.12 : 1,
-          transition: "opacity 120ms ease",
+          // v0.90.0 — on the scale like everything else. This one lived
+          // in an inline style object rather than in a stylesheet, so
+          // the sweep that tokenised index.css walked straight past it.
+          transition: "opacity var(--d-instant) var(--e-standard)",
         },
         zIndex: 0,
       });

@@ -29,6 +29,67 @@ const mainScript = (p) => join(root, "src/main", p);
 
 const CONTROLS = [
   {
+    // v0.90.0. The chapter box rested at 2px dashed, which made a
+    // container as heavy as the scene cards it holds. Measured by looking
+    // at a real story at real size rather than from a screenshot, which
+    // is also how the claim that the CANVAS was too busy turned out to be
+    // wrong — the dots are quiet and this line was not.
+    name: "the chapter box back to a two-pixel resting border",
+    file: src("components/graph/GroupNode.tsx"),
+    from: "rounded-lg border border-dashed bg-[var(--surface-2-faint)]",
+    to: "rounded-lg border-2 border-dashed bg-[var(--surface-2-faint)]",
+    spec: "topbar-kit",
+    expect: "a chapter box rests at one pixel, not two",
+  },
+  {
+    // v0.90.0. ...and the other half, which is the half that could hurt
+    // somebody: thinning the resting border without putting the weight
+    // back for the drop target would trade a small readability win for a
+    // real usability loss on the one gesture that needs to be unmissable.
+    name: "a drop target as thin as a frame at rest",
+    file: src("styles/index.css"),
+    from: ".react-flow__node.scriare-drop-target .scriare-frame-box {\n  border-color: var(--accent);\n  border-width: 2px;",
+    to: ".react-flow__node.scriare-drop-target .scriare-frame-box {\n  border-color: var(--accent);",
+    spec: "topbar-kit",
+    expect: "gets the weight back when it is dragged or dropped into",
+  },
+  {
+    // v0.90.0. The highest-leverage line in the version. `transition-colors`
+    // is Tailwind's own 150ms on its own curve, and it sat in Button —
+    // which is to say in every control the kit draws, including the six the
+    // top bar had just adopted. A grep over index.css cannot see a utility
+    // class in a TSX file, which is how it survived the motion sweep.
+    name: "the kit's button back on Tailwind's transition",
+    file: src("components/common/Button.tsx"),
+    from: "font-medium scriare-colors disabled:cursor-default",
+    to: "font-medium transition-colors disabled:cursor-default",
+    spec: "motion-scale",
+    expect: "the kit's own button no longer carries Tailwind's transition",
+  },
+  {
+    // v0.90.0. And the other shape of invisible: an inline style OBJECT in
+    // a TSX file. A graph edge's fade lived in one, so neither the
+    // stylesheet sweep nor a search for utility classes would have found it.
+    name: "a graph edge's fade back to a literal",
+    file: src("components/graph/FlowPanel.tsx"),
+    from: 'transition: "opacity var(--d-instant) var(--e-standard)",',
+    to: 'transition: "opacity 120ms ease",',
+    spec: "motion-scale",
+    expect: "a graph edge's inline transition is on the scale too",
+  },
+  {
+    // v0.90.0. The Story Graph's two boxes carried `duration-150`, which
+    // happens to equal --d-quick and is still a number written at a call
+    // site. The check looks for the number as well as the class, because
+    // the right value for the wrong reason rots the same way.
+    name: "the Story Graph's boxes back on a hand-written duration",
+    file: src("components/graph/GroupNode.tsx"),
+    from: "bg-[var(--surface-2-faint)] scriare-colors ${",
+    to: "bg-[var(--surface-2-faint)] transition-colors duration-150 ${",
+    spec: "motion-scale",
+    expect: "neither does the Story Graph",
+  },
+  {
     // v0.90.0. THE ONE THAT MATTERS. `openVariableManager` has two callers
     // and the other one only appears once a condition editor is already
     // open — so this button is the only way a writer who has never made a

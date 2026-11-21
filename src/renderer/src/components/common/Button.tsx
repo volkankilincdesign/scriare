@@ -173,7 +173,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       // a form submits it, and this component is used inside dialogs that
       // have inputs in them.
       type={type}
-      className={`inline-flex items-center justify-center gap-2 font-medium transition-colors disabled:cursor-default disabled:opacity-50 ${SIZE[size]} ${INTENT[intent]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 font-medium scriare-colors disabled:cursor-default disabled:opacity-50 ${SIZE[size]} ${INTENT[intent]} ${className}`}
       {...rest}
     />
   );

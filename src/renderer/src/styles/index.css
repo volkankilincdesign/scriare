@@ -440,13 +440,22 @@ input[type="number"],
    already applies to every node type including frames; this adds the same
    accent-border-and-fill language `scriare-scene-card` uses so a dragged
    frame doesn't read as a lesser, unfinished version of a dragged scene. */
+/* v0.90.0 — AND THE WEIGHT COMES BACK FOR THESE TWO STATES.
+   The frame's resting border went from 2px to 1px so a chapter stops
+   competing with the scene cards inside it. These are the two moments
+   where the opposite is wanted: a frame being dragged, and a frame you
+   are about to drop something into, both have to be unmissable. Quiet at
+   rest, loud at the moment it matters — which is the same bargain the
+   minimap and the reveal flash already make. */
 .react-flow__node.dragging .scriare-frame-box {
   border-color: var(--accent);
+  border-width: 2px;
   background: var(--accent-soft);
 }
 
 .react-flow__node.scriare-drop-target .scriare-frame-box {
   border-color: var(--accent);
+  border-width: 2px;
   background: var(--accent-soft);
 }
 
@@ -598,6 +607,33 @@ input[type="number"],
   filter: brightness(1.06);
   transform: scale(0.996);
 }
+/* COLOUR CHANGES, ON THE SCALE (v0.90.0).
+ *
+ * Tailwind's `transition-colors` is a twentieth duration and a sixth
+ * easing — 150ms on cubic-bezier(.4, 0, .2, 1) — and it was sitting in
+ * nineteen class lists, including Button's own. The motion sweep could
+ * not see any of them: they are utility classes in TSX, not declarations
+ * in a stylesheet, so a grep over index.css walked straight past the
+ * single most-used transition in the app.
+ *
+ * This is the same thing at Scriare's speed and on Scriare's curve, with
+ * a name, so a call site asks for it rather than deciding for itself.
+ * `--d-instant` and not `--d-quick`: a colour change under a pointer
+ * should not read as movement, which is the whole argument for having a
+ * 90ms step at all.
+ *
+ * NOT EVERY CALLER IS CONVERTED YET. Button and the Story Graph are, which
+ * covers every control the kit draws plus the canvas; the rest are counted
+ * in the changelog rather than quietly half-done. */
+.scriare-colors {
+  transition:
+    color var(--d-instant) var(--e-standard),
+    background-color var(--d-instant) var(--e-standard),
+    border-color var(--d-instant) var(--e-standard),
+    fill var(--d-instant) var(--e-standard),
+    stroke var(--d-instant) var(--e-standard);
+}
+
 /* A choice in PLAY MODE (v0.90.0).
  *
  * The flattest thing on the screen until this version, and the one moment

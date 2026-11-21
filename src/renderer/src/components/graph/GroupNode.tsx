@@ -102,7 +102,7 @@ export function GroupNode({ id, data, selected }: NodeProps) {
     return (
       <div
         onDoubleClick={() => toggleFolderCollapsed(id)}
-        className={`flex h-full w-full cursor-pointer flex-col justify-center rounded-lg border bg-[var(--surface-2)] px-4 transition-colors duration-150 ${
+        className={`flex h-full w-full cursor-pointer flex-col justify-center rounded-lg border bg-[var(--surface-2)] px-4 scriare-colors ${
           selected
             ? "border-[var(--accent)]"
             : "border-[var(--border-faint)] hover:border-[var(--accent-ring)]"
@@ -133,7 +133,14 @@ export function GroupNode({ id, data, selected }: NodeProps) {
     // kept from the Frame era on purpose — the CSS it hooks is unchanged, and
     // renaming it would mean touching a stylesheet for no behavioural reason.
     <div
-      className={`scriare-frame-box h-full w-full rounded-lg border-2 border-dashed bg-[var(--surface-2-faint)] transition-colors duration-150 ${
+      /* v0.90.0 — ONE PIXEL, NOT TWO. At real size on a real story the
+         2px dashed edge was the heaviest line on the canvas after the
+         wires, which put a chapter's container at the same visual weight
+         as the scene cards inside it: the two competed instead of the
+         cards reading as sitting on top of the chapter. The dashes stay,
+         because dashing is what says "a container, not an object" — only
+         the weight comes down. */
+      className={`scriare-frame-box h-full w-full rounded-lg border border-dashed bg-[var(--surface-2-faint)] scriare-colors ${
         selected
           ? "border-[var(--accent)]"
           : "border-[var(--border)] hover:border-[var(--border-faint)]"

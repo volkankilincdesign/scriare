@@ -135,6 +135,27 @@ export default async function run({ page, api, check, seedProject }) {
     "the two icon buttons are untouched",
   );
 
+  // ── 5. the Story Graph's chapter box ─────────────────────────────────
+  //
+  // Thinned from 2px to 1px in this version so a chapter stops competing
+  // with the scene cards inside it — but the two states where the box has
+  // to be unmissable, being dragged and being dropped into, put the weight
+  // back. A thinner resting border that also thinned the drop target would
+  // have traded a small readability win for a real usability loss, so both
+  // halves are asserted together.
+  const frame = await readFile(join(root, "src/renderer/src/components/graph/GroupNode.tsx"), "utf8");
+  const css = await readFile(join(root, "src/renderer/src/styles/index.css"), "utf8");
+  check(
+    "a chapter box rests at one pixel, not two",
+    /scriare-frame-box[^`]*\bborder border-dashed/.test(frame) && !/scriare-frame-box[^`]*border-2/.test(frame),
+    frame.match(/scriare-frame-box[^`]{0,60}/)?.[0] ?? "not found",
+  );
+  check(
+    "...and gets the weight back when it is dragged or dropped into",
+    (css.match(/\.scriare-frame-box \{\s*\n\s*border-color: var\(--accent\);\s*\n\s*border-width: 2px;/g) || []).length === 2,
+    `${(css.match(/border-width: 2px;/g) || []).length} rules restore the weight`,
+  );
+
   await seedProject();
   await wait(200);
   check(

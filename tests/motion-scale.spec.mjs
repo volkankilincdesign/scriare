@@ -187,6 +187,53 @@ export default async function run({ page, api, check, seedProject }) {
     "the two selectors share one :active block",
   );
 
+  // ── 1e. the transitions a CSS grep cannot see ────────────────────────
+  //
+  // The sweep that tokenised index.css could only see declarations in a
+  // stylesheet. Tailwind's `transition-colors` is a utility class in TSX —
+  // 150ms on cubic-bezier(.4, 0, .2, 1), a twentieth duration and a sixth
+  // easing — and it was in nineteen class lists including Button's own,
+  // which is to say in every control the kit draws. An inline style object
+  // in FlowPanel was invisible for the same reason.
+  const [buttonSrc, flowSrc, groupSrc] = await Promise.all([
+    readFile(join(root, "src/renderer/src/components/common/Button.tsx"), "utf8"),
+    readFile(join(root, "src/renderer/src/components/graph/FlowPanel.tsx"), "utf8"),
+    readFile(join(root, "src/renderer/src/components/graph/GroupNode.tsx"), "utf8"),
+  ]);
+  check(
+    "the kit's own button no longer carries Tailwind's transition",
+    !/transition-colors/.test(buttonSrc) && /scriare-colors/.test(buttonSrc),
+    `transition-colors ${/transition-colors/.test(buttonSrc)}, scriare-colors ${/scriare-colors/.test(buttonSrc)}`,
+  );
+  check(
+    "...and neither does the Story Graph",
+    !/transition-colors/.test(groupSrc) && !/duration-\d/.test(groupSrc),
+    groupSrc.match(/transition-colors|duration-\d+/g)?.join(" ") ?? "clean",
+  );
+  check(
+    "a graph edge's inline transition is on the scale too",
+    /transition:\s*"opacity var\(--d-/.test(flowSrc),
+    flowSrc.match(/transition:\s*"[^"]*"/)?.[0] ?? "no inline transition found",
+  );
+  const utility = await page.evaluate(() => {
+    const el = document.createElement("span");
+    el.className = "scriare-colors";
+    el.style.position = "fixed";
+    el.style.left = "-9999px";
+    document.body.appendChild(el);
+    const v = {
+      duration: getComputedStyle(el).transitionDuration,
+      timing: getComputedStyle(el).transitionTimingFunction,
+    };
+    el.remove();
+    return v;
+  });
+  check(
+    "...and the named utility they all point at resolves from the tokens",
+    /\d/.test(utility.duration) && !/^0s/.test(utility.duration) && utility.timing.includes("cubic-bezier"),
+    JSON.stringify(utility),
+  );
+
   // ── 2. the tokens resolve in the running app ─────────────────────────
   const tokens = await page.evaluate(() => {
     const s = getComputedStyle(document.documentElement);
