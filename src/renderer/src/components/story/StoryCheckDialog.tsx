@@ -206,7 +206,7 @@ export function StoryCheckDialog({ onClose }: StoryCheckDialogProps) {
                   aria-expanded={isOpen}
                   title={`${group.issues.length} to look at`}
                   onClick={() => toggle(group.key)}
-                  className="flex w-full items-center gap-2 px-2.5 py-2 text-left transition-colors hover:bg-[var(--surface-2)]"
+                  className="flex w-full items-center gap-2 px-2.5 py-2 text-left scriare-colors hover:bg-[var(--surface-2)]"
                 >
                   <span
                     aria-hidden
@@ -238,7 +238,7 @@ export function StoryCheckDialog({ onClose }: StoryCheckDialogProps) {
                         // row can carry and worth having a second away.
                         title={issue.detail}
                         onClick={() => goTo(issue)}
-                        className="flex gap-2 rounded px-2 py-1.5 text-left text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+                        className="flex gap-2 rounded px-2 py-1.5 text-left text-[var(--text-2)] scriare-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
                       >
                         <span className="mt-[5px] shrink-0">
                           <Dot severity={issue.severity} />

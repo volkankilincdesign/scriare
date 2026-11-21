@@ -68,7 +68,7 @@ export function HelpDialog({ onClose }: HelpDialogProps) {
             data-help-tab={id}
             aria-pressed={tab === id}
             onClick={() => setTab(id)}
-            className={`-mb-px border-b-2 px-3 py-1.5 text-sm transition-colors ${
+            className={`-mb-px border-b-2 px-3 py-1.5 text-sm scriare-colors ${
               tab === id
                 ? "border-[var(--accent)] text-[var(--text)]"
                 : "border-transparent text-[var(--text-3)] hover:text-[var(--text-2)]"

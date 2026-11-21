@@ -314,7 +314,7 @@ function EmptyShelf({ onStart }: { onStart: () => void }) {
         <button
           type="button"
           onClick={onStart}
-          className="flex flex-col rounded-xl bg-[var(--accent)] p-6 text-left text-[var(--accent-text-on)] shadow-[shadow:var(--shadow-raised)] transition-colors hover:bg-[var(--accent-hover)]"
+          className="flex flex-col rounded-xl bg-[var(--accent)] p-6 text-left text-[var(--accent-text-on)] shadow-[shadow:var(--shadow-raised)] scriare-colors hover:bg-[var(--accent-hover)]"
         >
           <svg
             width="26"

@@ -130,7 +130,7 @@ function ToolbarButton({
       title={label}
       aria-label={label}
       aria-pressed={active}
-      className={`flex shrink-0 items-center justify-center rounded-[5px] px-1.5 transition-colors ${
+      className={`flex shrink-0 items-center justify-center rounded-[5px] px-1.5 scriare-colors ${
         compact ? "h-6 min-w-6" : "h-7 min-w-7"
       } ${
         active
@@ -196,7 +196,7 @@ function SelectControl({
   return (
     <label
       title={label}
-      className="flex h-7 shrink-0 cursor-pointer items-center gap-1 rounded-[5px] border border-[var(--border)] pl-1.5 pr-0.5 text-[var(--text-2)] transition-colors hover:border-[var(--border-faint)] hover:text-[var(--text)] focus-within:border-[var(--accent)]"
+      className="flex h-7 shrink-0 cursor-pointer items-center gap-1 rounded-[5px] border border-[var(--border)] pl-1.5 pr-0.5 text-[var(--text-2)] scriare-colors hover:border-[var(--border-faint)] hover:text-[var(--text)] focus-within:border-[var(--accent)]"
     >
       <Icon name={icon} className="h-3.5 w-3.5" />
       <span className="sr-only">{label}</span>
@@ -250,7 +250,7 @@ function ColorControl({
   return (
     <label
       title={label}
-      className="flex h-7 w-7 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[5px] text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+      className="flex h-7 w-7 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[5px] text-[var(--text-2)] scriare-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
     >
       <Icon name={icon} className="h-3.5 w-3.5" />
       <span className="sr-only">{label}</span>
@@ -628,7 +628,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         onClick={() => editor.chain().focus().insertChoiceBlock().run()}
         title={blockTooltip("choice")}
         data-insert-choice
-        className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] bg-[var(--accent-fill-strong)] px-2.5 text-xs font-semibold text-[var(--accent-text-on)] transition-colors hover:bg-[var(--accent)]"
+        className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] bg-[var(--accent-fill-strong)] px-2.5 text-xs font-semibold text-[var(--accent-text-on)] scriare-colors hover:bg-[var(--accent)]"
       >
         <Icon name="branch" className="h-[15px] w-[15px]" />
         Choice
@@ -653,7 +653,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           onClick={() => editor.chain().focus().insertDialogueBlock().run()}
           title={blockTooltip("dialogue")}
           data-insert-dialogue
-          className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] bg-[var(--accent-fill-strong)] px-2.5 text-xs font-semibold text-[var(--accent-text-on)] transition-colors hover:bg-[var(--accent)]"
+          className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] bg-[var(--accent-fill-strong)] px-2.5 text-xs font-semibold text-[var(--accent-text-on)] scriare-colors hover:bg-[var(--accent)]"
         >
           <Icon name="dialogue" className="h-[15px] w-[15px]" />
           Dialogue
@@ -678,7 +678,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           onClick={() => editor.chain().focus().insertConditionalBlock().run()}
           title={blockTooltip("conditional")}
           data-insert-conditional
-          className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] bg-[var(--accent-fill-strong)] px-2.5 text-xs font-semibold text-[var(--accent-text-on)] transition-colors hover:bg-[var(--accent)]"
+          className="flex h-7 shrink-0 items-center gap-1.5 rounded-[5px] bg-[var(--accent-fill-strong)] px-2.5 text-xs font-semibold text-[var(--accent-text-on)] scriare-colors hover:bg-[var(--accent)]"
         >
           <Icon name="conditional" className="h-[15px] w-[15px]" />
           Conditional

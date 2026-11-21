@@ -29,6 +29,52 @@ const mainScript = (p) => join(root, "src/main", p);
 
 const CONTROLS = [
   {
+    // v0.90.0. The app writes "…" in seventeen places and wrote "..." in
+    // two. Nobody notices one of these on its own, which is exactly why a
+    // check has to.
+    name: "a three-dot ellipsis back in the UI copy",
+    file: src("components/layout/ContentBrowser.tsx"),
+    from: 'placeholder="Search story and writing…"',
+    to: 'placeholder="Search story and writing..."',
+    spec: "topbar-kit",
+    expect: "the app has one spelling of an ellipsis",
+  },
+  {
+    // v0.90.0. The Variables dialog said "False" where a writer DECLARES
+    // the value and Play Mode's readout says "false" where they go and
+    // CHECK it. Two spellings of one value across the two surfaces you
+    // move between is a question nobody should have to ask.
+    name: "the Variables dialog capitalising booleans again",
+    file: src("components/variables/VariableManagerDialog.tsx"),
+    from: '  if (variable.type === "boolean") return variable.defaultValue ? "true" : "false";',
+    to: '  if (variable.type === "boolean") return variable.defaultValue ? "True" : "False";',
+    spec: "topbar-kit",
+    expect: "one spelling of a boolean, in both places it appears",
+  },
+  {
+    // v0.90.0. v0.89.0 made the language field pick the spellchecker, and
+    // the helper text still described only the export and screen readers —
+    // user-visible copy a release out of date, which is the kind of thing
+    // only a check catches, because it reads correctly.
+    name: "the language helper back to not mentioning the spellchecker",
+    file: src("components/layout/ProjectSettingsDialog.tsx"),
+    from: "The language the story is written in. It picks the spellchecker while",
+    to: "The language the story is written in. Nothing else while",
+    spec: "topbar-kit",
+    expect: "the language helper mentions what that field now most visibly does",
+  },
+  {
+    // v0.90.0. The agreed fix for the one dialog that commits as you type
+    // was to SAY so, not to rebuild it — which means the sentence is the
+    // feature and deleting it removes the whole of it.
+    name: "the commit note deleted from the Variables dialog",
+    file: src("components/variables/VariableManagerDialog.tsx"),
+    from: "        Changes are saved as you make them. Ctrl+Z undoes them.",
+    to: "        Variables.",
+    spec: "topbar-kit",
+    expect: "the dialog that commits as you type says that it does",
+  },
+  {
     // v0.90.0. The chapter box rested at 2px dashed, which made a
     // container as heavy as the scene cards it holds. Measured by looking
     // at a real story at real size rather than from a screenshot, which

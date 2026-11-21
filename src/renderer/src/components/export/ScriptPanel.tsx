@@ -209,7 +209,7 @@ function Choice({
               data-script-option={option.id}
               aria-pressed={active}
               onClick={() => onChange(option.id)}
-              className={`rounded-md border px-3 py-2.5 text-left transition-colors ${
+              className={`rounded-md border px-3 py-2.5 text-left scriare-colors ${
                 active
                   ? "border-[var(--accent)] bg-[var(--accent-soft-2)]"
                   : "border-[var(--border-soft)] hover:border-[var(--border)] hover:bg-[var(--surface-2-faint)]"

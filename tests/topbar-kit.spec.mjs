@@ -135,6 +135,52 @@ export default async function run({ page, api, check, seedProject }) {
     "the two icon buttons are untouched",
   );
 
+  // ── 4b. the copy the audit found ─────────────────────────────────────
+  //
+  // Four strings, each of which somebody will one day retype. They are
+  // here rather than in a probe of their own because a check that lives
+  // outside the suite is a check that runs once.
+  const [browser, settings, varsDlg, readoutSrc] = await Promise.all([
+    readFile(join(root, "src/renderer/src/components/layout/ContentBrowser.tsx"), "utf8"),
+    readFile(join(root, "src/renderer/src/components/layout/ProjectSettingsDialog.tsx"), "utf8"),
+    readFile(join(root, "src/renderer/src/components/variables/VariableManagerDialog.tsx"), "utf8"),
+    readFile(join(root, "src/renderer/src/runtime/VariableReadout.tsx"), "utf8"),
+  ]);
+  const uiSrc = src + browser + settings + varsDlg;
+  const threeDots = uiSrc.match(/"[^"\n]*\.\.\."/g) || [];
+  check(
+    "the app has one spelling of an ellipsis",
+    threeDots.length === 0,
+    threeDots.join(" | ") || "all \u2026",
+  );
+  // The two surfaces a writer moves between: the dialog where they set a
+  // boolean's starting value, and the readout where they watch it change.
+  check(
+    "...and one spelling of a boolean, in both places it appears",
+    /\? "true" : "false"/.test(varsDlg) && /\? "true" : "false"/.test(readoutSrc),
+    `dialog ${/\? "true" : "false"/.test(varsDlg)}, readout ${/\? "true" : "false"/.test(readoutSrc)}`,
+  );
+  check(
+    "a settings row is named like the place it opens",
+    /title="Choice Styles"/.test(settings),
+    settings.match(/title="Choice [Ss]tyles"/)?.[0] ?? "row not found",
+  );
+  // v0.89.0 made the language field drive the spellchecker, which is now
+  // the most visible thing it does, and the helper text did not say so.
+  check(
+    "the language helper mentions what that field now most visibly does",
+    /spellchecker/i.test(settings),
+    /spellchecker/i.test(settings) ? "mentions the spellchecker" : "still only the export",
+  );
+  // The one dialog in the app that commits as you type, with no Cancel,
+  // sitting one button away from two that need one. Saying so was the
+  // agreed fix rather than rebuilding it.
+  check(
+    "the dialog that commits as you type says that it does",
+    /saved as you make them/i.test(varsDlg),
+    /saved as you make them/i.test(varsDlg) ? "says so" : "silent",
+  );
+
   // ── 5. the Story Graph's chapter box ─────────────────────────────────
   //
   // Thinned from 2px to 1px in this version so a chapter stops competing

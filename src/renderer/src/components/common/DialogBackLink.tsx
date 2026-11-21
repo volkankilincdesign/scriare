@@ -36,7 +36,7 @@ export function DialogBackLink({ label, onBack }: { label: string; onBack: () =>
       type="button"
       onClick={onBack}
       data-dialog-back
-      className="-ml-1.5 mb-2 flex items-center gap-1.5 rounded px-1.5 py-1 text-xs text-[var(--text-3)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+      className="-ml-1.5 mb-2 flex items-center gap-1.5 rounded px-1.5 py-1 text-xs text-[var(--text-3)] scriare-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
     >
       <svg
         width="13"

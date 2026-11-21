@@ -9,7 +9,7 @@ import { Icon } from "../common/Icon";
 
 const SAVE_STATUS_LABEL = {
   saved: "All changes saved",
-  saving: "Saving...",
+  saving: "Saving…",
   unsaved: "Unsaved changes",
 } as const;
 
@@ -114,7 +114,7 @@ export function TopBar() {
               disabled={!canUndo}
               title={canUndo ? `Undo ${undoLabel} (${modifier}Z)` : `Nothing to undo (${modifier}Z)`}
               aria-label={canUndo ? `Undo ${undoLabel}` : "Nothing to undo"}
-              className="rounded-md p-1.5 text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)] disabled:pointer-events-none disabled:text-[var(--border-faint)]"
+              className="rounded-md p-1.5 text-[var(--text-2)] scriare-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)] disabled:pointer-events-none disabled:text-[var(--border-faint)]"
             >
               <Icon name="undo" className="h-4 w-4" />
             </button>
@@ -126,7 +126,7 @@ export function TopBar() {
                 canRedo ? `Redo ${redoLabel} (${modifier}⇧Z)` : `Nothing to redo (${modifier}⇧Z)`
               }
               aria-label={canRedo ? `Redo ${redoLabel}` : "Nothing to redo"}
-              className="rounded-md p-1.5 text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)] disabled:pointer-events-none disabled:text-[var(--border-faint)]"
+              className="rounded-md p-1.5 text-[var(--text-2)] scriare-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)] disabled:pointer-events-none disabled:text-[var(--border-faint)]"
             >
               <Icon name="redo" className="h-4 w-4" />
             </button>

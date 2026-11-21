@@ -634,6 +634,13 @@ input[type="number"],
     stroke var(--d-instant) var(--e-standard);
 }
 
+/* ...and the same for an opacity-only change, which two editor views
+   wanted and Tailwind spells `transition-opacity` — its own 150ms, its own
+   curve, in a class list where nobody would think to look for a duration. */
+.scriare-fade {
+  transition: opacity var(--d-instant) var(--e-standard);
+}
+
 /* A choice in PLAY MODE (v0.90.0).
  *
  * The flattest thing on the screen until this version, and the one moment
@@ -1017,6 +1024,19 @@ button.scriare-dock-btn:focus-visible {
    lifts further rather than only changing its border colour. */
 .scriare-scene-card {
   box-shadow: var(--lift-node);
+  /* v0.90.0 — the card's own motion, moved here from a Tailwind
+     `transition duration-150` in SceneNode.tsx. Deliberately NOT
+     `.scriare-colors`: the note at that call site argues for the
+     drag-lift's transform and the selection ring as well, and it is
+     right. `--d-quick` rather than `--d-instant` because this one IS
+     movement — a card lifting under a drag — rather than a colour
+     settling under a pointer. */
+  transition:
+    color var(--d-quick) var(--e-standard),
+    background-color var(--d-quick) var(--e-standard),
+    border-color var(--d-quick) var(--e-standard),
+    box-shadow var(--d-quick) var(--e-standard),
+    transform var(--d-quick) var(--e-standard);
 }
 
 .react-flow__node.selected .scriare-scene-card,

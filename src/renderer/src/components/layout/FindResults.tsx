@@ -139,7 +139,7 @@ export function FindResults({ query }: FindResultsProps) {
                 ? "Nothing here can be replaced"
                 : `Replace ${chosen.length} in one step — Ctrl+Z puts it all back`
             }
-            className="shrink-0 rounded-md bg-[var(--accent-fill-strong)] px-2.5 py-1 text-xs font-semibold text-[var(--accent-text-on)] transition-colors hover:bg-[var(--accent)] disabled:pointer-events-none disabled:bg-transparent disabled:text-[var(--border-faint)]"
+            className="shrink-0 rounded-md bg-[var(--accent-fill-strong)] px-2.5 py-1 text-xs font-semibold text-[var(--accent-text-on)] scriare-colors hover:bg-[var(--accent)] disabled:pointer-events-none disabled:bg-transparent disabled:text-[var(--border-faint)]"
           >
             Replace {chosen.length}
           </button>

@@ -235,7 +235,7 @@ export function DialogueLineView({ node, editor, getPos }: NodeViewProps) {
             // Its hover was `--surface-3`, which v0.85.0 reserves for the row
             // the keyboard is on — so a pointer here said what an arrow key
             // says. Now the same fill as every other remove in the app.
-            className="opacity-0 transition-opacity group-hover:opacity-100"
+            className="opacity-0 scriare-fade group-hover:opacity-100"
           >
             ✕
           </Button>

@@ -67,7 +67,7 @@ export function DialogueBlockView({ node, deleteNode, selected, editor }: NodeVi
 
   return (
     <NodeViewWrapper
-      className={`dialogue-block my-3 rounded-md border px-3 py-2.5 transition-colors ${
+      className={`dialogue-block my-3 rounded-md border px-3 py-2.5 scriare-colors ${
         selected
           ? "border-[var(--accent)] bg-[var(--accent-soft)]"
           : "border-[var(--border)] bg-[var(--surface-2-faint)]"

@@ -144,7 +144,7 @@ function ThemeSwatch({ id, label, description, active, onSelect }: ThemeSwatchPr
       data-content-colour
       title={description}
       aria-pressed={active}
-      className={`rounded-lg border p-2 text-left transition-colors ${
+      className={`rounded-lg border p-2 text-left scriare-colors ${
         active
           ? "border-[var(--accent)] shadow-[0_0_0_3px_var(--accent-soft-2)]"
           : "border-[var(--border)] hover:border-[var(--border-faint)]"

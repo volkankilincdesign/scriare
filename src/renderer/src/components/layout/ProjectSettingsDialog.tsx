@@ -129,9 +129,11 @@ export function ProjectSettingsDialog({ onClose }: ProjectSettingsDialogProps) {
         </select>
       </div>
       <p className="mb-4 text-xs text-[var(--text-3)]">
-        The language the story is written in. The exported page carries it, so a
-        screen reader reads Turkish as Turkish. Left unset it carries none,
-        which is better than carrying the wrong one.
+        The language the story is written in. It picks the spellchecker while
+        you write, and the exported page carries it, so a screen reader reads
+        Turkish as Turkish. Left unset it carries none, which is better than
+        carrying the wrong one — and the spellchecker stays off rather than
+        checking your writing against another language.
       </p>
 
       <label
@@ -200,7 +202,7 @@ export function ProjectSettingsDialog({ onClose }: ProjectSettingsDialogProps) {
         </p>
         <div data-settings-doors>
           <DoorRow
-            title="Choice styles"
+            title="Choice Styles"
             sub="How choices look, named once"
             value={`${project.choiceStyles.length} ${
               project.choiceStyles.length === 1 ? "style" : "styles"

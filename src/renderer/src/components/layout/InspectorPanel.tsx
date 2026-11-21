@@ -1389,7 +1389,7 @@ function ConditionRow({ condition, variables, onChange, onRemove }: ConditionRow
           onClick={() => onChange({ negate: !condition.negate })}
           aria-pressed={Boolean(condition.negate)}
           title="Invert this condition"
-          className={`shrink-0 rounded border px-1.5 py-1 text-xs font-medium transition-colors ${
+          className={`shrink-0 rounded border px-1.5 py-1 text-xs font-medium scriare-colors ${
             condition.negate
               ? "border-[var(--accent-ring)] bg-[var(--accent-soft-2)] text-[var(--text)]"
               : "border-[var(--border)] text-[var(--text-3)] hover:text-[var(--text-2)]"

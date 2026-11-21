@@ -62,7 +62,7 @@ export function VersionTag({ className = "" }: { className?: string }) {
       data-version-tag={version}
       onClick={() => void copy()}
       title="Click to copy the version, platform and engine — for a bug report"
-      className={`scriare-status-btn rounded-[4px] px-1.5 py-0.5 text-[11px] tabular-nums text-[var(--text-3)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text-2)] ${className}`}
+      className={`scriare-status-btn rounded-[4px] px-1.5 py-0.5 text-[11px] tabular-nums text-[var(--text-3)] scriare-colors hover:bg-[var(--surface-2)] hover:text-[var(--text-2)] ${className}`}
     >
       {version}
     </button>

@@ -109,7 +109,7 @@ export function ChoiceOptionView({ node, editor, getPos }: NodeViewProps) {
         // The reveal is behavioural and stays: this ✕ appears when the row is
         // hovered. What was wrong is that it then had NO hover fill of its
         // own while its sibling on a dialogue line had one — see the intent.
-        className="shrink-0 select-none opacity-0 transition-opacity group-hover:opacity-100"
+        className="shrink-0 select-none opacity-0 scriare-fade group-hover:opacity-100"
       >
         ✕
       </Button>

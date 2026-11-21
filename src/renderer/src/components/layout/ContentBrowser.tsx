@@ -94,7 +94,7 @@ function EntityList({ kind }: { kind: EntityKind }) {
               selectEntity(entity.id);
               browser.openContextMenu(e, leaf);
             }}
-            className={`ml-3 flex cursor-default items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
+            className={`ml-3 flex cursor-default items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm scriare-colors ${
               entity.id === selectedEntityId
                 ? "scriare-row-on bg-[var(--surface-2)] text-[var(--text)]"
                 : "text-[var(--text-2)] hover:bg-[var(--bg)] hover:text-[var(--text)]"
@@ -761,7 +761,7 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
               }
             }}
             data-find-input
-            placeholder="Search story and writing..."
+            placeholder="Search story and writing…"
             className="w-full rounded-md border border-[var(--border-soft)] bg-[var(--bg)] px-2 py-1 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-3)] focus:border-[var(--accent)]"
           />
         </div>
@@ -827,7 +827,7 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
                 onContextMenu={(e) => openContextMenu(e, null)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDropOnStoryRoot}
-                className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2-faint)]"
+                className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-[var(--text-2)] scriare-colors hover:bg-[var(--surface-2-faint)]"
               >
                 <span className="w-3 text-[10px] text-[var(--text-3)]">{expanded.has(STORY_ROOT) ? "▾" : "▸"}</span>
                 <Icon name="story" />
@@ -872,7 +872,7 @@ export function ContentBrowser({ collapsed, onToggle }: ContentBrowserProps) {
                   {...rowActivation(() => toggleExpand(cat.key))}
                   aria-expanded={expanded.has(cat.key)}
                   onClick={() => toggleExpand(cat.key)}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2-faint)]"
+                  className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-[var(--text-2)] scriare-colors hover:bg-[var(--surface-2-faint)]"
                 >
                   <span className="w-3 text-[10px] text-[var(--text-3)]">
                     {expanded.has(cat.key) ? "▾" : "▸"}

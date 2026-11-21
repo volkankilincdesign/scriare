@@ -41,7 +41,7 @@ export function ToastHost() {
             <button
               type="button"
               onClick={() => undoToast(toast.id)}
-              className="rounded-md px-2.5 py-1 text-sm font-medium text-[var(--text)] underline decoration-[var(--border-faint)] underline-offset-4 transition-colors hover:bg-[var(--surface-3)] hover:decoration-[var(--text-2)]"
+              className="rounded-md px-2.5 py-1 text-sm font-medium text-[var(--text)] underline decoration-[var(--border-faint)] underline-offset-4 scriare-colors hover:bg-[var(--surface-3)] hover:decoration-[var(--text-2)]"
             >
               Undo
             </button>
@@ -51,7 +51,7 @@ export function ToastHost() {
             type="button"
             onClick={() => dismiss(toast.id)}
             aria-label="Dismiss"
-            className="rounded-md px-2 py-1 text-sm leading-none text-[var(--text-3)] transition-colors hover:bg-[var(--surface-3)] hover:text-[var(--text-2)]"
+            className="rounded-md px-2 py-1 text-sm leading-none text-[var(--text-3)] scriare-colors hover:bg-[var(--surface-3)] hover:text-[var(--text-2)]"
           >
             ×
           </button>

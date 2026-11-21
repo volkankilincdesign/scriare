@@ -18,6 +18,178 @@ omitting them.
 
 ---
 
+## v0.90.0 — Feel premium: a motion system, and four things I was wrong about
+
+Five directions, in the order they were agreed: a motion system, the three
+moments that carry the product, the empty window, resting-state consistency,
+and a UX audit. **The most useful thing in this entry is the list of claims
+that did not survive being measured**, because every one of them came from
+reading a screenshot and every correction came from opening the app or the
+source.
+
+### 1 · A motion system
+
+`themes.css` defined **384 colour tokens** and `index.css` spent **20
+transitions across nine durations and four easings**, each written on the day
+its feature shipped. Colour had been through a design system; motion never
+had.
+
+`styles/motion.css` is new: four durations (`--d-instant` 90ms, `--d-quick`
+150ms, `--d-settle` 240ms, `--d-considered` 420ms) and two easings
+(`--e-standard`, which is the toast's own curve promoted rather than replaced,
+and `--e-exit`). **Three of the four steps are the clusters the nine durations
+already formed**, named; the fourth is the press, which the app had no number
+for because it had no press. 420ms is unchanged — the argument beside the
+reveal still holds.
+
+It is its own file rather than part of `themes.css` because motion is not a
+theme: all eight tint the same room and none should move at a different speed.
+It carries a written rule for adding to it, since the first question for a new
+feature is "which of these four is it", not "what duration does this want".
+
+**One guard where there were three.** Reduced motion was honoured beside the
+splash, the toast and the reveal, and nowhere else — so the Play Mode scene
+fade and every transform in the Story Graph, the two surfaces a writer looks at
+most, were unguarded. One block redefining the four tokens covers everything,
+including features nobody has written.
+
+One literal survives in the whole stylesheet: the splash sweep's `1.15s`. It is
+an infinite loader and a looping curve has to start and end at the same
+velocity, which neither easing does. Documented beside itself.
+
+### 2 · The three moments
+
+**Nothing in Scriare responded to being held.** A row lit under the pointer and
+then said nothing between mousedown and the click landing — the exact moment a
+writer is most certain they have done something. There is a press now on all
+three surfaces that draw a choice: the editor, Play Mode and the exported page.
+A press on two of three would be worse than none, because then the app
+disagrees with itself.
+
+**Play Mode's choices were the flattest thing on screen** and they are the one
+moment that IS the product. They lift on hover and settle on press — with
+`transform` and `filter` only, never fill or border, because those belong to
+the writer's Choice Style in an earlier cascade layer. No `box-shadow` either,
+which is a change from the mockup: the only ground-correct raised shadow exists
+on `[data-play-root]` and not in the export, and inventing a second would be a
+colour decision in a codebase whose doctrine is that colour lives in
+`themes.css`.
+
+**The scene change gained six pixels of travel.** A pure opacity fade has no
+direction, so two scenes in a row read as one page flickering rather than a new
+one arriving.
+
+**A second stylesheet the sweep could not see.** `export/pageStyles.ts` carried
+its own `.14s` and its own `180ms ease` — a tenth duration and a fifth easing —
+because it lives inside a TypeScript template string. The exported page now
+declares the same six tokens in its own document, and the suite asserts the two
+declarations agree.
+
+**And a siblings-rule violation that was also a bug.** In Play Mode the Choice
+block hovered with `brightness-110` and the Dialogue block with
+`border-[var(--accent)]`: two drawings for two blocks that are meant to be one,
+and the second was overwriting the writer's own Choice Style border on every
+pointer cross. Both inherit one rule now.
+
+### 3 · The empty window
+
+Maximized, the Welcome screen put its whole composition against the top edge
+and left a little over half the window black; Play Mode did the same with about
+a third. Both centre their content while it fits and behave exactly as before
+once it does not.
+
+**Auto margins inside a flex column, not `justify-content: center`** — and that
+is the whole safety of it: auto margins resolve to zero when there is no free
+space, so a long scene scrolls from its first line. `justify-center` keeps
+centring and pushes the first line above the scroll origin where no scrolling
+reaches it. The spec resizes the real window and asserts the top is still
+reachable.
+
+### 4 · Resting-state consistency
+
+**The top bar used the `Button` component once, for Play, and hand-wrote the
+other six** — in an app whose Button carries a long argument about why a
+variant belongs in the kit rather than at a call site. The copy had drifted:
+the hand-rolled ones set `text-2` where `secondary` sets `text`, so six
+controls were a shade dimmer than the same button everywhere else. All six are
+the kit's now; `?` and the gear took the `ghost` intent; **Play ends the row**
+rather than sitting between the gear and Export.
+
+**Variables is `{x}`**, and it stays in the bar. It was `𝑥 Variables` — at 14px
+beside a word, U+1D465 is a multiplication sign, and a × left of a label means
+"remove this" everywhere. Measured against the app's own Inter, `{x}`'s ink
+centre sits **0.5px below "Check"**, which is less deviation than "Export"
+already has from its descender and below the whole-pixel threshold v0.68.0 set
+— so no nudge. It is set in the bar's own face: a second typeface for one
+glyph, in the pass about consistency, would be the same mistake in a new
+costume.
+
+**It cannot leave the bar.** `openVariableManager` has exactly two callers, and
+the Inspector's only appears once a condition editor is already open. No
+keyboard shortcut, no slash command. So that button is the only route to
+variables for a writer who has not made one — which is precisely the writer who
+needs it. The first draft of this bar dropped it.
+
+**The chapter box rests at 1px** instead of 2px, so a container stops competing
+with the scene cards inside it — and the drag and drop-target states put the
+weight back, because those two have to be unmissable.
+
+**Tailwind's `transition-colors` was a twentieth duration and a sixth easing**
+— 150ms on `cubic-bezier(.4, 0, .2, 1)` — sitting in **forty class lists**,
+including `Button`'s own, which is to say in every control the kit draws. A
+grep over a stylesheet cannot see a utility class in TSX, and an inline style
+object in `FlowPanel` was invisible for a third reason again. All of them are
+converted now, to named `.scriare-colors` and `.scriare-fade`, and the spec
+walks every `.tsx` in the renderer and insists none come back.
+
+### 5 · The UX audit, and the four corrections
+
+Asked to check everything — language, labels, workflow, buttons. **Step 5's own
+two items were both wrong.** The one-scene thumbnail is correct and
+`StoryMap.tsx` says why in its own comment ("a story with no shape yet is the
+same drawing with the scenes left out, which is exactly what it is"). The
+"focus ring" in Play Mode is a toggle's on-state.
+
+That makes four claims overturned this version: the top bar's "two button
+shapes" (one shape, hand-written six times), the graph's "three competing
+textures" (the dots are quiet; a 2px line and forty invisible transitions were
+not), and these two.
+
+Fixed: **two spellings of an ellipsis** (`"Saving..."` and the Content search
+placeholder, against `…` in seventeen other places); **two spellings of a
+boolean** (the Variables dialog said `True`/`False` where Play Mode's readout
+and the export say `true`/`false` — the two surfaces a writer moves between);
+**a row that disagreed with the place it opens** ("Choice styles" vs "Choice
+Styles"); and **copy that predated the last release** — the LANGUAGE helper
+explained the export and screen readers and said nothing about the
+spellchecker, which v0.89.0 made the most visible thing that field does.
+
+**And one dialog now says what it does.** Project Settings needs Save, Export
+needs Export, and Variables commits as you type with no Cancel — so the same
+Escape that throws a change away in one keeps it in the other. The asymmetry is
+defensible; its silence was not. It says so now.
+
+### What is asserted, and what is not
+
+Four specs — `motion-scale`, `window-fill`, `topbar-kit`, plus the existing
+suite — and **twenty-five negative controls**, every anchor verified present and
+unique before shipping.
+
+**One check is not controlled and the spec says so beside it.** The
+reachability assertion in `window-fill` cannot be made to fail by any
+single-line sabotage, because clipping needs `justify-center` AND the auto
+margin gone. The bug being hard to reintroduce is the design working; a check
+nobody has watched go red is still worth less than one they have, so the same
+concern is guarded from the source side too, where a control does fire.
+
+**Three of my own tests were wrong and the checking caught all three**: a dead
+negative control whose sabotage string no longer existed, a control that went
+stale the moment a later step edited its anchor line, and a regex that asserted
+two selectors shared a block and failed because it required a line start. Each
+is noted where it lives.
+
+---
+
 ## v0.89.0 — Every word in the story was underlined in red, and had been for a year
 
 **The bug.** Electron's spellchecker defaults to ON, with the dictionary

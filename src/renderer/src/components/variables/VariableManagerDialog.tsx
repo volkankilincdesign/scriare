@@ -73,6 +73,20 @@ export function VariableManagerDialog({ onClose }: VariableManagerDialogProps) {
         Wizard”, a string for something like a chosen name.
       </DialogHeader>
 
+      {/*
+        v0.90.0 — SAYING WHAT THIS DIALOG ALREADY DOES.
+
+        Project Settings sits one button away in the same bar and needs
+        Save; Export needs Export. This one commits as you type and has no
+        Cancel, so the same Escape that throws a change away over there
+        keeps it here. The asymmetry is defensible — a list of variables is
+        awkward to hold a draft copy of, and Ctrl+Z is global — but it was
+        not SAID anywhere, and an undo you have to guess at is not an undo.
+      */}
+      <p className="-mt-1 mb-3 text-xs text-[var(--text-3)]">
+        Changes are saved as you make them. Ctrl+Z undoes them.
+      </p>
+
       <div className="max-h-[60vh] overflow-y-auto pr-1">
         {variables.length === 0 ? (
           <p className="rounded-lg border border-dashed border-[var(--border-soft)] px-3 py-5 text-center text-xs leading-relaxed text-[var(--text-3)]">
@@ -115,7 +129,12 @@ export function VariableManagerDialog({ onClose }: VariableManagerDialogProps) {
  * string is a real, deliberate starting value.
  */
 export function startsAs(variable: Variable): string {
-  if (variable.type === "boolean") return variable.defaultValue ? "True" : "False";
+  // v0.90.0 — lowercase, because Play Mode's readout and the exported
+  // page both say `true`/`false` and this is where a writer sets the
+  // value they are about to go and watch. Two spellings of one value,
+  // one in the place you declare it and one in the place you check it,
+  // is a question nobody should have to ask.
+  if (variable.type === "boolean") return variable.defaultValue ? "true" : "false";
   if (variable.type === "string") {
     const text = String(variable.defaultValue ?? "");
     return text.length > 0 ? `“${text}”` : "“”";
@@ -273,8 +292,8 @@ function DefaultValueInput({
         onChange={(e) => onChange(e.target.value === "true")}
         className={INPUT_CLASS_SM}
       >
-        <option value="true">True</option>
-        <option value="false">False</option>
+        <option value="true">true</option>
+        <option value="false">false</option>
       </select>
     );
   }

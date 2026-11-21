@@ -59,11 +59,11 @@ const PLACEHOLDER = "placeholder:text-[var(--text-3)]";
  * not in all of them.
  */
 export const INPUT_CLASS =
-  `w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--accent)] disabled:text-[var(--text-3)] ${PLACEHOLDER}`;
+  `w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)] outline-none scriare-colors focus:border-[var(--accent)] disabled:text-[var(--text-3)] ${PLACEHOLDER}`;
 
 /** The same, at row scale — inside a list item rather than a dialog body. */
 export const INPUT_CLASS_SM =
-  `w-full rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--accent)] disabled:text-[var(--text-3)] ${PLACEHOLDER}`;
+  `w-full rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-sm text-[var(--text)] outline-none scriare-colors focus:border-[var(--accent)] disabled:text-[var(--text-3)] ${PLACEHOLDER}`;
 
 /**
  * The same again, for a field sitting DIRECTLY ON A PANEL (v0.84.0).
@@ -83,4 +83,4 @@ export const INPUT_CLASS_SM =
  * of the other two to copy.
  */
 export const INPUT_CLASS_PANEL =
-  `rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none transition-colors focus:border-[var(--accent)] disabled:text-[var(--text-3)] ${PLACEHOLDER}`;
+  `rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-1 text-xs text-[var(--text)] outline-none scriare-colors focus:border-[var(--accent)] disabled:text-[var(--text-3)] ${PLACEHOLDER}`;

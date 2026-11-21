@@ -227,7 +227,7 @@ export function PlayRuntime() {
                   ? "Showing your stylesheet — click to see the story without it"
                   : "Your stylesheet is off — click to put it back on"
               }
-              className={`rounded border px-2 py-0.5 text-xs transition-colors ${
+              className={`rounded border px-2 py-0.5 text-xs scriare-colors ${
                 customCss
                   ? "border-[var(--accent)] text-[var(--accent)]"
                   : "border-[var(--border)] text-[var(--text-3)] hover:text-[var(--text-2)]"
@@ -369,7 +369,7 @@ function GroundSwitch({ ground, onToggle }: { ground: string; onToggle: () => vo
       onClick={onToggle}
       aria-label={`Switch to the ${other.label} ground`}
       title={`Switch to the ${other.label} ground — what your reader sees`}
-      className="rounded border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2-faint)] hover:text-[var(--text)]"
+      className="rounded border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--text-2)] scriare-colors hover:bg-[var(--surface-2-faint)] hover:text-[var(--text)]"
     >
       {other.label}
     </button>

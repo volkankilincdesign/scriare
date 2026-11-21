@@ -95,7 +95,7 @@ export function VariableReadout({ variables, values }: VariableReadoutProps) {
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="ml-auto flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-[11px] font-medium text-[var(--text-3)] transition-colors hover:border-[var(--border-faint)] hover:text-[var(--text-2)]"
+        className="ml-auto flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-[11px] font-medium text-[var(--text-3)] scriare-colors hover:border-[var(--border-faint)] hover:text-[var(--text-2)]"
         title="Live variable values for this playthrough"
       >
         <span aria-hidden>{open ? "▾" : "▸"}</span>

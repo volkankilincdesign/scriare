@@ -84,7 +84,7 @@ export function StatusBar({ flowCollapsed, onToggleFlow }: StatusBarProps) {
       <button
         type="button"
         onClick={onToggleFlow}
-        className="scriare-status-btn rounded-[4px] px-2 py-0.5 text-[11px] text-[var(--text-3)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+        className="scriare-status-btn rounded-[4px] px-2 py-0.5 text-[11px] text-[var(--text-3)] scriare-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
       >
         {flowCollapsed ? "Show Story Graph" : "Hide Story Graph"}
       </button>

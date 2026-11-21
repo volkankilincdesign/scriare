@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -205,6 +205,31 @@ export default async function run({ page, api, check, seedProject }) {
     !/transition-colors/.test(buttonSrc) && /scriare-colors/.test(buttonSrc),
     `transition-colors ${/transition-colors/.test(buttonSrc)}, scriare-colors ${/scriare-colors/.test(buttonSrc)}`,
   );
+  // The sweep, finished rather than counted. Walks every .tsx in the
+  // renderer, because the whole lesson of this version is that a motion
+  // literal hides wherever nobody is grepping.
+  const walk = async (dir) => {
+    const out = [];
+    for (const e of await readdir(dir, { withFileTypes: true })) {
+      const full = join(dir, e.name);
+      if (e.isDirectory()) out.push(...(await walk(full)));
+      else if (e.name.endsWith(".tsx")) out.push(full);
+    }
+    return out;
+  };
+  const tsx = await walk(join(root, "src/renderer/src"));
+  const offenders = [];
+  for (const f of tsx) {
+    const text = await readFile(f, "utf8");
+    const hits = text.match(/\btransition-colors\b|\btransition-opacity\b|\btransition duration-\d+|\bduration-\d+/g);
+    if (hits) offenders.push(`${f.split(/[\\/]/).pop()}: ${[...new Set(hits)].join(",")}`);
+  }
+  check(
+    "no Tailwind motion utility is left anywhere in the renderer",
+    offenders.length === 0,
+    offenders.join(" | ") || `${tsx.length} files clean`,
+  );
+
   check(
     "...and neither does the Story Graph",
     !/transition-colors/.test(groupSrc) && !/duration-\d/.test(groupSrc),
