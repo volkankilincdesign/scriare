@@ -176,8 +176,19 @@ export function WelcomeScreen() {
       {recentProjects.length === 0 ? (
         <EmptyShelf onStart={() => setShowNewProjectDialog(true)} />
       ) : (
-        <main className="flex-grow overflow-y-auto px-8 pb-12 pt-7">
-          <div className="mx-auto flex w-full max-w-[var(--welcome-column)] flex-col">
+        {/*
+          v0.90.0 — centred in the window while it fits, top-aligned and
+          scrolling the moment it does not. Maximized, this screen put its
+          whole composition against the top edge and left a little over half
+          the window black underneath it.
+
+          Auto margins, not `justify-center`: with three stories the margins
+          share out the free space, and with twenty they compute to zero and
+          nothing here has to know which case it is in. That is the whole
+          reason this needs no measurement, no breakpoint and no state.
+        */}
+        <main className="flex flex-grow flex-col overflow-y-auto px-8 pb-12 pt-7">
+          <div className="scriare-welcome-column mx-auto my-auto flex w-full max-w-[var(--welcome-column)] flex-col">
           {searching ? (
             <SearchResults
               needle={query.trim()}

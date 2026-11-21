@@ -247,8 +247,24 @@ export function PlayRuntime() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-8 py-10">
-        <div className={READING_COLUMN_CLASS}>
+      {/*
+        v0.90.0 — the reading column is CENTRED IN THE WINDOW when it fits
+        in it, and behaves exactly as it always has when it does not.
+
+        A short scene pinned to the top of a maximized window, with its
+        choices stranded halfway up and a third of the screen black beneath
+        them, reads as a page that has not finished loading. It is a
+        reading surface; a short passage should look composed on it.
+
+        `my-auto` inside a flex column rather than `justify-center`, and the
+        difference is the whole reason this is safe: auto margins resolve to
+        ZERO once the content is taller than the container, so a long scene
+        scrolls from its first line in the normal way. `justify-center`
+        would keep centring and clip the top of a long scene out of reach,
+        which is the classic version of this bug.
+      */}
+      <div className="flex flex-1 flex-col overflow-y-auto px-8 py-10">
+        <div className={`${READING_COLUMN_CLASS} my-auto`}>
           {!scene ? (
             <div className="text-sm text-[var(--text-3)]">
               This story doesn't have a scene to start from yet.

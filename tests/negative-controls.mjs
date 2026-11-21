@@ -29,6 +29,44 @@ const mainScript = (p) => join(root, "src/main", p);
 
 const CONTROLS = [
   {
+    // v0.90.0. The Welcome screen centred itself by sharing out free space
+    // with auto margins. Take the margin away and it goes back to sitting
+    // against the top edge of a maximized window with half of it black.
+    name: "the Welcome screen back against the top edge",
+    file: src("components/welcome/WelcomeScreen.tsx"),
+    from: 'className="scriare-welcome-column mx-auto my-auto flex w-full',
+    to: 'className="scriare-welcome-column mx-auto flex w-full',
+    spec: "window-fill",
+    expect: "it sits in the middle rather than against the top",
+  },
+  {
+    // v0.90.0. The auto margin only shares out space inside a FLEX column.
+    // Drop the flex and the margin silently does nothing — which is the
+    // quiet version of the same regression, and the one somebody would
+    // introduce while tidying class lists.
+    name: "Play Mode's scroll container stops being a flex column",
+    file: src("runtime/PlayRuntime.tsx"),
+    from: '<div className="flex flex-1 flex-col overflow-y-auto px-8 py-10">',
+    to: '<div className="flex-1 overflow-y-auto px-8 py-10">',
+    spec: "window-fill",
+    expect: "a scene shorter than the window is centred in it",
+  },
+  {
+    // v0.90.0. The guard against this being "fixed" later with the version
+    // that clips: `justify-content: center` keeps centring after the
+    // content outgrows the box and pushes the first line above the scroll
+    // origin, where no amount of scrolling reaches it. The measurement that
+    // would catch the clipping itself cannot be controlled with one edit
+    // (see the note beside it in the spec); this guards the same thing from
+    // the source side, and this one can go red.
+    name: "centring switched to the version that clips",
+    file: src("components/welcome/WelcomeScreen.tsx"),
+    from: '<main className="flex flex-grow flex-col overflow-y-auto px-8 pb-12 pt-7">',
+    to: '<main className="flex flex-grow flex-col justify-center overflow-y-auto px-8 pb-12 pt-7">',
+    spec: "window-fill",
+    expect: "neither surface centres with justify-center",
+  },
+  {
     // v0.90.0. The exported page is a standalone document and cannot
     // import motion.css, so pageStyles.ts declares the same six tokens
     // again. Two declarations of one decision is a real cost, and this is
