@@ -1,0 +1,102 @@
+/* Motion — four durations, two easings (v0.90.0).
+ *
+ * WHY THIS FILE EXISTS. `themes.css` opens by saying that nothing outside
+ * it names a colour, and that held: 384 colour tokens, one block per theme,
+ * every component asking rather than deciding. Motion never got the same
+ * treatment. Before this version `index.css` spent twenty transitions
+ * across NINE durations (.12s, .15s, 100ms, 120ms, 140ms, 150ms, 180ms,
+ * 220ms, 420ms) and FOUR easings, each written on the day its feature
+ * shipped and none of them compared to the others. Nothing was wrong
+ * anywhere and the whole was not a system.
+ *
+ * WHY NOT IN themes.css. Because motion is not a theme. All eight themes
+ * tint the same room; none of them should move at a different speed, and
+ * putting a duration inside a per-theme block would invite exactly that.
+ * Colour varies by theme, motion varies by PURPOSE, so it gets its own
+ * file and its own vocabulary.
+ *
+ * THE SCALE IS DERIVED, NOT INVENTED. The nine durations already in use
+ * clustered into three groups — 100–150 for colour and borders, 180–220
+ * for things arriving, 420 for the reveal — and three of the four steps
+ * below are those clusters, named. The fourth, `--d-instant`, is the one
+ * the app had no number for because it had no press: nothing in Scriare
+ * responded to being held down. 420ms is kept exactly as it was, because
+ * the comment beside the reveal argues for it and that argument still
+ * holds.
+ *
+ * ────────────────────────────────────────────────────────────────────
+ * ADDING TO THIS SCALE, when a later feature needs something it has not got.
+ *
+ * The first question is never "what duration does this want" but "which of
+ * these four is it". Four steps covered every piece of movement that
+ * existed in eighty-nine versions, so a fifth is far more likely to be a
+ * feature misclassifying itself than a genuine gap.
+ *
+ * If it really is a gap, add the token HERE, give it a name that says what
+ * it is for rather than how long it is, and write down the case that
+ * forced it — the way this comment does. What must not happen is a literal
+ * duration reappearing in a rule. A number in `index.css` is a decision
+ * nobody else can see, and twenty of them is where this started.
+ *
+ * ONE EXCEPTION IS ALREADY ON THE BOOKS: the splash sweep keeps its own
+ * 1.15s and its own curve. It is an infinite loader rather than a state
+ * change, and a looping curve has to start and end at the same velocity,
+ * which none of the two easings here do. It is documented beside itself
+ * in `index.css` and it stays literal on purpose.
+ * ──────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Colour, border, fill, and the press itself. Should not read as
+     movement at all — only as the absence of a jump. */
+  --d-instant: 90ms;
+
+  /* Something small changing position or elevation: a card lifting, a
+     handle growing, a graph node settling after Auto Layout. */
+  --d-quick: 150ms;
+
+  /* Something arriving or leaving: a toast, a scene in Play Mode. Long
+     enough to be seen as a movement rather than a flicker. */
+  --d-settle: 240ms;
+
+  /* The one moment meant to be noticed. Today that is exactly one thing —
+     the flash on whatever Check Story sent the writer to — and if a second
+     thing ever wants this duration, that is worth an argument first. */
+  --d-considered: 420ms;
+
+  /* Leaves quickly, lands softly. For arriving, and for every ordinary
+     state change. This is not a new curve: it is the one the toast has
+     been using since v0.26.0, promoted rather than replaced. */
+  --e-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Starts softly, leaves quickly. ONLY for something going away — nobody
+     is waiting to read a thing that is already leaving, so it should get
+     out of the way faster than it arrived. */
+  --e-exit: cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* ONE GUARD, WHERE THERE WERE THREE.
+ *
+ * Before this version, `prefers-reduced-motion` was honoured in exactly
+ * three places — the splash, the toast, and the reveal — because each was
+ * written by hand next to its own rule. The Play Mode scene fade and every
+ * transform in the Story Graph had no guard at all, so a writer who had
+ * asked their operating system for less movement still got it from the two
+ * surfaces they spend the most time looking at.
+ *
+ * Redefining the tokens fixes that for everything at once, including
+ * features nobody has written yet. A rule that is never written per-feature
+ * cannot be forgotten on the next feature.
+ *
+ * 1ms rather than 0: a zero-length transition does not fire `transitionend`
+ * in every engine, and a handful of places in the app wait for that event
+ * to clean up after themselves. One millisecond is imperceptible and keeps
+ * the event.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --d-instant: 1ms;
+    --d-quick: 1ms;
+    --d-settle: 1ms;
+    --d-considered: 1ms;
+  }
+}

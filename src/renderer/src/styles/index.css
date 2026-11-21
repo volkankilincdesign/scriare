@@ -1,4 +1,5 @@
 @import "./themes.css";
+@import "./motion.css";
 
 /* Cascade layers (v0.80.0), and the order is the whole point.
    `scriare.reset` holds Tailwind's preflight; `scriare.boxes` holds the
@@ -267,7 +268,7 @@ input[type="number"],
 }
 
 .runtime-scene-fade {
-  animation: runtimeFadeIn 220ms ease-out;
+  animation: runtimeFadeIn var(--d-settle) var(--e-standard);
 }
 
 /* The splash's one moving thing (v0.62.0) — a line that travels rather
@@ -359,7 +360,7 @@ input[type="number"],
 }
 
 .react-flow__node:not(.dragging):not(.scriare-resizing) {
-  transition: transform 150ms ease;
+  transition: transform var(--d-quick) var(--e-standard);
 }
 
 /* `.scriare-resizing` (set on a Frame's node object only while its
@@ -391,7 +392,10 @@ input[type="number"],
 }
 
 .react-flow__edge-path {
-  transition: stroke 150ms ease, stroke-width 150ms ease, opacity 150ms ease;
+  transition:
+    stroke var(--d-quick) var(--e-standard),
+    stroke-width var(--d-quick) var(--e-standard),
+    opacity var(--d-quick) var(--e-standard);
 }
 
 .react-flow__node {
@@ -463,7 +467,7 @@ input[type="number"],
    `transform` here is safe — the two properties compose independently and
    this scale never fights the handle's own positioning. */
 .react-flow__resize-control.handle {
-  transition: transform 100ms ease;
+  transition: transform var(--d-instant) var(--e-standard);
 }
 
 .react-flow__resize-control.handle:hover {
@@ -522,14 +526,11 @@ input[type="number"],
 }
 
 .scriare-toast {
-  animation: scriare-toast-in 180ms cubic-bezier(0.2, 0, 0, 1);
+  animation: scriare-toast-in var(--d-settle) var(--e-standard);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .scriare-toast {
-    animation: none;
-  }
-}
+/* The toast's own guard is gone for the same reason the reveal's is:
+   its duration is --d-settle now, which motion.css already reduces. */
 
 /* The Conditional's body (v0.78.0).
 
@@ -560,7 +561,7 @@ input[type="number"],
    differs. */
 .ProseMirror .scriare-choice-option,
 .ProseMirror .scriare-dialogue-line {
-  transition: filter .12s;
+  transition: filter var(--d-instant) var(--e-standard);
 }
 /* v0.34.0: the row now paints its own Choice Style (fill, border, radius)
    as an inline style, so hover can no longer be a background swap — it
@@ -575,7 +576,7 @@ input[type="number"],
    the pointer arrives. */
 .scriare-minimap {
   opacity: .45;
-  transition: opacity .15s ease;
+  transition: opacity var(--d-quick) var(--e-standard);
 }
 .scriare-minimap:hover {
   opacity: 1;
@@ -588,7 +589,9 @@ input[type="number"],
    reading. */
 .scriare-mention {
   border-bottom: 1px solid transparent;
-  transition: border-color .12s, color .12s;
+  transition:
+    border-color var(--d-instant) var(--e-standard),
+    color var(--d-instant) var(--e-standard);
 }
 
 /* v0.35.1 — every hint a mention gives is scoped to the EDITOR.
@@ -676,7 +679,10 @@ input[type="number"],
   top: -.12em;
   cursor: pointer;
   user-select: none;
-  transition: color .12s, border-color .12s, background-color .12s;
+  transition:
+    color var(--d-instant) var(--e-standard),
+    border-color var(--d-instant) var(--e-standard),
+    background-color var(--d-instant) var(--e-standard);
 }
 .scriare-speaker-chip:hover {
   border-color: var(--accent);
@@ -876,7 +882,10 @@ input[type="number"],
   background: var(--surface-2);
   color: var(--text-2);
   box-shadow: var(--lift-edge), var(--lift-control);
-  transition: color 0.12s ease, background-color 0.12s ease, border-color 0.12s ease;
+  transition:
+    color var(--d-instant) var(--e-standard),
+    background-color var(--d-instant) var(--e-standard),
+    border-color var(--d-instant) var(--e-standard);
 }
 
 button.scriare-dock-btn:hover,
@@ -946,9 +955,9 @@ button.scriare-dock-btn:focus-visible {
 .scriare-story-card {
   box-shadow: var(--lift-node), var(--lift-edge);
   transition:
-    box-shadow 140ms ease,
-    border-color 140ms ease,
-    transform 140ms ease;
+    box-shadow var(--d-quick) var(--e-standard),
+    border-color var(--d-quick) var(--e-standard),
+    transform var(--d-quick) var(--e-standard);
 }
 
 .scriare-story-card:hover {
@@ -967,8 +976,8 @@ button.scriare-dock-btn:focus-visible {
 .scriare-resume-hero {
   box-shadow: var(--lift-page), var(--lift-edge);
   transition:
-    box-shadow 140ms ease,
-    border-color 140ms ease;
+    box-shadow var(--d-quick) var(--e-standard),
+    border-color var(--d-quick) var(--e-standard);
 }
 
 .scriare-resume-hero:hover {
@@ -979,7 +988,7 @@ button.scriare-dock-btn:focus-visible {
 /* A row in "Everything else" is not a card and must not pretend to be
    one — it lights its own strip instead of lifting. */
 .scriare-story-row {
-  transition: background-color 120ms ease;
+  transition: background-color var(--d-instant) var(--e-standard);
 }
 
 .scriare-story-row:hover {
@@ -1002,8 +1011,10 @@ button.scriare-dock-btn:focus-visible {
   border-radius: 4px;
   box-shadow: 0 0 0 2px var(--warning), 0 0 0 6px var(--accent-soft);
   background: var(--accent-soft);
-  transition: box-shadow 420ms ease-out, background 420ms ease-out;
+  transition:
+    box-shadow var(--d-considered) var(--e-standard),
+    background var(--d-considered) var(--e-standard);
 }
-@media (prefers-reduced-motion: reduce) {
-  .scriare-revealed { transition: none; }
-}
+/* The hand-written guard that used to sit here is gone: --d-considered
+   is redefined under prefers-reduced-motion in motion.css, so this rule
+   and every other one are covered at once. */

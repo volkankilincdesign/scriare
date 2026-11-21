@@ -29,6 +29,58 @@ const mainScript = (p) => join(root, "src/main", p);
 
 const CONTROLS = [
   {
+    // v0.90.0. THE SYSTEM DECAYING is the failure this version is really
+    // guarding against, and it is not a failure anybody makes on purpose:
+    // the nine durations that existed before it were each reasonable on
+    // the day they were written. So the spec reads the shipped stylesheet
+    // and insists no rule names its own duration. This puts one literal
+    // back, exactly the way the next feature would.
+    name: "a rule that names its own duration again",
+    file: src("styles/index.css"),
+    from: "  transition: filter var(--d-instant) var(--e-standard);",
+    to: "  transition: filter 180ms ease;",
+    spec: "motion-scale",
+    expect: "no rule names its own duration",
+  },
+  {
+    // v0.90.0. ...and the curve half of the same rule, because a literal
+    // easing is the quieter version of the same decay: `ease` is what 16
+    // of the 20 transitions used before this version, and it is the
+    // browser's default rather than anybody's decision.
+    name: "a rule that names its own easing curve again",
+    file: src("styles/index.css"),
+    from: "  transition: opacity var(--d-quick) var(--e-standard);",
+    to: "  transition: opacity var(--d-quick) ease-in-out;",
+    spec: "motion-scale",
+    expect: "no rule names its own easing curve",
+  },
+  {
+    // v0.90.0. The guard was hand-written in three places before this and
+    // missing from every other, including the Play Mode fade and the whole
+    // Story Graph. The spec turns the media query on for real and reads
+    // what the app computes; starve the token redefinition and that has to
+    // go red, or the guard is being trusted rather than tested.
+    name: "reduced motion that no longer reduces",
+    file: src("styles/motion.css"),
+    from: "    --d-instant: 1ms;\n    --d-quick: 1ms;",
+    to: "    --d-instant: 90ms;\n    --d-quick: 150ms;",
+    spec: "motion-scale",
+    expect: "every duration token collapses under reduced motion",
+  },
+  {
+    // v0.90.0. Everything else in that spec is meaningless if the tokens
+    // never reach the document, and an unresolved var() fails silently —
+    // the property is simply dropped and the element gets the initial
+    // value. One missing @import would otherwise read as "the app has no
+    // transitions", which is not obviously wrong on a screenshot.
+    name: "the motion tokens never imported",
+    file: src("styles/index.css"),
+    from: '@import "./themes.css";\n@import "./motion.css";',
+    to: '@import "./themes.css";',
+    spec: "motion-scale",
+    expect: "all six motion tokens resolve",
+  },
+  {
     // v0.89.0. THE BUG ITSELF. Electron's spellchecker defaulted to the
     // app's locale, so on a Turkish Windows an English story was checked
     // against a Turkish dictionary and every word in it was underlined.
