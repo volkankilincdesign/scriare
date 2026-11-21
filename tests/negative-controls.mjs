@@ -30,6 +30,28 @@ const mainScript = (p) => join(root, "src/main", p);
 const CONTROLS = [
   // ── v0.91.0 — the first-launch tour ─────────────────────────────────
   {
+    // His one exception to "2px inside": the block buttons. Dropping the
+    // flag puts the ring back over them, and only the geometry says so.
+    name: "the block buttons' ring back inside them",
+    file: src("tour/tourSteps.ts"),
+    from: '    ring: "outside",\n',
+    to: "",
+    spec: "tour",
+    // Not the geometry check: that one reads each stop's own setting, so a
+    // stop with no setting is correctly drawn inside and it passes. What
+    // catches a lost exception is the check that names the exception.
+    expect: "the block buttons are the ONE stop whose ring sits outside",
+  },
+  {
+    // The flag still set, but the overlay ignoring it.
+    name: "the overlay ignoring a stop's ring setting",
+    file: src("components/tour/TourOverlay.tsx"),
+    from: "      const box = measure(stop.targets, stop.ring);",
+    to: "      const box = measure(stop.targets);",
+    spec: "tour",
+    expect: "2px clear of the block buttons",
+  },
+  {
     // His report on the first build: the ring was drawn 6px OUTSIDE the
     // region, and on the two panels against the window's edges it ran off
     // the app. Put back exactly as it shipped.

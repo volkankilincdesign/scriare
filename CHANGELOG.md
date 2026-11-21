@@ -108,6 +108,11 @@ a **Take the tour** link under the empty shelf.
   proposed moving it inside only where a panel meets the edge, at the full
   6px. He pointed out that 6px inside can sit over a button, and one rule
   everywhere is easier to check than two.
+- **One exception, his: the block buttons.** Their ring sits **2px
+  outside** them (its inner edge 2px clear), because a ring drawn over three
+  small filled buttons crowds them and the toolbar has room around them.
+  It is a setting on the stop (`ring: "outside"`), not a special case in the
+  overlay, and a check names it as the only stop that has it.
 - **Stop 1 flew in from the window's top-left corner.** The hole was born
   with its slide switched on, and stop 1's region is still being laid out
   when it is first measured (the practice story has just opened and the
@@ -119,7 +124,7 @@ a **Take the tour** link under the empty shelf.
 
 ### Tests
 
-`tests/tour.spec.mjs`, 27 checks. The one that matters most walks all six
+`tests/tour.spec.mjs`, 28 checks. The one that matters most walks all six
 stops on a real window and measures **the lit hole against the region the
 stop names**, covering it and tight to it, because a hole the size of the
 window also "covers" every target. Keys pressed mid-tour are measured
@@ -142,7 +147,7 @@ own control would not go red because nothing in the app ever takes focus
 from it, which makes it the second-mechanism-added-to-be-safe the roadmap
 warns about.
 
-Fourteen negative controls, all caught: the ring back outside the region, the ring flush with it, the ring sliding into stop 1, sliding switched off between stops, a renamed anchor, a hole round only the first of the
+Sixteen negative controls, all caught: the block buttons' ring back inside them, the overlay ignoring that setting, the ring back outside the region, the ring flush with it, the ring sliding into stop 1, sliding switched off between stops, a renamed anchor, a hole round only the first of the
 three buttons, the shelf not offering, the offer ignoring the stored answer,
 the practice story written over the last one, a replay making a new story
 over an open one, folded panels left folded, the tour left over Play, keys

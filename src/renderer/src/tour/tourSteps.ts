@@ -36,6 +36,14 @@ export interface TourStop {
    * wraps (the v0.33.1 bug toolbar.spec.mjs still guards).
    */
   targets: string[];
+  /**
+   * Where the ring sits. Inside by default (2px in from the region's edge,
+   * his rule for every stop, so it never runs off the window). "outside"
+   * puts its INNER edge 2px clear of the region instead — his one exception,
+   * the block buttons, where a ring drawn over three small filled buttons
+   * crowds them and there is room around them in every direction.
+   */
+  ring?: "inside" | "outside";
   kicker: string;
   title: string;
   body?: string;
@@ -54,6 +62,7 @@ export const TOUR_STOPS: TourStop[] = [
   {
     id: "blocks",
     targets: ["[data-insert-choice]", "[data-insert-dialogue]", "[data-insert-conditional]"],
+    ring: "outside",
     kicker: "Branching",
     title: "Three ways to branch",
     // From the registry, so the tour can never describe a block in words

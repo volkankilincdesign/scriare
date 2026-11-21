@@ -54,7 +54,7 @@ const GAP = 14;
 const EDGE = 12;
 const CARD_W = 340;
 
-function measure(selectors: string[]): Box | null {
+function measure(selectors: string[], ring: "inside" | "outside" = "inside"): Box | null {
   let left = Infinity;
   let top = Infinity;
   let right = -Infinity;
@@ -73,10 +73,14 @@ function measure(selectors: string[]): Box | null {
   // Clipped to the window first (the page's scroll area can run past the
   // bottom edge), then brought in so the ring's OUTER edge lands INSET px
   // inside the region: box + RING = region - INSET.
-  left = Math.max(left, 0) + INSET + RING;
-  top = Math.max(top, 0) + INSET + RING;
-  right = Math.min(right, window.innerWidth) - INSET - RING;
-  bottom = Math.min(bottom, window.innerHeight) - INSET - RING;
+  //
+  // "outside" (the block buttons only): the ring's INNER edge lands INSET px
+  // clear of the region instead, so box = region + INSET.
+  const shift = ring === "outside" ? -INSET : INSET + RING;
+  left = Math.max(left, 0) + shift;
+  top = Math.max(top, 0) + shift;
+  right = Math.min(right, window.innerWidth) - shift;
+  bottom = Math.min(bottom, window.innerHeight) - shift;
   return { x: left, y: top, w: right - left, h: bottom - top };
 }
 
@@ -173,7 +177,7 @@ function TourLayer() {
     let frame = 0;
     let last: Box | null = null;
     const tick = () => {
-      const box = measure(stop.targets);
+      const box = measure(stop.targets, stop.ring);
       if (!sameBox(box, last)) {
         last = box;
         setHole(box);

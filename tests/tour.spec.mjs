@@ -36,7 +36,12 @@ export default async function run({ page, api, check, seedProject }) {
 
   /* ── the stops, as data ─────────────────────────────────────────────── */
 
-  const stops = await api(() => window.__scriareTourStops.map((s) => ({ id: s.id, targets: s.targets, terms: s.terms ?? null })));
+  const stops = await api(() => window.__scriareTourStops.map((s) => ({ id: s.id, targets: s.targets, ring: s.ring ?? "inside", terms: s.terms ?? null })));
+  check(
+    "the block buttons are the ONE stop whose ring sits outside — his exception, and only that one",
+    stops.filter((s) => s.ring === "outside").map((s) => s.id).join(",") === "blocks",
+    stops.map((s) => `${s.id}:${s.ring}`).join(" "),
+  );
   check(
     "six stops, one per region, in the order he agreed",
     stops.map((s) => s.id).join(",") === "page,blocks,inspector,graph,content,play",
@@ -206,11 +211,16 @@ export default async function run({ page, api, check, seedProject }) {
     // ring edge = box + 2, and that must equal region - 2 (±1 for rounding).
     // Exact rather than "covers": a hole the size of the window also covers
     // every target, and one drawn outside the region is the overflow he saw.
+    //
+    // HIS ONE EXCEPTION: the block buttons, where the ring's INNER edge (the
+    // box itself) sits 2px clear of the region instead.
     const ring = hole && { l: hole.l - 2, t: hole.t - 2, r: hole.r + 2, b: hole.b + 2 };
     const near = (a, b) => Math.abs(a - b) <= 1;
-    const inside2 =
-      ring && target && near(ring.l, target.l + 2) && near(ring.t, target.t + 2) && near(ring.r, target.r - 2) && near(ring.b, target.b - 2);
-    if (!inside2) misses.push(`${stop.id}: ring ${JSON.stringify(ring)} region ${JSON.stringify(target)}`);
+    const placed =
+      stop.ring === "outside"
+        ? hole && target && near(hole.l, target.l - 2) && near(hole.t, target.t - 2) && near(hole.r, target.r + 2) && near(hole.b, target.b + 2)
+        : ring && target && near(ring.l, target.l + 2) && near(ring.t, target.t + 2) && near(ring.r, target.r - 2) && near(ring.b, target.b - 2);
+    if (!placed) misses.push(`${stop.id} (${stop.ring}): ring ${JSON.stringify(ring)} region ${JSON.stringify(target)}`);
     const ringInWindow = ring && ring.l >= 0 && ring.t >= 0 && ring.r <= m.vw && ring.b <= m.vh;
     if (!ringInWindow) offWindow.push(`${stop.id}: ${JSON.stringify(ring)} in ${m.vw}×${m.vh}`);
     const inWindow = card && card.l >= 0 && card.t >= 0 && card.r <= m.vw && card.b <= m.vh;
@@ -222,7 +232,7 @@ export default async function run({ page, api, check, seedProject }) {
       overlaps.push(`${stop.id}: card ${JSON.stringify(card)}`);
     if (stop.id !== "play") await page.keyboard.press("ArrowRight");
   }
-  check("EVERY STOP LIGHTS THE REGION IT NAMES — its ring sits 2px inside it, on every side", misses.length === 0, misses.join(" ; ") || "6/6");
+  check("EVERY STOP LIGHTS THE REGION IT NAMES — its ring sits 2px inside it, on every side (2px clear of the block buttons)", misses.length === 0, misses.join(" ; ") || "6/6");
   check("THE RING NEVER LEAVES THE WINDOW — the panels against its edges included", offWindow.length === 0, offWindow.join(" ; ") || "6/6");
   const slidesLater = await api(() => getComputedStyle(document.querySelector("[data-tour-hole]")).transitionDuration);
   check("...while moving BETWEEN stops still slides", slidesLater !== "0s" && slidesLater !== "", slidesLater);
