@@ -86,6 +86,107 @@ export default async function run({ page, api, check, seedProject }) {
     `${declarations.filter((d) => EXEMPT.test(d.text)).length} exempt declarations`,
   );
 
+  // ── 1b. the SECOND stylesheet, and the drift it invites ──────────────
+  //
+  // An exported page is a standalone document: it cannot import
+  // motion.css, so pageStyles.ts declares the same six tokens again. Two
+  // declarations of one decision is a real cost and this is the check
+  // that pays it — change the scale in one file and forget the other and
+  // this goes red immediately, rather than six months later when somebody
+  // notices the export feels different from Play Mode.
+  const motionPath = join(root, "src/renderer/src/styles/motion.css");
+  const pagePath = join(root, "src/renderer/src/export/pageStyles.ts");
+  const motionCss = await readFile(motionPath, "utf8");
+  const pageCss = await readFile(pagePath, "utf8");
+
+  const readTokens = (text) => {
+    const out = {};
+    // Only the first (non-reduced) declaration of each: the guard block
+    // redefines them all to 1ms and would otherwise overwrite these.
+    for (const name of ["--d-instant", "--d-quick", "--d-settle", "--d-considered", "--e-standard", "--e-exit"]) {
+      const m = text.match(new RegExp(`${name}\\s*:\\s*([^;]+);`));
+      if (m) out[name] = m[1].trim();
+    }
+    return out;
+  };
+  const inApp = readTokens(motionCss);
+  const inExport = readTokens(pageCss);
+
+  check(
+    "the exported page declares the whole scale, not part of it",
+    Object.keys(inExport).length === 6,
+    `${Object.keys(inExport).length}/6: ${JSON.stringify(inExport)}`,
+  );
+  check(
+    "the app's scale and the exported page's scale are the same scale",
+    JSON.stringify(inApp) === JSON.stringify(inExport),
+    `app ${JSON.stringify(inApp)} vs export ${JSON.stringify(inExport)}`,
+  );
+
+  const pageDecls = [...pageCss.matchAll(/^\s*(transition|animation)[^;]*;/gm)].map((m) =>
+    m[0].replace(/\s+/g, " ").trim(),
+  );
+  check(
+    "the exported page names no durations of its own either",
+    pageDecls.every((d) => !/\b\d+(\.\d+)?m?s\b/.test(d)),
+    pageDecls.filter((d) => /\b\d+(\.\d+)?m?s\b/.test(d)).join(" | ") || "none",
+  );
+
+  // ── 1c. the siblings rule, where it was being broken ─────────────────
+  //
+  // In Play Mode the Choice block hovered with `brightness-110` and the
+  // Dialogue block with `border-[var(--accent)]` — two different drawings
+  // for two blocks whose whole arrangement is that they are one. Worse,
+  // the Dialogue's version set a BORDER COLOUR, which belongs to the
+  // writer's Choice Style and sits in an earlier cascade layer, so a
+  // writer who chose a border watched the app overwrite it on hover.
+  // Both now inherit one rule in index.css; this is what keeps them there.
+  const blocks = await Promise.all(
+    ["choiceRuntimeBlock.tsx", "dialogueRuntimeBlock.tsx"].map((f) =>
+      readFile(join(root, "src/renderer/src/runtime/blocks", f), "utf8"),
+    ),
+  );
+  const strayUtilities = blocks.flatMap((text, i) =>
+    [...text.matchAll(/className=\{`scriare-choice[^`]*`\}/g)]
+      .map((m) => m[0])
+      .filter((c) => /\bhover:|\btransition-|\bactive:/.test(c))
+      .map((c) => `${i === 0 ? "choice" : "dialogue"}: ${c.slice(0, 90)}`),
+  );
+  check(
+    "neither Play Mode block draws its own hover — the siblings rule, enforced",
+    strayUtilities.length === 0,
+    strayUtilities.join(" | ") || "none",
+  );
+
+  // ── 1d. the press exists on all three surfaces that draw a choice ────
+  //
+  // The point of this version's second half. Before it, nothing anywhere
+  // in Scriare responded to being HELD: a row lit under the pointer and
+  // then said nothing between mousedown and the click landing, which is
+  // the exact moment a writer is most certain they have done something.
+  // Three surfaces draw a choice — the editor, Play Mode, and the
+  // exported page — and a press that exists on two of them is worse than
+  // one that exists on none, because then the app disagrees with itself.
+  const pressing = [
+    ["the editor", css, /\.scriare-choice-option:active[^{]*\{/],
+    ["Play Mode", css, /\[data-play-root\] \.scriare-choice:active/],
+    ["the exported page", pageCss, /\.scriare-choice:active/],
+  ];
+  const missingPress = pressing.filter(([, text, re]) => !re.test(text)).map(([where]) => where);
+  check(
+    "a choice responds to being held down on all three surfaces",
+    missingPress.length === 0,
+    missingPress.length ? `missing on: ${missingPress.join(", ")}` : "editor, Play Mode, export",
+  );
+  // The siblings rule, stated once more where it can fail: the Dialogue
+  // line is under the same editor rule as the Choice option rather than a
+  // copy of it, so the two cannot drift apart by someone editing one.
+  check(
+    "...and the Dialogue line is in that rule rather than beside it",
+    /\.scriare-choice-option:active,\s*\n\s*(\.ProseMirror\s+)?\.scriare-dialogue-line:active/.test(css),
+    "the two selectors share one :active block",
+  );
+
   // ── 2. the tokens resolve in the running app ─────────────────────────
   const tokens = await page.evaluate(() => {
     const s = getComputedStyle(document.documentElement);

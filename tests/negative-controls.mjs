@@ -29,16 +29,84 @@ const mainScript = (p) => join(root, "src/main", p);
 
 const CONTROLS = [
   {
+    // v0.90.0. The exported page is a standalone document and cannot
+    // import motion.css, so pageStyles.ts declares the same six tokens
+    // again. Two declarations of one decision is a real cost, and this is
+    // the check that pays it: move one and the suite says so, instead of
+    // somebody noticing six months later that the export feels different
+    // from Play Mode.
+    name: "the exported page's scale drifting from the app's",
+    file: src("export/pageStyles.ts"),
+    from: "  --d-settle: 240ms;",
+    to: "  --d-settle: 200ms;",
+    spec: "motion-scale",
+    expect: "the app's scale and the exported page's scale are the same scale",
+  },
+  {
+    // v0.90.0. The same decay guard as index.css's, on the second
+    // stylesheet — which had its own .14s and its own 180ms for eighty-nine
+    // versions precisely because it lives inside a TypeScript template
+    // string and nobody greps it.
+    name: "the exported page naming its own duration again",
+    file: src("export/pageStyles.ts"),
+    from: "    filter var(--d-instant) var(--e-standard),",
+    to: "    filter .14s,",
+    spec: "motion-scale",
+    expect: "the exported page names no durations of its own either",
+  },
+  {
+    // v0.90.0. THE SIBLINGS RULE, where it was actually broken. In Play
+    // Mode the Choice hovered with brightness and the Dialogue with a
+    // border colour — two drawings for two blocks that are meant to be
+    // one. The border version was also overwriting the writer's own Choice
+    // Style, which sits in an earlier cascade layer. This puts it back.
+    name: "the Dialogue block drawing its own hover again",
+    file: src("runtime/blocks/dialogueRuntimeBlock.tsx"),
+    from: "w-full cursor-pointer px-4 py-2.5 text-left`}",
+    to: "w-full cursor-pointer px-4 py-2.5 text-left transition-colors hover:border-[var(--accent)]`}",
+    spec: "motion-scale",
+    expect: "neither Play Mode block draws its own hover",
+  },
+  {
+    // v0.90.0. A press that exists on two of the three surfaces that draw
+    // a choice is worse than one that exists on none, because then the app
+    // disagrees with itself about what pressing something does.
+    name: "Play Mode losing the press the editor still has",
+    file: src("styles/index.css"),
+    from: "[data-play-root] .scriare-choice:active:not(.is-locked) {",
+    to: "[data-play-root] .scriare-choice.never-matches:not(.is-locked) {",
+    spec: "motion-scale",
+    expect: "a choice responds to being held down on all three surfaces",
+  },
+  {
+    // v0.90.0. ...and the same rule from the other direction: the Dialogue
+    // line must stay INSIDE the editor's :active rule rather than beside
+    // it, so the two cannot drift apart by someone editing one of them.
+    name: "the Dialogue line's press split out of the shared rule",
+    file: src("styles/index.css"),
+    from: ".ProseMirror .scriare-dialogue-line:active {",
+    to: ".ProseMirror .scriare-dialogue-line:focus {",
+    spec: "motion-scale",
+    expect: "the Dialogue line is in that rule rather than beside it",
+  },
+  {
     // v0.90.0. THE SYSTEM DECAYING is the failure this version is really
     // guarding against, and it is not a failure anybody makes on purpose:
     // the nine durations that existed before it were each reasonable on
     // the day they were written. So the spec reads the shipped stylesheet
     // and insists no rule names its own duration. This puts one literal
     // back, exactly the way the next feature would.
+    // RE-AIMED IN THE SAME VERSION. Its first anchor was the editor's
+    // one-line `transition: filter ...`, which stopped existing an hour
+    // later when that rule gained a transform and went multi-line. The
+    // runner's pre-flight caught it as a stale control, which is the
+    // whole reason that pre-flight exists. Now aimed at a declaration
+    // nothing in this version touches, and sabotaging ONLY the duration
+    // so it stays distinct from the easing control below it.
     name: "a rule that names its own duration again",
     file: src("styles/index.css"),
-    from: "  transition: filter var(--d-instant) var(--e-standard);",
-    to: "  transition: filter 180ms ease;",
+    from: "  transition: transform var(--d-quick) var(--e-standard);",
+    to: "  transition: transform 150ms var(--e-standard);",
     spec: "motion-scale",
     expect: "no rule names its own duration",
   },

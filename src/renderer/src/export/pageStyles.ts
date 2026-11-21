@@ -52,6 +52,21 @@ export function pageStyles(boxes: Record<string, ChoiceBox> = {}): string {
   return `${LAYER_ORDER}
 ${boxLayerCss(boxes)}
 @layer scriare.base {
+/* The motion scale (v0.90.0), declared here the same way the layer order
+   is: an exported page is a standalone document and cannot import
+   styles/motion.css, so it carries its own copy of the same six tokens.
+   Two declarations of one decision, which is the price of the export
+   being a real file somebody can open rather than a view of the app.
+   If the scale in motion.css changes, this changes with it — and the
+   suite asserts the two agree, so they cannot drift quietly. */
+:root {
+  --d-instant: 90ms;
+  --d-quick: 150ms;
+  --d-settle: 240ms;
+  --d-considered: 420ms;
+  --e-standard: cubic-bezier(0.2, 0, 0, 1);
+  --e-exit: cubic-bezier(0.4, 0, 1, 1);
+}
 :root {
   color-scheme: dark;
 ${GROUND_TOKENS.night}
@@ -122,7 +137,10 @@ body {
   background: transparent;
   color: var(--text-2);
   cursor: pointer;
-  transition: color .14s, border-color .14s, background-color .14s;
+  transition:
+    color var(--d-instant) var(--e-standard),
+    border-color var(--d-instant) var(--e-standard),
+    background-color var(--d-instant) var(--e-standard);
 }
 .scriare-bar button:hover:not(:disabled) {
   color: var(--text);
@@ -248,9 +266,27 @@ body {
      want. Harmless to look at, and exactly the kind of thing that stops
      being harmless the first time somebody reasons from it. */
   cursor: pointer;
-  transition: filter .14s;
+  transition:
+    filter var(--d-instant) var(--e-standard),
+    transform var(--d-quick) var(--e-standard);
 }
-.scriare-choice:hover { filter: brightness(1.08); }
+/* Transform and filter only — never fill or border. Those belong to the
+   writer's Choice Style, generated into the EARLIER `scriare.boxes`
+   layer, and a declaration here would win over it. The same rule, for the
+   same reason, as the one in styles/index.css that draws this in Play
+   Mode: the two surfaces are one arrangement and this is where that is
+   kept true. A locked choice is excluded from both states, because it
+   already says what it is and lifting it would be a promise the page is
+   about to refuse. */
+.scriare-choice:hover:not(.is-locked) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+.scriare-choice:active:not(.is-locked) {
+  filter: brightness(1.04);
+  transform: translateY(0) scale(0.996);
+  transition-duration: var(--d-instant);
+}
 .scriare-choice:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* A locked choice keeps its style's corner radius so it still reads as one
    of the choices around it, but takes its own dashed, drained treatment:
@@ -319,11 +355,25 @@ body {
 /* A scene change is a fade and nothing else — the same transition Play
    Mode uses, for the same reason: anything more elaborate is a thing the
    reader has to sit through once per choice. */
-@keyframes scriare-scene-in { from { opacity: 0; } to { opacity: 1; } }
-.scriare-scene { animation: scriare-scene-in 180ms ease; }
+/* Six pixels of travel under the fade (v0.90.0), the same as Play Mode's:
+   a pure opacity fade has no direction, so two scenes in a row read as one
+   page flickering rather than a new one arriving. Small enough that no
+   reader could describe what happened. */
+@keyframes scriare-scene-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.scriare-scene { animation: scriare-scene-in var(--d-settle) var(--e-standard); }
+/* One redefinition rather than a list of rules to keep up to date — the
+   same change motion.css made in the app. The old version named three
+   selectors, and anything added afterwards was unguarded by default. */
 @media (prefers-reduced-motion: reduce) {
-  .scriare-scene { animation: none; }
-  .scriare-bar button, .scriare-choice { transition: none; }
+  :root {
+    --d-instant: 1ms;
+    --d-quick: 1ms;
+    --d-settle: 1ms;
+    --d-considered: 1ms;
+  }
 }
 }
 `;

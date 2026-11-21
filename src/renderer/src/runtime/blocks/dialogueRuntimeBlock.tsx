@@ -125,7 +125,7 @@ function RuntimeDialogue({
                 // `border` left with it: the generated rule owns the
                 // radius, width and style, and a utility class is unlayered
                 // so it would have outranked the layer they live in.
-                className={`scriare-choice ${boxClass(resolveChoiceBox(context.choiceStyles, line.style))} w-full cursor-pointer px-4 py-2.5 text-left transition-colors hover:border-[var(--accent)]`}
+                className={`scriare-choice ${boxClass(resolveChoiceBox(context.choiceStyles, line.style))} w-full cursor-pointer px-4 py-2.5 text-left`}
               >
                 {line.text || "…"}
               </button>

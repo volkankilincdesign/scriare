@@ -55,7 +55,7 @@ function RuntimeChoiceOptions({ options, context }: RuntimeChoiceOptionsProps) {
             // `border-solid` left with it: the generated rule sets the
             // border style, and a Tailwind utility is unlayered and would
             // have outranked it.
-            className={`scriare-choice ${boxClass(resolveChoiceBox(context.choiceStyles, option.style))} px-4 py-2 text-left text-sm text-[var(--text)] transition-colors hover:brightness-110`}
+            className={`scriare-choice ${boxClass(resolveChoiceBox(context.choiceStyles, option.style))} px-4 py-2 text-left text-sm text-[var(--text)]`}
           >
             <Label option={option} />
           </button>

@@ -254,16 +254,27 @@ input[type="number"],
   margin-bottom: 0;
 }
 
-/* Play runtime — a simple fade when a scene changes, keyed by scene id in
-   PlayRuntime.tsx so React remounts this element (and thus replays the
-   animation) on every scene transition. Deliberately just an opacity fade,
-   per Sprint 7's "simple fade is enough". */
+/* Play runtime — the scene change, keyed by scene id in PlayRuntime.tsx so
+   React remounts this element (and thus replays the animation) every time.
+
+   Sprint 7 said "a simple fade is enough" and it was, for a long time. It
+   is now a fade and SIX PIXELS of travel, which is the smallest change
+   that turns a cross-dissolve into an arrival. A pure opacity fade has no
+   direction, so two scenes in a row read as the same page flickering; a
+   little upward movement says a new one came in. Six pixels is deliberately
+   below the threshold at which anybody could describe what happened.
+
+   Under prefers-reduced-motion this collapses with --d-settle like
+   everything else, so the travel goes away with the fade rather than
+   needing its own exemption. */
 @keyframes runtimeFadeIn {
   from {
     opacity: 0;
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -561,7 +572,9 @@ input[type="number"],
    differs. */
 .ProseMirror .scriare-choice-option,
 .ProseMirror .scriare-dialogue-line {
-  transition: filter var(--d-instant) var(--e-standard);
+  transition:
+    filter var(--d-instant) var(--e-standard),
+    transform var(--d-instant) var(--e-standard);
 }
 /* v0.34.0: the row now paints its own Choice Style (fill, border, radius)
    as an inline style, so hover can no longer be a background swap — it
@@ -571,6 +584,63 @@ input[type="number"],
 .ProseMirror .scriare-dialogue-line:hover {
   filter: brightness(1.12);
 }
+/* v0.90.0 — and the other half of the same gesture. Until now nothing in
+   the editor responded to being HELD: a row lit up under the pointer and
+   then did nothing at all between mousedown and the click landing, which
+   is the moment a writer is most sure they have done something and the
+   app was least willing to agree.
+   The press is a scale rather than a colour, for the reason the hover is
+   a brightness: the row paints the writer's own Choice Style and nothing
+   here may overwrite it. A scale of .996 is about half a pixel on a
+   full-width row — felt, not seen, which is the whole brief. */
+.ProseMirror .scriare-choice-option:active,
+.ProseMirror .scriare-dialogue-line:active {
+  filter: brightness(1.06);
+  transform: scale(0.996);
+}
+/* A choice in PLAY MODE (v0.90.0).
+ *
+ * The flattest thing on the screen until this version, and the one moment
+ * that IS the product: a reader's whole relationship with a branching
+ * story is the half-second in which they pick a line. It had a Tailwind
+ * `transition-colors` and a brightness, which is less response than the
+ * Welcome screen's story cards have had since v0.53.0.
+ *
+ * TRANSFORM AND FILTER ONLY, and that is not a stylistic preference. The
+ * fill, the border and the radius belong to the writer's Choice Style,
+ * generated into the `scriare.boxes` layer — and an unlayered rule here
+ * beats every layer whatever its specificity, so a `background` or a
+ * `border-color` in this block would quietly overwrite a style the writer
+ * chose. The editor learned this in v0.34.0 and said so beside its own
+ * hover; this is the same lesson applied to the other surface.
+ *
+ * NO BOX-SHADOW EITHER, which is a change from the mockup this was
+ * designed in. A lift wants a raised shadow, and the only ground-correct
+ * one is `--shadow-raised`, which exists on `[data-play-root]` but not in
+ * the exported page. Inventing a second would be a new colour decision in
+ * a file whose whole doctrine is that colour lives in themes.css — so the
+ * lift is a translate, the same in Play Mode and in the export, and the
+ * two surfaces stay one arrangement rather than two that resemble each
+ * other.
+ *
+ * A LOCKED CHOICE IS EXCLUDED FROM BOTH. It already says what it is with a
+ * dashed border and a drained fill; lifting it under the pointer would be
+ * the app promising something it is about to refuse. */
+[data-play-root] .scriare-choice {
+  transition:
+    filter var(--d-instant) var(--e-standard),
+    transform var(--d-quick) var(--e-standard);
+}
+[data-play-root] .scriare-choice:hover:not(.is-locked) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+[data-play-root] .scriare-choice:active:not(.is-locked) {
+  filter: brightness(1.04);
+  transform: translateY(0) scale(0.996);
+  transition-duration: var(--d-instant);
+}
+
 /* The Story Graph's minimap (v0.36.1). Even when it's needed, what sits
    under it is a scene somebody wrote — so it waits at a low opacity until
    the pointer arrives. */
